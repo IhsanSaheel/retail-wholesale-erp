@@ -1,0 +1,227 @@
+index.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Business ERP</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#17243a}
+header{background:#142b4a;color:white;padding:20px}
+header h2{margin:0}
+header p{margin:7px 0 0;color:#c7d5e7}
+.container{max-width:1100px;margin:auto;padding:20px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}
+.card{background:white;padding:18px;border-radius:12px;box-shadow:0 2px 10px #17243a0c}
+.card small{color:#65758b}
+.card h2{margin:10px 0 0;color:#1765bd}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+input,button{padding:12px;border-radius:8px;border:1px solid #d6deea;font-size:14px}
+input{background:white;min-width:0}
+#search{flex:1}
+button{background:#1765bd;color:white;border:0;font-weight:bold;cursor:pointer}
+button.secondary{background:#e9eff8;color:#193653}
+button.danger{background:#c83e4d}
+table{width:100%;border-collapse:collapse;background:white}
+th,td{text-align:left;padding:13px;border-bottom:1px solid #e8edf4;font-size:14px}
+th{background:#edf3fa}
+.status{color:#16834c;font-weight:bold}
+.actions{display:flex;gap:6px}
+.actions button{padding:8px;font-size:12px}
+.table-wrap{overflow-x:auto;border-radius:10px}
+.form{display:none;background:white;padding:18px;border-radius:12px;margin:15px 0}
+.form input{width:100%;margin:6px 0 12px}
+.form label{font-size:13px;font-weight:bold}
+.empty{text-align:center;color:#738197;padding:25px}
+footer{text-align:center;color:#8290a3;padding:25px;font-size:12px}
+@media(max-width:600px){
+.container{padding:12px}
+.stats{grid-template-columns:1fr}
+header{padding:17px}
+th,td{padding:10px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<header>
+<h2>MY BUSINESS ERP</h2>
+<p>Retail & Wholesale Management System</p>
+</header>
+
+<main class="container">
+<h2>Business Dashboard</h2>
+<p>Manage your branches in one place.</p>
+
+<div class="stats">
+<div class="card">
+<small>Total Branches</small>
+<h2 id="total">0</h2>
+</div>
+<div class="card">
+<small>Active Branches</small>
+<h2 id="active">0</h2>
+</div>
+<div class="card">
+<small>Inactive Branches</small>
+<h2 id="inactive">0</h2>
+</div>
+</div>
+
+<h3>Branch Management</h3>
+
+<div class="toolbar">
+<input id="search" placeholder="Search branches..." oninput="render()">
+<button onclick="showForm()">+ Add Branch</button>
+</div>
+
+<div class="form" id="form">
+<h3 id="formTitle">Add New Branch</h3>
+<label>Branch Name</label>
+<input id="name" placeholder="e.g. Islamabad Main Branch">
+<label>Branch Code</label>
+<input id="code" placeholder="e.g. BR-001">
+<label>Address</label>
+<input id="address" placeholder="Branch address">
+<label>Phone Number</label>
+<input id="phone" placeholder="Phone number">
+<div class="toolbar">
+<button onclick="saveBranch()">Save Branch</button>
+<button class="secondary" onclick="hideForm()">Cancel</button>
+</div>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Branch</th>
+<th>Code</th>
+<th>Address</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="branchList"></tbody>
+</table>
+</div>
+<footer>My Business ERP · PKR · Demo Version</footer>
+</main>
+
+<script>
+let branches = JSON.parse(localStorage.getItem("erpBranches") || "[]");
+let editing = null;
+
+function store(){
+ localStorage.setItem("erpBranches",JSON.stringify(branches));
+}
+
+function showForm(){
+ editing=null;
+ document.getElementById("formTitle").textContent="Add New Branch";
+ ["name","code","address","phone"].forEach(id=>document.getElementById(id).value="");
+ document.getElementById("form").style.display="block";
+}
+
+function hideForm(){
+ document.getElementById("form").style.display="none";
+}
+
+function saveBranch(){
+ const name=document.getElementById("name").value.trim();
+ const code=document.getElementById("code").value.trim();
+ const address=document.getElementById("address").value.trim();
+ const phone=document.getElementById("phone").value.trim();
+
+ if(!name || !code){
+  alert("Please enter branch name and branch code.");
+  return;
+ }
+
+ if(branches.some((b,i)=>b.code.toLowerCase()===code.toLowerCase() && i!==editing)){
+  alert("This branch code already exists.");
+  return;
+ }
+
+ const item={name,code,address,phone,status:"Active"};
+
+ if(editing!==null){
+  item.status=branches[editing].status;
+  branches[editing]=item;
+ }else{
+  branches.push(item);
+ }
+
+ store();
+ hideForm();
+ render();
+}
+
+function editBranch(i){
+ editing=i;
+ const b=branches[i];
+ document.getElementById("formTitle").textContent="Edit Branch";
+ document.getElementById("name").value=b.name;
+ document.getElementById("code").value=b.code;
+ document.getElementById("address").value=b.address;
+ document.getElementById("phone").value=b.phone;
+ document.getElementById("form").style.display="block";
+}
+
+function toggleBranch(i){
+ branches[i].status=branches[i].status==="Active"?"Inactive":"Active";
+ store();
+ render();
+}
+
+function deleteBranch(i){
+ if(confirm("Delete this branch?")){
+  branches.splice(i,1);
+  store();
+  render();
+ }
+}
+
+function render(){
+ const query=document.getElementById("search").value.toLowerCase();
+ document.getElementById("total").textContent=branches.length;
+ document.getElementById("active").textContent=branches.filter(b=>b.status==="Active").length;
+ document.getElementById("inactive").textContent=branches.filter(b=>b.status==="Inactive").length;
+
+ const list=document.getElementById("branchList");
+ const filtered=branches.map((b,i)=>({...b,index:i})).filter(b=>
+  (b.name+" "+b.code+" "+b.address).toLowerCase().includes(query)
+ );
+
+ if(!filtered.length){
+  list.innerHTML='<tr><td colspan="5" class="empty">No branches found. Add your first branch.</td></tr>';
+  return;
+ }
+
+ list.innerHTML=filtered.map(b=>`
+ <tr>
+ <td>${safe(b.name)}</td>
+ <td>${safe(b.code)}</td>
+ <td>${safe(b.address)}</td>
+ <td class="${b.status==="Active"?"status":""}">${b.status}</td>
+ <td><div class="actions">
+ <button class="secondary" onclick="editBranch(${b.index})">Edit</button>
+ <button class="secondary" onclick="toggleBranch(${b.index})">Status</button>
+ <button class="danger" onclick="deleteBranch(${b.index})">Delete</button>
+ </div></td>
+ </tr>`).join("");
+}
+
+function safe(value){
+ return String(value).replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",
+ '"':"&quot;","'":"&#39;"
+ }[c]));
+}
+
+render();
+</script>
+</body>
+</html>
