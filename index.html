@@ -2,224 +2,118 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Business ERP</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#17243a}
-header{background:#142b4a;color:white;padding:20px}
-header h2{margin:0}
-header p{margin:7px 0 0;color:#c7d5e7}
-.container{max-width:1100px;margin:auto;padding:20px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}
-.card{background:white;padding:18px;border-radius:12px;box-shadow:0 2px 10px #17243a0c}
-.card small{color:#65758b}
-.card h2{margin:10px 0 0;color:#1765bd}
-.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
-input,button{padding:12px;border-radius:8px;border:1px solid #d6deea;font-size:14px}
-input{background:white;min-width:0}
-#search{flex:1}
-button{background:#1765bd;color:white;border:0;font-weight:bold;cursor:pointer}
-button.secondary{background:#e9eff8;color:#193653}
-button.danger{background:#c83e4d}
-table{width:100%;border-collapse:collapse;background:white}
-th,td{text-align:left;padding:13px;border-bottom:1px solid #e8edf4;font-size:14px}
-th{background:#edf3fa}
-.status{color:#16834c;font-weight:bold}
-.actions{display:flex;gap:6px}
-.actions button{padding:8px;font-size:12px}
-.table-wrap{overflow-x:auto;border-radius:10px}
-.form{display:none;background:white;padding:18px;border-radius:12px;margin:15px 0}
-.form input{width:100%;margin:6px 0 12px}
-.form label{font-size:13px;font-weight:bold}
-.empty{text-align:center;color:#738197;padding:25px}
-footer{text-align:center;color:#8290a3;padding:25px;font-size:12px}
-@media(max-width:600px){
-.container{padding:12px}
-.stats{grid-template-columns:1fr}
-header{padding:17px}
-th,td{padding:10px;font-size:12px}
-}
+:root{--navy:#102a43;--blue:#1769aa;--bg:#f3f6fa;--line:#e2e8f0;--muted:#64748b;--green:#16845b;--red:#c24141}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial,sans-serif;color:#172b4d}
+header{background:var(--navy);color:#fff;padding:17px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:20px;margin:0}header small{color:#cbd5e1}
+nav{display:flex;gap:8px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--line);overflow:auto}
+nav button{white-space:nowrap;border:0;border-radius:8px;padding:10px 14px;background:#eef3f8;color:#24435f;font-weight:700}
+nav button.active{background:var(--blue);color:#fff}
+main{max-width:1100px;margin:22px auto;padding:0 15px}
+h2{font-size:21px;margin:0 0 5px}.sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:18px}
+.card,.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+.card span{font-size:12px;color:var(--muted)}.card strong{display:block;font-size:24px;margin-top:8px}
+.panel{margin-bottom:16px}.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+input,select{padding:11px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;font-size:14px;min-width:0}
+.toolbar input{flex:1;min-width:150px}
+button{cursor:pointer}.primary{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:11px 15px;font-weight:700}
+.secondary{background:#eaf1f8;color:#24435f;border:0;border-radius:8px;padding:10px 13px;font-weight:700}
+.danger{background:#fff0f0;color:var(--red);border:0;border-radius:7px;padding:8px 10px}
+table{width:100%;border-collapse:collapse;min-width:700px}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);font-size:13px}th{color:var(--muted);background:#f8fafc}
+.tablewrap{overflow-x:auto}.pill{padding:5px 8px;border-radius:20px;font-size:11px;font-weight:700;background:#e8f7ef;color:var(--green)}.low{background:#fff0e7;color:#b45309}
+.hidden{display:none!important}.notice{font-size:12px;color:var(--muted);line-height:1.5;background:#f8fafc;padding:12px;border-radius:8px}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:15px;z-index:5}.modal.show{display:flex}
+.dialog{background:#fff;border-radius:13px;padding:19px;width:min(480px,100%);max-height:90vh;overflow:auto}.dialog h3{margin:0 0 14px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:12px;color:var(--muted)}.field input,.field select{width:100%}.full{grid-column:1/-1}.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:15px}
+.empty{text-align:center;color:var(--muted);padding:25px}
+@media(max-width:560px){header h1{font-size:18px}.formgrid{grid-template-columns:1fr}.full{grid-column:auto}main{margin-top:16px}.card{padding:13px}}
 </style>
 </head>
 <body>
-
-<header>
-<h2>MY BUSINESS ERP</h2>
-<p>Retail & Wholesale Management System</p>
-</header>
-
-<main class="container">
-<h2>Business Dashboard</h2>
-<p>Manage your branches in one place.</p>
-
-<div class="stats">
-<div class="card">
-<small>Total Branches</small>
-<h2 id="total">0</h2>
+<header><div><h1>MY BUSINESS ERP</h1><small>Retail & Wholesale Management</small></div><strong>PKR ₨</strong></header>
+<nav>
+<button class="active" data-tab="inventory">Products & Inventory</button>
+<button data-tab="branches">Branches</button>
+</nav>
+<main>
+<section id="inventory">
+<h2>Products & Inventory</h2><p class="sub">Manage products and stock by branch</p>
+<div class="cards">
+<div class="card"><span>Total products</span><strong id="totalProducts">0</strong></div>
+<div class="card"><span>Total stock units</span><strong id="totalUnits">0</strong></div>
+<div class="card"><span>Low-stock products</span><strong id="lowCount">0</strong></div>
+<div class="card"><span>Stock value (cost)</span><strong id="stockValue">₨0</strong></div>
 </div>
-<div class="card">
-<small>Active Branches</small>
-<h2 id="active">0</h2>
-</div>
-<div class="card">
-<small>Inactive Branches</small>
-<h2 id="inactive">0</h2>
-</div>
-</div>
-
-<h3>Branch Management</h3>
-
+<div class="panel">
 <div class="toolbar">
-<input id="search" placeholder="Search branches..." oninput="render()">
-<button onclick="showForm()">+ Add Branch</button>
+<select id="branchFilter" aria-label="Filter by branch"></select>
+<input id="productSearch" placeholder="Search product, SKU or category">
+<button class="primary" id="addProduct">+ Add product</button>
 </div>
-
-<div class="form" id="form">
-<h3 id="formTitle">Add New Branch</h3>
-<label>Branch Name</label>
-<input id="name" placeholder="e.g. Islamabad Main Branch">
-<label>Branch Code</label>
-<input id="code" placeholder="e.g. BR-001">
-<label>Address</label>
-<input id="address" placeholder="Branch address">
-<label>Phone Number</label>
-<input id="phone" placeholder="Phone number">
-<div class="toolbar">
-<button onclick="saveBranch()">Save Branch</button>
-<button class="secondary" onclick="hideForm()">Cancel</button>
+<div class="tablewrap"><table><thead><tr><th>Product</th><th>SKU / Barcode</th><th>Category</th><th>Branch</th><th>Qty</th><th>Cost</th><th>Selling</th><th>Status</th><th>Actions</th></tr></thead><tbody id="productRows"></tbody></table></div>
+<div id="productEmpty" class="empty hidden">No products yet. Tap “Add product” to add your first item.</div>
 </div>
+<p class="notice">Prototype notice: records are saved only in this browser on this device. They are not shared between branches, phones or computers. Do not enter real business records until we add secure user accounts, a central database and backups.</p>
+</section>
+<section id="branches" class="hidden">
+<h2>Branch Management</h2><p class="sub">Create and manage your business locations</p>
+<div class="cards">
+<div class="card"><span>Total branches</span><strong id="totalBranches">0</strong></div>
+<div class="card"><span>Active branches</span><strong id="activeBranches">0</strong></div>
+<div class="card"><span>Inactive branches</span><strong id="inactiveBranches">0</strong></div>
 </div>
-
-<div class="table-wrap">
-<table>
-<thead>
-<tr>
-<th>Branch</th>
-<th>Code</th>
-<th>Address</th>
-<th>Status</th>
-<th>Actions</th>
-</tr>
-</thead>
-<tbody id="branchList"></tbody>
-</table>
-</div>
-<footer>My Business ERP · PKR · Demo Version</footer>
+<div class="panel"><div class="toolbar"><input id="branchSearch" placeholder="Search branch name or code"><button class="primary" id="addBranch">+ Add branch</button></div>
+<div class="tablewrap"><table><thead><tr><th>Branch</th><th>Code</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead><tbody id="branchRows"></tbody></table></div>
+<div id="branchEmpty" class="empty hidden">No branches yet. Add your first branch.</div></div>
+</section>
 </main>
-
+<div class="modal" id="productModal"><div class="dialog"><h3 id="productModalTitle">Add product</h3>
+<form id="productForm"><div class="formgrid">
+<div class="field full"><label>Product name *</label><input name="name" required maxlength="80"></div>
+<div class="field"><label>SKU / Barcode *</label><input name="sku" required maxlength="40"></div>
+<div class="field"><label>Category</label><input name="category" maxlength="50"></div>
+<div class="field"><label>Branch *</label><select name="branchId" required></select></div>
+<div class="field"><label>Quantity *</label><input name="qty" type="number" min="0" step="1" required></div>
+<div class="field"><label>Purchase cost (PKR) *</label><input name="cost" type="number" min="0" step="0.01" required></div>
+<div class="field"><label>Selling price (PKR) *</label><input name="price" type="number" min="0" step="0.01" required></div>
+<div class="field"><label>Low-stock alert at</label><input name="lowAt" type="number" min="0" step="1" value="5"></div>
+</div><div class="actions"><button type="button" class="secondary" id="cancelProduct">Cancel</button><button class="primary" type="submit">Save product</button></div></form>
+</div></div>
+<div class="modal" id="branchModal"><div class="dialog"><h3 id="branchModalTitle">Add branch</h3>
+<form id="branchForm"><div class="formgrid">
+<div class="field full"><label>Branch name *</label><input name="name" required maxlength="80"></div>
+<div class="field"><label>Branch code *</label><input name="code" required maxlength="20"></div>
+<div class="field"><label>Phone</label><input name="phone" maxlength="25"></div>
+</div><div class="actions"><button type="button" class="secondary" id="cancelBranch">Cancel</button><button class="primary" type="submit">Save branch</button></div></form>
+</div></div>
 <script>
-let branches = JSON.parse(localStorage.getItem("erpBranches") || "[]");
-let editing = null;
-
-function store(){
- localStorage.setItem("erpBranches",JSON.stringify(branches));
-}
-
-function showForm(){
- editing=null;
- document.getElementById("formTitle").textContent="Add New Branch";
- ["name","code","address","phone"].forEach(id=>document.getElementById(id).value="");
- document.getElementById("form").style.display="block";
-}
-
-function hideForm(){
- document.getElementById("form").style.display="none";
-}
-
-function saveBranch(){
- const name=document.getElementById("name").value.trim();
- const code=document.getElementById("code").value.trim();
- const address=document.getElementById("address").value.trim();
- const phone=document.getElementById("phone").value.trim();
-
- if(!name || !code){
-  alert("Please enter branch name and branch code.");
-  return;
- }
-
- if(branches.some((b,i)=>b.code.toLowerCase()===code.toLowerCase() && i!==editing)){
-  alert("This branch code already exists.");
-  return;
- }
-
- const item={name,code,address,phone,status:"Active"};
-
- if(editing!==null){
-  item.status=branches[editing].status;
-  branches[editing]=item;
- }else{
-  branches.push(item);
- }
-
- store();
- hideForm();
- render();
-}
-
-function editBranch(i){
- editing=i;
- const b=branches[i];
- document.getElementById("formTitle").textContent="Edit Branch";
- document.getElementById("name").value=b.name;
- document.getElementById("code").value=b.code;
- document.getElementById("address").value=b.address;
- document.getElementById("phone").value=b.phone;
- document.getElementById("form").style.display="block";
-}
-
-function toggleBranch(i){
- branches[i].status=branches[i].status==="Active"?"Inactive":"Active";
- store();
- render();
-}
-
-function deleteBranch(i){
- if(confirm("Delete this branch?")){
-  branches.splice(i,1);
-  store();
-  render();
- }
-}
-
-function render(){
- const query=document.getElementById("search").value.toLowerCase();
- document.getElementById("total").textContent=branches.length;
- document.getElementById("active").textContent=branches.filter(b=>b.status==="Active").length;
- document.getElementById("inactive").textContent=branches.filter(b=>b.status==="Inactive").length;
-
- const list=document.getElementById("branchList");
- const filtered=branches.map((b,i)=>({...b,index:i})).filter(b=>
-  (b.name+" "+b.code+" "+b.address).toLowerCase().includes(query)
- );
-
- if(!filtered.length){
-  list.innerHTML='<tr><td colspan="5" class="empty">No branches found. Add your first branch.</td></tr>';
-  return;
- }
-
- list.innerHTML=filtered.map(b=>`
- <tr>
- <td>${safe(b.name)}</td>
- <td>${safe(b.code)}</td>
- <td>${safe(b.address)}</td>
- <td class="${b.status==="Active"?"status":""}">${b.status}</td>
- <td><div class="actions">
- <button class="secondary" onclick="editBranch(${b.index})">Edit</button>
- <button class="secondary" onclick="toggleBranch(${b.index})">Status</button>
- <button class="danger" onclick="deleteBranch(${b.index})">Delete</button>
- </div></td>
- </tr>`).join("");
-}
-
-function safe(value){
- return String(value).replace(/[&<>"']/g,c=>({
- "&":"&amp;","<":"&lt;",">":"&gt;",
- '"':"&quot;","'":"&#39;"
- }[c]));
-}
-
-render();
+const $=id=>document.getElementById(id);
+const load=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))||fallback}catch{return fallback}};
+let branches=load('mberp_branches',[]), products=load('mberp_products',[]), editingProduct=null,editingBranch=null;
+const save=()=>{localStorage.setItem('mberp_branches',JSON.stringify(branches));localStorage.setItem('mberp_products',JSON.stringify(products))};
+const money=n=>'₨'+Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2});
+function tabs(){document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));$('inventory').classList.toggle('hidden',b.dataset.tab!=='inventory');$('branches').classList.toggle('hidden',b.dataset.tab!=='branches')})}
+function branchOptions(){let opts=branches.map(b=>`<option value="${b.id}">${esc(b.name)} (${esc(b.code)})</option>`).join('');$('branchFilter').innerHTML='<option value="">All branches</option>'+opts;$('productForm').elements.branchId.innerHTML=opts||'<option value="">Add a branch first</option>'}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderBranches(){let q=$('branchSearch').value.toLowerCase();let list=branches.filter(b=>(b.name+' '+b.code).toLowerCase().includes(q));$('branchRows').innerHTML=list.map(b=>`<tr><td>${esc(b.name)}</td><td>${esc(b.code)}</td><td>${esc(b.phone||'—')}</td><td><span class="pill">${b.active?'Active':'Inactive'}</span></td><td><button class="secondary" onclick="editBranch('${b.id}')">Edit</button> <button class="secondary" onclick="toggleBranch('${b.id}')">${b.active?'Deactivate':'Activate'}</button> <button class="danger" onclick="deleteBranch('${b.id}')">Delete</button></td></tr>`).join('');$('branchEmpty').classList.toggle('hidden',list.length>0);$('totalBranches').textContent=branches.length;$('activeBranches').textContent=branches.filter(b=>b.active).length;$('inactiveBranches').textContent=branches.filter(b=>!b.active).length;branchOptions()}
+function renderProducts(){let q=$('productSearch').value.toLowerCase(),filter=$('branchFilter').value;let list=products.filter(p=>(!filter||p.branchId===filter)&&(p.name+' '+p.sku+' '+p.category).toLowerCase().includes(q));$('productRows').innerHTML=list.map(p=>{let b=branches.find(x=>x.id===p.branchId);let low=Number(p.qty)<=Number(p.lowAt);return `<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.sku)}</td><td>${esc(p.category||'—')}</td><td>${esc(b?.name||'Deleted branch')}</td><td>${Number(p.qty)}</td><td>${money(p.cost)}</td><td>${money(p.price)}</td><td><span class="pill ${low?'low':''}">${low?'Low stock':'In stock'}</span></td><td><button class="secondary" onclick="editProduct('${p.id}')">Edit</button> <button class="danger" onclick="deleteProduct('${p.id}')">Delete</button></td></tr>`}).join('');$('productEmpty').classList.toggle('hidden',list.length>0);$('totalProducts').textContent=products.length;$('totalUnits').textContent=products.reduce((s,p)=>s+Number(p.qty),0).toLocaleString('en-PK');$('lowCount').textContent=products.filter(p=>Number(p.qty)<=Number(p.lowAt)).length;$('stockValue').textContent=money(products.reduce((s,p)=>s+Number(p.qty)*Number(p.cost),0))}
+function showModal(id,on){$(id).classList.toggle('show',on)}
+$('addBranch').onclick=()=>{editingBranch=null;$('branchForm').reset();$('branchModalTitle').textContent='Add branch';showModal('branchModal',true)};
+$('cancelBranch').onclick=()=>showModal('branchModal',false);
+$('branchForm').onsubmit=e=>{e.preventDefault();let f=new FormData(e.target),name=f.get('name').trim(),code=f.get('code').trim().toUpperCase();if(branches.some(b=>b.code===code&&b.id!==editingBranch)){alert('This branch code already exists.');return}let data={id:editingBranch||crypto.randomUUID(),name,code,phone:f.get('phone').trim(),active:editingBranch?branches.find(b=>b.id===editingBranch).active:true};if(editingBranch)branches=branches.map(b=>b.id===editingBranch?data:b);else branches.push(data);save();renderBranches();renderProducts();showModal('branchModal',false)};
+window.editBranch=id=>{let b=branches.find(x=>x.id===id);editingBranch=id;Object.entries({name:b.name,code:b.code,phone:b.phone}).forEach(([k,v])=>$('branchForm').elements[k].value=v);$('branchModalTitle').textContent='Edit branch';showModal('branchModal',true)};
+window.toggleBranch=id=>{let b=branches.find(x=>x.id===id);b.active=!b.active;save();renderBranches();renderProducts()};
+window.deleteBranch=id=>{if(products.some(p=>p.branchId===id)){alert('Move or delete this branch’s products before deleting the branch.');return}if(confirm('Delete this branch?')){branches=branches.filter(b=>b.id!==id);save();renderBranches();renderProducts()}};
+$('addProduct').onclick=()=>{if(!branches.length){alert('Please add a branch first.');document.querySelector('[data-tab="branches"]').click();return}editingProduct=null;$('productForm').reset();$('productForm').elements.lowAt.value=5;$('productModalTitle').textContent='Add product';branchOptions();showModal('productModal',true)};
+$('cancelProduct').onclick=()=>showModal('productModal',false);
+$('productForm').onsubmit=e=>{e.preventDefault();let f=new FormData(e.target),sku=f.get('sku').trim().toUpperCase();if(products.some(p=>p.sku===sku&&p.id!==editingProduct)){alert('This SKU / barcode already exists.');return}let p={id:editingProduct||crypto.randomUUID(),name:f.get('name').trim(),sku,category:f.get('category').trim(),branchId:f.get('branchId'),qty:Number(f.get('qty')),cost:Number(f.get('cost')),price:Number(f.get('price')),lowAt:Number(f.get('lowAt')||0)};if(editingProduct)products=products.map(x=>x.id===editingProduct?p:x);else products.push(p);save();renderProducts();showModal('productModal',false)};
+window.editProduct=id=>{let p=products.find(x=>x.id===id);editingProduct=id;branchOptions();Object.entries(p).forEach(([k,v])=>{if($('productForm').elements[k])$('productForm').elements[k].value=v});$('productModalTitle').textContent='Edit product';showModal('productModal',true)};
+window.deleteProduct=id=>{if(confirm('Delete this product?')){products=products.filter(p=>p.id!==id);save();renderProducts()}};
+$('branchSearch').oninput=renderBranches;$('productSearch').oninput=renderProducts;$('branchFilter').onchange=renderProducts;
+tabs();renderBranches();renderProducts();
 </script>
-</body>
-</html>
+</body></html>
