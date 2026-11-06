@@ -2133,5 +2133,119 @@ renderAll();
 })();
 </script>
 
+<script>
+(function(){
+ if(document.getElementById('posCustomerHistory'))return;
+
+ const pos=document.getElementById('pos');
+ const customer=document.getElementById('saleCustomer');
+ const phone=document.getElementById('salePhone');
+
+ if(!pos||!customer||!phone)return;
+
+ const panel=document.createElement('div');
+ panel.id='posCustomerHistory';
+ panel.className='panel';
+ panel.innerHTML=`
+  <h3>Customer Purchase History</h3>
+  <div id="posCustomerHistoryContent" class="muted">
+   Select or enter a customer to view previous purchases.
+  </div>
+ `;
+ pos.insertBefore(panel,pos.children[1].nextSibling);
+
+ function showHistory(){
+  const name=customer.value.trim().toLowerCase();
+  const number=phone.value.replace(/\D/g,'');
+
+  const output=document.getElementById('posCustomerHistoryContent');
+
+  if(!name&&!number){
+   output.innerHTML='Select or enter a customer to view previous purchases.';
+   return;
+  }
+
+  let sales=[];
+  let payments=[];
+
+  try{
+   sales=JSON.parse(localStorage.getItem('mberp_sales')||'[]');
+   payments=JSON.parse(localStorage.getItem('mberp_payments')||'[]');
+  }catch(e){}
+
+  const matches=sales.filter(s=>{
+   const savedName=String(s.customerName||'').trim().toLowerCase();
+   const savedPhone=String(s.customerPhone||'').replace(/\D/g,'');
+
+   if(number)return savedPhone===number;
+   return savedName===name;
+  });
+
+  if(!matches.length){
+   output.innerHTML='<p>No previous purchases found for this customer.</p>';
+   return;
+  }
+
+  const total=matches.reduce((n,s)=>n+Number(s.total||0),0);
+  const paid=matches.reduce((n,s)=>n+Number(s.paid??s.total??0),0);
+  const due=matches.reduce((n,s)=>n+Math.max(0,Number(s.balance??(Number(s.total||0)-Number(s.paid||0)))),0);
+
+  output.innerHTML=`
+   <div class="cards">
+    <div class="card"><small>Previous Orders</small><strong>${matches.length}</strong></div>
+    <div class="card"><small>Total Purchases</small><strong>PKR ${money(total)}</strong></div>
+    <div class="card"><small>Total Paid</small><strong>PKR ${money(paid)}</strong></div>
+    <div class="card"><small>Outstanding</small><strong class="${due>0?'bad':'good'}">PKR ${money(due)}</strong></div>
+   </div>
+   <h3>Previous Invoices</h3>
+   <div class="table-wrap">
+    <table>
+     <thead>
+      <tr><th>Invoice</th><th>Date</th><th>Products</th><th>Total</th><th>Paid</th><th>Due</th></tr>
+     </thead>
+     <tbody>
+      ${matches.map(s=>`
+       <tr>
+        <td>${esc(s.invoiceNo||s.id)}</td>
+        <td>${new Date(s.date||Date.now()).toLocaleDateString()}</td>
+        <td>${(s.items||[]).map(i=>esc(i.name)+' × '+Number(i.qty||0)).join('<br>')}</td>
+        <td>${money(s.total)}</td>
+        <td>${money(s.paid??s.total)}</td>
+        <td class="${Number(s.balance||0)>0?'bad':'good'}">${money(s.balance??0)}</td>
+       </tr>
+      `).join('')}
+     </tbody>
+    </table>
+   </div>
+  `;
+ }
+
+ customer.addEventListener('input',showHistory);
+ phone.addEventListener('input',showHistory);
+
+ document.addEventListener('change',function(e){
+  if(e.target.id==='savedCustomerSelect'){
+   setTimeout(showHistory,0);
+  }
+ });
+
+ window.renderPosCustomerHistory=showHistory;
+})();
+</script>
+```
+
+### Step 2 — Save and test
+
+1. Keep the original `</body>` and `</html>`.
+2. Commit the changes.
+3. Refresh your ERP.
+4. Open POS / Sales.
+5. Select a saved customer.
+
+You should now see that customer's previous invoices, purchases, payments and outstanding balance.
+
+**Important:** This is a display-only feature. It does not change old invoices, stock, or customer balances.
+
+Please test it with one customer who has previous sales and tell me whether their history appears.
 </body>
 </html>
