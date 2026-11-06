@@ -6,31 +6,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Business ERP</title>
 <style>
-:root{--navy:#102a43;--blue:#1769aa;--bg:#f3f6fa;--line:#e2e8f0;--muted:#64748b;--green:#16845b;--red:#c0392b;--white:#fff}
+:root{--navy:#102a43;--blue:#1769aa;--bg:#f3f6fa;--line:#e2e8f0;--muted:#64748b;--green:#16845b;--red:#c0392b}
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#1e293b}
-header{background:var(--navy);color:white;padding:17px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+header{background:var(--navy);color:white;padding:17px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
 header h2{margin:0;font-size:21px}
 header small{color:#cbd5e1}
 nav{display:flex;gap:6px;background:white;padding:9px;overflow-x:auto;border-bottom:1px solid var(--line)}
-nav button{border:0;background:transparent;padding:11px 15px;border-radius:7px;white-space:nowrap;color:#334155;font-weight:bold;cursor:pointer}
+nav button{border:0;background:transparent;padding:11px 15px;border-radius:7px;white-space:nowrap;color:#334155;font-weight:bold}
 nav button.active{background:var(--blue);color:white}
 main{max-width:1250px;margin:auto;padding:18px}
 h3{margin:5px 0 16px;color:var(--navy)}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
 .card,.panel{background:white;border:1px solid var(--line);border-radius:10px;padding:15px;margin-bottom:15px}
 .card small{color:var(--muted)}
-.card strong{display:block;font-size:23px;margin-top:8px;color:var(--navy)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.card strong{display:block;font-size:21px;margin-top:8px;color:var(--navy)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
 label{display:block;font-size:13px;font-weight:bold;color:#475569;margin-bottom:5px}
-input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;background:white;font-size:14px;margin-bottom:11px}
+input,select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;background:white;font-size:14px;margin-bottom:11px}
 button{cursor:pointer}
 .btn{border:0;border-radius:7px;padding:10px 14px;background:var(--blue);color:white;font-weight:bold;margin:3px 3px 3px 0}
-.btn.green{background:var(--green)}
-.btn.red{background:var(--red)}
-.btn.gray{background:#64748b}
-.btn.light{background:#e8f0f8;color:#164b78}
-.btn.small{padding:6px 9px;font-size:12px}
+.green{background:var(--green)}.red{background:var(--red)}.gray{background:#64748b}
+.light{background:#e8f0f8;color:#164b78}
+.small{padding:6px 9px;font-size:12px}
 table{width:100%;border-collapse:collapse;min-width:650px}
 th,td{text-align:left;padding:11px 9px;border-bottom:1px solid var(--line);font-size:13px}
 th{background:#f8fafc;color:#475569}
@@ -38,522 +36,557 @@ th{background:#f8fafc;color:#475569}
 .muted{color:var(--muted)}
 .good{color:var(--green);font-weight:bold}
 .bad{color:var(--red);font-weight:bold}
-.tag{padding:4px 7px;border-radius:5px;background:#e8f0f8;font-size:11px}
-.empty{text-align:center;color:var(--muted);padding:25px}
 .total{font-size:22px;font-weight:bold;color:var(--navy)}
+.empty{text-align:center;color:var(--muted);padding:25px}
 .hidden{display:none!important}
-.actions{white-space:nowrap}
 footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
-@media(max-width:600px){main{padding:11px}header{padding:14px}nav button{padding:10px;font-size:12px}.card{padding:12px}}
+@media(max-width:600px){main{padding:11px}header{padding:14px}nav button{padding:10px;font-size:12px}}
 </style>
 </head>
 <body>
 
 <header>
-  <div>
-    <h2>My Business ERP</h2>
-    <small>Retail & Wholesale Management System</small>
-  </div>
-  <div id="today"></div>
+<div><h2>My Business ERP</h2><small>Retail & Wholesale Management System</small></div>
+<div id="today"></div>
 </header>
 
 <nav>
-  <button class="active" data-tab="dashboard">Dashboard</button>
-  <button data-tab="products">Products & Inventory</button>
-  <button data-tab="branches">Branches</button>
-  <button data-tab="pos">POS / Sales</button>
-  <button data-tab="customers">Customers</button>
+<button class="active" data-tab="dashboard">Dashboard</button>
+<button data-tab="products">Products & Inventory</button>
+<button data-tab="branches">Branches</button>
+<button data-tab="pos">POS / Sales</button>
+<button data-tab="customers">Customers & Ledger</button>
 </nav>
 
 <main>
+
 <section id="dashboard" class="page">
-  <h3>Business Dashboard</h3>
-  <div class="cards" id="dashboardCards"></div>
-  <div class="panel">
-    <h3>Recent Sales</h3>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Total</th><th>Due</th></tr></thead>
-      <tbody id="dashboardSales"></tbody>
-    </table></div>
-  </div>
-  <div class="panel">
-    <h3>Low Stock Products</h3>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Product</th><th>Branch</th><th>Stock</th><th>Alert Level</th></tr></thead>
-      <tbody id="lowStockTable"></tbody>
-    </table></div>
-  </div>
+<h3>Business Dashboard</h3>
+<div class="cards" id="dashboardCards"></div>
+<div class="panel">
+<h3>Recent Sales</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Total</th><th>Due</th></tr></thead>
+<tbody id="dashboardSales"></tbody>
+</table></div>
+</div>
+<div class="panel">
+<h3>Low Stock Products</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Product</th><th>Branch</th><th>Stock</th><th>Alert Level</th></tr></thead>
+<tbody id="lowStockTable"></tbody>
+</table></div>
+</div>
 </section>
 
 <section id="products" class="page hidden">
-  <h3>Products & Inventory</h3>
-  <div class="panel">
-    <h3 id="productFormTitle">Add New Product</h3>
-    <input type="hidden" id="productId">
-    <div class="grid">
-      <div><label>Product Name</label><input id="pName" placeholder="Product name"></div>
-      <div><label>SKU / Barcode</label><input id="pSku" placeholder="SKU or barcode"></div>
-      <div><label>Category</label><input id="pCategory" placeholder="Category"></div>
-      <div><label>Branch</label><select id="pBranch"></select></div>
-      <div><label>Quantity</label><input id="pQty" type="number" min="0" value="0"></div>
-      <div><label>Purchase Cost (PKR)</label><input id="pCost" type="number" min="0" value="0"></div>
-      <div><label>Selling Price (PKR)</label><input id="pPrice" type="number" min="0" value="0"></div>
-      <div><label>Low Stock Alert</label><input id="pAlert" type="number" min="0" value="5"></div>
-    </div>
-    <button class="btn green" onclick="saveProduct()">Save Product</button>
-    <button class="btn gray" onclick="resetProductForm()">Clear</button>
-  </div>
-  <div class="panel">
-    <div class="grid">
-      <div><label>Search Products</label><input id="productSearch" oninput="renderProducts()" placeholder="Search name, SKU or category"></div>
-      <div><label>Filter Branch</label><select id="productFilter" onchange="renderProducts()"></select></div>
-    </div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Product</th><th>SKU</th><th>Branch</th><th>Qty</th><th>Cost</th><th>Price</th><th>Value</th><th>Actions</th></tr></thead>
-      <tbody id="productsTable"></tbody>
-    </table></div>
-  </div>
+<h3>Products & Inventory</h3>
+<div class="panel">
+<h3 id="productFormTitle">Add New Product</h3>
+<input type="hidden" id="productId">
+<div class="grid">
+<div><label>Product Name</label><input id="pName" placeholder="Product name"></div>
+<div><label>SKU / Barcode</label><input id="pSku" placeholder="SKU or barcode"></div>
+<div><label>Category</label><input id="pCategory" placeholder="Category"></div>
+<div><label>Branch</label><select id="pBranch"></select></div>
+<div><label>Quantity</label><input id="pQty" type="number" min="0" value="0"></div>
+<div><label>Purchase Cost (PKR)</label><input id="pCost" type="number" min="0" value="0"></div>
+<div><label>Selling Price (PKR)</label><input id="pPrice" type="number" min="0" value="0"></div>
+<div><label>Low Stock Alert</label><input id="pAlert" type="number" min="0" value="5"></div>
+</div>
+<button class="btn green" onclick="saveProduct()">Save Product</button>
+<button class="btn gray" onclick="resetProductForm()">Clear</button>
+</div>
+<div class="panel">
+<div class="grid">
+<div><label>Search Products</label><input id="productSearch" oninput="renderProducts()" placeholder="Search products"></div>
+<div><label>Filter Branch</label><select id="productFilter" onchange="renderProducts()"></select></div>
+</div>
+<div class="table-wrap"><table>
+<thead><tr><th>Product</th><th>SKU</th><th>Branch</th><th>Qty</th><th>Cost</th><th>Price</th><th>Value</th><th>Actions</th></tr></thead>
+<tbody id="productsTable"></tbody>
+</table></div>
+</div>
 </section>
 
 <section id="branches" class="page hidden">
-  <h3>Branch Management</h3>
-  <div class="panel">
-    <input type="hidden" id="branchId">
-    <div class="grid">
-      <div><label>Branch Name</label><input id="branchName" placeholder="e.g. Main Branch"></div>
-      <div><label>Branch Address</label><input id="branchAddress" placeholder="Address"></div>
-    </div>
-    <button class="btn green" onclick="saveBranch()">Save Branch</button>
-    <button class="btn gray" onclick="resetBranchForm()">Clear</button>
-  </div>
-  <div class="panel">
-    <div class="table-wrap"><table>
-      <thead><tr><th>Branch</th><th>Address</th><th>Status</th><th>Actions</th></tr></thead>
-      <tbody id="branchesTable"></tbody>
-    </table></div>
-  </div>
+<h3>Branch Management</h3>
+<div class="panel">
+<input type="hidden" id="branchId">
+<div class="grid">
+<div><label>Branch Name</label><input id="branchName" placeholder="Main Branch"></div>
+<div><label>Branch Address</label><input id="branchAddress" placeholder="Address"></div>
+</div>
+<button class="btn green" onclick="saveBranch()">Save Branch</button>
+<button class="btn gray" onclick="resetBranchForm()">Clear</button>
+</div>
+<div class="panel"><div class="table-wrap"><table>
+<thead><tr><th>Branch</th><th>Address</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody id="branchesTable"></tbody>
+</table></div></div>
 </section>
 
 <section id="pos" class="page hidden">
-  <h3>Point of Sale / New Invoice</h3>
-  <div class="panel">
-    <div class="grid">
-      <div><label>Select Branch</label><select id="saleBranch" onchange="renderSaleProductOptions()"></select></div>
-      <div><label>Customer Name</label><input id="saleCustomer" placeholder="Customer name"></div>
-      <div><label>Customer Phone</label><input id="salePhone" placeholder="03XXXXXXXXX" inputmode="tel"></div>
-    </div>
-  </div>
-  <div class="panel">
-    <h3>Add Products to Bill</h3>
-    <div class="grid">
-      <div><label>Product</label><select id="saleProduct"></select></div>
-      <div><label>Quantity</label><input id="saleQty" type="number" min="1" value="1"></div>
-    </div>
-    <button class="btn" onclick="addToCart()">Add to Bill</button>
-  </div>
-  <div class="panel">
-    <h3>Current Bill</h3>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead>
-      <tbody id="cartTable"></tbody>
-    </table></div>
-    <p class="total">Total: PKR <span id="cartTotal">0</span></p>
-    <div class="grid">
-      <div><label>Amount Received (PKR)</label><input id="salePaid" type="number" min="0" value="0" oninput="updateBalancePreview()"></div>
-      <div><label>Remaining Balance (PKR)</label><input id="saleBalance" readonly value="0"></div>
-    </div>
-    <button class="btn green" onclick="completeSale()">Complete Sale & Save Invoice</button>
-    <button class="btn red" onclick="clearCart()">Clear Bill</button>
-  </div>
-  <div class="panel">
-    <h3>Recent Sales & Invoices</h3>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Branch</th><th>Total</th><th>Paid</th><th>Due</th><th>Action</th></tr></thead>
-      <tbody id="salesTable"></tbody>
-    </table></div>
-  </div>
+<h3>Point of Sale / New Invoice</h3>
+<div class="panel">
+<div class="grid">
+<div><label>Select Branch</label><select id="saleBranch" onchange="renderSaleProductOptions()"></select></div>
+<div><label>Customer Name</label><input id="saleCustomer" placeholder="Customer name"></div>
+<div><label>Customer Phone</label><input id="salePhone" placeholder="03XXXXXXXXX" inputmode="tel"></div>
+</div>
+</div>
+<div class="panel">
+<h3>Add Products to Bill</h3>
+<div class="grid">
+<div><label>Product</label><select id="saleProduct"></select></div>
+<div><label>Quantity</label><input id="saleQty" type="number" min="1" value="1"></div>
+</div>
+<button class="btn" onclick="addToCart()">Add to Bill</button>
+</div>
+<div class="panel">
+<h3>Current Bill</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead>
+<tbody id="cartTable"></tbody>
+</table></div>
+<p class="total">Total: PKR <span id="cartTotal">0</span></p>
+<div class="grid">
+<div><label>Amount Received (PKR)</label><input id="salePaid" type="number" min="0" value="0" oninput="updateBalancePreview()"></div>
+<div><label>Remaining Balance (PKR)</label><input id="saleBalance" readonly value="0"></div>
+</div>
+<button class="btn green" onclick="completeSale()">Complete Sale & Save Invoice</button>
+<button class="btn red" onclick="clearCart()">Clear Bill</button>
+</div>
+<div class="panel">
+<h3>Recent Sales & Invoices</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Branch</th><th>Total</th><th>Paid</th><th>Due</th><th>Action</th></tr></thead>
+<tbody id="salesTable"></tbody>
+</table></div>
+</div>
 </section>
 
 <section id="customers" class="page hidden">
-  <h3>Customer Records</h3>
-  <div class="cards" id="customerCards"></div>
-  <div class="panel">
-    <label>Search Customer</label>
-    <input id="customerSearch" placeholder="Search by name or phone" oninput="renderCustomers()">
-    <div class="table-wrap"><table>
-      <thead><tr><th>Customer</th><th>Phone</th><th>Orders</th><th>Total Purchases</th><th>Paid</th><th>Outstanding</th></tr></thead>
-      <tbody id="customersTable"></tbody>
-    </table></div>
-  </div>
-  <div class="panel">
-    <h3>Customer Invoices</h3>
-    <p class="muted">Select a customer from the list above to view their invoices.</p>
-    <div id="customerInvoices"></div>
-  </div>
-</section>
-</main>
+<h3>Customers & Payment Ledger</h3>
+<div class="cards" id="customerCards"></div>
 
+<div class="panel">
+<h3>Customer Records</h3>
+<label>Search Customer</label>
+<input id="customerSearch" placeholder="Search name or phone" oninput="renderCustomers()">
+<div class="table-wrap"><table>
+<thead><tr><th>Customer</th><th>Phone</th><th>Orders</th><th>Purchases</th><th>Paid</th><th>Outstanding</th><th>Action</th></tr></thead>
+<tbody id="customersTable"></tbody>
+</table></div>
+</div>
+
+<div class="panel">
+<h3>Customer Invoices & Ledger</h3>
+<div id="customerInvoices" class="muted">Select a customer to view their invoices and payment history.</div>
+</div>
+
+<div class="panel">
+<h3>Collect Customer Payment</h3>
+<p class="muted">Select an unpaid invoice from a customer's ledger to record a later payment.</p>
+<div class="grid">
+<div><label>Selected Invoice</label><input id="paymentInvoice" readonly placeholder="Select an invoice above"></div>
+<div><label>Customer</label><input id="paymentCustomer" readonly placeholder="Customer name"></div>
+<div><label>Outstanding Balance (PKR)</label><input id="paymentDue" readonly value="0"></div>
+<div><label>Payment Amount (PKR)</label><input id="paymentAmount" type="number" min="0" placeholder="Enter received amount"></div>
+<div><label>Payment Method</label>
+<select id="paymentMethod">
+<option>Cash</option><option>Bank Transfer</option><option>JazzCash</option><option>EasyPaisa</option><option>Cheque</option><option>Other</option>
+</select></div>
+<div><label>Payment Note</label><input id="paymentNote" placeholder="Optional note"></div>
+</div>
+<button class="btn green" onclick="recordPayment()">Save Customer Payment</button>
+<button class="btn gray" onclick="resetPaymentForm()">Clear</button>
+</div>
+
+<div class="panel">
+<h3>Payment History</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Date</th><th>Receipt</th><th>Customer</th><th>Invoice</th><th>Method</th><th>Amount</th><th>Action</th></tr></thead>
+<tbody id="paymentHistory"></tbody>
+</table></div>
+</div>
+</section>
+
+</main>
 <footer>My Business ERP · Data is stored in this browser on this device.</footer>
 
 <script>
 const KEY_PRODUCTS='mberp_products';
 const KEY_BRANCHES='mberp_branches';
 const KEY_SALES='mberp_sales';
+const KEY_PAYMENTS='mberp_payments';
 
 function load(key,fallback){
-  try{return JSON.parse(localStorage.getItem(key)) ?? fallback}
-  catch(e){return fallback}
+ try{return JSON.parse(localStorage.getItem(key))??fallback}catch(e){return fallback}
 }
 let products=load(KEY_PRODUCTS,[]);
 let branches=load(KEY_BRANCHES,[]);
 let sales=load(KEY_SALES,[]);
+let payments=load(KEY_PAYMENTS,[]);
 let cart=[];
 let selectedCustomer=null;
+let selectedInvoice=null;
 
 function saveAll(){
-  localStorage.setItem(KEY_PRODUCTS,JSON.stringify(products));
-  localStorage.setItem(KEY_BRANCHES,JSON.stringify(branches));
-  localStorage.setItem(KEY_SALES,JSON.stringify(sales));
+ localStorage.setItem(KEY_PRODUCTS,JSON.stringify(products));
+ localStorage.setItem(KEY_BRANCHES,JSON.stringify(branches));
+ localStorage.setItem(KEY_SALES,JSON.stringify(sales));
+ localStorage.setItem(KEY_PAYMENTS,JSON.stringify(payments));
 }
 function money(n){return Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2})}
-function esc(v){
-  return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function id(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function branchName(bid){return branches.find(b=>b.id===bid)?.name||'Unknown Branch'}
 function activeBranches(){return branches.filter(b=>b.active!==false)}
 function saleTotal(s){return Number(s.total||0)}
 function salePaid(s){return Number(s.paid??s.total??0)}
-function saleDue(s){return Number(s.balance??Math.max(0,saleTotal(s)-salePaid(s)))}
+function saleDue(s){return Math.max(0,Number(s.balance??(saleTotal(s)-salePaid(s))))}
 function invoiceNo(s){return s.invoiceNo||s.id||'OLD-INVOICE'}
-
+function paymentReceipt(p){return p.receiptNo||p.id||'PAYMENT'}
 document.getElementById('today').textContent=new Date().toLocaleDateString();
 
 document.querySelectorAll('nav button').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
-    btn.classList.add('active');
-    document.getElementById(btn.dataset.tab).classList.remove('hidden');
-    renderAll();
-  });
+ btn.addEventListener('click',()=>{
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+  btn.classList.add('active');
+  document.getElementById(btn.dataset.tab).classList.remove('hidden');
+  renderAll();
+ });
 });
-
-function showTab(tab){
-  document.querySelector(`nav button[data-tab="${tab}"]`).click();
-}
+function showTab(tab){document.querySelector('nav button[data-tab="'+tab+'"]').click()}
 
 function renderAll(){
-  renderBranchOptions();
-  renderProducts();
-  renderBranches();
-  renderSaleProductOptions();
-  renderCart();
-  renderSales();
-  renderCustomers();
-  renderDashboard();
+ renderBranchOptions();renderProducts();renderBranches();renderSaleProductOptions();
+ renderCart();renderSales();renderCustomers();renderDashboard();renderPaymentHistory();
 }
-
 function renderBranchOptions(){
-  const opts=branches.map(b=>`<option value="${esc(b.id)}">${esc(b.name)}${b.active===false?' (Inactive)':''}</option>`).join('');
-  const active=activeBranches().map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
-  const p=document.getElementById('pBranch');
-  const f=document.getElementById('productFilter');
-  const s=document.getElementById('saleBranch');
-  const oldP=p.value,oldF=f.value,oldS=s.value;
-  p.innerHTML=opts||'<option value="">Add a branch first</option>';
-  f.innerHTML='<option value="">All Branches</option>'+opts;
-  s.innerHTML=active||'<option value="">No active branches</option>';
-  if([...p.options].some(o=>o.value===oldP))p.value=oldP;
-  if([...f.options].some(o=>o.value===oldF))f.value=oldF;
-  if([...s.options].some(o=>o.value===oldS))s.value=oldS;
+ const opts=branches.map(b=>`<option value="${esc(b.id)}">${esc(b.name)}${b.active===false?' (Inactive)':''}</option>`).join('');
+ const active=activeBranches().map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+ const p=document.getElementById('pBranch'),f=document.getElementById('productFilter'),s=document.getElementById('saleBranch');
+ const oldP=p.value,oldF=f.value,oldS=s.value;
+ p.innerHTML=opts||'<option value="">Add a branch first</option>';
+ f.innerHTML='<option value="">All Branches</option>'+opts;
+ s.innerHTML=active||'<option value="">No active branches</option>';
+ if([...p.options].some(o=>o.value===oldP))p.value=oldP;
+ if([...f.options].some(o=>o.value===oldF))f.value=oldF;
+ if([...s.options].some(o=>o.value===oldS))s.value=oldS;
 }
-
 function saveBranch(){
-  const name=document.getElementById('branchName').value.trim();
-  const address=document.getElementById('branchAddress').value.trim();
-  const bid=document.getElementById('branchId').value;
-  if(!name)return alert('Please enter branch name.');
-  if(bid){
-    const b=branches.find(x=>x.id===bid);
-    if(b){b.name=name;b.address=address}
-  }else branches.push({id:id(),name,address,active:true});
-  saveAll();resetBranchForm();renderAll();
+ const name=document.getElementById('branchName').value.trim();
+ const address=document.getElementById('branchAddress').value.trim();
+ const bid=document.getElementById('branchId').value;
+ if(!name)return alert('Please enter branch name.');
+ if(bid){const b=branches.find(x=>x.id===bid);if(b){b.name=name;b.address=address}}
+ else branches.push({id:id(),name,address,active:true});
+ saveAll();resetBranchForm();renderAll();
 }
 function editBranch(bid){
-  const b=branches.find(x=>x.id===bid);if(!b)return;
-  document.getElementById('branchId').value=b.id;
-  document.getElementById('branchName').value=b.name;
-  document.getElementById('branchAddress').value=b.address||'';
-  showTab('branches');
+ const b=branches.find(x=>x.id===bid);if(!b)return;
+ document.getElementById('branchId').value=b.id;
+ document.getElementById('branchName').value=b.name;
+ document.getElementById('branchAddress').value=b.address||'';
+ showTab('branches');
 }
 function toggleBranch(bid){
-  const b=branches.find(x=>x.id===bid);if(!b)return;
-  b.active=b.active===false?true:false;
-  saveAll();renderAll();
+ const b=branches.find(x=>x.id===bid);if(!b)return;
+ b.active=b.active===false?true:false;saveAll();renderAll();
 }
 function deleteBranch(bid){
-  if(products.some(p=>p.branchId===bid))return alert('This branch has products. Move or delete those products first.');
-  if(!confirm('Delete this branch?'))return;
-  branches=branches.filter(b=>b.id!==bid);saveAll();renderAll();
+ if(products.some(p=>p.branchId===bid))return alert('This branch has products. Move or delete them first.');
+ if(!confirm('Delete this branch?'))return;
+ branches=branches.filter(b=>b.id!==bid);saveAll();renderAll();
 }
 function resetBranchForm(){
-  document.getElementById('branchId').value='';
-  document.getElementById('branchName').value='';
-  document.getElementById('branchAddress').value='';
+ ['branchId','branchName','branchAddress'].forEach(x=>document.getElementById(x).value='');
 }
 function renderBranches(){
-  document.getElementById('branchesTable').innerHTML=branches.map(b=>`
-    <tr><td>${esc(b.name)}</td><td>${esc(b.address||'-')}</td>
-    <td>${b.active===false?'<span class="bad">Inactive</span>':'<span class="good">Active</span>'}</td>
-    <td class="actions">
-    <button class="btn small light" onclick="editBranch('${esc(b.id)}')">Edit</button>
-    <button class="btn small gray" onclick="toggleBranch('${esc(b.id)}')">${b.active===false?'Activate':'Deactivate'}</button>
-    <button class="btn small red" onclick="deleteBranch('${esc(b.id)}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="4" class="empty">No branches added.</td></tr>';
+ document.getElementById('branchesTable').innerHTML=branches.map(b=>`
+ <tr><td>${esc(b.name)}</td><td>${esc(b.address||'-')}</td>
+ <td>${b.active===false?'<span class="bad">Inactive</span>':'<span class="good">Active</span>'}</td>
+ <td><button class="btn small light" onclick="editBranch('${esc(b.id)}')">Edit</button>
+ <button class="btn small gray" onclick="toggleBranch('${esc(b.id)}')">${b.active===false?'Activate':'Deactivate'}</button>
+ <button class="btn small red" onclick="deleteBranch('${esc(b.id)}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="4" class="empty">No branches added.</td></tr>';
 }
 
 function saveProduct(){
-  const bid=document.getElementById('productId').value;
-  const name=document.getElementById('pName').value.trim();
-  const branchId=document.getElementById('pBranch').value;
-  const qty=Number(document.getElementById('pQty').value);
-  const cost=Number(document.getElementById('pCost').value);
-  const price=Number(document.getElementById('pPrice').value);
-  const alertQty=Number(document.getElementById('pAlert').value);
-  if(!name)return alert('Enter product name.');
-  if(!branchId)return alert('Please add a branch first.');
-  if([qty,cost,price,alertQty].some(x=>!Number.isFinite(x)||x<0))return alert('Enter valid non-negative numbers.');
-  const data={name,sku:document.getElementById('pSku').value.trim(),category:document.getElementById('pCategory').value.trim(),branchId,qty,cost,price,alert:alertQty};
-  if(bid){
-    const p=products.find(x=>x.id===bid);if(p)Object.assign(p,data);
-  }else products.push({id:id(),...data});
-  saveAll();resetProductForm();renderAll();
+ const bid=document.getElementById('productId').value;
+ const name=document.getElementById('pName').value.trim();
+ const branchId=document.getElementById('pBranch').value;
+ const qty=Number(document.getElementById('pQty').value);
+ const cost=Number(document.getElementById('pCost').value);
+ const price=Number(document.getElementById('pPrice').value);
+ const alertQty=Number(document.getElementById('pAlert').value);
+ if(!name)return alert('Enter product name.');
+ if(!branchId)return alert('Please add a branch first.');
+ if([qty,cost,price,alertQty].some(x=>!Number.isFinite(x)||x<0))return alert('Enter valid non-negative numbers.');
+ const data={name,sku:document.getElementById('pSku').value.trim(),category:document.getElementById('pCategory').value.trim(),branchId,qty,cost,price,alert:alertQty};
+ if(bid){const p=products.find(x=>x.id===bid);if(p)Object.assign(p,data)}
+ else products.push({id:id(),...data});
+ saveAll();resetProductForm();renderAll();
 }
 function editProduct(pid){
-  const p=products.find(x=>x.id===pid);if(!p)return;
-  document.getElementById('productId').value=p.id;
-  document.getElementById('pName').value=p.name||'';
-  document.getElementById('pSku').value=p.sku||'';
-  document.getElementById('pCategory').value=p.category||'';
-  document.getElementById('pBranch').value=p.branchId||'';
-  document.getElementById('pQty').value=p.qty||0;
-  document.getElementById('pCost').value=p.cost||0;
-  document.getElementById('pPrice').value=p.price||0;
-  document.getElementById('pAlert').value=p.alert??5;
-  document.getElementById('productFormTitle').textContent='Edit Product';
-  showTab('products');
+ const p=products.find(x=>x.id===pid);if(!p)return;
+ document.getElementById('productId').value=p.id;
+ document.getElementById('pName').value=p.name||'';
+ document.getElementById('pSku').value=p.sku||'';
+ document.getElementById('pCategory').value=p.category||'';
+ document.getElementById('pBranch').value=p.branchId||'';
+ document.getElementById('pQty').value=p.qty||0;
+ document.getElementById('pCost').value=p.cost||0;
+ document.getElementById('pPrice').value=p.price||0;
+ document.getElementById('pAlert').value=p.alert??5;
+ document.getElementById('productFormTitle').textContent='Edit Product';
+ showTab('products');
 }
 function deleteProduct(pid){
-  if(!confirm('Delete this product?'))return;
-  products=products.filter(p=>p.id!==pid);saveAll();renderAll();
+ if(!confirm('Delete this product?'))return;
+ products=products.filter(p=>p.id!==pid);saveAll();renderAll();
 }
 function resetProductForm(){
-  ['productId','pName','pSku','pCategory'].forEach(x=>document.getElementById(x).value='');
-  document.getElementById('pQty').value=0;
-  document.getElementById('pCost').value=0;
-  document.getElementById('pPrice').value=0;
-  document.getElementById('pAlert').value=5;
-  document.getElementById('productFormTitle').textContent='Add New Product';
+ ['productId','pName','pSku','pCategory'].forEach(x=>document.getElementById(x).value='');
+ document.getElementById('pQty').value=0;document.getElementById('pCost').value=0;
+ document.getElementById('pPrice').value=0;document.getElementById('pAlert').value=5;
+ document.getElementById('productFormTitle').textContent='Add New Product';
 }
 function renderProducts(){
-  const q=(document.getElementById('productSearch').value||'').toLowerCase();
-  const filter=document.getElementById('productFilter').value;
-  const list=products.filter(p=>(!filter||p.branchId===filter)&&[p.name,p.sku,p.category].join(' ').toLowerCase().includes(q));
-  document.getElementById('productsTable').innerHTML=list.map(p=>`
-    <tr><td><b>${esc(p.name)}</b><br><small class="muted">${esc(p.category||'')}</small></td>
-    <td>${esc(p.sku||'-')}</td><td>${esc(branchName(p.branchId))}</td>
-    <td>${Number(p.qty||0)} ${Number(p.qty||0)<=Number(p.alert||0)?'<span class="bad">Low</span>':''}</td>
-    <td>${money(p.cost)}</td><td>${money(p.price)}</td><td>${money(Number(p.qty||0)*Number(p.cost||0))}</td>
-    <td class="actions"><button class="btn small light" onclick="editProduct('${esc(p.id)}')">Edit</button>
-    <button class="btn small red" onclick="deleteProduct('${esc(p.id)}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No products found.</td></tr>';
+ const q=(document.getElementById('productSearch').value||'').toLowerCase();
+ const filter=document.getElementById('productFilter').value;
+ const list=products.filter(p=>(!filter||p.branchId===filter)&&[p.name,p.sku,p.category].join(' ').toLowerCase().includes(q));
+ document.getElementById('productsTable').innerHTML=list.map(p=>`
+ <tr><td><b>${esc(p.name)}</b><br><small class="muted">${esc(p.category||'')}</small></td>
+ <td>${esc(p.sku||'-')}</td><td>${esc(branchName(p.branchId))}</td>
+ <td>${Number(p.qty||0)} ${Number(p.qty||0)<=Number(p.alert||0)?'<span class="bad">Low</span>':''}</td>
+ <td>${money(p.cost)}</td><td>${money(p.price)}</td><td>${money(Number(p.qty||0)*Number(p.cost||0))}</td>
+ <td><button class="btn small light" onclick="editProduct('${esc(p.id)}')">Edit</button>
+ <button class="btn small red" onclick="deleteProduct('${esc(p.id)}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No products found.</td></tr>';
 }
 
 function renderSaleProductOptions(){
-  const bid=document.getElementById('saleBranch').value;
-  const list=products.filter(p=>p.branchId===bid&&Number(p.qty)>0);
-  document.getElementById('saleProduct').innerHTML=list.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} — ${money(p.price)} (Stock: ${p.qty})</option>`).join('')||'<option value="">No available stock</option>';
+ const bid=document.getElementById('saleBranch').value;
+ const list=products.filter(p=>p.branchId===bid&&Number(p.qty)>0);
+ document.getElementById('saleProduct').innerHTML=list.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} — ${money(p.price)} (Stock: ${p.qty})</option>`).join('')||'<option value="">No available stock</option>';
 }
 function addToCart(){
-  const pid=document.getElementById('saleProduct').value;
-  const qty=Number(document.getElementById('saleQty').value);
-  const p=products.find(x=>x.id===pid);
-  if(!p)return alert('Select a product with available stock.');
-  if(!Number.isInteger(qty)||qty<1)return alert('Enter a valid quantity.');
-  const existing=cart.find(x=>x.productId===pid);
-  const already=existing?existing.qty:0;
-  if(already+qty>Number(p.qty))return alert('Not enough stock. Available: '+p.qty);
-  if(existing)existing.qty+=qty;
-  else cart.push({productId:p.id,name:p.name,price:Number(p.price||0),qty});
-  document.getElementById('saleQty').value=1;
-  renderCart();
+ const pid=document.getElementById('saleProduct').value;
+ const qty=Number(document.getElementById('saleQty').value);
+ const p=products.find(x=>x.id===pid);
+ if(!p)return alert('Select a product with available stock.');
+ if(!Number.isInteger(qty)||qty<1)return alert('Enter a valid quantity.');
+ const existing=cart.find(x=>x.productId===pid);
+ if((existing?existing.qty:0)+qty>Number(p.qty))return alert('Not enough stock. Available: '+p.qty);
+ if(existing)existing.qty+=qty;else cart.push({productId:p.id,name:p.name,price:Number(p.price||0),qty});
+ document.getElementById('saleQty').value=1;renderCart();
 }
 function cartAmount(){return cart.reduce((sum,x)=>sum+x.price*x.qty,0)}
 function renderCart(){
-  document.getElementById('cartTable').innerHTML=cart.map((x,i)=>`
-    <tr><td>${esc(x.name)}</td><td>${money(x.price)}</td><td>${x.qty}</td><td>${money(x.price*x.qty)}</td>
-    <td><button class="btn small red" onclick="removeCartItem(${i})">Remove</button></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Your bill is empty.</td></tr>';
-  document.getElementById('cartTotal').textContent=money(cartAmount());
-  updateBalancePreview();
+ document.getElementById('cartTable').innerHTML=cart.map((x,i)=>`
+ <tr><td>${esc(x.name)}</td><td>${money(x.price)}</td><td>${x.qty}</td><td>${money(x.price*x.qty)}</td>
+ <td><button class="btn small red" onclick="removeCartItem(${i})">Remove</button></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Your bill is empty.</td></tr>';
+ document.getElementById('cartTotal').textContent=money(cartAmount());updateBalancePreview();
 }
 function removeCartItem(i){cart.splice(i,1);renderCart()}
 function clearCart(){
-  if(cart.length&&!confirm('Clear the current bill?'))return;
-  cart=[];document.getElementById('salePaid').value=0;renderCart();
+ if(cart.length&&!confirm('Clear the current bill?'))return;
+ cart=[];document.getElementById('salePaid').value=0;renderCart();
 }
 function updateBalancePreview(){
-  const total=cartAmount();
-  const paid=Number(document.getElementById('salePaid').value||0);
-  document.getElementById('saleBalance').value=money(Math.max(0,total-paid));
+ const paid=Number(document.getElementById('salePaid').value||0);
+ document.getElementById('saleBalance').value=money(Math.max(0,cartAmount()-paid));
 }
 function nextInvoiceNumber(){
-  const year=new Date().getFullYear();
-  const number=sales.reduce((max,s)=>{
-    const match=String(s.invoiceNo||'').match(/INV-\d{4}-(\d+)/);
-    return match?Math.max(max,Number(match[1])):max;
-  },0)+1;
-  return 'INV-'+year+'-'+String(number).padStart(5,'0');
+ const year=new Date().getFullYear();
+ const number=sales.reduce((max,s)=>{
+  const match=String(s.invoiceNo||'').match(/INV-\d{4}-(\d+)/);
+  return match?Math.max(max,Number(match[1])):max;
+ },0)+1;
+ return 'INV-'+year+'-'+String(number).padStart(5,'0');
 }
 function completeSale(){
-  if(!cart.length)return alert('Add products to the bill first.');
-  const bid=document.getElementById('saleBranch').value;
-  if(!bid)return alert('Select an active branch.');
-  const customer=document.getElementById('saleCustomer').value.trim()||'Walk-in Customer';
-  const phone=document.getElementById('salePhone').value.trim();
-  const total=cartAmount();
-  const paid=Number(document.getElementById('salePaid').value||0);
-  if(!Number.isFinite(paid)||paid<0||paid>total)return alert('Paid amount must be between 0 and the bill total.');
-  for(const item of cart){
-    const p=products.find(x=>x.id===item.productId);
-    if(!p||Number(p.qty)<item.qty)return alert('Stock changed for '+item.name+'. Please check the cart.');
-  }
-  const invoice=nextInvoiceNumber();
-  const record={
-    id:id(),invoiceNo:invoice,date:new Date().toISOString(),
-    branchId:bid,branchName:branchName(bid),
-    customerName:customer,customerPhone:phone,
-    items:cart.map(x=>({...x})),total,paid,balance:total-paid
-  };
-  cart.forEach(item=>{
-    const p=products.find(x=>x.id===item.productId);
-    p.qty=Number(p.qty)-item.qty;
-  });
-  sales.unshift(record);
-  saveAll();
-  cart=[];
-  document.getElementById('saleCustomer').value='';
-  document.getElementById('salePhone').value='';
-  document.getElementById('salePaid').value=0;
-  renderAll();
-  alert('Sale saved successfully!\nInvoice: '+invoice);
-  printInvoice(record.id);
+ if(!cart.length)return alert('Add products to the bill first.');
+ const bid=document.getElementById('saleBranch').value;
+ if(!bid)return alert('Select an active branch.');
+ const customer=document.getElementById('saleCustomer').value.trim()||'Walk-in Customer';
+ const phone=document.getElementById('salePhone').value.trim();
+ const total=cartAmount(),paid=Number(document.getElementById('salePaid').value||0);
+ if(!Number.isFinite(paid)||paid<0||paid>total)return alert('Paid amount must be between zero and the bill total.');
+ for(const item of cart){const p=products.find(x=>x.id===item.productId);if(!p||Number(p.qty)<item.qty)return alert('Stock changed for '+item.name+'. Check the cart.')}
+ const record={id:id(),invoiceNo:nextInvoiceNumber(),date:new Date().toISOString(),branchId:bid,branchName:branchName(bid),customerName:customer,customerPhone:phone,items:cart.map(x=>({...x})),total,paid,balance:total-paid};
+ cart.forEach(item=>{const p=products.find(x=>x.id===item.productId);p.qty=Number(p.qty)-item.qty});
+ sales.unshift(record);saveAll();cart=[];
+ document.getElementById('saleCustomer').value='';document.getElementById('salePhone').value='';
+ document.getElementById('salePaid').value=0;renderAll();
+ alert('Sale saved successfully! Invoice: '+record.invoiceNo);
+ printInvoice(record.id);
 }
-
 function renderSales(){
-  document.getElementById('salesTable').innerHTML=sales.slice(0,100).map(s=>`
-    <tr><td><b>${esc(invoiceNo(s))}</b></td>
-    <td>${new Date(s.date||Date.now()).toLocaleDateString()}</td>
-    <td>${esc(s.customerName||'Walk-in Customer')}</td>
-    <td>${esc(s.branchName||branchName(s.branchId))}</td>
-    <td>${money(saleTotal(s))}</td><td>${money(salePaid(s))}</td>
-    <td class="${saleDue(s)>0?'bad':'good'}">${money(saleDue(s))}</td>
-    <td><button class="btn small light" onclick="printInvoice('${esc(s.id)}')">Print</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No sales yet.</td></tr>';
+ document.getElementById('salesTable').innerHTML=sales.slice(0,100).map(s=>`
+ <tr><td><b>${esc(invoiceNo(s))}</b></td><td>${new Date(s.date||Date.now()).toLocaleDateString()}</td>
+ <td>${esc(s.customerName||'Walk-in Customer')}</td><td>${esc(s.branchName||branchName(s.branchId))}</td>
+ <td>${money(saleTotal(s))}</td><td>${money(salePaid(s))}</td>
+ <td class="${saleDue(s)>0?'bad':'good'}">${money(saleDue(s))}</td>
+ <td><button class="btn small light" onclick="printInvoice('${esc(s.id)}')">Print</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No sales yet.</td></tr>';
 }
 
 function printInvoice(sid){
-  const s=sales.find(x=>x.id===sid);if(!s)return alert('Invoice not found.');
-  const items=(s.items||[]).map(x=>`<tr><td>${esc(x.name)}</td><td>${money(x.price)}</td><td>${Number(x.qty||0)}</td><td>${money(Number(x.price||0)*Number(x.qty||0))}</td></tr>`).join('');
-  const total=saleTotal(s),paid=salePaid(s),due=saleDue(s);
-  const html=`<!DOCTYPE html><html><head><title>${esc(invoiceNo(s))}</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <style>
-  body{font-family:Arial,sans-serif;color:#222;padding:25px;max-width:800px;margin:auto}
-  h1{text-align:center;margin-bottom:4px}p{text-align:center;color:#555}
-  .details{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;margin:25px 0}
-  table{width:100%;border-collapse:collapse;margin:20px 0}
-  th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left}
-  .totals{margin-left:auto;max-width:300px}
-  .totals div{display:flex;justify-content:space-between;padding:7px}
-  .due{font-size:19px;font-weight:bold;border-top:2px solid #222}
-  .thanks{text-align:center;margin-top:35px}
-  button{padding:10px 18px;background:#1769aa;color:white;border:0;border-radius:5px}
-  @media print{button{display:none}body{padding:0}}
-  </style></head><body>
-  <h1>MY BUSINESS ERP</h1><p>Sales Invoice</p><hr>
-  <div class="details">
-  <div><b>Invoice:</b> ${esc(invoiceNo(s))}<br><b>Date:</b> ${new Date(s.date||Date.now()).toLocaleString()}<br><b>Branch:</b> ${esc(s.branchName||branchName(s.branchId))}</div>
-  <div><b>Customer:</b> ${esc(s.customerName||'Walk-in Customer')}<br><b>Phone:</b> ${esc(s.customerPhone||'-')}</div>
-  </div>
-  <table><thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Amount</th></tr></thead><tbody>${items}</tbody></table>
-  <div class="totals">
-  <div><span>Total</span><b>PKR ${money(total)}</b></div>
-  <div><span>Paid</span><b>PKR ${money(paid)}</b></div>
-  <div class="due"><span>Balance Due</span><span>PKR ${money(due)}</span></div>
-  </div>
-  <div class="thanks"><p>Thank you for your business!</p></div>
-  <center><button onclick="window.print()">Print Invoice</button></center>
-  </body></html>`;
-  const win=window.open('','_blank');
-  if(!win)return alert('Your browser blocked the invoice window. Allow pop-ups for this website and try again.');
-  win.document.open();win.document.write(html);win.document.close();
+ const s=sales.find(x=>x.id===sid);if(!s)return alert('Invoice not found.');
+ const items=(s.items||[]).map(x=>`<tr><td>${esc(x.name)}</td><td>${money(x.price)}</td><td>${x.qty}</td><td>${money(Number(x.price||0)*Number(x.qty||0))}</td></tr>`).join('');
+ const html=`<!DOCTYPE html><html><head><title>${esc(invoiceNo(s))}</title><meta name="viewport" content="width=device-width,initial-scale=1">
+ <style>body{font-family:Arial;padding:25px;max-width:800px;margin:auto}h1{text-align:center}table{width:100%;border-collapse:collapse;margin:20px 0}td,th{padding:10px;border-bottom:1px solid #ddd;text-align:left}.totals{margin-left:auto;max-width:300px}.totals div{display:flex;justify-content:space-between;padding:7px}.due{font-weight:bold;border-top:2px solid #222}button{padding:10px;background:#1769aa;color:white;border:0}@media print{button{display:none}}</style></head><body>
+ <h1>MY BUSINESS ERP</h1><center>Sales Invoice</center><hr>
+ <p><b>Invoice:</b> ${esc(invoiceNo(s))}<br><b>Date:</b> ${new Date(s.date||Date.now()).toLocaleString()}<br><b>Branch:</b> ${esc(s.branchName||branchName(s.branchId))}</p>
+ <p><b>Customer:</b> ${esc(s.customerName||'Walk-in Customer')}<br><b>Phone:</b> ${esc(s.customerPhone||'-')}</p>
+ <table><thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Amount</th></tr></thead><tbody>${items}</tbody></table>
+ <div class="totals"><div><span>Total</span><b>PKR ${money(saleTotal(s))}</b></div><div><span>Paid</span><b>PKR ${money(salePaid(s))}</b></div><div class="due"><span>Balance Due</span><b>PKR ${money(saleDue(s))}</b></div></div>
+ <center><p>Thank you for your business!</p><button onclick="window.print()">Print Invoice</button></center></body></html>`;
+ const win=window.open('','_blank');
+ if(!win)return alert('Browser blocked the invoice window. Allow pop-ups and try again.');
+ win.document.open();win.document.write(html);win.document.close();
 }
 
 function getCustomers(){
-  const map={};
-  sales.forEach(s=>{
-    const name=s.customerName||'Walk-in Customer';
-    const phone=s.customerPhone||'';
-    const key=phone?'phone:'+phone:'name:'+name.toLowerCase();
-    if(!map[key])map[key]={name,phone,orders:0,total:0,paid:0,due:0,sales:[]};
-    const c=map[key];c.orders++;c.total+=saleTotal(s);c.paid+=salePaid(s);c.due+=saleDue(s);c.sales.push(s);
-    if(name!=='Walk-in Customer')c.name=name;
-  });
-  return Object.entries(map).map(([key,value])=>({key,...value}));
+ const map={};
+ sales.forEach(s=>{
+  const name=s.customerName||'Walk-in Customer',phone=s.customerPhone||'';
+  const key=phone?'phone:'+phone:'name:'+name.toLowerCase();
+  if(!map[key])map[key]={name,phone,orders:0,total:0,paid:0,due:0,sales:[]};
+  const c=map[key];c.orders++;c.total+=saleTotal(s);c.paid+=salePaid(s);c.due+=saleDue(s);c.sales.push(s);
+  if(name!=='Walk-in Customer')c.name=name;
+ });
+ return Object.entries(map).map(([key,value])=>({key,...value}));
 }
 function renderCustomers(){
-  const customers=getCustomers();
-  const due=customers.reduce((n,c)=>n+c.due,0);
-  document.getElementById('customerCards').innerHTML=`
-    <div class="card"><small>Total Customers</small><strong>${customers.filter(c=>c.name!=='Walk-in Customer'||c.phone).length}</strong></div>
-    <div class="card"><small>Total Customer Sales</small><strong>PKR ${money(customers.reduce((n,c)=>n+c.total,0))}</strong></div>
-    <div class="card"><small>Outstanding Balance</small><strong>PKR ${money(due)}</strong></div>`;
-  const q=(document.getElementById('customerSearch').value||'').toLowerCase();
-  const list=customers.filter(c=>(c.name+' '+c.phone).toLowerCase().includes(q));
-  document.getElementById('customersTable').innerHTML=list.map(c=>`
-    <tr><td><button class="btn small light" onclick="viewCustomer('${encodeURIComponent(c.key)}')">${esc(c.name)}</button></td>
-    <td>${esc(c.phone||'-')}</td><td>${c.orders}</td><td>${money(c.total)}</td><td>${money(c.paid)}</td>
-    <td class="${c.due>0?'bad':'good'}">${money(c.due)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">No customer records found.</td></tr>';
+ const customers=getCustomers();
+ const due=customers.reduce((n,c)=>n+c.due,0);
+ document.getElementById('customerCards').innerHTML=`
+ <div class="card"><small>Total Customers</small><strong>${customers.filter(c=>c.name!=='Walk-in Customer'||c.phone).length}</strong></div>
+ <div class="card"><small>Total Purchases</small><strong>PKR ${money(customers.reduce((n,c)=>n+c.total,0))}</strong></div>
+ <div class="card"><small>Outstanding Balance</small><strong>PKR ${money(due)}</strong></div>`;
+ const q=(document.getElementById('customerSearch').value||'').toLowerCase();
+ const list=customers.filter(c=>(c.name+' '+c.phone).toLowerCase().includes(q));
+ document.getElementById('customersTable').innerHTML=list.map(c=>`
+ <tr><td>${esc(c.name)}</td><td>${esc(c.phone||'-')}</td><td>${c.orders}</td>
+ <td>${money(c.total)}</td><td>${money(c.paid)}</td><td class="${c.due>0?'bad':'good'}">${money(c.due)}</td>
+ <td><button class="btn small light" onclick="viewCustomer('${encodeURIComponent(c.key)}')">View Ledger</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty">No customer records found.</td></tr>';
 }
 function viewCustomer(encoded){
-  const key=decodeURIComponent(encoded);
-  const c=getCustomers().find(x=>x.key===key);if(!c)return;
-  selectedCustomer=key;
-  document.getElementById('customerInvoices').innerHTML=`
-    <h3>${esc(c.name)} — ${esc(c.phone||'No phone')}</h3>
-    <p>Total purchases: PKR ${money(c.total)} | Outstanding: PKR ${money(c.due)}</p>
-    <div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Date</th><th>Total</th><th>Paid</th><th>Due</th><th>Action</th></tr></thead>
-    <tbody>${c.sales.map(s=>`<tr><td>${esc(invoiceNo(s))}</td><td>${new Date(s.date||Date.now()).toLocaleDateString()}</td><td>${money(saleTotal(s))}</td><td>${money(salePaid(s))}</td><td>${money(saleDue(s))}</td><td><button class="btn small light" onclick="printInvoice('${esc(s.id)}')">Print</button></td></tr>`).join('')}</tbody></table></div>`;
+ const key=decodeURIComponent(encoded),c=getCustomers().find(x=>x.key===key);if(!c)return;
+ selectedCustomer=key;
+ const rows=c.sales.map(s=>`
+ <tr><td>${esc(invoiceNo(s))}</td><td>${new Date(s.date||Date.now()).toLocaleDateString()}</td>
+ <td>${money(saleTotal(s))}</td><td>${money(salePaid(s))}</td>
+ <td class="${saleDue(s)>0?'bad':'good'}">${money(saleDue(s))}</td>
+ <td><button class="btn small light" onclick="printInvoice('${esc(s.id)}')">Invoice</button>
+ ${saleDue(s)>0?`<button class="btn small green" onclick="selectPaymentInvoice('${esc(s.id)}')">Collect Payment</button>`:''}</td></tr>`).join('');
+ const history=payments.filter(p=>c.sales.some(s=>s.id===p.saleId));
+ document.getElementById('customerInvoices').innerHTML=`
+ <h3>${esc(c.name)} — ${esc(c.phone||'No phone')}</h3>
+ <p>Total purchases: PKR ${money(c.total)} | Total paid: PKR ${money(c.paid)} | Outstanding: <b class="bad">PKR ${money(c.due)}</b></p>
+ <div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Date</th><th>Total</th><th>Paid</th><th>Due</th><th>Actions</th></tr></thead><tbody>${rows||'<tr><td colspan="6">No invoices.</td></tr>'}</tbody></table></div>
+ <h3>Payments from this customer</h3>
+ <div class="table-wrap"><table><thead><tr><th>Date</th><th>Receipt</th><th>Invoice</th><th>Method</th><th>Amount</th></tr></thead><tbody>
+ ${history.map(p=>`<tr><td>${new Date(p.date).toLocaleString()}</td><td>${esc(paymentReceipt(p))}</td><td>${esc(p.invoiceNo)}</td><td>${esc(p.method)}</td><td>${money(p.amount)}</td></tr>`).join('')||'<tr><td colspan="5">No later payments recorded.</td></tr>'}
+ </tbody></table></div>`;
+}
+function selectPaymentInvoice(sid){
+ const s=sales.find(x=>x.id===sid);if(!s)return;
+ if(saleDue(s)<=0)return alert('This invoice is already fully paid.');
+ selectedInvoice=sid;
+ document.getElementById('paymentInvoice').value=invoiceNo(s);
+ document.getElementById('paymentCustomer').value=s.customerName||'Walk-in Customer';
+ document.getElementById('paymentDue').value=money(saleDue(s));
+ document.getElementById('paymentAmount').value='';
+ document.getElementById('paymentAmount').max=saleDue(s);
+ document.getElementById('paymentMethod').value='Cash';
+ document.getElementById('paymentNote').value='';
+ document.getElementById('paymentAmount').focus();
+}
+function resetPaymentForm(){
+ selectedInvoice=null;
+ ['paymentInvoice','paymentCustomer','paymentAmount','paymentNote'].forEach(x=>document.getElementById(x).value='');
+ document.getElementById('paymentDue').value='0';
+ document.getElementById('paymentAmount').removeAttribute('max');
+ document.getElementById('paymentMethod').value='Cash';
+}
+function recordPayment(){
+ if(!selectedInvoice)return alert('First select an unpaid invoice using the Collect Payment button.');
+ const s=sales.find(x=>x.id===selectedInvoice);if(!s)return alert('Invoice not found.');
+ const amount=Number(document.getElementById('paymentAmount').value);
+ const due=saleDue(s);
+ if(!Number.isFinite(amount)||amount<=0)return alert('Enter a payment amount greater than zero.');
+ if(amount>due)return alert('Payment cannot be more than the outstanding balance of PKR '+money(due)+'.');
+ const receipt='REC-'+new Date().getFullYear()+'-'+String(payments.length+1).padStart(5,'0');
+ const payment={
+  id:id(),receiptNo:receipt,saleId:s.id,invoiceNo:invoiceNo(s),
+  customerName:s.customerName||'Walk-in Customer',customerPhone:s.customerPhone||'',
+  date:new Date().toISOString(),amount,
+  method:document.getElementById('paymentMethod').value,
+  note:document.getElementById('paymentNote').value.trim()
+ };
+ payments.unshift(payment);
+ s.paid=salePaid(s)+amount;
+ s.balance=Math.max(0,saleTotal(s)-s.paid);
+ saveAll();
+ alert('Payment recorded successfully!\nReceipt: '+receipt+'\nRemaining balance: PKR '+money(s.balance));
+ resetPaymentForm();renderAll();
+ if(selectedCustomer)viewCustomer(encodeURIComponent(selectedCustomer));
+ printPaymentReceipt(payment.id);
+}
+function renderPaymentHistory(){
+ document.getElementById('paymentHistory').innerHTML=payments.map(p=>`
+ <tr><td>${new Date(p.date).toLocaleString()}</td><td>${esc(paymentReceipt(p))}</td>
+ <td>${esc(p.customerName)}</td><td>${esc(p.invoiceNo)}</td><td>${esc(p.method)}</td>
+ <td>${money(p.amount)}</td><td><button class="btn small light" onclick="printPaymentReceipt('${esc(p.id)}')">Receipt</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty">No later payments recorded yet.</td></tr>';
+}
+function printPaymentReceipt(pid){
+ const p=payments.find(x=>x.id===pid);if(!p)return alert('Payment receipt not found.');
+ const s=sales.find(x=>x.id===p.saleId);
+ const html=`<!DOCTYPE html><html><head><title>${esc(paymentReceipt(p))}</title><meta name="viewport" content="width=device-width,initial-scale=1">
+ <style>body{font-family:Arial;padding:25px;max-width:600px;margin:auto}h1{text-align:center}hr{margin:20px 0}.line{padding:10px 0;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;gap:15px}.amount{font-size:23px;font-weight:bold;color:#16845b;text-align:center;margin:25px}.note{color:#555}button{padding:10px 18px;background:#1769aa;color:white;border:0}@media print{button{display:none}}</style></head><body>
+ <h1>MY BUSINESS ERP</h1><center>PAYMENT RECEIPT</center><hr>
+ <div class="line"><b>Receipt No.</b><span>${esc(paymentReceipt(p))}</span></div>
+ <div class="line"><b>Date</b><span>${new Date(p.date).toLocaleString()}</span></div>
+ <div class="line"><b>Customer</b><span>${esc(p.customerName)}</span></div>
+ <div class="line"><b>Phone</b><span>${esc(p.customerPhone||'-')}</span></div>
+ <div class="line"><b>Invoice</b><span>${esc(p.invoiceNo)}</span></div>
+ <div class="line"><b>Payment Method</b><span>${esc(p.method)}</span></div>
+ <div class="amount">Received: PKR ${money(p.amount)}</div>
+ <div class="line"><b>Invoice Total</b><span>PKR ${money(s?saleTotal(s):0)}</span></div>
+ <div class="line"><b>Total Paid So Far</b><span>PKR ${money(s?salePaid(s):p.amount)}</span></div>
+ <div class="line"><b>Remaining Balance</b><span>PKR ${money(s?saleDue(s):0)}</span></div>
+ <p class="note">Note: ${esc(p.note||'-')}</p><center><p>Thank you for your payment.</p><button onclick="window.print()">Print Receipt</button></center>
+ </body></html>`;
+ const win=window.open('','_blank');
+ if(!win)return alert('Browser blocked the receipt window. Allow pop-ups and try again.');
+ win.document.open();win.document.write(html);win.document.close();
 }
 
 function renderDashboard(){
-  const totalStock=products.reduce((n,p)=>n+Number(p.qty||0),0);
-  const stockValue=products.reduce((n,p)=>n+Number(p.qty||0)*Number(p.cost||0),0);
-  const revenue=sales.reduce((n,s)=>n+saleTotal(s),0);
-  const outstanding=sales.reduce((n,s)=>n+saleDue(s),0);
-  document.getElementById('dashboardCards').innerHTML=`
-    <div class="card"><small>Total Products</small><strong>${products.length}</strong></div>
-    <div class="card"><small>Total Stock Units</small><strong>${totalStock}</strong></div>
-    <div class="card"><small>Stock Value</small><strong>PKR ${money(stockValue)}</strong></div>
-    <div class="card"><small>Total Sales</small><strong>PKR ${money(revenue)}</strong></div>
-    <div class="card"><small>Outstanding Due</small><strong>PKR ${money(outstanding)}</strong></div>
-    <div class="card"><small>Branches</small><strong>${activeBranches().length}</strong></div>`;
-  document.getElementById('dashboardSales').innerHTML=sales.slice(0,7).map(s=>`
-    <tr><td>${esc(invoiceNo(s))}</td><td>${new Date(s.date||Date.now()).toLocaleDateString()}</td>
-    <td>${esc(s.customerName||'Walk-in Customer')}</td><td>${money(saleTotal(s))}</td><td>${money(saleDue(s))}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">No sales recorded.</td></tr>';
-  const low=products.filter(p=>Number(p.qty||0)<=Number(p.alert||0));
-  document.getElementById('lowStockTable').innerHTML=low.map(p=>`
-    <tr><td>${esc(p.name)}</td><td>${esc(branchName(p.branchId))}</td><td class="bad">${p.qty}</td><td>${p.alert??5}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">No low-stock products.</td></tr>';
+ const totalStock=products.reduce((n,p)=>n+Number(p.qty||0),0);
+ const stockValue=products.reduce((n,p)=>n+Number(p.qty||0)*Number(p.cost||0),0);
+ const revenue=sales.reduce((n,s)=>n+saleTotal(s),0);
+ const outstanding=sales.reduce((n,s)=>n+saleDue(s),0);
+ const received=sales.reduce((n,s)=>n+salePaid(s),0);
+ document.getElementById('dashboardCards').innerHTML=`
+ <div class="card"><small>Total Products</small><strong>${products.length}</strong></div>
+ <div class="card"><small>Total Stock Units</small><strong>${totalStock}</strong></div>
+ <div class="card"><small>Stock Value</small><strong>PKR ${money(stockValue)}</strong></div>
+ <div class="card"><small>Total Sales</small><strong>PKR ${money(revenue)}</strong></div>
+ <div class="card"><small>Total Received</small><strong>PKR ${money(received)}</strong></div>
+ <div class="card"><small>Outstanding Due</small><strong>PKR ${money(outstanding)}</strong></div>
+ <div class="card"><small>Branches</small><strong>${activeBranches().length}</strong></div>`;
+ document.getElementById('dashboardSales').innerHTML=sales.slice(0,7).map(s=>`
+ <tr><td>${esc(invoiceNo(s))}</td><td>${new Date(s.date||Date.now()).toLocaleDateString()}</td>
+ <td>${esc(s.customerName||'Walk-in Customer')}</td><td>${money(saleTotal(s))}</td><td>${money(saleDue(s))}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">No sales recorded.</td></tr>';
+ const low=products.filter(p=>Number(p.qty||0)<=Number(p.alert||0));
+ document.getElementById('lowStockTable').innerHTML=low.map(p=>`
+ <tr><td>${esc(p.name)}</td><td>${esc(branchName(p.branchId))}</td><td class="bad">${p.qty}</td><td>${p.alert??5}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">No low-stock products.</td></tr>';
 }
-
 renderAll();
 </script>
 </body>
