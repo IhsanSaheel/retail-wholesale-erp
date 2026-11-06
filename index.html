@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,6 +55,8 @@ footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
 <button data-tab="branches">Branches</button>
 <button data-tab="pos">POS / Sales</button>
 <button data-tab="customers">Customers & Ledger</button>
+<button data-tab="expenses">Expenses</button>
+<button data-tab="reports">Profit & Loss</button>
 </nav>
 
 <main>
@@ -169,7 +170,6 @@ footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
 <section id="customers" class="page hidden">
 <h3>Customers & Payment Ledger</h3>
 <div class="cards" id="customerCards"></div>
-
 <div class="panel">
 <h3>Customer Records</h3>
 <label>Search Customer</label>
@@ -179,12 +179,10 @@ footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
 <tbody id="customersTable"></tbody>
 </table></div>
 </div>
-
 <div class="panel">
 <h3>Customer Invoices & Ledger</h3>
 <div id="customerInvoices" class="muted">Select a customer to view their invoices and payment history.</div>
 </div>
-
 <div class="panel">
 <h3>Collect Customer Payment</h3>
 <p class="muted">Select an unpaid invoice from a customer's ledger to record a later payment.</p>
@@ -202,12 +200,82 @@ footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
 <button class="btn green" onclick="recordPayment()">Save Customer Payment</button>
 <button class="btn gray" onclick="resetPaymentForm()">Clear</button>
 </div>
-
 <div class="panel">
 <h3>Payment History</h3>
 <div class="table-wrap"><table>
 <thead><tr><th>Date</th><th>Receipt</th><th>Customer</th><th>Invoice</th><th>Method</th><th>Amount</th><th>Action</th></tr></thead>
 <tbody id="paymentHistory"></tbody>
+</table></div>
+</div>
+</section>
+
+<section id="expenses" class="page hidden">
+<h3>Expenses Management</h3>
+<div class="panel">
+<h3 id="expenseFormTitle">Add New Expense</h3>
+<input type="hidden" id="expenseId">
+<div class="grid">
+<div><label>Expense Title</label><input id="expenseTitle" placeholder="e.g. Shop rent"></div>
+<div><label>Category</label>
+<select id="expenseCategory">
+<option>Rent</option><option>Salaries</option><option>Electricity</option>
+<option>Water</option><option>Internet & Phone</option><option>Transport</option>
+<option>Repairs & Maintenance</option><option>Packaging</option>
+<option>Marketing</option><option>Office Supplies</option><option>Other</option>
+</select></div>
+<div><label>Amount (PKR)</label><input id="expenseAmount" type="number" min="0" placeholder="Enter amount"></div>
+<div><label>Date</label><input id="expenseDate" type="date"></div>
+<div><label>Branch</label><select id="expenseBranch"></select></div>
+<div><label>Payment Method</label>
+<select id="expenseMethod">
+<option>Cash</option><option>Bank Transfer</option><option>JazzCash</option><option>EasyPaisa</option><option>Cheque</option><option>Other</option>
+</select></div>
+<div><label>Note (Optional)</label><input id="expenseNote" placeholder="Additional details"></div>
+</div>
+<button class="btn green" onclick="saveExpense()">Save Expense</button>
+<button class="btn gray" onclick="resetExpenseForm()">Clear</button>
+</div>
+
+<div class="cards" id="expenseCards"></div>
+
+<div class="panel">
+<h3>Expense Records</h3>
+<div class="grid">
+<div><label>From Date</label><input type="date" id="expenseFrom" onchange="renderExpenses()"></div>
+<div><label>To Date</label><input type="date" id="expenseTo" onchange="renderExpenses()"></div>
+<div><label>Branch</label><select id="expenseFilterBranch" onchange="renderExpenses()"></select></div>
+</div>
+<div class="table-wrap"><table>
+<thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Branch</th><th>Method</th><th>Amount</th><th>Actions</th></tr></thead>
+<tbody id="expensesTable"></tbody>
+</table></div>
+</div>
+</section>
+
+<section id="reports" class="page hidden">
+<h3>Profit & Loss Accounting</h3>
+<div class="panel">
+<p class="muted">Choose a date range and branch to calculate your business performance.</p>
+<div class="grid">
+<div><label>From Date</label><input type="date" id="reportFrom" onchange="renderProfitLoss()"></div>
+<div><label>To Date</label><input type="date" id="reportTo" onchange="renderProfitLoss()"></div>
+<div><label>Branch</label><select id="reportBranch" onchange="renderProfitLoss()"></select></div>
+</div>
+<button class="btn light" onclick="clearReportFilters()">Show All Dates</button>
+</div>
+<div class="cards" id="profitCards"></div>
+<div class="panel">
+<h3>Profit & Loss Summary</h3>
+<div class="table-wrap"><table>
+<tbody id="profitSummary"></tbody>
+</table></div>
+<p class="muted">Net Profit = Sales Revenue − Cost of Goods Sold − Expenses.</p>
+</div>
+<div class="panel">
+<h3>Expenses by Category</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Category</th><th>Total Amount</th></tr></thead>
+<tbody id="categorySummary"></tbody>
 </table></div>
 </div>
 </section>
@@ -220,6 +288,7 @@ const KEY_PRODUCTS='mberp_products';
 const KEY_BRANCHES='mberp_branches';
 const KEY_SALES='mberp_sales';
 const KEY_PAYMENTS='mberp_payments';
+const KEY_EXPENSES='mberp_expenses';
 
 function load(key,fallback){
  try{return JSON.parse(localStorage.getItem(key))??fallback}catch(e){return fallback}
@@ -228,6 +297,7 @@ let products=load(KEY_PRODUCTS,[]);
 let branches=load(KEY_BRANCHES,[]);
 let sales=load(KEY_SALES,[]);
 let payments=load(KEY_PAYMENTS,[]);
+let expenses=load(KEY_EXPENSES,[]);
 let cart=[];
 let selectedCustomer=null;
 let selectedInvoice=null;
@@ -237,6 +307,7 @@ function saveAll(){
  localStorage.setItem(KEY_BRANCHES,JSON.stringify(branches));
  localStorage.setItem(KEY_SALES,JSON.stringify(sales));
  localStorage.setItem(KEY_PAYMENTS,JSON.stringify(payments));
+ localStorage.setItem(KEY_EXPENSES,JSON.stringify(expenses));
 }
 function money(n){return Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2})}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -248,7 +319,11 @@ function salePaid(s){return Number(s.paid??s.total??0)}
 function saleDue(s){return Math.max(0,Number(s.balance??(saleTotal(s)-salePaid(s))))}
 function invoiceNo(s){return s.invoiceNo||s.id||'OLD-INVOICE'}
 function paymentReceipt(p){return p.receiptNo||p.id||'PAYMENT'}
+function saleDate(s){return String(s.date||'').slice(0,10)}
+function todayISO(){return new Date().toISOString().slice(0,10)}
+
 document.getElementById('today').textContent=new Date().toLocaleDateString();
+document.getElementById('expenseDate').value=todayISO();
 
 document.querySelectorAll('nav button').forEach(btn=>{
  btn.addEventListener('click',()=>{
@@ -262,9 +337,20 @@ document.querySelectorAll('nav button').forEach(btn=>{
 function showTab(tab){document.querySelector('nav button[data-tab="'+tab+'"]').click()}
 
 function renderAll(){
- renderBranchOptions();renderProducts();renderBranches();renderSaleProductOptions();
- renderCart();renderSales();renderCustomers();renderDashboard();renderPaymentHistory();
+ renderBranchOptions();
+ renderProducts();
+ renderBranches();
+ renderSaleProductOptions();
+ renderCart();
+ renderSales();
+ renderCustomers();
+ renderDashboard();
+ renderPaymentHistory();
+ renderExpenseBranchOptions();
+ renderExpenses();
+ renderProfitLoss();
 }
+
 function renderBranchOptions(){
  const opts=branches.map(b=>`<option value="${esc(b.id)}">${esc(b.name)}${b.active===false?' (Inactive)':''}</option>`).join('');
  const active=activeBranches().map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
@@ -277,6 +363,7 @@ function renderBranchOptions(){
  if([...f.options].some(o=>o.value===oldF))f.value=oldF;
  if([...s.options].some(o=>o.value===oldS))s.value=oldS;
 }
+
 function saveBranch(){
  const name=document.getElementById('branchName').value.trim();
  const address=document.getElementById('branchAddress').value.trim();
@@ -350,8 +437,10 @@ function deleteProduct(pid){
 }
 function resetProductForm(){
  ['productId','pName','pSku','pCategory'].forEach(x=>document.getElementById(x).value='');
- document.getElementById('pQty').value=0;document.getElementById('pCost').value=0;
- document.getElementById('pPrice').value=0;document.getElementById('pAlert').value=5;
+ document.getElementById('pQty').value=0;
+ document.getElementById('pCost').value=0;
+ document.getElementById('pPrice').value=0;
+ document.getElementById('pAlert').value=5;
  document.getElementById('productFormTitle').textContent='Add New Product';
 }
 function renderProducts(){
@@ -380,7 +469,8 @@ function addToCart(){
  if(!Number.isInteger(qty)||qty<1)return alert('Enter a valid quantity.');
  const existing=cart.find(x=>x.productId===pid);
  if((existing?existing.qty:0)+qty>Number(p.qty))return alert('Not enough stock. Available: '+p.qty);
- if(existing)existing.qty+=qty;else cart.push({productId:p.id,name:p.name,price:Number(p.price||0),qty});
+ if(existing)existing.qty+=qty;
+ else cart.push({productId:p.id,name:p.name,price:Number(p.price||0),cost:Number(p.cost||0),qty});
  document.getElementById('saleQty').value=1;renderCart();
 }
 function cartAmount(){return cart.reduce((sum,x)=>sum+x.price*x.qty,0)}
@@ -419,8 +509,10 @@ function completeSale(){
  const record={id:id(),invoiceNo:nextInvoiceNumber(),date:new Date().toISOString(),branchId:bid,branchName:branchName(bid),customerName:customer,customerPhone:phone,items:cart.map(x=>({...x})),total,paid,balance:total-paid};
  cart.forEach(item=>{const p=products.find(x=>x.id===item.productId);p.qty=Number(p.qty)-item.qty});
  sales.unshift(record);saveAll();cart=[];
- document.getElementById('saleCustomer').value='';document.getElementById('salePhone').value='';
- document.getElementById('salePaid').value=0;renderAll();
+ document.getElementById('saleCustomer').value='';
+ document.getElementById('salePhone').value='';
+ document.getElementById('salePaid').value=0;
+ renderAll();
  alert('Sale saved successfully! Invoice: '+record.invoiceNo);
  printInvoice(record.id);
 }
@@ -432,7 +524,6 @@ function renderSales(){
  <td class="${saleDue(s)>0?'bad':'good'}">${money(saleDue(s))}</td>
  <td><button class="btn small light" onclick="printInvoice('${esc(s.id)}')">Print</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No sales yet.</td></tr>';
 }
-
 function printInvoice(sid){
  const s=sales.find(x=>x.id===sid);if(!s)return alert('Invoice not found.');
  const items=(s.items||[]).map(x=>`<tr><td>${esc(x.name)}</td><td>${money(x.price)}</td><td>${x.qty}</td><td>${money(Number(x.price||0)*Number(x.qty||0))}</td></tr>`).join('');
@@ -566,12 +657,158 @@ function printPaymentReceipt(pid){
  win.document.open();win.document.write(html);win.document.close();
 }
 
+/* EXPENSE MANAGEMENT */
+function renderExpenseBranchOptions(){
+ const selectIds=['expenseBranch','expenseFilterBranch','reportBranch'];
+ selectIds.forEach((sid,index)=>{
+  const el=document.getElementById(sid);
+  const old=el.value;
+  el.innerHTML=(index===0?'<option value="">Select Branch</option>':'<option value="">All Branches</option>')+
+  branches.map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+  if([...el.options].some(o=>o.value===old))el.value=old;
+ });
+}
+function saveExpense(){
+ const eid=document.getElementById('expenseId').value;
+ const title=document.getElementById('expenseTitle').value.trim();
+ const category=document.getElementById('expenseCategory').value;
+ const amount=Number(document.getElementById('expenseAmount').value);
+ const date=document.getElementById('expenseDate').value;
+ const branchId=document.getElementById('expenseBranch').value;
+ if(!title)return alert('Please enter expense title.');
+ if(!date)return alert('Please select expense date.');
+ if(!Number.isFinite(amount)||amount<=0)return alert('Enter an amount greater than zero.');
+ if(!branchId)return alert('Please select a branch.');
+ const data={
+  title,category,amount,date,branchId,
+  method:document.getElementById('expenseMethod').value,
+  note:document.getElementById('expenseNote').value.trim()
+ };
+ if(eid){
+  const old=expenses.find(x=>x.id===eid);
+  if(old)Object.assign(old,data);
+ }else{
+  expenses.unshift({id:id(),...data,createdAt:new Date().toISOString()});
+ }
+ saveAll();resetExpenseForm();renderAll();
+ alert('Expense saved successfully.');
+}
+function editExpense(eid){
+ const e=expenses.find(x=>x.id===eid);if(!e)return;
+ document.getElementById('expenseId').value=e.id;
+ document.getElementById('expenseTitle').value=e.title||'';
+ document.getElementById('expenseCategory').value=e.category||'Other';
+ document.getElementById('expenseAmount').value=e.amount||0;
+ document.getElementById('expenseDate').value=e.date||todayISO();
+ document.getElementById('expenseBranch').value=e.branchId||'';
+ document.getElementById('expenseMethod').value=e.method||'Cash';
+ document.getElementById('expenseNote').value=e.note||'';
+ document.getElementById('expenseFormTitle').textContent='Edit Expense';
+ showTab('expenses');
+}
+function deleteExpense(eid){
+ if(!confirm('Delete this expense record?'))return;
+ expenses=expenses.filter(e=>e.id!==eid);
+ saveAll();renderAll();
+}
+function resetExpenseForm(){
+ document.getElementById('expenseId').value='';
+ document.getElementById('expenseTitle').value='';
+ document.getElementById('expenseCategory').value='Rent';
+ document.getElementById('expenseAmount').value='';
+ document.getElementById('expenseDate').value=todayISO();
+ document.getElementById('expenseBranch').value='';
+ document.getElementById('expenseMethod').value='Cash';
+ document.getElementById('expenseNote').value='';
+ document.getElementById('expenseFormTitle').textContent='Add New Expense';
+}
+function expenseMatches(e,from,to,branch){
+ return (!from||e.date>=from)&&(!to||e.date<=to)&&(!branch||e.branchId===branch);
+}
+function renderExpenses(){
+ const from=document.getElementById('expenseFrom').value;
+ const to=document.getElementById('expenseTo').value;
+ const branch=document.getElementById('expenseFilterBranch').value;
+ const list=expenses.filter(e=>expenseMatches(e,from,to,branch));
+ const total=list.reduce((n,e)=>n+Number(e.amount||0),0);
+ document.getElementById('expenseCards').innerHTML=`
+ <div class="card"><small>Expense Records</small><strong>${list.length}</strong></div>
+ <div class="card"><small>Total Expenses</small><strong>PKR ${money(total)}</strong></div>`;
+ document.getElementById('expensesTable').innerHTML=list.map(e=>`
+ <tr><td>${esc(e.date)}</td><td>${esc(e.title)}</td><td>${esc(e.category)}</td>
+ <td>${esc(branchName(e.branchId))}</td><td>${esc(e.method||'-')}</td><td>${money(e.amount)}</td>
+ <td><button class="btn small light" onclick="editExpense('${esc(e.id)}')">Edit</button>
+ <button class="btn small red" onclick="deleteExpense('${esc(e.id)}')">Delete</button></td></tr>`).join('')||
+ '<tr><td colspan="7" class="empty">No expenses found for this filter.</td></tr>';
+}
+
+/* PROFIT & LOSS REPORT */
+function costOfSale(s){
+ return (s.items||[]).reduce((sum,item)=>{
+  let cost=Number(item.cost);
+  if(!Number.isFinite(cost)||cost<0){
+   const p=products.find(x=>x.id===item.productId);
+   cost=Number(p?.cost||0);
+  }
+  return sum+cost*Number(item.qty||0);
+ },0);
+}
+function renderProfitLoss(){
+ const from=document.getElementById('reportFrom').value;
+ const to=document.getElementById('reportTo').value;
+ const branch=document.getElementById('reportBranch').value;
+ const filteredSales=sales.filter(s=>
+  (!from||saleDate(s)>=from)&&(!to||saleDate(s)<=to)&&(!branch||s.branchId===branch)
+ );
+ const filteredExpenses=expenses.filter(e=>expenseMatches(e,from,to,branch));
+ const revenue=filteredSales.reduce((n,s)=>n+saleTotal(s),0);
+ const cogs=filteredSales.reduce((n,s)=>n+costOfSale(s),0);
+ const gross=revenue-cogs;
+ const expenseTotal=filteredExpenses.reduce((n,e)=>n+Number(e.amount||0),0);
+ const net=gross-expenseTotal;
+ const received=filteredSales.reduce((n,s)=>n+salePaid(s),0);
+ const due=filteredSales.reduce((n,s)=>n+saleDue(s),0);
+ document.getElementById('profitCards').innerHTML=`
+ <div class="card"><small>Sales Revenue</small><strong>PKR ${money(revenue)}</strong></div>
+ <div class="card"><small>Cost of Goods Sold</small><strong>PKR ${money(cogs)}</strong></div>
+ <div class="card"><small>Gross Profit</small><strong>PKR ${money(gross)}</strong></div>
+ <div class="card"><small>Total Expenses</small><strong>PKR ${money(expenseTotal)}</strong></div>
+ <div class="card"><small>Net Profit / Loss</small><strong class="${net>=0?'good':'bad'}">PKR ${money(net)}</strong></div>
+ <div class="card"><small>Customer Payments Received</small><strong>PKR ${money(received)}</strong></div>`;
+ document.getElementById('profitSummary').innerHTML=`
+ <tr><td>Sales Revenue</td><td>PKR ${money(revenue)}</td></tr>
+ <tr><td>Cost of Goods Sold</td><td>PKR ${money(cogs)}</td></tr>
+ <tr><td><b>Gross Profit</b></td><td><b>PKR ${money(gross)}</b></td></tr>
+ <tr><td>Operating Expenses</td><td>PKR ${money(expenseTotal)}</td></tr>
+ <tr><td><b>Net Profit / Loss</b></td><td class="${net>=0?'good':'bad'}"><b>PKR ${money(net)}</b></td></tr>
+ <tr><td>Amount Received from Customers</td><td>PKR ${money(received)}</td></tr>
+ <tr><td>Outstanding Customer Balance</td><td>PKR ${money(due)}</td></tr>`;
+ const categories={};
+ filteredExpenses.forEach(e=>{
+  const c=e.category||'Other';
+  categories[c]=(categories[c]||0)+Number(e.amount||0);
+ });
+ document.getElementById('categorySummary').innerHTML=
+ Object.entries(categories).sort((a,b)=>b[1]-a[1]).map(([c,v])=>
+ `<tr><td>${esc(c)}</td><td>PKR ${money(v)}</td></tr>`).join('')||
+ '<tr><td colspan="2" class="empty">No expenses recorded for this period.</td></tr>';
+}
+function clearReportFilters(){
+ document.getElementById('reportFrom').value='';
+ document.getElementById('reportTo').value='';
+ document.getElementById('reportBranch').value='';
+ renderProfitLoss();
+}
+
 function renderDashboard(){
  const totalStock=products.reduce((n,p)=>n+Number(p.qty||0),0);
  const stockValue=products.reduce((n,p)=>n+Number(p.qty||0)*Number(p.cost||0),0);
  const revenue=sales.reduce((n,s)=>n+saleTotal(s),0);
  const outstanding=sales.reduce((n,s)=>n+saleDue(s),0);
  const received=sales.reduce((n,s)=>n+salePaid(s),0);
+ const expenseTotal=expenses.reduce((n,e)=>n+Number(e.amount||0),0);
+ const cogs=sales.reduce((n,s)=>n+costOfSale(s),0);
+ const net=revenue-cogs-expenseTotal;
  document.getElementById('dashboardCards').innerHTML=`
  <div class="card"><small>Total Products</small><strong>${products.length}</strong></div>
  <div class="card"><small>Total Stock Units</small><strong>${totalStock}</strong></div>
@@ -579,6 +816,8 @@ function renderDashboard(){
  <div class="card"><small>Total Sales</small><strong>PKR ${money(revenue)}</strong></div>
  <div class="card"><small>Total Received</small><strong>PKR ${money(received)}</strong></div>
  <div class="card"><small>Outstanding Due</small><strong>PKR ${money(outstanding)}</strong></div>
+ <div class="card"><small>Total Expenses</small><strong>PKR ${money(expenseTotal)}</strong></div>
+ <div class="card"><small>Estimated Net Profit</small><strong class="${net>=0?'good':'bad'}">PKR ${money(net)}</strong></div>
  <div class="card"><small>Branches</small><strong>${activeBranches().length}</strong></div>`;
  document.getElementById('dashboardSales').innerHTML=sales.slice(0,7).map(s=>`
  <tr><td>${esc(invoiceNo(s))}</td><td>${new Date(s.date||Date.now()).toLocaleDateString()}</td>
@@ -587,6 +826,7 @@ function renderDashboard(){
  document.getElementById('lowStockTable').innerHTML=low.map(p=>`
  <tr><td>${esc(p.name)}</td><td>${esc(branchName(p.branchId))}</td><td class="bad">${p.qty}</td><td>${p.alert??5}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">No low-stock products.</td></tr>';
 }
+
 renderAll();
 </script>
 </body>
