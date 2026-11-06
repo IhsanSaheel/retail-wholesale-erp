@@ -2019,5 +2019,119 @@ renderAll();
 })();
 </script>
 
+<script>
+(function(){
+ const nameInput=document.getElementById('saleCustomer');
+ const phoneInput=document.getElementById('salePhone');
+
+ if(!nameInput||!phoneInput)return;
+
+ const box=document.createElement('div');
+ const label=document.createElement('label');
+ const select=document.createElement('select');
+
+ label.textContent='Select Existing Customer';
+ select.id='savedCustomerSelect';
+
+ box.appendChild(label);
+ box.appendChild(select);
+
+ nameInput.parentElement.parentElement.insertBefore(
+  box,
+  nameInput.parentElement
+ );
+
+ function getSavedCustomers(){
+  let records=[];
+  try{
+   records=JSON.parse(localStorage.getItem('mberp_sales')||'[]');
+  }catch(e){}
+
+  const map=new Map();
+
+  records.forEach(s=>{
+   const name=(s.customerName||'').trim();
+   const phone=(s.customerPhone||'').trim();
+
+   if(!name||name==='Walk-in Customer')return;
+
+   const key=phone
+    ?'phone:'+phone.replace(/\D/g,'')
+    :'name:'+name.toLowerCase();
+
+   if(!map.has(key)){
+    map.set(key,{name,phone});
+   }
+  });
+
+  return [...map.values()].sort((a,b)=>
+   a.name.localeCompare(b.name)
+  );
+ }
+
+ function refreshCustomerList(){
+  const customers=getSavedCustomers();
+
+  select.innerHTML='';
+
+  select.add(new Option(
+   'Choose a saved customer',
+   ''
+  ));
+
+  select.add(new Option(
+   'New customer - enter details below',
+   'new'
+  ));
+
+  customers.forEach((c,i)=>{
+   select.add(new Option(
+    c.name+(c.phone?' - '+c.phone:''),
+    String(i)
+   ));
+  });
+
+  select.onchange=function(){
+   if(this.value==='new'){
+    nameInput.value='';
+    phoneInput.value='';
+    return;
+   }
+
+   if(this.value==='')return;
+
+   const customer=customers[Number(this.value)];
+   if(!customer)return;
+
+   nameInput.value=customer.name;
+   phoneInput.value=customer.phone;
+  };
+ }
+
+ refreshCustomerList();
+
+ const originalCompleteSale=window.completeSale;
+
+ if(typeof originalCompleteSale==='function'){
+  window.completeSale=function(){
+   const before=JSON.parse(
+    localStorage.getItem('mberp_sales')||'[]'
+   ).length;
+
+   originalCompleteSale.apply(this,arguments);
+
+   const after=JSON.parse(
+    localStorage.getItem('mberp_sales')||'[]'
+   ).length;
+
+   if(after>before){
+    refreshCustomerList();
+    select.value='';
+   }
+  };
+ }
+})();
+</script>
+
 </body>
 </html>
