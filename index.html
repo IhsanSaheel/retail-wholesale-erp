@@ -6,1382 +6,555 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Business ERP</title>
 <style>
-:root{--navy:#102a43;--blue:#1769aa;--bg:#f3f6fa;--line:#e2e8f0;--muted:#64748b;--green:#16845b;--red:#c24141}
+:root{--navy:#102a43;--blue:#1769aa;--bg:#f3f6fa;--line:#e2e8f0;--muted:#64748b;--green:#16845b;--red:#c0392b;--white:#fff}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);font-family:Arial,sans-serif;color:#172b4d}
-header{background:var(--navy);color:#fff;padding:17px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-header h1{font-size:20px;margin:0}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#1e293b}
+header{background:var(--navy);color:white;padding:17px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+header h2{margin:0;font-size:21px}
 header small{color:#cbd5e1}
-nav{display:flex;gap:8px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--line);overflow:auto}
-nav button{white-space:nowrap;border:0;border-radius:8px;padding:10px 14px;background:#eef3f8;color:#24435f;font-weight:700}
-nav button.active{background:var(--blue);color:#fff}
-main{max-width:1100px;margin:22px auto;padding:0 15px}
-h2{font-size:21px;margin:0 0 5px}
-.sub{color:var(--muted);font-size:13px;margin:0 0 18px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:18px}
-.card,.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
-.card span{font-size:12px;color:var(--muted)}
-.card strong{display:block;font-size:24px;margin-top:8px}
-.panel{margin-bottom:16px}
-.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-input,select{padding:11px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;font-size:14px;min-width:0}
-.toolbar input{flex:1;min-width:150px}
+nav{display:flex;gap:6px;background:white;padding:9px;overflow-x:auto;border-bottom:1px solid var(--line)}
+nav button{border:0;background:transparent;padding:11px 15px;border-radius:7px;white-space:nowrap;color:#334155;font-weight:bold;cursor:pointer}
+nav button.active{background:var(--blue);color:white}
+main{max-width:1250px;margin:auto;padding:18px}
+h3{margin:5px 0 16px;color:var(--navy)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.card,.panel{background:white;border:1px solid var(--line);border-radius:10px;padding:15px;margin-bottom:15px}
+.card small{color:var(--muted)}
+.card strong{display:block;font-size:23px;margin-top:8px;color:var(--navy)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+label{display:block;font-size:13px;font-weight:bold;color:#475569;margin-bottom:5px}
+input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;background:white;font-size:14px;margin-bottom:11px}
 button{cursor:pointer}
-.primary{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:11px 15px;font-weight:700}
-.secondary{background:#eaf1f8;color:#24435f;border:0;border-radius:8px;padding:10px 13px;font-weight:700}
-.danger{background:#fff0f0;color:var(--red);border:0;border-radius:7px;padding:8px 10px}
-table{width:100%;border-collapse:collapse;min-width:700px}
-th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);font-size:13px}
-th{color:var(--muted);background:#f8fafc}
-.tablewrap{overflow-x:auto}
-.pill{padding:5px 8px;border-radius:20px;font-size:11px;font-weight:700;background:#e8f7ef;color:var(--green)}
-.low{background:#fff0e7;color:#b45309}
-.hidden{display:none!important}
-.notice{font-size:12px;color:var(--muted);line-height:1.5;background:#f8fafc;padding:12px;border-radius:8px}
-.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:15px;z-index:5}
-.modal.show{display:flex}
-.dialog{background:#fff;border-radius:13px;padding:19px;width:min(480px,100%);max-height:90vh;overflow:auto}
-.dialog h3{margin:0 0 14px}
-.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.field{display:flex;flex-direction:column;gap:5px}
-.field label{font-size:12px;color:var(--muted)}
-.field input,.field select{width:100%}
-.full{grid-column:1/-1}
-.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:15px}
+.btn{border:0;border-radius:7px;padding:10px 14px;background:var(--blue);color:white;font-weight:bold;margin:3px 3px 3px 0}
+.btn.green{background:var(--green)}
+.btn.red{background:var(--red)}
+.btn.gray{background:#64748b}
+.btn.light{background:#e8f0f8;color:#164b78}
+.btn.small{padding:6px 9px;font-size:12px}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{text-align:left;padding:11px 9px;border-bottom:1px solid var(--line);font-size:13px}
+th{background:#f8fafc;color:#475569}
+.table-wrap{overflow-x:auto}
+.muted{color:var(--muted)}
+.good{color:var(--green);font-weight:bold}
+.bad{color:var(--red);font-weight:bold}
+.tag{padding:4px 7px;border-radius:5px;background:#e8f0f8;font-size:11px}
 .empty{text-align:center;color:var(--muted);padding:25px}
-.pos-total{font-size:26px;font-weight:700;color:var(--green);margin:12px 0}
-.cart-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
-@media(max-width:560px){
-header h1{font-size:18px}
-.formgrid{grid-template-columns:1fr}
-.full{grid-column:auto}
-main{margin-top:16px}
-.card{padding:13px}
-}
+.total{font-size:22px;font-weight:bold;color:var(--navy)}
+.hidden{display:none!important}
+.actions{white-space:nowrap}
+footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
+@media(max-width:600px){main{padding:11px}header{padding:14px}nav button{padding:10px;font-size:12px}.card{padding:12px}}
 </style>
 </head>
 <body>
 
 <header>
-<div><h1>MY BUSINESS ERP</h1><small>Retail & Wholesale Management</small></div>
-<strong>PKR ₨</strong>
+  <div>
+    <h2>My Business ERP</h2>
+    <small>Retail & Wholesale Management System</small>
+  </div>
+  <div id="today"></div>
 </header>
 
 <nav>
-<button class="active" data-tab="inventory">Products & Inventory</button>
-<button data-tab="branches">Branches</button>
-<button data-tab="pos">POS / Sales</button>
+  <button class="active" data-tab="dashboard">Dashboard</button>
+  <button data-tab="products">Products & Inventory</button>
+  <button data-tab="branches">Branches</button>
+  <button data-tab="pos">POS / Sales</button>
+  <button data-tab="customers">Customers</button>
 </nav>
 
 <main>
-
-<!-- INVENTORY -->
-<section id="inventory">
-<h2>Products & Inventory</h2>
-<p class="sub">Manage products and stock by branch</p>
-
-<div class="cards">
-<div class="card"><span>Total products</span><strong id="totalProducts">0</strong></div>
-<div class="card"><span>Total stock units</span><strong id="totalUnits">0</strong></div>
-<div class="card"><span>Low-stock products</span><strong id="lowCount">0</strong></div>
-<div class="card"><span>Stock value (cost)</span><strong id="stockValue">₨0</strong></div>
-</div>
-
-<div class="panel">
-<div class="toolbar">
-<select id="branchFilter" aria-label="Filter by branch"></select>
-<input id="productSearch" placeholder="Search product, SKU or category">
-<button class="primary" id="addProduct">+ Add product</button>
-</div>
-
-<div class="tablewrap">
-<table>
-<thead><tr>
-<th>Product</th><th>SKU / Barcode</th><th>Category</th><th>Branch</th><th>Qty</th><th>Cost</th><th>Selling</th><th>Status</th><th>Actions</th>
-</tr></thead>
-<tbody id="productRows"></tbody>
-</table>
-</div>
-<div id="productEmpty" class="empty hidden">No products yet. Tap “Add product” to add your first item.</div>
-</div>
-
-<p class="notice">Prototype notice: records are saved only in this browser on this device. They are not shared between branches, phones or computers. Do not enter real business records until we add secure user accounts, a central database and backups.</p>
+<section id="dashboard" class="page">
+  <h3>Business Dashboard</h3>
+  <div class="cards" id="dashboardCards"></div>
+  <div class="panel">
+    <h3>Recent Sales</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Total</th><th>Due</th></tr></thead>
+      <tbody id="dashboardSales"></tbody>
+    </table></div>
+  </div>
+  <div class="panel">
+    <h3>Low Stock Products</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Product</th><th>Branch</th><th>Stock</th><th>Alert Level</th></tr></thead>
+      <tbody id="lowStockTable"></tbody>
+    </table></div>
+  </div>
 </section>
 
-<!-- BRANCHES -->
-<section id="branches" class="hidden">
-<h2>Branch Management</h2>
-<p class="sub">Create and manage your business locations</p>
-
-<div class="cards">
-<div class="card"><span>Total branches</span><strong id="totalBranches">0</strong></div>
-<div class="card"><span>Active branches</span><strong id="activeBranches">0</strong></div>
-<div class="card"><span>Inactive branches</span><strong id="inactiveBranches">0</strong></div>
-</div>
-
-<div class="panel">
-<div class="toolbar">
-<input id="branchSearch" placeholder="Search branch name or code">
-<button class="primary" id="addBranch">+ Add branch</button>
-</div>
-<div class="tablewrap">
-<table>
-<thead><tr><th>Branch</th><th>Code</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
-<tbody id="branchRows"></tbody>
-</table>
-</div>
-<div id="branchEmpty" class="empty hidden">No branches yet. Add your first branch.</div>
-</div>
+<section id="products" class="page hidden">
+  <h3>Products & Inventory</h3>
+  <div class="panel">
+    <h3 id="productFormTitle">Add New Product</h3>
+    <input type="hidden" id="productId">
+    <div class="grid">
+      <div><label>Product Name</label><input id="pName" placeholder="Product name"></div>
+      <div><label>SKU / Barcode</label><input id="pSku" placeholder="SKU or barcode"></div>
+      <div><label>Category</label><input id="pCategory" placeholder="Category"></div>
+      <div><label>Branch</label><select id="pBranch"></select></div>
+      <div><label>Quantity</label><input id="pQty" type="number" min="0" value="0"></div>
+      <div><label>Purchase Cost (PKR)</label><input id="pCost" type="number" min="0" value="0"></div>
+      <div><label>Selling Price (PKR)</label><input id="pPrice" type="number" min="0" value="0"></div>
+      <div><label>Low Stock Alert</label><input id="pAlert" type="number" min="0" value="5"></div>
+    </div>
+    <button class="btn green" onclick="saveProduct()">Save Product</button>
+    <button class="btn gray" onclick="resetProductForm()">Clear</button>
+  </div>
+  <div class="panel">
+    <div class="grid">
+      <div><label>Search Products</label><input id="productSearch" oninput="renderProducts()" placeholder="Search name, SKU or category"></div>
+      <div><label>Filter Branch</label><select id="productFilter" onchange="renderProducts()"></select></div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Product</th><th>SKU</th><th>Branch</th><th>Qty</th><th>Cost</th><th>Price</th><th>Value</th><th>Actions</th></tr></thead>
+      <tbody id="productsTable"></tbody>
+    </table></div>
+  </div>
 </section>
 
-<!-- POS / SALES -->
-<section id="pos" class="hidden">
-<h2>POS / Sales</h2>
-<p class="sub">Create customer bills and record sales</p>
-
-<div class="cards">
-<div class="card"><span>Total sales recorded</span><strong id="salesCount">0</strong></div>
-<div class="card"><span>Total sales amount</span><strong id="salesTotal">₨0</strong></div>
-</div>
-
-<div class="panel">
-<h3>New Sale</h3>
-
-<div class="toolbar">
-<select id="posBranch" aria-label="Select branch"></select>
-</div>
-
-<div class="formgrid">
-<div class="field full">
-<label>Choose product</label>
-<select id="posProduct"></select>
-</div>
-<div class="field">
-<label>Quantity</label>
-<input id="posQty" type="number" min="1" step="1" value="1">
-</div>
-<div class="field">
-<label>&nbsp;</label>
-<button class="primary" id="addToCart">Add to bill</button>
-</div>
-</div>
-</div>
-
-<div class="panel">
-<h3>Current Bill</h3>
-<div class="tablewrap">
-<table>
-<thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead>
-<tbody id="cartRows"></tbody>
-</table>
-</div>
-<div id="cartEmpty" class="empty">Your bill is empty. Add a product to begin.</div>
-<div class="pos-total">Total: <span id="cartTotal">₨0</span></div>
-<div class="cart-actions">
-<button class="secondary" id="clearCart">Clear bill</button>
-<button class="primary" id="completeSale">Complete sale</button>
-</div>
-</div>
-
-<div class="panel">
-<h3>Recent Sales</h3>
-<div class="tablewrap">
-<table>
-<thead><tr><th>Sale ID</th><th>Date</th><th>Branch</th><th>Items</th><th>Total</th></tr></thead>
-<tbody id="salesRows"></tbody>
-</table>
-</div>
-<div id="salesEmpty" class="empty">No sales recorded yet.</div>
-</div>
+<section id="branches" class="page hidden">
+  <h3>Branch Management</h3>
+  <div class="panel">
+    <input type="hidden" id="branchId">
+    <div class="grid">
+      <div><label>Branch Name</label><input id="branchName" placeholder="e.g. Main Branch"></div>
+      <div><label>Branch Address</label><input id="branchAddress" placeholder="Address"></div>
+    </div>
+    <button class="btn green" onclick="saveBranch()">Save Branch</button>
+    <button class="btn gray" onclick="resetBranchForm()">Clear</button>
+  </div>
+  <div class="panel">
+    <div class="table-wrap"><table>
+      <thead><tr><th>Branch</th><th>Address</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="branchesTable"></tbody>
+    </table></div>
+  </div>
 </section>
 
+<section id="pos" class="page hidden">
+  <h3>Point of Sale / New Invoice</h3>
+  <div class="panel">
+    <div class="grid">
+      <div><label>Select Branch</label><select id="saleBranch" onchange="renderSaleProductOptions()"></select></div>
+      <div><label>Customer Name</label><input id="saleCustomer" placeholder="Customer name"></div>
+      <div><label>Customer Phone</label><input id="salePhone" placeholder="03XXXXXXXXX" inputmode="tel"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Add Products to Bill</h3>
+    <div class="grid">
+      <div><label>Product</label><select id="saleProduct"></select></div>
+      <div><label>Quantity</label><input id="saleQty" type="number" min="1" value="1"></div>
+    </div>
+    <button class="btn" onclick="addToCart()">Add to Bill</button>
+  </div>
+  <div class="panel">
+    <h3>Current Bill</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead>
+      <tbody id="cartTable"></tbody>
+    </table></div>
+    <p class="total">Total: PKR <span id="cartTotal">0</span></p>
+    <div class="grid">
+      <div><label>Amount Received (PKR)</label><input id="salePaid" type="number" min="0" value="0" oninput="updateBalancePreview()"></div>
+      <div><label>Remaining Balance (PKR)</label><input id="saleBalance" readonly value="0"></div>
+    </div>
+    <button class="btn green" onclick="completeSale()">Complete Sale & Save Invoice</button>
+    <button class="btn red" onclick="clearCart()">Clear Bill</button>
+  </div>
+  <div class="panel">
+    <h3>Recent Sales & Invoices</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Branch</th><th>Total</th><th>Paid</th><th>Due</th><th>Action</th></tr></thead>
+      <tbody id="salesTable"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<section id="customers" class="page hidden">
+  <h3>Customer Records</h3>
+  <div class="cards" id="customerCards"></div>
+  <div class="panel">
+    <label>Search Customer</label>
+    <input id="customerSearch" placeholder="Search by name or phone" oninput="renderCustomers()">
+    <div class="table-wrap"><table>
+      <thead><tr><th>Customer</th><th>Phone</th><th>Orders</th><th>Total Purchases</th><th>Paid</th><th>Outstanding</th></tr></thead>
+      <tbody id="customersTable"></tbody>
+    </table></div>
+  </div>
+  <div class="panel">
+    <h3>Customer Invoices</h3>
+    <p class="muted">Select a customer from the list above to view their invoices.</p>
+    <div id="customerInvoices"></div>
+  </div>
+</section>
 </main>
 
-<!-- PRODUCT MODAL -->
-<div class="modal" id="productModal">
-<div class="dialog">
-<h3 id="productModalTitle">Add product</h3>
-<form id="productForm">
-<div class="formgrid">
-<div class="field full"><label>Product name *</label><input name="name" required maxlength="80"></div>
-<div class="field"><label>SKU / Barcode *</label><input name="sku" required maxlength="40"></div>
-<div class="field"><label>Category</label><input name="category" maxlength="50"></div>
-<div class="field"><label>Branch *</label><select name="branchId" required></select></div>
-<div class="field"><label>Quantity *</label><input name="qty" type="number" min="0" step="1" required></div>
-<div class="field"><label>Purchase cost (PKR) *</label><input name="cost" type="number" min="0" step="0.01" required></div>
-<div class="field"><label>Selling price (PKR) *</label><input name="price" type="number" min="0" step="0.01" required></div>
-<div class="field"><label>Low-stock alert at</label><input name="lowAt" type="number" min="0" step="1" value="5"></div>
-</div>
-<div class="actions">
-<button type="button" class="secondary" id="cancelProduct">Cancel</button>
-<button class="primary" type="submit">Save product</button>
-</div>
-</form>
-</div>
-</div>
-
-<!-- BRANCH MODAL -->
-<div class="modal" id="branchModal">
-<div class="dialog">
-<h3 id="branchModalTitle">Add branch</h3>
-<form id="branchForm">
-<div class="formgrid">
-<div class="field full"><label>Branch name *</label><input name="name" required maxlength="80"></div>
-<div class="field"><label>Branch code *</label><input name="code" required maxlength="20"></div>
-<div class="field"><label>Phone</label><input name="phone" maxlength="25"></div>
-</div>
-<div class="actions">
-<button type="button" class="secondary" id="cancelBranch">Cancel</button>
-<button class="primary" type="submit">Save branch</button>
-</div>
-</form>
-</div>
-</div>
+<footer>My Business ERP · Data is stored in this browser on this device.</footer>
 
 <script>
-const $=id=>document.getElementById(id);
+const KEY_PRODUCTS='mberp_products';
+const KEY_BRANCHES='mberp_branches';
+const KEY_SALES='mberp_sales';
 
-const load=(key,fallback)=>{
-try{
-const data=JSON.parse(localStorage.getItem(key));
-return Array.isArray(data)?data:fallback;
-}catch{return fallback}
-};
-
-let branches=load('mberp_branches',[]);
-let products=load('mberp_products',[]);
-let sales=load('mberp_sales',[]);
+function load(key,fallback){
+  try{return JSON.parse(localStorage.getItem(key)) ?? fallback}
+  catch(e){return fallback}
+}
+let products=load(KEY_PRODUCTS,[]);
+let branches=load(KEY_BRANCHES,[]);
+let sales=load(KEY_SALES,[]);
 let cart=[];
-let editingProduct=null;
-let editingBranch=null;
+let selectedCustomer=null;
 
-const money=n=>'₨'+Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2});
-
-const save=()=>{
-localStorage.setItem('mberp_branches',JSON.stringify(branches));
-localStorage.setItem('mberp_products',JSON.stringify(products));
-localStorage.setItem('mberp_sales',JSON.stringify(sales));
-};
-
-function esc(s){
-return String(s??'').replace(/[&<>"']/g,c=>({
-'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-}[c]));
+function saveAll(){
+  localStorage.setItem(KEY_PRODUCTS,JSON.stringify(products));
+  localStorage.setItem(KEY_BRANCHES,JSON.stringify(branches));
+  localStorage.setItem(KEY_SALES,JSON.stringify(sales));
 }
-
-function showModal(id,on){
-$(id).classList.toggle('show',on);
+function money(n){return Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2})}
+function esc(v){
+  return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+function id(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function branchName(bid){return branches.find(b=>b.id===bid)?.name||'Unknown Branch'}
+function activeBranches(){return branches.filter(b=>b.active!==false)}
+function saleTotal(s){return Number(s.total||0)}
+function salePaid(s){return Number(s.paid??s.total??0)}
+function saleDue(s){return Number(s.balance??Math.max(0,saleTotal(s)-salePaid(s)))}
+function invoiceNo(s){return s.invoiceNo||s.id||'OLD-INVOICE'}
 
-function tabs(){
-document.querySelectorAll('nav button').forEach(b=>{
-b.onclick=()=>{
-document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));
-['inventory','branches','pos'].forEach(id=>{
-$(id).classList.toggle('hidden',b.dataset.tab!==id);
+document.getElementById('today').textContent=new Date().toLocaleDateString();
+
+document.querySelectorAll('nav button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.remove('hidden');
+    renderAll();
+  });
 });
-if(b.dataset.tab==='pos')renderPOS();
-};
-});
+
+function showTab(tab){
+  document.querySelector(`nav button[data-tab="${tab}"]`).click();
 }
 
-function branchOptions(){
-let opts=branches.map(b=>`<option value="${b.id}">${esc(b.name)} (${esc(b.code)})</option>`).join('');
-
-$('branchFilter').innerHTML='<option value="">All branches</option>'+opts;
-
-$('productForm').elements.branchId.innerHTML=
-opts||'<option value="">Add a branch first</option>';
-
-renderPOS();
+function renderAll(){
+  renderBranchOptions();
+  renderProducts();
+  renderBranches();
+  renderSaleProductOptions();
+  renderCart();
+  renderSales();
+  renderCustomers();
+  renderDashboard();
 }
 
+function renderBranchOptions(){
+  const opts=branches.map(b=>`<option value="${esc(b.id)}">${esc(b.name)}${b.active===false?' (Inactive)':''}</option>`).join('');
+  const active=activeBranches().map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+  const p=document.getElementById('pBranch');
+  const f=document.getElementById('productFilter');
+  const s=document.getElementById('saleBranch');
+  const oldP=p.value,oldF=f.value,oldS=s.value;
+  p.innerHTML=opts||'<option value="">Add a branch first</option>';
+  f.innerHTML='<option value="">All Branches</option>'+opts;
+  s.innerHTML=active||'<option value="">No active branches</option>';
+  if([...p.options].some(o=>o.value===oldP))p.value=oldP;
+  if([...f.options].some(o=>o.value===oldF))f.value=oldF;
+  if([...s.options].some(o=>o.value===oldS))s.value=oldS;
+}
+
+function saveBranch(){
+  const name=document.getElementById('branchName').value.trim();
+  const address=document.getElementById('branchAddress').value.trim();
+  const bid=document.getElementById('branchId').value;
+  if(!name)return alert('Please enter branch name.');
+  if(bid){
+    const b=branches.find(x=>x.id===bid);
+    if(b){b.name=name;b.address=address}
+  }else branches.push({id:id(),name,address,active:true});
+  saveAll();resetBranchForm();renderAll();
+}
+function editBranch(bid){
+  const b=branches.find(x=>x.id===bid);if(!b)return;
+  document.getElementById('branchId').value=b.id;
+  document.getElementById('branchName').value=b.name;
+  document.getElementById('branchAddress').value=b.address||'';
+  showTab('branches');
+}
+function toggleBranch(bid){
+  const b=branches.find(x=>x.id===bid);if(!b)return;
+  b.active=b.active===false?true:false;
+  saveAll();renderAll();
+}
+function deleteBranch(bid){
+  if(products.some(p=>p.branchId===bid))return alert('This branch has products. Move or delete those products first.');
+  if(!confirm('Delete this branch?'))return;
+  branches=branches.filter(b=>b.id!==bid);saveAll();renderAll();
+}
+function resetBranchForm(){
+  document.getElementById('branchId').value='';
+  document.getElementById('branchName').value='';
+  document.getElementById('branchAddress').value='';
+}
 function renderBranches(){
-let q=$('branchSearch').value.toLowerCase();
-
-let list=branches.filter(b=>(b.name+' '+b.code).toLowerCase().includes(q));
-
-$('branchRows').innerHTML=list.map(b=>`
-<tr>
-<td>${esc(b.name)}</td>
-<td>${esc(b.code)}</td>
-<td>${esc(b.phone||'—')}</td>
-<td><span class="pill">${b.active?'Active':'Inactive'}</span></td>
-<td>
-<button class="secondary" onclick="editBranch('${b.id}')">Edit</button>
-<button class="secondary" onclick="toggleBranch('${b.id}')">${b.active?'Deactivate':'Activate'}</button>
-<button class="danger" onclick="deleteBranch('${b.id}')">Delete</button>
-</td>
-</tr>`).join('');
-
-$('branchEmpty').classList.toggle('hidden',list.length>0);
-$('totalBranches').textContent=branches.length;
-$('activeBranches').textContent=branches.filter(b=>b.active).length;
-$('inactiveBranches').textContent=branches.filter(b=>!b.active).length;
-
-branchOptions();
+  document.getElementById('branchesTable').innerHTML=branches.map(b=>`
+    <tr><td>${esc(b.name)}</td><td>${esc(b.address||'-')}</td>
+    <td>${b.active===false?'<span class="bad">Inactive</span>':'<span class="good">Active</span>'}</td>
+    <td class="actions">
+    <button class="btn small light" onclick="editBranch('${esc(b.id)}')">Edit</button>
+    <button class="btn small gray" onclick="toggleBranch('${esc(b.id)}')">${b.active===false?'Activate':'Deactivate'}</button>
+    <button class="btn small red" onclick="deleteBranch('${esc(b.id)}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="4" class="empty">No branches added.</td></tr>';
 }
 
+function saveProduct(){
+  const bid=document.getElementById('productId').value;
+  const name=document.getElementById('pName').value.trim();
+  const branchId=document.getElementById('pBranch').value;
+  const qty=Number(document.getElementById('pQty').value);
+  const cost=Number(document.getElementById('pCost').value);
+  const price=Number(document.getElementById('pPrice').value);
+  const alertQty=Number(document.getElementById('pAlert').value);
+  if(!name)return alert('Enter product name.');
+  if(!branchId)return alert('Please add a branch first.');
+  if([qty,cost,price,alertQty].some(x=>!Number.isFinite(x)||x<0))return alert('Enter valid non-negative numbers.');
+  const data={name,sku:document.getElementById('pSku').value.trim(),category:document.getElementById('pCategory').value.trim(),branchId,qty,cost,price,alert:alertQty};
+  if(bid){
+    const p=products.find(x=>x.id===bid);if(p)Object.assign(p,data);
+  }else products.push({id:id(),...data});
+  saveAll();resetProductForm();renderAll();
+}
+function editProduct(pid){
+  const p=products.find(x=>x.id===pid);if(!p)return;
+  document.getElementById('productId').value=p.id;
+  document.getElementById('pName').value=p.name||'';
+  document.getElementById('pSku').value=p.sku||'';
+  document.getElementById('pCategory').value=p.category||'';
+  document.getElementById('pBranch').value=p.branchId||'';
+  document.getElementById('pQty').value=p.qty||0;
+  document.getElementById('pCost').value=p.cost||0;
+  document.getElementById('pPrice').value=p.price||0;
+  document.getElementById('pAlert').value=p.alert??5;
+  document.getElementById('productFormTitle').textContent='Edit Product';
+  showTab('products');
+}
+function deleteProduct(pid){
+  if(!confirm('Delete this product?'))return;
+  products=products.filter(p=>p.id!==pid);saveAll();renderAll();
+}
+function resetProductForm(){
+  ['productId','pName','pSku','pCategory'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('pQty').value=0;
+  document.getElementById('pCost').value=0;
+  document.getElementById('pPrice').value=0;
+  document.getElementById('pAlert').value=5;
+  document.getElementById('productFormTitle').textContent='Add New Product';
+}
 function renderProducts(){
-let q=$('productSearch').value.toLowerCase();
-let filter=$('branchFilter').value;
-
-let list=products.filter(p=>
-(!filter||p.branchId===filter)&&
-(p.name+' '+p.sku+' '+p.category).toLowerCase().includes(q)
-);
-
-$('productRows').innerHTML=list.map(p=>{
-let b=branches.find(x=>x.id===p.branchId);
-let low=Number(p.qty)<=Number(p.lowAt);
-
-return `<tr>
-<td><b>${esc(p.name)}</b></td>
-<td>${esc(p.sku)}</td>
-<td>${esc(p.category||'—')}</td>
-<td>${esc(b?.name||'Deleted branch')}</td>
-<td>${Number(p.qty)}</td>
-<td>${money(p.cost)}</td>
-<td>${money(p.price)}</td>
-<td><span class="pill ${low?'low':''}">${low?'Low stock':'In stock'}</span></td>
-<td>
-<button class="secondary" onclick="editProduct('${p.id}')">Edit</button>
-<button class="danger" onclick="deleteProduct('${p.id}')">Delete</button>
-</td>
-</tr>`;
-}).join('');
-
-$('productEmpty').classList.toggle('hidden',list.length>0);
-
-$('totalProducts').textContent=products.length;
-$('totalUnits').textContent=products.reduce((s,p)=>s+Number(p.qty),0).toLocaleString('en-PK');
-$('lowCount').textContent=products.filter(p=>Number(p.qty)<=Number(p.lowAt)).length;
-$('stockValue').textContent=money(products.reduce((s,p)=>s+Number(p.qty)*Number(p.cost),0));
-
-renderPOS();
+  const q=(document.getElementById('productSearch').value||'').toLowerCase();
+  const filter=document.getElementById('productFilter').value;
+  const list=products.filter(p=>(!filter||p.branchId===filter)&&[p.name,p.sku,p.category].join(' ').toLowerCase().includes(q));
+  document.getElementById('productsTable').innerHTML=list.map(p=>`
+    <tr><td><b>${esc(p.name)}</b><br><small class="muted">${esc(p.category||'')}</small></td>
+    <td>${esc(p.sku||'-')}</td><td>${esc(branchName(p.branchId))}</td>
+    <td>${Number(p.qty||0)} ${Number(p.qty||0)<=Number(p.alert||0)?'<span class="bad">Low</span>':''}</td>
+    <td>${money(p.cost)}</td><td>${money(p.price)}</td><td>${money(Number(p.qty||0)*Number(p.cost||0))}</td>
+    <td class="actions"><button class="btn small light" onclick="editProduct('${esc(p.id)}')">Edit</button>
+    <button class="btn small red" onclick="deleteProduct('${esc(p.id)}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No products found.</td></tr>';
 }
 
-// BRANCH ACTIONS
-$('addBranch').onclick=()=>{
-editingBranch=null;
-$('branchForm').reset();
-$('branchModalTitle').textContent='Add branch';
-showModal('branchModal',true);
-};
-
-$('cancelBranch').onclick=()=>showModal('branchModal',false);
-
-$('branchForm').onsubmit=e=>{
-e.preventDefault();
-
-let f=new FormData(e.target);
-let name=f.get('name').trim();
-let code=f.get('code').trim().toUpperCase();
-
-if(branches.some(b=>b.code===code&&b.id!==editingBranch)){
-alert('This branch code already exists.');
-return;
+function renderSaleProductOptions(){
+  const bid=document.getElementById('saleBranch').value;
+  const list=products.filter(p=>p.branchId===bid&&Number(p.qty)>0);
+  document.getElementById('saleProduct').innerHTML=list.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} — ${money(p.price)} (Stock: ${p.qty})</option>`).join('')||'<option value="">No available stock</option>';
 }
-
-let old=branches.find(b=>b.id===editingBranch);
-
-let data={
-id:editingBranch||crypto.randomUUID(),
-name,code,
-phone:f.get('phone').trim(),
-active:old?old.active:true
-};
-
-if(editingBranch)branches=branches.map(b=>b.id===editingBranch?data:b);
-else branches.push(data);
-
-save();
-renderBranches();
-renderProducts();
-showModal('branchModal',false);
-};
-
-window.editBranch=id=>{
-let b=branches.find(x=>x.id===id);
-editingBranch=id;
-
-Object.entries({name:b.name,code:b.code,phone:b.phone}).forEach(([k,v])=>{
-$('branchForm').elements[k].value=v;
-});
-
-$('branchModalTitle').textContent='Edit branch';
-showModal('branchModal',true);
-};
-
-window.toggleBranch=id=>{
-let b=branches.find(x=>x.id===id);
-b.active=!b.active;
-save();
-renderBranches();
-renderProducts();
-};
-
-window.deleteBranch=id=>{
-if(products.some(p=>p.branchId===id)){
-alert('Move or delete this branch’s products before deleting the branch.');
-return;
+function addToCart(){
+  const pid=document.getElementById('saleProduct').value;
+  const qty=Number(document.getElementById('saleQty').value);
+  const p=products.find(x=>x.id===pid);
+  if(!p)return alert('Select a product with available stock.');
+  if(!Number.isInteger(qty)||qty<1)return alert('Enter a valid quantity.');
+  const existing=cart.find(x=>x.productId===pid);
+  const already=existing?existing.qty:0;
+  if(already+qty>Number(p.qty))return alert('Not enough stock. Available: '+p.qty);
+  if(existing)existing.qty+=qty;
+  else cart.push({productId:p.id,name:p.name,price:Number(p.price||0),qty});
+  document.getElementById('saleQty').value=1;
+  renderCart();
 }
-if(confirm('Delete this branch?')){
-branches=branches.filter(b=>b.id!==id);
-save();
-renderBranches();
-renderProducts();
-}
-};
-
-// PRODUCT ACTIONS
-$('addProduct').onclick=()=>{
-if(!branches.length){
-alert('Please add a branch first.');
-document.querySelector('[data-tab="branches"]').click();
-return;
-}
-
-editingProduct=null;
-$('productForm').reset();
-$('productForm').elements.lowAt.value=5;
-$('productModalTitle').textContent='Add product';
-branchOptions();
-showModal('productModal',true);
-};
-
-$('cancelProduct').onclick=()=>showModal('productModal',false);
-
-$('productForm').onsubmit=e=>{
-e.preventDefault();
-
-let f=new FormData(e.target);
-let sku=f.get('sku').trim().toUpperCase();
-
-if(products.some(p=>p.sku===sku&&p.id!==editingProduct)){
-alert('This SKU / barcode already exists.');
-return;
-}
-
-let p={
-id:editingProduct||crypto.randomUUID(),
-name:f.get('name').trim(),
-sku,
-category:f.get('category').trim(),
-branchId:f.get('branchId'),
-qty:Number(f.get('qty')),
-cost:Number(f.get('cost')),
-price:Number(f.get('price')),
-lowAt:Number(f.get('lowAt')||0)
-};
-
-if(editingProduct)products=products.map(x=>x.id===editingProduct?p:x);
-else products.push(p);
-
-save();
-renderProducts();
-showModal('productModal',false);
-};
-
-window.editProduct=id=>{
-let p=products.find(x=>x.id===id);
-editingProduct=id;
-branchOptions();
-
-Object.entries(p).forEach(([k,v])=>{
-if($('productForm').elements[k])$('productForm').elements[k].value=v;
-});
-
-$('productModalTitle').textContent='Edit product';
-showModal('productModal',true);
-};
-
-window.deleteProduct=id=>{
-if(confirm('Delete this product?')){
-products=products.filter(p=>p.id!==id);
-cart=cart.filter(item=>item.productId!==id);
-save();
-renderProducts();
-renderCart();
-}
-};
-
-// POS / SALES
-function renderPOS(){
-let activeBranches=branches.filter(b=>b.active);
-let previousBranch=$('posBranch').value;
-
-$('posBranch').innerHTML=activeBranches.length
-?activeBranches.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')
-:'<option value="">No active branch available</option>';
-
-if(activeBranches.some(b=>b.id===previousBranch)){
-$('posBranch').value=previousBranch;
-}
-
-let branchId=$('posBranch').value;
-
-let available=products.filter(p=>
-p.branchId===branchId&&Number(p.qty)>0
-);
-
-$('posProduct').innerHTML=available.length
-?available.map(p=>`<option value="${p.id}">${esc(p.name)} — ${money(p.price)} (Stock: ${p.qty})</option>`).join('')
-:'<option value="">No products in stock</option>';
-
-$('posBranch').disabled=cart.length>0;
-
-renderCart();
-renderSales();
-}
-
-$('posBranch').onchange=()=>{
-cart=[];
-renderPOS();
-};
-
-$('addToCart').onclick=()=>{
-let productId=$('posProduct').value;
-let qty=Number($('posQty').value);
-let product=products.find(p=>p.id===productId);
-
-if(!product){
-alert('Please select a product with available stock.');
-return;
-}
-
-if(!Number.isInteger(qty)||qty<1){
-alert('Enter a valid quantity.');
-return;
-}
-
-let existing=cart.find(item=>item.productId===productId);
-let alreadyInCart=existing?existing.qty:0;
-
-if(qty+alreadyInCart>Number(product.qty)){
-alert('Not enough stock available. Available stock: '+product.qty);
-return;
-}
-
-if(existing)existing.qty+=qty;
-else cart.push({
-productId:product.id,
-name:product.name,
-price:Number(product.price),
-qty
-});
-
-$('posQty').value=1;
-renderCart();
-renderPOS();
-};
-
+function cartAmount(){return cart.reduce((sum,x)=>sum+x.price*x.qty,0)}
 function renderCart(){
-$('cartRows').innerHTML=cart.map(item=>`
-<tr>
-<td>${esc(item.name)}</td>
-<td>${money(item.price)}</td>
-<td>${item.qty}</td>
-<td>${money(item.price*item.qty)}</td>
-<td><button class="danger" onclick="removeCartItem('${item.productId}')">Remove</button></td>
-</tr>`).join('');
-
-$('cartEmpty').classList.toggle('hidden',cart.length>0);
-
-let total=cart.reduce((sum,item)=>sum+item.price*item.qty,0);
-$('cartTotal').textContent=money(total);
+  document.getElementById('cartTable').innerHTML=cart.map((x,i)=>`
+    <tr><td>${esc(x.name)}</td><td>${money(x.price)}</td><td>${x.qty}</td><td>${money(x.price*x.qty)}</td>
+    <td><button class="btn small red" onclick="removeCartItem(${i})">Remove</button></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Your bill is empty.</td></tr>';
+  document.getElementById('cartTotal').textContent=money(cartAmount());
+  updateBalancePreview();
 }
-
-window.removeCartItem=id=>{
-cart=cart.filter(item=>item.productId!==id);
-renderPOS();
-};
-
-$('clearCart').onclick=()=>{
-if(cart.length&&confirm('Clear this bill?')){
-cart=[];
-renderPOS();
+function removeCartItem(i){cart.splice(i,1);renderCart()}
+function clearCart(){
+  if(cart.length&&!confirm('Clear the current bill?'))return;
+  cart=[];document.getElementById('salePaid').value=0;renderCart();
 }
-};
-
-$('completeSale').onclick=()=>{
-if(!cart.length){
-alert('Your bill is empty.');
-return;
+function updateBalancePreview(){
+  const total=cartAmount();
+  const paid=Number(document.getElementById('salePaid').value||0);
+  document.getElementById('saleBalance').value=money(Math.max(0,total-paid));
 }
-
-let branchId=$('posBranch').value;
-let branch=branches.find(b=>b.id===branchId);
-
-if(!branch||!branch.active){
-alert('Please select an active branch.');
-return;
+function nextInvoiceNumber(){
+  const year=new Date().getFullYear();
+  const number=sales.reduce((max,s)=>{
+    const match=String(s.invoiceNo||'').match(/INV-\d{4}-(\d+)/);
+    return match?Math.max(max,Number(match[1])):max;
+  },0)+1;
+  return 'INV-'+year+'-'+String(number).padStart(5,'0');
 }
-
-// Check all stock quantities again before saving.
-for(let item of cart){
-let product=products.find(p=>p.id===item.productId);
-
-if(!product||product.branchId!==branchId||Number(product.qty)<item.qty){
-alert('Stock changed or is insufficient for '+item.name+'. Please check the bill.');
-return;
+function completeSale(){
+  if(!cart.length)return alert('Add products to the bill first.');
+  const bid=document.getElementById('saleBranch').value;
+  if(!bid)return alert('Select an active branch.');
+  const customer=document.getElementById('saleCustomer').value.trim()||'Walk-in Customer';
+  const phone=document.getElementById('salePhone').value.trim();
+  const total=cartAmount();
+  const paid=Number(document.getElementById('salePaid').value||0);
+  if(!Number.isFinite(paid)||paid<0||paid>total)return alert('Paid amount must be between 0 and the bill total.');
+  for(const item of cart){
+    const p=products.find(x=>x.id===item.productId);
+    if(!p||Number(p.qty)<item.qty)return alert('Stock changed for '+item.name+'. Please check the cart.');
+  }
+  const invoice=nextInvoiceNumber();
+  const record={
+    id:id(),invoiceNo:invoice,date:new Date().toISOString(),
+    branchId:bid,branchName:branchName(bid),
+    customerName:customer,customerPhone:phone,
+    items:cart.map(x=>({...x})),total,paid,balance:total-paid
+  };
+  cart.forEach(item=>{
+    const p=products.find(x=>x.id===item.productId);
+    p.qty=Number(p.qty)-item.qty;
+  });
+  sales.unshift(record);
+  saveAll();
+  cart=[];
+  document.getElementById('saleCustomer').value='';
+  document.getElementById('salePhone').value='';
+  document.getElementById('salePaid').value=0;
+  renderAll();
+  alert('Sale saved successfully!\nInvoice: '+invoice);
+  printInvoice(record.id);
 }
-}
-
-let total=cart.reduce((sum,item)=>sum+item.price*item.qty,0);
-
-// Reduce stock after validation.
-cart.forEach(item=>{
-let product=products.find(p=>p.id===item.productId);
-product.qty=Number(product.qty)-item.qty;
-});
-
-let sale={
-id:crypto.randomUUID(),
-date:new Date().toISOString(),
-branchId:branch.id,
-branchName:branch.name,
-items:cart.map(item=>({...item})),
-total
-};
-
-sales.unshift(sale);
-cart=[];
-
-save();
-renderProducts();
-renderPOS();
-
-alert('Sale completed successfully! Total: '+money(total));
-};
 
 function renderSales(){
-let total=sales.reduce((sum,sale)=>sum+Number(sale.total),0);
-
-$('salesCount').textContent=sales.length;
-$('salesTotal').textContent=money(total);
-
-let recent=sales.slice(0,30);
-
-$('salesRows').innerHTML=recent.map(sale=>{
-let date=new Date(sale.date).toLocaleString('en-PK');
-let itemCount=sale.items.reduce((sum,item)=>sum+Number(item.qty),0);
-
-return `<tr>
-<td>${esc(sale.id.slice(0,8).toUpperCase())}</td>
-<td>${esc(date)}</td>
-<td>${esc(sale.branchName)}</td>
-<td>${itemCount}</td>
-<td><b>${money(sale.total)}</b></td>
-</tr>`;
-}).join('');
-
-$('salesEmpty').classList.toggle('hidden',recent.length>0);
+  document.getElementById('salesTable').innerHTML=sales.slice(0,100).map(s=>`
+    <tr><td><b>${esc(invoiceNo(s))}</b></td>
+    <td>${new Date(s.date||Date.now()).toLocaleDateString()}</td>
+    <td>${esc(s.customerName||'Walk-in Customer')}</td>
+    <td>${esc(s.branchName||branchName(s.branchId))}</td>
+    <td>${money(saleTotal(s))}</td><td>${money(salePaid(s))}</td>
+    <td class="${saleDue(s)>0?'bad':'good'}">${money(saleDue(s))}</td>
+    <td><button class="btn small light" onclick="printInvoice('${esc(s.id)}')">Print</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No sales yet.</td></tr>';
 }
 
-// SEARCH AND STARTUP
-$('branchSearch').oninput=renderBranches;
-$('productSearch').oninput=renderProducts;
-$('branchFilter').onchange=renderProducts;
+function printInvoice(sid){
+  const s=sales.find(x=>x.id===sid);if(!s)return alert('Invoice not found.');
+  const items=(s.items||[]).map(x=>`<tr><td>${esc(x.name)}</td><td>${money(x.price)}</td><td>${Number(x.qty||0)}</td><td>${money(Number(x.price||0)*Number(x.qty||0))}</td></tr>`).join('');
+  const total=saleTotal(s),paid=salePaid(s),due=saleDue(s);
+  const html=`<!DOCTYPE html><html><head><title>${esc(invoiceNo(s))}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+  body{font-family:Arial,sans-serif;color:#222;padding:25px;max-width:800px;margin:auto}
+  h1{text-align:center;margin-bottom:4px}p{text-align:center;color:#555}
+  .details{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;margin:25px 0}
+  table{width:100%;border-collapse:collapse;margin:20px 0}
+  th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left}
+  .totals{margin-left:auto;max-width:300px}
+  .totals div{display:flex;justify-content:space-between;padding:7px}
+  .due{font-size:19px;font-weight:bold;border-top:2px solid #222}
+  .thanks{text-align:center;margin-top:35px}
+  button{padding:10px 18px;background:#1769aa;color:white;border:0;border-radius:5px}
+  @media print{button{display:none}body{padding:0}}
+  </style></head><body>
+  <h1>MY BUSINESS ERP</h1><p>Sales Invoice</p><hr>
+  <div class="details">
+  <div><b>Invoice:</b> ${esc(invoiceNo(s))}<br><b>Date:</b> ${new Date(s.date||Date.now()).toLocaleString()}<br><b>Branch:</b> ${esc(s.branchName||branchName(s.branchId))}</div>
+  <div><b>Customer:</b> ${esc(s.customerName||'Walk-in Customer')}<br><b>Phone:</b> ${esc(s.customerPhone||'-')}</div>
+  </div>
+  <table><thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Amount</th></tr></thead><tbody>${items}</tbody></table>
+  <div class="totals">
+  <div><span>Total</span><b>PKR ${money(total)}</b></div>
+  <div><span>Paid</span><b>PKR ${money(paid)}</b></div>
+  <div class="due"><span>Balance Due</span><span>PKR ${money(due)}</span></div>
+  </div>
+  <div class="thanks"><p>Thank you for your business!</p></div>
+  <center><button onclick="window.print()">Print Invoice</button></center>
+  </body></html>`;
+  const win=window.open('','_blank');
+  if(!win)return alert('Your browser blocked the invoice window. Allow pop-ups for this website and try again.');
+  win.document.open();win.document.write(html);win.document.close();
+}
 
-tabs();
-renderBranches();
-renderProducts();
-renderPOS();
+function getCustomers(){
+  const map={};
+  sales.forEach(s=>{
+    const name=s.customerName||'Walk-in Customer';
+    const phone=s.customerPhone||'';
+    const key=phone?'phone:'+phone:'name:'+name.toLowerCase();
+    if(!map[key])map[key]={name,phone,orders:0,total:0,paid:0,due:0,sales:[]};
+    const c=map[key];c.orders++;c.total+=saleTotal(s);c.paid+=salePaid(s);c.due+=saleDue(s);c.sales.push(s);
+    if(name!=='Walk-in Customer')c.name=name;
+  });
+  return Object.entries(map).map(([key,value])=>({key,...value}));
+}
+function renderCustomers(){
+  const customers=getCustomers();
+  const due=customers.reduce((n,c)=>n+c.due,0);
+  document.getElementById('customerCards').innerHTML=`
+    <div class="card"><small>Total Customers</small><strong>${customers.filter(c=>c.name!=='Walk-in Customer'||c.phone).length}</strong></div>
+    <div class="card"><small>Total Customer Sales</small><strong>PKR ${money(customers.reduce((n,c)=>n+c.total,0))}</strong></div>
+    <div class="card"><small>Outstanding Balance</small><strong>PKR ${money(due)}</strong></div>`;
+  const q=(document.getElementById('customerSearch').value||'').toLowerCase();
+  const list=customers.filter(c=>(c.name+' '+c.phone).toLowerCase().includes(q));
+  document.getElementById('customersTable').innerHTML=list.map(c=>`
+    <tr><td><button class="btn small light" onclick="viewCustomer('${encodeURIComponent(c.key)}')">${esc(c.name)}</button></td>
+    <td>${esc(c.phone||'-')}</td><td>${c.orders}</td><td>${money(c.total)}</td><td>${money(c.paid)}</td>
+    <td class="${c.due>0?'bad':'good'}">${money(c.due)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">No customer records found.</td></tr>';
+}
+function viewCustomer(encoded){
+  const key=decodeURIComponent(encoded);
+  const c=getCustomers().find(x=>x.key===key);if(!c)return;
+  selectedCustomer=key;
+  document.getElementById('customerInvoices').innerHTML=`
+    <h3>${esc(c.name)} — ${esc(c.phone||'No phone')}</h3>
+    <p>Total purchases: PKR ${money(c.total)} | Outstanding: PKR ${money(c.due)}</p>
+    <div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Date</th><th>Total</th><th>Paid</th><th>Due</th><th>Action</th></tr></thead>
+    <tbody>${c.sales.map(s=>`<tr><td>${esc(invoiceNo(s))}</td><td>${new Date(s.date||Date.now()).toLocaleDateString()}</td><td>${money(saleTotal(s))}</td><td>${money(salePaid(s))}</td><td>${money(saleDue(s))}</td><td><button class="btn small light" onclick="printInvoice('${esc(s.id)}')">Print</button></td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderDashboard(){
+  const totalStock=products.reduce((n,p)=>n+Number(p.qty||0),0);
+  const stockValue=products.reduce((n,p)=>n+Number(p.qty||0)*Number(p.cost||0),0);
+  const revenue=sales.reduce((n,s)=>n+saleTotal(s),0);
+  const outstanding=sales.reduce((n,s)=>n+saleDue(s),0);
+  document.getElementById('dashboardCards').innerHTML=`
+    <div class="card"><small>Total Products</small><strong>${products.length}</strong></div>
+    <div class="card"><small>Total Stock Units</small><strong>${totalStock}</strong></div>
+    <div class="card"><small>Stock Value</small><strong>PKR ${money(stockValue)}</strong></div>
+    <div class="card"><small>Total Sales</small><strong>PKR ${money(revenue)}</strong></div>
+    <div class="card"><small>Outstanding Due</small><strong>PKR ${money(outstanding)}</strong></div>
+    <div class="card"><small>Branches</small><strong>${activeBranches().length}</strong></div>`;
+  document.getElementById('dashboardSales').innerHTML=sales.slice(0,7).map(s=>`
+    <tr><td>${esc(invoiceNo(s))}</td><td>${new Date(s.date||Date.now()).toLocaleDateString()}</td>
+    <td>${esc(s.customerName||'Walk-in Customer')}</td><td>${money(saleTotal(s))}</td><td>${money(saleDue(s))}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">No sales recorded.</td></tr>';
+  const low=products.filter(p=>Number(p.qty||0)<=Number(p.alert||0));
+  document.getElementById('lowStockTable').innerHTML=low.map(p=>`
+    <tr><td>${esc(p.name)}</td><td>${esc(branchName(p.branchId))}</td><td class="bad">${p.qty}</td><td>${p.alert??5}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">No low-stock products.</td></tr>';
+}
+
+renderAll();
 </script>
-
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My Business ERP</title>
-<style>
-:root{--navy:#102a43;--blue:#1769aa;--bg:#f3f6fa;--line:#e2e8f0;--muted:#64748b;--green:#16845b;--red:#c24141}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);font-family:Arial,sans-serif;color:#172b4d}
-header{background:var(--navy);color:#fff;padding:17px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-header h1{font-size:20px;margin:0}
-header small{color:#cbd5e1}
-nav{display:flex;gap:8px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--line);overflow:auto}
-nav button{white-space:nowrap;border:0;border-radius:8px;padding:10px 14px;background:#eef3f8;color:#24435f;font-weight:700}
-nav button.active{background:var(--blue);color:#fff}
-main{max-width:1100px;margin:22px auto;padding:0 15px}
-h2{font-size:21px;margin:0 0 5px}
-.sub{color:var(--muted);font-size:13px;margin:0 0 18px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:18px}
-.card,.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
-.card span{font-size:12px;color:var(--muted)}
-.card strong{display:block;font-size:24px;margin-top:8px}
-.panel{margin-bottom:16px}
-.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-input,select{padding:11px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;font-size:14px;min-width:0}
-.toolbar input{flex:1;min-width:150px}
-button{cursor:pointer}
-.primary{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:11px 15px;font-weight:700}
-.secondary{background:#eaf1f8;color:#24435f;border:0;border-radius:8px;padding:10px 13px;font-weight:700}
-.danger{background:#fff0f0;color:var(--red);border:0;border-radius:7px;padding:8px 10px}
-table{width:100%;border-collapse:collapse;min-width:700px}
-th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);font-size:13px}
-th{color:var(--muted);background:#f8fafc}
-.tablewrap{overflow-x:auto}
-.pill{padding:5px 8px;border-radius:20px;font-size:11px;font-weight:700;background:#e8f7ef;color:var(--green)}
-.low{background:#fff0e7;color:#b45309}
-.hidden{display:none!important}
-.notice{font-size:12px;color:var(--muted);line-height:1.5;background:#f8fafc;padding:12px;border-radius:8px}
-.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:15px;z-index:5}
-.modal.show{display:flex}
-.dialog{background:#fff;border-radius:13px;padding:19px;width:min(480px,100%);max-height:90vh;overflow:auto}
-.dialog h3{margin:0 0 14px}
-.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.field{display:flex;flex-direction:column;gap:5px}
-.field label{font-size:12px;color:var(--muted)}
-.field input,.field select{width:100%}
-.full{grid-column:1/-1}
-.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:15px}
-.empty{text-align:center;color:var(--muted);padding:25px}
-.pos-total{font-size:26px;font-weight:700;color:var(--green);margin:12px 0}
-.cart-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
-@media(max-width:560px){
-header h1{font-size:18px}
-.formgrid{grid-template-columns:1fr}
-.full{grid-column:auto}
-main{margin-top:16px}
-.card{padding:13px}
-}
-</style>
-</head>
-<body>
-
-<header>
-<div><h1>MY BUSINESS ERP</h1><small>Retail & Wholesale Management</small></div>
-<strong>PKR ₨</strong>
-</header>
-
-<nav>
-<button class="active" data-tab="inventory">Products & Inventory</button>
-<button data-tab="branches">Branches</button>
-<button data-tab="pos">POS / Sales</button>
-</nav>
-
-<main>
-
-<!-- INVENTORY -->
-<section id="inventory">
-<h2>Products & Inventory</h2>
-<p class="sub">Manage products and stock by branch</p>
-
-<div class="cards">
-<div class="card"><span>Total products</span><strong id="totalProducts">0</strong></div>
-<div class="card"><span>Total stock units</span><strong id="totalUnits">0</strong></div>
-<div class="card"><span>Low-stock products</span><strong id="lowCount">0</strong></div>
-<div class="card"><span>Stock value (cost)</span><strong id="stockValue">₨0</strong></div>
-</div>
-
-<div class="panel">
-<div class="toolbar">
-<select id="branchFilter" aria-label="Filter by branch"></select>
-<input id="productSearch" placeholder="Search product, SKU or category">
-<button class="primary" id="addProduct">+ Add product</button>
-</div>
-
-<div class="tablewrap">
-<table>
-<thead><tr>
-<th>Product</th><th>SKU / Barcode</th><th>Category</th><th>Branch</th><th>Qty</th><th>Cost</th><th>Selling</th><th>Status</th><th>Actions</th>
-</tr></thead>
-<tbody id="productRows"></tbody>
-</table>
-</div>
-<div id="productEmpty" class="empty hidden">No products yet. Tap “Add product” to add your first item.</div>
-</div>
-
-<p class="notice">Prototype notice: records are saved only in this browser on this device. They are not shared between branches, phones or computers. Do not enter real business records until we add secure user accounts, a central database and backups.</p>
-</section>
-
-<!-- BRANCHES -->
-<section id="branches" class="hidden">
-<h2>Branch Management</h2>
-<p class="sub">Create and manage your business locations</p>
-
-<div class="cards">
-<div class="card"><span>Total branches</span><strong id="totalBranches">0</strong></div>
-<div class="card"><span>Active branches</span><strong id="activeBranches">0</strong></div>
-<div class="card"><span>Inactive branches</span><strong id="inactiveBranches">0</strong></div>
-</div>
-
-<div class="panel">
-<div class="toolbar">
-<input id="branchSearch" placeholder="Search branch name or code">
-<button class="primary" id="addBranch">+ Add branch</button>
-</div>
-<div class="tablewrap">
-<table>
-<thead><tr><th>Branch</th><th>Code</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
-<tbody id="branchRows"></tbody>
-</table>
-</div>
-<div id="branchEmpty" class="empty hidden">No branches yet. Add your first branch.</div>
-</div>
-</section>
-
-<!-- POS / SALES -->
-<section id="pos" class="hidden">
-<h2>POS / Sales</h2>
-<p class="sub">Create customer bills and record sales</p>
-
-<div class="cards">
-<div class="card"><span>Total sales recorded</span><strong id="salesCount">0</strong></div>
-<div class="card"><span>Total sales amount</span><strong id="salesTotal">₨0</strong></div>
-</div>
-
-<div class="panel">
-<h3>New Sale</h3>
-
-<div class="toolbar">
-<select id="posBranch" aria-label="Select branch"></select>
-</div>
-
-<div class="formgrid">
-<div class="field full">
-<label>Choose product</label>
-<select id="posProduct"></select>
-</div>
-<div class="field">
-<label>Quantity</label>
-<input id="posQty" type="number" min="1" step="1" value="1">
-</div>
-<div class="field">
-<label>&nbsp;</label>
-<button class="primary" id="addToCart">Add to bill</button>
-</div>
-</div>
-</div>
-
-<div class="panel">
-<h3>Current Bill</h3>
-<div class="tablewrap">
-<table>
-<thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead>
-<tbody id="cartRows"></tbody>
-</table>
-</div>
-<div id="cartEmpty" class="empty">Your bill is empty. Add a product to begin.</div>
-<div class="pos-total">Total: <span id="cartTotal">₨0</span></div>
-<div class="cart-actions">
-<button class="secondary" id="clearCart">Clear bill</button>
-<button class="primary" id="completeSale">Complete sale</button>
-</div>
-</div>
-
-<div class="panel">
-<h3>Recent Sales</h3>
-<div class="tablewrap">
-<table>
-<thead><tr><th>Sale ID</th><th>Date</th><th>Branch</th><th>Items</th><th>Total</th></tr></thead>
-<tbody id="salesRows"></tbody>
-</table>
-</div>
-<div id="salesEmpty" class="empty">No sales recorded yet.</div>
-</div>
-</section>
-
-</main>
-
-<!-- PRODUCT MODAL -->
-<div class="modal" id="productModal">
-<div class="dialog">
-<h3 id="productModalTitle">Add product</h3>
-<form id="productForm">
-<div class="formgrid">
-<div class="field full"><label>Product name *</label><input name="name" required maxlength="80"></div>
-<div class="field"><label>SKU / Barcode *</label><input name="sku" required maxlength="40"></div>
-<div class="field"><label>Category</label><input name="category" maxlength="50"></div>
-<div class="field"><label>Branch *</label><select name="branchId" required></select></div>
-<div class="field"><label>Quantity *</label><input name="qty" type="number" min="0" step="1" required></div>
-<div class="field"><label>Purchase cost (PKR) *</label><input name="cost" type="number" min="0" step="0.01" required></div>
-<div class="field"><label>Selling price (PKR) *</label><input name="price" type="number" min="0" step="0.01" required></div>
-<div class="field"><label>Low-stock alert at</label><input name="lowAt" type="number" min="0" step="1" value="5"></div>
-</div>
-<div class="actions">
-<button type="button" class="secondary" id="cancelProduct">Cancel</button>
-<button class="primary" type="submit">Save product</button>
-</div>
-</form>
-</div>
-</div>
-
-<!-- BRANCH MODAL -->
-<div class="modal" id="branchModal">
-<div class="dialog">
-<h3 id="branchModalTitle">Add branch</h3>
-<form id="branchForm">
-<div class="formgrid">
-<div class="field full"><label>Branch name *</label><input name="name" required maxlength="80"></div>
-<div class="field"><label>Branch code *</label><input name="code" required maxlength="20"></div>
-<div class="field"><label>Phone</label><input name="phone" maxlength="25"></div>
-</div>
-<div class="actions">
-<button type="button" class="secondary" id="cancelBranch">Cancel</button>
-<button class="primary" type="submit">Save branch</button>
-</div>
-</form>
-</div>
-</div>
-
-<script>
-const $=id=>document.getElementById(id);
-
-const load=(key,fallback)=>{
-try{
-const data=JSON.parse(localStorage.getItem(key));
-return Array.isArray(data)?data:fallback;
-}catch{return fallback}
-};
-
-let branches=load('mberp_branches',[]);
-let products=load('mberp_products',[]);
-let sales=load('mberp_sales',[]);
-let cart=[];
-let editingProduct=null;
-let editingBranch=null;
-
-const money=n=>'₨'+Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2});
-
-const save=()=>{
-localStorage.setItem('mberp_branches',JSON.stringify(branches));
-localStorage.setItem('mberp_products',JSON.stringify(products));
-localStorage.setItem('mberp_sales',JSON.stringify(sales));
-};
-
-function esc(s){
-return String(s??'').replace(/[&<>"']/g,c=>({
-'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-}[c]));
-}
-
-function showModal(id,on){
-$(id).classList.toggle('show',on);
-}
-
-function tabs(){
-document.querySelectorAll('nav button').forEach(b=>{
-b.onclick=()=>{
-document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));
-['inventory','branches','pos'].forEach(id=>{
-$(id).classList.toggle('hidden',b.dataset.tab!==id);
-});
-if(b.dataset.tab==='pos')renderPOS();
-};
-});
-}
-
-function branchOptions(){
-let opts=branches.map(b=>`<option value="${b.id}">${esc(b.name)} (${esc(b.code)})</option>`).join('');
-
-$('branchFilter').innerHTML='<option value="">All branches</option>'+opts;
-
-$('productForm').elements.branchId.innerHTML=
-opts||'<option value="">Add a branch first</option>';
-
-renderPOS();
-}
-
-function renderBranches(){
-let q=$('branchSearch').value.toLowerCase();
-
-let list=branches.filter(b=>(b.name+' '+b.code).toLowerCase().includes(q));
-
-$('branchRows').innerHTML=list.map(b=>`
-<tr>
-<td>${esc(b.name)}</td>
-<td>${esc(b.code)}</td>
-<td>${esc(b.phone||'—')}</td>
-<td><span class="pill">${b.active?'Active':'Inactive'}</span></td>
-<td>
-<button class="secondary" onclick="editBranch('${b.id}')">Edit</button>
-<button class="secondary" onclick="toggleBranch('${b.id}')">${b.active?'Deactivate':'Activate'}</button>
-<button class="danger" onclick="deleteBranch('${b.id}')">Delete</button>
-</td>
-</tr>`).join('');
-
-$('branchEmpty').classList.toggle('hidden',list.length>0);
-$('totalBranches').textContent=branches.length;
-$('activeBranches').textContent=branches.filter(b=>b.active).length;
-$('inactiveBranches').textContent=branches.filter(b=>!b.active).length;
-
-branchOptions();
-}
-
-function renderProducts(){
-let q=$('productSearch').value.toLowerCase();
-let filter=$('branchFilter').value;
-
-let list=products.filter(p=>
-(!filter||p.branchId===filter)&&
-(p.name+' '+p.sku+' '+p.category).toLowerCase().includes(q)
-);
-
-$('productRows').innerHTML=list.map(p=>{
-let b=branches.find(x=>x.id===p.branchId);
-let low=Number(p.qty)<=Number(p.lowAt);
-
-return `<tr>
-<td><b>${esc(p.name)}</b></td>
-<td>${esc(p.sku)}</td>
-<td>${esc(p.category||'—')}</td>
-<td>${esc(b?.name||'Deleted branch')}</td>
-<td>${Number(p.qty)}</td>
-<td>${money(p.cost)}</td>
-<td>${money(p.price)}</td>
-<td><span class="pill ${low?'low':''}">${low?'Low stock':'In stock'}</span></td>
-<td>
-<button class="secondary" onclick="editProduct('${p.id}')">Edit</button>
-<button class="danger" onclick="deleteProduct('${p.id}')">Delete</button>
-</td>
-</tr>`;
-}).join('');
-
-$('productEmpty').classList.toggle('hidden',list.length>0);
-
-$('totalProducts').textContent=products.length;
-$('totalUnits').textContent=products.reduce((s,p)=>s+Number(p.qty),0).toLocaleString('en-PK');
-$('lowCount').textContent=products.filter(p=>Number(p.qty)<=Number(p.lowAt)).length;
-$('stockValue').textContent=money(products.reduce((s,p)=>s+Number(p.qty)*Number(p.cost),0));
-
-renderPOS();
-}
-
-// BRANCH ACTIONS
-$('addBranch').onclick=()=>{
-editingBranch=null;
-$('branchForm').reset();
-$('branchModalTitle').textContent='Add branch';
-showModal('branchModal',true);
-};
-
-$('cancelBranch').onclick=()=>showModal('branchModal',false);
-
-$('branchForm').onsubmit=e=>{
-e.preventDefault();
-
-let f=new FormData(e.target);
-let name=f.get('name').trim();
-let code=f.get('code').trim().toUpperCase();
-
-if(branches.some(b=>b.code===code&&b.id!==editingBranch)){
-alert('This branch code already exists.');
-return;
-}
-
-let old=branches.find(b=>b.id===editingBranch);
-
-let data={
-id:editingBranch||crypto.randomUUID(),
-name,code,
-phone:f.get('phone').trim(),
-active:old?old.active:true
-};
-
-if(editingBranch)branches=branches.map(b=>b.id===editingBranch?data:b);
-else branches.push(data);
-
-save();
-renderBranches();
-renderProducts();
-showModal('branchModal',false);
-};
-
-window.editBranch=id=>{
-let b=branches.find(x=>x.id===id);
-editingBranch=id;
-
-Object.entries({name:b.name,code:b.code,phone:b.phone}).forEach(([k,v])=>{
-$('branchForm').elements[k].value=v;
-});
-
-$('branchModalTitle').textContent='Edit branch';
-showModal('branchModal',true);
-};
-
-window.toggleBranch=id=>{
-let b=branches.find(x=>x.id===id);
-b.active=!b.active;
-save();
-renderBranches();
-renderProducts();
-};
-
-window.deleteBranch=id=>{
-if(products.some(p=>p.branchId===id)){
-alert('Move or delete this branch’s products before deleting the branch.');
-return;
-}
-if(confirm('Delete this branch?')){
-branches=branches.filter(b=>b.id!==id);
-save();
-renderBranches();
-renderProducts();
-}
-};
-
-// PRODUCT ACTIONS
-$('addProduct').onclick=()=>{
-if(!branches.length){
-alert('Please add a branch first.');
-document.querySelector('[data-tab="branches"]').click();
-return;
-}
-
-editingProduct=null;
-$('productForm').reset();
-$('productForm').elements.lowAt.value=5;
-$('productModalTitle').textContent='Add product';
-branchOptions();
-showModal('productModal',true);
-};
-
-$('cancelProduct').onclick=()=>showModal('productModal',false);
-
-$('productForm').onsubmit=e=>{
-e.preventDefault();
-
-let f=new FormData(e.target);
-let sku=f.get('sku').trim().toUpperCase();
-
-if(products.some(p=>p.sku===sku&&p.id!==editingProduct)){
-alert('This SKU / barcode already exists.');
-return;
-}
-
-let p={
-id:editingProduct||crypto.randomUUID(),
-name:f.get('name').trim(),
-sku,
-category:f.get('category').trim(),
-branchId:f.get('branchId'),
-qty:Number(f.get('qty')),
-cost:Number(f.get('cost')),
-price:Number(f.get('price')),
-lowAt:Number(f.get('lowAt')||0)
-};
-
-if(editingProduct)products=products.map(x=>x.id===editingProduct?p:x);
-else products.push(p);
-
-save();
-renderProducts();
-showModal('productModal',false);
-};
-
-window.editProduct=id=>{
-let p=products.find(x=>x.id===id);
-editingProduct=id;
-branchOptions();
-
-Object.entries(p).forEach(([k,v])=>{
-if($('productForm').elements[k])$('productForm').elements[k].value=v;
-});
-
-$('productModalTitle').textContent='Edit product';
-showModal('productModal',true);
-};
-
-window.deleteProduct=id=>{
-if(confirm('Delete this product?')){
-products=products.filter(p=>p.id!==id);
-cart=cart.filter(item=>item.productId!==id);
-save();
-renderProducts();
-renderCart();
-}
-};
-
-// POS / SALES
-function renderPOS(){
-let activeBranches=branches.filter(b=>b.active);
-let previousBranch=$('posBranch').value;
-
-$('posBranch').innerHTML=activeBranches.length
-?activeBranches.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')
-:'<option value="">No active branch available</option>';
-
-if(activeBranches.some(b=>b.id===previousBranch)){
-$('posBranch').value=previousBranch;
-}
-
-let branchId=$('posBranch').value;
-
-let available=products.filter(p=>
-p.branchId===branchId&&Number(p.qty)>0
-);
-
-$('posProduct').innerHTML=available.length
-?available.map(p=>`<option value="${p.id}">${esc(p.name)} — ${money(p.price)} (Stock: ${p.qty})</option>`).join('')
-:'<option value="">No products in stock</option>';
-
-$('posBranch').disabled=cart.length>0;
-
-renderCart();
-renderSales();
-}
-
-$('posBranch').onchange=()=>{
-cart=[];
-renderPOS();
-};
-
-$('addToCart').onclick=()=>{
-let productId=$('posProduct').value;
-let qty=Number($('posQty').value);
-let product=products.find(p=>p.id===productId);
-
-if(!product){
-alert('Please select a product with available stock.');
-return;
-}
-
-if(!Number.isInteger(qty)||qty<1){
-alert('Enter a valid quantity.');
-return;
-}
-
-let existing=cart.find(item=>item.productId===productId);
-let alreadyInCart=existing?existing.qty:0;
-
-if(qty+alreadyInCart>Number(product.qty)){
-alert('Not enough stock available. Available stock: '+product.qty);
-return;
-}
-
-if(existing)existing.qty+=qty;
-else cart.push({
-productId:product.id,
-name:product.name,
-price:Number(product.price),
-qty
-});
-
-$('posQty').value=1;
-renderCart();
-renderPOS();
-};
-
-function renderCart(){
-$('cartRows').innerHTML=cart.map(item=>`
-<tr>
-<td>${esc(item.name)}</td>
-<td>${money(item.price)}</td>
-<td>${item.qty}</td>
-<td>${money(item.price*item.qty)}</td>
-<td><button class="danger" onclick="removeCartItem('${item.productId}')">Remove</button></td>
-</tr>`).join('');
-
-$('cartEmpty').classList.toggle('hidden',cart.length>0);
-
-let total=cart.reduce((sum,item)=>sum+item.price*item.qty,0);
-$('cartTotal').textContent=money(total);
-}
-
-window.removeCartItem=id=>{
-cart=cart.filter(item=>item.productId!==id);
-renderPOS();
-};
-
-$('clearCart').onclick=()=>{
-if(cart.length&&confirm('Clear this bill?')){
-cart=[];
-renderPOS();
-}
-};
-
-$('completeSale').onclick=()=>{
-if(!cart.length){
-alert('Your bill is empty.');
-return;
-}
-
-let branchId=$('posBranch').value;
-let branch=branches.find(b=>b.id===branchId);
-
-if(!branch||!branch.active){
-alert('Please select an active branch.');
-return;
-}
-
-// Check all stock quantities again before saving.
-for(let item of cart){
-let product=products.find(p=>p.id===item.productId);
-
-if(!product||product.branchId!==branchId||Number(product.qty)<item.qty){
-alert('Stock changed or is insufficient for '+item.name+'. Please check the bill.');
-return;
-}
-}
-
-let total=cart.reduce((sum,item)=>sum+item.price*item.qty,0);
-
-// Reduce stock after validation.
-cart.forEach(item=>{
-let product=products.find(p=>p.id===item.productId);
-product.qty=Number(product.qty)-item.qty;
-});
-
-let sale={
-id:crypto.randomUUID(),
-date:new Date().toISOString(),
-branchId:branch.id,
-branchName:branch.name,
-items:cart.map(item=>({...item})),
-total
-};
-
-sales.unshift(sale);
-cart=[];
-
-save();
-renderProducts();
-renderPOS();
-
-alert('Sale completed successfully! Total: '+money(total));
-};
-
-function renderSales(){
-let total=sales.reduce((sum,sale)=>sum+Number(sale.total),0);
-
-$('salesCount').textContent=sales.length;
-$('salesTotal').textContent=money(total);
-
-let recent=sales.slice(0,30);
-
-$('salesRows').innerHTML=recent.map(sale=>{
-let date=new Date(sale.date).toLocaleString('en-PK');
-let itemCount=sale.items.reduce((sum,item)=>sum+Number(item.qty),0);
-
-return `<tr>
-<td>${esc(sale.id.slice(0,8).toUpperCase())}</td>
-<td>${esc(date)}</td>
-<td>${esc(sale.branchName)}</td>
-<td>${itemCount}</td>
-<td><b>${money(sale.total)}</b></td>
-</tr>`;
-}).join('');
-
-$('salesEmpty').classList.toggle('hidden',recent.length>0);
-}
-
-// SEARCH AND STARTUP
-$('branchSearch').oninput=renderBranches;
-$('productSearch').oninput=renderProducts;
-$('branchFilter').onchange=renderProducts;
-
-tabs();
-renderBranches();
-renderProducts();
-renderPOS();
-</script>
-
 </body>
 </html>
