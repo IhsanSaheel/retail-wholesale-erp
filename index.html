@@ -1,3 +1,4 @@
+renderAll();
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1069,6 +1070,458 @@ function renderDashboard(){
  document.getElementById('lowStockTable').innerHTML=low.map(p=>`
  <tr><td>${esc(p.name)}</td><td>${esc(branchName(p.branchId))}</td><td class="bad">${p.qty}</td><td>${p.alert??5}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">No low-stock products.</td></tr>';
 }
+
+/* SUPPLIER & PURCHASE MANAGEMENT */
+
+const KEY_SUPPLIERS='mberp_suppliers';
+const KEY_PURCHASES='mberp_purchases';
+const KEY_SUPPLIER_PAYMENTS='mberp_supplier_payments';
+
+let suppliers=load(KEY_SUPPLIERS,[]);
+let purchases=load(KEY_PURCHASES,[]);
+let supplierPayments=load(KEY_SUPPLIER_PAYMENTS,[]);
+let selectedSupplier=null;
+
+const originalSaveAll=saveAll;
+saveAll=function(){
+ originalSaveAll();
+ localStorage.setItem(KEY_SUPPLIERS,JSON.stringify(suppliers));
+ localStorage.setItem(KEY_PURCHASES,JSON.stringify(purchases));
+ localStorage.setItem(KEY_SUPPLIER_PAYMENTS,JSON.stringify(supplierPayments));
+};
+
+const originalRenderAll=renderAll;
+renderAll=function(){
+ originalRenderAll();
+ renderSupplierOptions();
+ renderSuppliers();
+ renderPurchases();
+ renderSupplierPayments();
+ renderSupplierDashboard();
+};
+
+const supplierNav=document.createElement('button');
+supplierNav.textContent='Suppliers & Purchases';
+supplierNav.dataset.tab='suppliers';
+document.querySelector('nav').appendChild(supplierNav);
+
+supplierNav.addEventListener('click',()=>{
+ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+ document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+ supplierNav.classList.add('active');
+ document.getElementById('suppliers').classList.remove('hidden');
+ renderAll();
+});
+
+const supplierSection=document.createElement('section');
+supplierSection.id='suppliers';
+supplierSection.className='page hidden';
+supplierSection.innerHTML=`
+<h3>Supplier & Purchase Management</h3>
+
+<div class="cards" id="supplierCards"></div>
+
+<div class="panel">
+<h3>Add Supplier</h3>
+<div class="grid">
+<div><label>Supplier Name</label><input id="supName" placeholder="Supplier name"></div>
+<div><label>Phone Number</label><input id="supPhone" placeholder="Phone number"></div>
+<div><label>Address</label><input id="supAddress" placeholder="Supplier address"></div>
+</div>
+<button class="btn green" onclick="saveSupplier()">Save Supplier</button>
+</div>
+
+<div class="panel">
+<h3>Supplier Records</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Supplier</th><th>Phone</th><th>Purchases</th><th>Paid</th><th>Outstanding</th><th>Action</th></tr></thead>
+<tbody id="suppliersTable"></tbody>
+</table></div>
+</div>
+
+<div class="panel">
+<h3>Record New Purchase</h3>
+<div class="grid">
+<div><label>Supplier</label><select id="purchaseSupplier"></select></div>
+<div><label>Receiving Branch</label><select id="purchaseBranch"></select></div>
+<div><label>Purchase Date</label><input id="purchaseDate" type="date"></div>
+<div><label>Product Name</label><input id="purchaseProduct" placeholder="Product name"></div>
+<div><label>SKU / Barcode</label><input id="purchaseSku" placeholder="Optional SKU"></div>
+<div><label>Category</label><input id="purchaseCategory" placeholder="Category"></div>
+<div><label>Quantity</label><input id="purchaseQty" type="number" min="1" value="1"></div>
+<div><label>Unit Purchase Cost (PKR)</label><input id="purchaseCost" type="number" min="0" value="0"></div>
+<div><label>Amount Paid (PKR)</label><input id="purchasePaid" type="number" min="0" value="0"></div>
+<div><label>Payment Method</label>
+<select id="purchaseMethod">
+<option>Cash</option><option>Bank Transfer</option><option>JazzCash</option><option>EasyPaisa</option><option>Cheque</option><option>Credit</option><option>Other</option>
+</select></div>
+<div><label>Note</label><input id="purchaseNote" placeholder="Optional note"></div>
+</div>
+<p class="total">Purchase Total: PKR <span id="purchaseTotal">0</span></p>
+<button class="btn green" onclick="savePurchase()">Save Purchase & Update Stock</button>
+<button class="btn gray" onclick="resetPurchaseForm()">Clear</button>
+</div>
+
+<div class="panel">
+<h3>Purchase History</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Purchase No.</th><th>Date</th><th>Supplier</th><th>Branch</th><th>Product</th><th>Qty</th><th>Total</th><th>Paid</th><th>Due</th><th>Action</th></tr></thead>
+<tbody id="purchasesTable"></tbody>
+</table></div>
+</div>
+
+<div class="panel">
+<h3>Supplier Ledger & Payment Collection</h3>
+<div class="grid">
+<div><label>Select Supplier</label><select id="supplierLedger" onchange="renderSupplierLedger()"></select></div>
+<div><label>Outstanding Balance (PKR)</label><input id="supplierDue" readonly value="0"></div>
+<div><label>Payment Amount (PKR)</label><input id="supplierPaymentAmount" type="number" min="0" placeholder="Enter amount"></div>
+<div><label>Payment Method</label>
+<select id="supplierPaymentMethod">
+<option>Cash</option><option>Bank Transfer</option><option>JazzCash</option><option>EasyPaisa</option><option>Cheque</option><option>Other</option>
+</select></div>
+<div><label>Payment Note</label><input id="supplierPaymentNote" placeholder="Optional note"></div>
+</div>
+<button class="btn green" onclick="recordSupplierPayment()">Save Supplier Payment</button>
+<div id="supplierLedgerDetails"></div>
+</div>
+
+<div class="panel">
+<h3>Supplier Payment History</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Date</th><th>Receipt</th><th>Supplier</th><th>Method</th><th>Amount</th></tr></thead>
+<tbody id="supplierPaymentsTable"></tbody>
+</table></div>
+</div>
+`;
+document.querySelector('main').appendChild(supplierSection);
+
+document.getElementById('purchaseDate').value=todayISO();
+
+document.getElementById('purchaseQty').addEventListener('input',updatePurchaseTotal);
+document.getElementById('purchaseCost').addEventListener('input',updatePurchaseTotal);
+
+function supplierName(sid){
+ return suppliers.find(s=>s.id===sid)?.name||'Unknown Supplier';
+}
+
+function supplierTotal(sid){
+ return purchases.filter(p=>p.supplierId===sid)
+ .reduce((n,p)=>n+Number(p.total||0),0);
+}
+
+function supplierPaid(sid){
+ const purchasePaid=purchases.filter(p=>p.supplierId===sid)
+ .reduce((n,p)=>n+Number(p.paid||0),0);
+ const laterPaid=supplierPayments.filter(p=>p.supplierId===sid)
+ .reduce((n,p)=>n+Number(p.amount||0),0);
+ return purchasePaid+laterPaid;
+}
+
+function supplierDue(sid){
+ return Math.max(0,supplierTotal(sid)-supplierPaid(sid));
+}
+
+function renderSupplierOptions(){
+ const supplierOptions=suppliers.map(s=>
+ `<option value="${esc(s.id)}">${esc(s.name)}</option>`
+ ).join('');
+
+ const branchOptions=activeBranches().map(b=>
+ `<option value="${esc(b.id)}">${esc(b.name)}</option>`
+ ).join('');
+
+ ['purchaseSupplier','supplierLedger'].forEach(id=>{
+  const el=document.getElementById(id);
+  const old=el.value;
+  el.innerHTML='<option value="">Select Supplier</option>'+supplierOptions;
+  if([...el.options].some(o=>o.value===old))el.value=old;
+ });
+
+ const branch=document.getElementById('purchaseBranch');
+ const oldBranch=branch.value;
+ branch.innerHTML='<option value="">Select Branch</option>'+branchOptions;
+ if([...branch.options].some(o=>o.value===oldBranch))branch.value=oldBranch;
+}
+
+function saveSupplier(){
+ const name=document.getElementById('supName').value.trim();
+ const phone=document.getElementById('supPhone').value.trim();
+ const address=document.getElementById('supAddress').value.trim();
+
+ if(!name)return alert('Enter supplier name.');
+
+ suppliers.push({id:id(),name,phone,address,createdAt:new Date().toISOString()});
+ saveAll();
+ document.getElementById('supName').value='';
+ document.getElementById('supPhone').value='';
+ document.getElementById('supAddress').value='';
+ renderAll();
+ alert('Supplier saved successfully.');
+}
+
+function renderSuppliers(){
+ document.getElementById('suppliersTable').innerHTML=suppliers.map(s=>`
+ <tr>
+ <td><b>${esc(s.name)}</b><br><small>${esc(s.address||'')}</small></td>
+ <td>${esc(s.phone||'-')}</td>
+ <td>${money(supplierTotal(s.id))}</td>
+ <td>${money(supplierPaid(s.id))}</td>
+ <td class="${supplierDue(s.id)>0?'bad':'good'}">${money(supplierDue(s.id))}</td>
+ <td><button class="btn small light" onclick="openSupplierLedger('${esc(s.id)}')">View Ledger</button></td>
+ </tr>`).join('')||
+ '<tr><td colspan="6" class="empty">No suppliers added.</td></tr>';
+}
+
+function openSupplierLedger(sid){
+ document.getElementById('supplierLedger').value=sid;
+ renderSupplierLedger();
+}
+
+function updatePurchaseTotal(){
+ const qty=Number(document.getElementById('purchaseQty').value||0);
+ const cost=Number(document.getElementById('purchaseCost').value||0);
+ document.getElementById('purchaseTotal').textContent=money(qty*cost);
+}
+
+function nextPurchaseNumber(){
+ const year=new Date().getFullYear();
+ const number=purchases.reduce((max,p)=>{
+  const match=String(p.purchaseNo||'').match(/PUR-\d{4}-(\d+)/);
+  return match?Math.max(max,Number(match[1])):max;
+ },0)+1;
+ return 'PUR-'+year+'-'+String(number).padStart(5,'0');
+}
+
+function savePurchase(){
+ const supplierId=document.getElementById('purchaseSupplier').value;
+ const branchId=document.getElementById('purchaseBranch').value;
+ const name=document.getElementById('purchaseProduct').value.trim();
+ const sku=document.getElementById('purchaseSku').value.trim();
+ const category=document.getElementById('purchaseCategory').value.trim();
+ const qty=Number(document.getElementById('purchaseQty').value);
+ const cost=Number(document.getElementById('purchaseCost').value);
+ const paid=Number(document.getElementById('purchasePaid').value);
+ const date=document.getElementById('purchaseDate').value;
+ const total=qty*cost;
+
+ if(!supplierId)return alert('Select a supplier.');
+ if(!branchId)return alert('Select a receiving branch.');
+ if(!name)return alert('Enter product name.');
+ if(!Number.isInteger(qty)||qty<=0)return alert('Enter a valid whole-number quantity.');
+ if(!Number.isFinite(cost)||cost<0)return alert('Enter a valid purchase cost.');
+ if(!Number.isFinite(paid)||paid<0||paid>total)return alert('Paid amount must be between zero and the purchase total.');
+ if(!date)return alert('Select purchase date.');
+
+ const supplier=suppliers.find(s=>s.id===supplierId);
+ const branch=branches.find(b=>b.id===branchId);
+ if(!supplier||!branch||branch.active===false)return alert('Select a valid active supplier and branch.');
+
+ let product=products.find(p=>
+  p.branchId===branchId&&
+  (
+   (sku&&p.sku&&String(p.sku).trim().toLowerCase()===sku.toLowerCase())||
+   (!sku&&!p.sku&&String(p.name).trim().toLowerCase()===name.toLowerCase())
+  )
+ );
+
+ if(!confirm(
+  'Save this purchase?\n\nProduct: '+name+
+  '\nQuantity: '+qty+
+  '\nTotal: PKR '+money(total)+
+  '\nPaid: PKR '+money(paid)+
+  '\nDue: PKR '+money(total-paid)
+ ))return;
+
+ if(product){
+  product.qty=Number(product.qty||0)+qty;
+  product.cost=cost;
+  if(category)product.category=category;
+ }else{
+  product={
+   id:id(),name,sku,category,branchId,
+   qty,cost,price:cost,alert:5
+  };
+  products.push(product);
+ }
+
+ const purchase={
+  id:id(),
+  purchaseNo:nextPurchaseNumber(),
+  supplierId,
+  supplierName:supplier.name,
+  branchId,
+  branchName:branch.name,
+  productId:product.id,
+  productName:name,
+  sku,
+  qty,cost,total,paid,
+  balance:total-paid,
+  date,
+  method:document.getElementById('purchaseMethod').value,
+  note:document.getElementById('purchaseNote').value.trim(),
+  createdAt:new Date().toISOString()
+ };
+
+ purchases.unshift(purchase);
+ saveAll();
+ resetPurchaseForm();
+ renderAll();
+ alert('Purchase saved successfully. Branch stock has been increased.');
+}
+
+function resetPurchaseForm(){
+ document.getElementById('purchaseProduct').value='';
+ document.getElementById('purchaseSku').value='';
+ document.getElementById('purchaseCategory').value='';
+ document.getElementById('purchaseQty').value=1;
+ document.getElementById('purchaseCost').value=0;
+ document.getElementById('purchasePaid').value=0;
+ document.getElementById('purchaseDate').value=todayISO();
+ document.getElementById('purchaseMethod').value='Cash';
+ document.getElementById('purchaseNote').value='';
+ updatePurchaseTotal();
+}
+
+function renderPurchases(){
+ document.getElementById('purchasesTable').innerHTML=purchases.map(p=>`
+ <tr>
+ <td><b>${esc(p.purchaseNo||p.id)}</b></td>
+ <td>${esc(p.date)}</td>
+ <td>${esc(p.supplierName||supplierName(p.supplierId))}</td>
+ <td>${esc(p.branchName||branchName(p.branchId))}</td>
+ <td>${esc(p.productName)}</td>
+ <td>${Number(p.qty)}</td>
+ <td>${money(p.total)}</td>
+ <td>${money(p.paid)}</td>
+ <td class="${Number(p.balance)>0?'bad':'good'}">${money(p.balance)}</td>
+ <td><button class="btn small light" onclick="printPurchase('${esc(p.id)}')">Print</button></td>
+ </tr>`).join('')||
+ '<tr><td colspan="10" class="empty">No purchases recorded.</td></tr>';
+}
+
+function renderSupplierLedger(){
+ const sid=document.getElementById('supplierLedger').value;
+ const due=document.getElementById('supplierDue');
+ const details=document.getElementById('supplierLedgerDetails');
+
+ if(!sid){
+  due.value='0';
+  details.innerHTML='';
+  return;
+ }
+
+ due.value=money(supplierDue(sid));
+ const list=purchases.filter(p=>p.supplierId===sid);
+ const history=supplierPayments.filter(p=>p.supplierId===sid);
+
+ details.innerHTML=`
+ <h3>${esc(supplierName(sid))}</h3>
+ <p>Total Purchases: PKR ${money(supplierTotal(sid))}</p>
+ <p>Total Paid: PKR ${money(supplierPaid(sid))}</p>
+ <p class="bad"><b>Outstanding: PKR ${money(supplierDue(sid))}</b></p>
+ <div class="table-wrap"><table>
+ <thead><tr><th>Purchase</th><th>Date</th><th>Product</th><th>Total</th><th>Paid</th><th>Due</th></tr></thead>
+ <tbody>${list.map(p=>`
+ <tr><td>${esc(p.purchaseNo)}</td><td>${esc(p.date)}</td>
+ <td>${esc(p.productName)}</td><td>${money(p.total)}</td>
+ <td>${money(p.paid)}</td><td>${money(p.balance)}</td></tr>
+ `).join('')||'<tr><td colspan="6">No purchases.</td></tr>'}</tbody>
+ </table></div>
+ <h3>Payment Records</h3>
+ <div class="table-wrap"><table>
+ <thead><tr><th>Date</th><th>Receipt</th><th>Method</th><th>Amount</th></tr></thead>
+ <tbody>${history.map(p=>`
+ <tr><td>${esc(p.date)}</td><td>${esc(p.receiptNo)}</td>
+ <td>${esc(p.method)}</td><td>${money(p.amount)}</td></tr>
+ `).join('')||'<tr><td colspan="4">No later payments.</td></tr>'}</tbody>
+ </table></div>`;
+}
+
+function recordSupplierPayment(){
+ const sid=document.getElementById('supplierLedger').value;
+ const amount=Number(document.getElementById('supplierPaymentAmount').value);
+ if(!sid)return alert('Select a supplier first.');
+ const due=supplierDue(sid);
+ if(!Number.isFinite(amount)||amount<=0)return alert('Enter a payment greater than zero.');
+ if(amount>due)return alert('Payment cannot exceed the outstanding balance of PKR '+money(due)+'.');
+
+ const payment={
+  id:id(),
+  receiptNo:'SPR-'+new Date().getFullYear()+'-'+String(supplierPayments.length+1).padStart(5,'0'),
+  supplierId:sid,
+  supplierName:supplierName(sid),
+  amount,
+  method:document.getElementById('supplierPaymentMethod').value,
+  note:document.getElementById('supplierPaymentNote').value.trim(),
+  date:new Date().toISOString()
+ };
+
+ supplierPayments.unshift(payment);
+ saveAll();
+ document.getElementById('supplierPaymentAmount').value='';
+ document.getElementById('supplierPaymentNote').value='';
+ renderAll();
+ document.getElementById('supplierLedger').value=sid;
+ renderSupplierLedger();
+ alert('Supplier payment saved. Receipt: '+payment.receiptNo);
+}
+
+function renderSupplierPayments(){
+ document.getElementById('supplierPaymentsTable').innerHTML=supplierPayments.map(p=>`
+ <tr><td>${new Date(p.date).toLocaleString()}</td>
+ <td>${esc(p.receiptNo)}</td><td>${esc(p.supplierName)}</td>
+ <td>${esc(p.method)}</td><td>${money(p.amount)}</td></tr>
+ `).join('')||
+ '<tr><td colspan="5" class="empty">No supplier payments recorded.</td></tr>';
+}
+
+function renderSupplierDashboard(){
+ const total=suppliers.reduce((n,s)=>n+supplierTotal(s.id),0);
+ const paid=suppliers.reduce((n,s)=>n+supplierPaid(s.id),0);
+ const due=suppliers.reduce((n,s)=>n+supplierDue(s.id),0);
+
+ document.getElementById('supplierCards').innerHTML=`
+ <div class="card"><small>Total Suppliers</small><strong>${suppliers.length}</strong></div>
+ <div class="card"><small>Total Purchases</small><strong>PKR ${money(total)}</strong></div>
+ <div class="card"><small>Total Paid</small><strong>PKR ${money(paid)}</strong></div>
+ <div class="card"><small>Outstanding to Suppliers</small><strong>PKR ${money(due)}</strong></div>`;
+}
+
+function printPurchase(pid){
+ const p=purchases.find(x=>x.id===pid);
+ if(!p)return alert('Purchase not found.');
+
+ const html=`<!DOCTYPE html><html><head><title>${esc(p.purchaseNo)}</title>
+ <meta name="viewport" content="width=device-width,initial-scale=1">
+ <style>body{font-family:Arial;padding:25px;max-width:700px;margin:auto}
+ h1{text-align:center}table{width:100%;border-collapse:collapse;margin:20px 0}
+ td,th{padding:10px;border-bottom:1px solid #ddd;text-align:left}
+ .total{text-align:right;font-size:18px;font-weight:bold}
+ button{padding:10px;background:#1769aa;color:white;border:0}
+ @media print{button{display:none}}</style></head><body>
+ <h1>MY BUSINESS ERP</h1><center>Purchase Record</center><hr>
+ <p><b>Purchase No:</b> ${esc(p.purchaseNo)}<br>
+ <b>Date:</b> ${esc(p.date)}<br>
+ <b>Supplier:</b> ${esc(p.supplierName)}<br>
+ <b>Receiving Branch:</b> ${esc(p.branchName)}</p>
+ <table><thead><tr><th>Product</th><th>Quantity</th><th>Unit Cost</th><th>Total</th></tr></thead>
+ <tbody><tr><td>${esc(p.productName)}</td><td>${p.qty}</td>
+ <td>PKR ${money(p.cost)}</td><td>PKR ${money(p.total)}</td></tr></tbody></table>
+ <p class="total">Total: PKR ${money(p.total)}</p>
+ <p class="total">Paid: PKR ${money(p.paid)}</p>
+ <p class="total">Balance: PKR ${money(p.balance)}</p>
+ <center><button onclick="window.print()">Print Purchase</button></center>
+ </body></html>`;
+
+ const win=window.open('','_blank');
+ if(!win)return alert('Allow pop-ups to print purchase records.');
+ win.document.open();
+ win.document.write(html);
+ win.document.close();
+}
+
+updatePurchaseTotal();
 
 renderAll();
 </script>
