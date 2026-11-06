@@ -53,6 +53,7 @@ footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
 <button class="active" data-tab="dashboard">Dashboard</button>
 <button data-tab="products">Products & Inventory</button>
 <button data-tab="branches">Branches</button>
+<button data-tab="transfers">Stock Transfer</button>
 <button data-tab="pos">POS / Sales</button>
 <button data-tab="customers">Customers & Ledger</button>
 <button data-tab="expenses">Expenses</button>
@@ -125,6 +126,68 @@ footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
 <thead><tr><th>Branch</th><th>Address</th><th>Status</th><th>Actions</th></tr></thead>
 <tbody id="branchesTable"></tbody>
 </table></div></div>
+</section>
+
+<!-- STOCK TRANSFER -->
+<section id="transfers" class="page hidden">
+<h3>Stock Transfer Between Branches</h3>
+
+<div class="panel">
+<h3>New Stock Transfer</h3>
+<p class="muted">Transfer products from one branch to another. Stock will update automatically in both branches.</p>
+
+<div class="grid">
+<div>
+<label>Sending Branch</label>
+<select id="transferFrom" onchange="renderTransferProductOptions()"></select>
+</div>
+<div>
+<label>Receiving Branch</label>
+<select id="transferTo"></select>
+</div>
+<div>
+<label>Product</label>
+<select id="transferProduct"></select>
+</div>
+<div>
+<label>Transfer Quantity</label>
+<input id="transferQty" type="number" min="1" step="1" value="1">
+</div>
+<div>
+<label>Transfer Date</label>
+<input id="transferDate" type="date">
+</div>
+<div>
+<label>Note (Optional)</label>
+<input id="transferNote" placeholder="Reason or additional details">
+</div>
+</div>
+
+<button class="btn green" onclick="completeTransfer()">Complete Stock Transfer</button>
+<button class="btn gray" onclick="resetTransferForm()">Clear</button>
+</div>
+
+<div class="cards" id="transferCards"></div>
+
+<div class="panel">
+<h3>Stock Transfer History</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transfer No.</th>
+<th>Product</th>
+<th>From Branch</th>
+<th>To Branch</th>
+<th>Quantity</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody id="transfersTable"></tbody>
+</table>
+</div>
+</div>
 </section>
 
 <section id="pos" class="page hidden">
@@ -289,6 +352,7 @@ const KEY_BRANCHES='mberp_branches';
 const KEY_SALES='mberp_sales';
 const KEY_PAYMENTS='mberp_payments';
 const KEY_EXPENSES='mberp_expenses';
+const KEY_TRANSFERS='mberp_transfers';
 
 function load(key,fallback){
  try{return JSON.parse(localStorage.getItem(key))??fallback}catch(e){return fallback}
@@ -298,6 +362,7 @@ let branches=load(KEY_BRANCHES,[]);
 let sales=load(KEY_SALES,[]);
 let payments=load(KEY_PAYMENTS,[]);
 let expenses=load(KEY_EXPENSES,[]);
+let transfers=load(KEY_TRANSFERS,[]);
 let cart=[];
 let selectedCustomer=null;
 let selectedInvoice=null;
@@ -308,6 +373,7 @@ function saveAll(){
  localStorage.setItem(KEY_SALES,JSON.stringify(sales));
  localStorage.setItem(KEY_PAYMENTS,JSON.stringify(payments));
  localStorage.setItem(KEY_EXPENSES,JSON.stringify(expenses));
+ localStorage.setItem(KEY_TRANSFERS,JSON.stringify(transfers));
 }
 function money(n){return Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2})}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -324,6 +390,7 @@ function todayISO(){return new Date().toISOString().slice(0,10)}
 
 document.getElementById('today').textContent=new Date().toLocaleDateString();
 document.getElementById('expenseDate').value=todayISO();
+document.getElementById('transferDate').value=todayISO();
 
 document.querySelectorAll('nav button').forEach(btn=>{
  btn.addEventListener('click',()=>{
@@ -349,6 +416,9 @@ function renderAll(){
  renderExpenseBranchOptions();
  renderExpenses();
  renderProfitLoss();
+ renderTransferOptions();
+ renderTransferProductOptions();
+ renderTransfers();
 }
 
 function renderBranchOptions(){
@@ -386,12 +456,14 @@ function toggleBranch(bid){
 }
 function deleteBranch(bid){
  if(products.some(p=>p.branchId===bid))return alert('This branch has products. Move or delete them first.');
+ if(transfers.some(t=>t.fromBranchId===bid||t.toBranchId===bid))return alert('This branch has stock transfer history. Keep the branch to preserve your records.');
  if(!confirm('Delete this branch?'))return;
  branches=branches.filter(b=>b.id!==bid);saveAll();renderAll();
 }
 function resetBranchForm(){
  ['branchId','branchName','branchAddress'].forEach(x=>document.getElementById(x).value='');
 }
+
 function renderBranches(){
  document.getElementById('branchesTable').innerHTML=branches.map(b=>`
  <tr><td>${esc(b.name)}</td><td>${esc(b.address||'-')}</td>
@@ -455,6 +527,171 @@ function renderProducts(){
  <td><button class="btn small light" onclick="editProduct('${esc(p.id)}')">Edit</button>
  <button class="btn small red" onclick="deleteProduct('${esc(p.id)}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No products found.</td></tr>';
 }
+
+/* STOCK TRANSFER MANAGEMENT */
+
+function renderTransferOptions(){
+ const from=document.getElementById('transferFrom');
+ const to=document.getElementById('transferTo');
+ const oldFrom=from.value;
+ const oldTo=to.value;
+ const options=activeBranches().map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+ from.innerHTML=options||'<option value="">No active branches</option>';
+ to.innerHTML=options||'<option value="">No active branches</option>';
+
+ if([...from.options].some(o=>o.value===oldFrom))from.value=oldFrom;
+ if([...to.options].some(o=>o.value===oldTo))to.value=oldTo;
+
+ if(from.value===to.value&&to.options.length>1){
+  const other=[...to.options].find(o=>o.value!==from.value);
+  if(other)to.value=other.value;
+ }
+}
+
+function renderTransferProductOptions(){
+ const fromId=document.getElementById('transferFrom').value;
+ const select=document.getElementById('transferProduct');
+ const old=select.value;
+ const list=products.filter(p=>p.branchId===fromId&&Number(p.qty)>0);
+
+ select.innerHTML=list.map(p=>
+  `<option value="${esc(p.id)}">${esc(p.name)}${p.sku?' ('+esc(p.sku)+')':''} — Stock: ${Number(p.qty)}</option>`
+ ).join('')||'<option value="">No available stock in this branch</option>';
+
+ if([...select.options].some(o=>o.value===old))select.value=old;
+}
+
+function nextTransferNumber(){
+ const year=new Date().getFullYear();
+ const number=transfers.reduce((max,t)=>{
+  const match=String(t.transferNo||'').match(/TRF-\d{4}-(\d+)/);
+  return match?Math.max(max,Number(match[1])):max;
+ },0)+1;
+ return 'TRF-'+year+'-'+String(number).padStart(5,'0');
+}
+
+function findMatchingBranchProduct(source,destinationBranchId){
+ return products.find(p=>
+  p.branchId===destinationBranchId&&
+  (
+   (source.sku&&p.sku&&String(source.sku).trim().toLowerCase()===String(p.sku).trim().toLowerCase())||
+   (!source.sku&&!p.sku&&String(source.name).trim().toLowerCase()===String(p.name).trim().toLowerCase())
+  )
+ );
+}
+
+function completeTransfer(){
+ const fromId=document.getElementById('transferFrom').value;
+ const toId=document.getElementById('transferTo').value;
+ const productId=document.getElementById('transferProduct').value;
+ const qty=Number(document.getElementById('transferQty').value);
+ const date=document.getElementById('transferDate').value;
+ const note=document.getElementById('transferNote').value.trim();
+
+ if(!fromId||!toId)return alert('Please select both branches.');
+ if(fromId===toId)return alert('Sending and receiving branches must be different.');
+
+ const fromBranch=branches.find(b=>b.id===fromId);
+ const toBranch=branches.find(b=>b.id===toId);
+
+ if(!fromBranch||!toBranch)return alert('Selected branch could not be found.');
+ if(fromBranch.active===false||toBranch.active===false)return alert('Both branches must be active to transfer stock.');
+
+ const source=products.find(p=>p.id===productId);
+ if(!source||source.branchId!==fromId)return alert('Please select a valid product from the sending branch.');
+
+ if(!Number.isInteger(qty)||qty<=0)return alert('Enter a whole number quantity greater than zero.');
+ if(!date)return alert('Please select the transfer date.');
+ if(Number(source.qty)<qty)return alert('Insufficient stock. Available quantity: '+source.qty);
+
+ const destinationProduct=findMatchingBranchProduct(source,toId);
+
+ if(destinationProduct&&destinationProduct.id===source.id)return alert('Invalid destination product.');
+
+ const transfer={
+  id:id(),
+  transferNo:nextTransferNumber(),
+  date,
+  fromBranchId:fromId,
+  fromBranchName:fromBranch.name,
+  toBranchId:toId,
+  toBranchName:toBranch.name,
+  productId:source.id,
+  productName:source.name,
+  sku:source.sku||'',
+  qty,
+  note,
+  createdAt:new Date().toISOString()
+ };
+
+ if(!confirm(
+  'Confirm stock transfer?\n\nProduct: '+source.name+
+  '\nQuantity: '+qty+
+  '\nFrom: '+fromBranch.name+
+  '\nTo: '+toBranch.name
+ ))return;
+
+ // Deduct stock from sending branch.
+ source.qty=Number(source.qty)-qty;
+
+ // Add stock to matching product in receiving branch.
+ // If it does not exist, create it automatically.
+ if(destinationProduct){
+  destinationProduct.qty=Number(destinationProduct.qty||0)+qty;
+ }else{
+  products.push({
+   id:id(),
+   name:source.name,
+   sku:source.sku||'',
+   category:source.category||'',
+   branchId:toId,
+   qty:qty,
+   cost:Number(source.cost||0),
+   price:Number(source.price||0),
+   alert:Number(source.alert??5)
+  });
+ }
+
+ transfers.unshift(transfer);
+ saveAll();
+ resetTransferForm();
+ renderAll();
+
+ alert('Stock transferred successfully!\nTransfer No: '+transfer.transferNo);
+}
+
+function resetTransferForm(){
+ document.getElementById('transferQty').value=1;
+ document.getElementById('transferDate').value=todayISO();
+ document.getElementById('transferNote').value='';
+ renderTransferOptions();
+ renderTransferProductOptions();
+}
+
+function renderTransfers(){
+ const totalUnits=transfers.reduce((n,t)=>n+Number(t.qty||0),0);
+ const today=todayISO();
+ const todayCount=transfers.filter(t=>t.date===today).length;
+
+ document.getElementById('transferCards').innerHTML=`
+ <div class="card"><small>Total Transfers</small><strong>${transfers.length}</strong></div>
+ <div class="card"><small>Total Units Transferred</small><strong>${totalUnits}</strong></div>
+ <div class="card"><small>Transfers Today</small><strong>${todayCount}</strong></div>`;
+
+ document.getElementById('transfersTable').innerHTML=transfers.map(t=>`
+ <tr>
+ <td>${esc(t.date||'-')}</td>
+ <td><b>${esc(t.transferNo||t.id)}</b></td>
+ <td><b>${esc(t.productName||'Product')}</b><br><small class="muted">${esc(t.sku||'')}</small></td>
+ <td>${esc(t.fromBranchName||branchName(t.fromBranchId))}</td>
+ <td>${esc(t.toBranchName||branchName(t.toBranchId))}</td>
+ <td class="good">${Number(t.qty||0)}</td>
+ <td>${esc(t.note||'-')}</td>
+ </tr>`).join('')||
+ '<tr><td colspan="7" class="empty">No stock transfers recorded yet.</td></tr>';
+}
+
+/* POS / SALES */
 
 function renderSaleProductOptions(){
  const bid=document.getElementById('saleBranch').value;
@@ -539,6 +776,8 @@ function printInvoice(sid){
  if(!win)return alert('Browser blocked the invoice window. Allow pop-ups and try again.');
  win.document.open();win.document.write(html);win.document.close();
 }
+
+/* CUSTOMER LEDGER */
 
 function getCustomers(){
  const map={};
@@ -658,6 +897,7 @@ function printPaymentReceipt(pid){
 }
 
 /* EXPENSE MANAGEMENT */
+
 function renderExpenseBranchOptions(){
  const selectIds=['expenseBranch','expenseFilterBranch','reportBranch'];
  selectIds.forEach((sid,index)=>{
@@ -743,6 +983,7 @@ function renderExpenses(){
 }
 
 /* PROFIT & LOSS REPORT */
+
 function costOfSale(s){
  return (s.items||[]).reduce((sum,item)=>{
   let cost=Number(item.cost);
@@ -799,6 +1040,8 @@ function clearReportFilters(){
  document.getElementById('reportBranch').value='';
  renderProfitLoss();
 }
+
+/* DASHBOARD */
 
 function renderDashboard(){
  const totalStock=products.reduce((n,p)=>n+Number(p.qty||0),0);
