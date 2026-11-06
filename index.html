@@ -1,4 +1,3 @@
-renderAll();
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1519,6 +1518,330 @@ function printPurchase(pid){
  win.document.open();
  win.document.write(html);
  win.document.close();
+}
+
+/* BUSINESS REPORTS & EXPORT MODULE */
+
+const reportNav=document.createElement('button');
+reportNav.textContent='Business Reports & Export';
+reportNav.dataset.tab='businessReports';
+document.querySelector('nav').appendChild(reportNav);
+
+const businessReportSection=document.createElement('section');
+businessReportSection.id='businessReports';
+businessReportSection.className='page hidden';
+
+businessReportSection.innerHTML=`
+<h3>Business Reports & Export</h3>
+
+<div class="panel">
+<p class="muted">Select a report and apply date or branch filters.</p>
+
+<div class="grid">
+<div>
+<label>Report Type</label>
+<select id="businessReportType">
+<option value="sales">Sales Report</option>
+<option value="purchases">Purchase Report</option>
+<option value="stock">Current Stock Report</option>
+<option value="customers">Customer Report</option>
+<option value="suppliers">Supplier Report</option>
+<option value="profit">Profit & Loss Report</option>
+</select>
+</div>
+
+<div>
+<label>From Date</label>
+<input type="date" id="businessReportFrom">
+</div>
+
+<div>
+<label>To Date</label>
+<input type="date" id="businessReportTo">
+</div>
+
+<div>
+<label>Branch</label>
+<select id="businessReportBranch"></select>
+</div>
+</div>
+
+<button class="btn" onclick="renderBusinessReport()">Generate Report</button>
+<button class="btn green" onclick="exportBusinessReport()">Download CSV / Excel</button>
+<button class="btn light" onclick="printBusinessReport()">Print / Save PDF</button>
+<button class="btn gray" onclick="clearBusinessReport()">Clear Filters</button>
+</div>
+
+<div class="cards" id="businessReportCards"></div>
+
+<div class="panel">
+<h3 id="businessReportHeading">Report Results</h3>
+<div class="table-wrap">
+<table>
+<thead id="businessReportHead"></thead>
+<tbody id="businessReportBody"></tbody>
+</table>
+</div>
+</div>
+`;
+
+document.querySelector('main').appendChild(businessReportSection);
+
+reportNav.addEventListener('click',()=>{
+ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+ document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+ reportNav.classList.add('active');
+ businessReportSection.classList.remove('hidden');
+ renderBusinessReport();
+});
+
+function updateBusinessReportBranches(){
+ const el=document.getElementById('businessReportBranch');
+ const old=el.value;
+ el.innerHTML='<option value="">All Branches</option>'+
+ branches.map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+ if([...el.options].some(o=>o.value===old))el.value=old;
+}
+
+function businessReportData(){
+ const type=document.getElementById('businessReportType').value;
+ const from=document.getElementById('businessReportFrom').value;
+ const to=document.getElementById('businessReportTo').value;
+ const branch=document.getElementById('businessReportBranch').value;
+
+ const inDate=d=>(!from||d>=from)&&(!to||d<=to);
+ const inBranch=b=>!branch||b===branch;
+
+ let headers=[];
+ let rows=[];
+ let cards=[];
+
+ if(type==='sales'){
+  const list=sales.filter(s=>inDate(saleDate(s))&&inBranch(s.branchId));
+  headers=['Invoice','Date','Customer','Phone','Branch','Total','Paid','Due'];
+  rows=list.map(s=>[
+   invoiceNo(s),saleDate(s),s.customerName||'Walk-in Customer',
+   s.customerPhone||'',s.branchName||branchName(s.branchId),
+   saleTotal(s),salePaid(s),saleDue(s)
+  ]);
+  cards=[
+   ['Invoices',list.length],
+   ['Sales Total',money(list.reduce((n,s)=>n+saleTotal(s),0))],
+   ['Received',money(list.reduce((n,s)=>n+salePaid(s),0))],
+   ['Outstanding',money(list.reduce((n,s)=>n+saleDue(s),0))]
+  ];
+ }
+
+ if(type==='purchases'){
+  const list=purchases.filter(p=>inDate(String(p.date||''))&&inBranch(p.branchId));
+  headers=['Purchase No','Date','Supplier','Branch','Product','SKU','Quantity','Unit Cost','Total','Paid','Due'];
+  rows=list.map(p=>[
+   p.purchaseNo,p.date,p.supplierName,
+   p.branchName||branchName(p.branchId),p.productName,p.sku||'',
+   p.qty,p.cost,p.total,p.paid,p.balance
+  ]);
+  cards=[
+   ['Purchases',list.length],
+   ['Purchase Total',money(list.reduce((n,p)=>n+Number(p.total||0),0))],
+   ['Paid',money(list.reduce((n,p)=>n+Number(p.paid||0),0))],
+   ['Outstanding',money(list.reduce((n,p)=>n+Number(p.balance||0),0))]
+  ];
+ }
+
+ if(type==='stock'){
+  const list=products.filter(p=>inBranch(p.branchId));
+  headers=['Product','SKU','Category','Branch','Quantity','Unit Cost','Selling Price','Stock Value','Stock Status'];
+  rows=list.map(p=>[
+   p.name,p.sku||'',p.category||'',branchName(p.branchId),
+   Number(p.qty||0),Number(p.cost||0),Number(p.price||0),
+   Number(p.qty||0)*Number(p.cost||0),
+   Number(p.qty||0)<=Number(p.alert||0)?'Low Stock':'Available'
+  ]);
+  cards=[
+   ['Products',list.length],
+   ['Stock Units',list.reduce((n,p)=>n+Number(p.qty||0),0)],
+   ['Stock Value',money(list.reduce((n,p)=>n+Number(p.qty||0)*Number(p.cost||0),0))],
+   ['Low Stock',list.filter(p=>Number(p.qty||0)<=Number(p.alert||0)).length]
+  ];
+ }
+
+ if(type==='customers'){
+  const list=sales.filter(s=>inDate(saleDate(s))&&inBranch(s.branchId));
+  const map={};
+  list.forEach(s=>{
+   const name=s.customerName||'Walk-in Customer';
+   const phone=s.customerPhone||'';
+   const key=phone?'phone:'+phone:'name:'+name.toLowerCase();
+   if(!map[key])map[key]={name,phone,orders:0,total:0,paid:0,due:0};
+   map[key].orders++;
+   map[key].total+=saleTotal(s);
+   map[key].paid+=salePaid(s);
+   map[key].due+=saleDue(s);
+  });
+  const data=Object.values(map);
+  headers=['Customer','Phone','Orders','Purchases','Paid','Outstanding'];
+  rows=data.map(c=>[c.name,c.phone,c.orders,c.total,c.paid,c.due]);
+  cards=[
+   ['Customers',data.length],
+   ['Orders',list.length],
+   ['Purchases',money(data.reduce((n,c)=>n+c.total,0))],
+   ['Outstanding',money(data.reduce((n,c)=>n+c.due,0))]
+  ];
+ }
+
+ if(type==='suppliers'){
+  const list=purchases.filter(p=>inDate(String(p.date||''))&&inBranch(p.branchId));
+  const map={};
+  list.forEach(p=>{
+   const sid=p.supplierId;
+   if(!map[sid])map[sid]={
+    name:p.supplierName||supplierName(sid),
+    purchases:0,paid:0,due:0,orders:0
+   };
+   map[sid].purchases+=Number(p.total||0);
+   map[sid].paid+=Number(p.paid||0);
+   map[sid].due+=Number(p.balance||0);
+   map[sid].orders++;
+  });
+  const data=Object.values(map);
+  headers=['Supplier','Purchase Records','Purchase Total','Paid on Purchases','Outstanding on Purchases'];
+  rows=data.map(s=>[s.name,s.orders,s.purchases,s.paid,s.due]);
+  cards=[
+   ['Suppliers',data.length],
+   ['Purchase Records',list.length],
+   ['Purchase Total',money(list.reduce((n,p)=>n+Number(p.total||0),0))],
+   ['Outstanding',money(list.reduce((n,p)=>n+Number(p.balance||0),0))]
+  ];
+ }
+
+ if(type==='profit'){
+  const filteredSales=sales.filter(s=>inDate(saleDate(s))&&inBranch(s.branchId));
+  const filteredExpenses=expenses.filter(e=>
+   inDate(String(e.date||''))&&inBranch(e.branchId)
+  );
+  const revenue=filteredSales.reduce((n,s)=>n+saleTotal(s),0);
+  const cogs=filteredSales.reduce((n,s)=>n+costOfSale(s),0);
+  const gross=revenue-cogs;
+  const expenseTotal=filteredExpenses.reduce((n,e)=>n+Number(e.amount||0),0);
+  const net=gross-expenseTotal;
+  headers=['Description','Amount (PKR)'];
+  rows=[
+   ['Sales Revenue',revenue],
+   ['Cost of Goods Sold',cogs],
+   ['Gross Profit',gross],
+   ['Operating Expenses',expenseTotal],
+   ['Net Profit / Loss',net],
+   ['Customer Amount Received',filteredSales.reduce((n,s)=>n+salePaid(s),0)],
+   ['Customer Outstanding',filteredSales.reduce((n,s)=>n+saleDue(s),0)]
+  ];
+  cards=[
+   ['Sales Revenue',money(revenue)],
+   ['Gross Profit',money(gross)],
+   ['Expenses',money(expenseTotal)],
+   ['Net Profit / Loss',money(net)]
+  ];
+ }
+
+ return {type,headers,rows,cards};
+}
+
+let currentBusinessReport=null;
+
+function renderBusinessReport(){
+ updateBusinessReportBranches();
+
+ const report=businessReportData();
+ currentBusinessReport=report;
+
+ const titles={
+  sales:'Sales Report',
+  purchases:'Purchase Report',
+  stock:'Current Stock Report',
+  customers:'Customer Report',
+  suppliers:'Supplier Report',
+  profit:'Profit & Loss Report'
+ };
+
+ document.getElementById('businessReportHeading').textContent=titles[report.type];
+
+ document.getElementById('businessReportCards').innerHTML=
+ report.cards.map(c=>`
+ <div class="card"><small>${esc(c[0])}</small><strong>${esc(c[1])}</strong></div>
+ `).join('');
+
+ document.getElementById('businessReportHead').innerHTML=
+ '<tr>'+report.headers.map(h=>`<th>${esc(h)}</th>`).join('')+'</tr>';
+
+ document.getElementById('businessReportBody').innerHTML=
+ report.rows.map(row=>'<tr>'+row.map(v=>`<td>${esc(v)}</td>`).join('')+'</tr>').join('')||
+ `<tr><td colspan="${report.headers.length}" class="empty">No records found for these filters.</td></tr>`;
+}
+
+function exportBusinessReport(){
+ const report=businessReportData();
+ if(!report.rows.length)return alert('There are no records to export.');
+
+ const quote=value=>'"'+String(value??'').replace(/"/g,'""')+'"';
+ const csv=[
+  report.headers.map(quote).join(','),
+  ...report.rows.map(row=>row.map(quote).join(','))
+ ].join('\r\n');
+
+ const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+ const url=URL.createObjectURL(blob);
+ const link=document.createElement('a');
+ link.href=url;
+ link.download=report.type+'-report-'+todayISO()+'.csv';
+ document.body.appendChild(link);
+ link.click();
+ link.remove();
+ URL.revokeObjectURL(url);
+}
+
+function printBusinessReport(){
+ const report=businessReportData();
+ const title=document.getElementById('businessReportHeading').textContent;
+ const rows=report.rows.map(row=>
+  '<tr>'+row.map(v=>`<td>${esc(v)}</td>`).join('')+'</tr>'
+ ).join('');
+
+ const html=`<!DOCTYPE html><html><head>
+ <meta name="viewport" content="width=device-width,initial-scale=1">
+ <title>${esc(title)}</title>
+ <style>
+ body{font-family:Arial;padding:20px;color:#222}
+ h1{text-align:center}
+ p{color:#555}
+ table{width:100%;border-collapse:collapse;margin-top:20px}
+ th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:12px}
+ th{background:#eee}
+ button{padding:10px 18px;background:#1769aa;color:white;border:0}
+ @media print{button{display:none}body{padding:0}}
+ </style></head><body>
+ <h1>MY BUSINESS ERP</h1>
+ <h2>${esc(title)}</h2>
+ <p>Generated: ${new Date().toLocaleString()}</p>
+ <p>From: ${esc(document.getElementById('businessReportFrom').value||'All dates')}
+ &nbsp; To: ${esc(document.getElementById('businessReportTo').value||'All dates')}</p>
+ <p>Branch: ${esc(document.getElementById('businessReportBranch').selectedOptions[0]?.textContent||'All Branches')}</p>
+ <table><thead><tr>${report.headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
+ <tbody>${rows||`<tr><td colspan="${report.headers.length}">No records found.</td></tr>`}</tbody>
+ </table>
+ <p><button onclick="window.print()">Print / Save as PDF</button></p>
+ </body></html>`;
+
+ const win=window.open('','_blank');
+ if(!win)return alert('Allow pop-ups in your browser to print or save PDF.');
+ win.document.open();
+ win.document.write(html);
+ win.document.close();
+}
+
+function clearBusinessReport(){
+ document.getElementById('businessReportFrom').value='';
+ document.getElementById('businessReportTo').value='';
+ document.getElementById('businessReportBranch').value='';
+ renderBusinessReport();
 }
 
 updatePurchaseTotal();
