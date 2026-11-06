@@ -1858,6 +1858,7 @@ renderAll();
   'mberp_suppliers',
   'mberp_purchases',
   'mberp_supplier_payments'
+  'mberp_customer_credit_limits',
  ];
 
  const nav=document.querySelector('nav');
@@ -2247,5 +2248,161 @@ You should now see that customer's previous invoices, purchases, payments and ou
 **Important:** This is a display-only feature. It does not change old invoices, stock, or customer balances.
 
 Please test it with one customer who has previous sales and tell me whether their history appears.
+
+<script>
+(function(){
+ const KEY='mberp_customer_credit_limits';
+
+ function loadLimits(){
+  try{return JSON.parse(localStorage.getItem(KEY)||'{}')}
+  catch(e){return {}}
+ }
+
+ let limits=loadLimits();
+
+ function saveLimits(){
+  localStorage.setItem(KEY,JSON.stringify(limits));
+ }
+
+ function customerKey(){
+  const name=document.getElementById('saleCustomer').value.trim();
+  const phone=document.getElementById('salePhone').value.replace(/\D/g,'');
+  if(phone)return 'phone:'+phone;
+  if(name)return 'name:'+name.toLowerCase();
+  return '';
+ }
+
+ function customerDue(){
+  const key=customerKey();
+  if(!key)return 0;
+
+  let sales=[];
+  try{sales=JSON.parse(localStorage.getItem('mberp_sales')||'[]')}
+  catch(e){}
+
+  return sales.reduce((sum,s)=>{
+   const phone=String(s.customerPhone||'').replace(/\D/g,'');
+   const name=String(s.customerName||'').trim().toLowerCase();
+   const match=key.startsWith('phone:')
+    ? phone===key.slice(6)
+    : name===key.slice(5);
+
+   return sum+(match?Math.max(0,Number(s.balance??(Number(s.total||0)-Number(s.paid||0)))):0);
+  },0);
+ }
+
+ const pos=document.getElementById('pos');
+ const name=document.getElementById('saleCustomer');
+ const phone=document.getElementById('salePhone');
+
+ if(!pos||!name||!phone)return;
+
+ const panel=document.createElement('div');
+ panel.className='panel';
+ panel.id='customerCreditPanel';
+ panel.innerHTML=`
+  <h3>Customer Credit Limit</h3>
+  <div class="grid">
+   <div>
+    <label>Credit Limit (PKR)</label>
+    <input id="customerCreditLimit" type="number" min="0" step="100" placeholder="0 = No limit">
+    <button class="btn green" id="saveCustomerCredit">Save Credit Limit</button>
+   </div>
+   <div>
+    <label>Current Outstanding</label>
+    <p class="total" id="customerCreditDue">PKR 0</p>
+   </div>
+   <div>
+    <label>Available Credit</label>
+    <p class="total" id="customerCreditAvailable">Unlimited</p>
+   </div>
+  </div>
+  <p id="customerCreditWarning" class="muted">
+   Select a customer to manage their credit limit.
+  </p>
+ `;
+
+ const history=document.getElementById('posCustomerHistory');
+ if(history)pos.insertBefore(panel,history);
+ else pos.insertBefore(panel,pos.children[1]);
+
+ const limitInput=document.getElementById('customerCreditLimit');
+
+ function updateCredit(){
+  const key=customerKey();
+  const due=customerDue();
+  const limit=Number(limits[key]||0);
+
+  document.getElementById('customerCreditDue').textContent='PKR '+due.toLocaleString('en-PK');
+
+  document.getElementById('customerCreditAvailable').textContent=
+   limit>0?'PKR '+Math.max(0,limit-due).toLocaleString('en-PK'):'Unlimited';
+
+  document.getElementById('customerCreditWarning').textContent=
+   !key?'Select a customer to manage their credit limit.':
+   limit===0?'No credit limit set for this customer.':
+   due>limit?'WARNING: Customer is over their credit limit.':
+   'Customer credit is within the limit.';
+
+  document.getElementById('customerCreditWarning').className=
+   limit>0&&due>=limit?'bad':'muted';
+
+  limitInput.value=key?(limits[key]||''):'';
+ }
+
+ document.getElementById('saveCustomerCredit').onclick=function(){
+  const key=customerKey();
+  if(!key)return alert('Please select or enter a customer first.');
+
+  const value=Number(limitInput.value);
+  if(!Number.isFinite(value)||value<0)
+   return alert('Enter a valid credit limit.');
+
+  limits[key]=value;
+  saveLimits();
+  updateCredit();
+  alert('Customer credit limit saved successfully.');
+ };
+
+ name.addEventListener('input',updateCredit);
+ phone.addEventListener('input',updateCredit);
+
+ document.addEventListener('change',function(e){
+  if(e.target.id==='savedCustomerSelect'){
+   setTimeout(updateCredit,50);
+  }
+ });
+
+ const originalCompleteSale=window.completeSale;
+
+ if(typeof originalCompleteSale==='function'){
+  window.completeSale=function(){
+   const key=customerKey();
+   const limit=Number(limits[key]||0);
+   const due=customerDue();
+   const total=typeof cartAmount==='function'?cartAmount():0;
+   const paid=Number(document.getElementById('salePaid').value||0);
+   const newDue=due+Math.max(0,total-paid);
+
+   if(limit>0&&newDue>limit&&newDue>due){
+    alert(
+     'CREDIT LIMIT EXCEEDED!\n\n'+
+     'Current outstanding: PKR '+due.toLocaleString('en-PK')+
+     '\nNew outstanding: PKR '+newDue.toLocaleString('en-PK')+
+     '\nCredit limit: PKR '+limit.toLocaleString('en-PK')+
+     '\n\nPlease collect payment or increase the credit limit.'
+    );
+    updateCredit();
+    return;
+   }
+
+   return originalCompleteSale.apply(this,arguments);
+  };
+ }
+
+ updateCredit();
+})();
+</script>
+
 </body>
 </html>
