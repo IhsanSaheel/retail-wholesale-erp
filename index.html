@@ -1847,6 +1847,178 @@ function clearBusinessReport(){
 updatePurchaseTotal();
 
 renderAll();
+<script>
+(function(){
+ const keys=[
+  'mberp_products',
+  'mberp_branches',
+  'mberp_sales',
+  'mberp_payments',
+  'mberp_expenses',
+  'mberp_transfers',
+  'mberp_suppliers',
+  'mberp_purchases',
+  'mberp_supplier_payments'
+ ];
+
+ const nav=document.querySelector('nav');
+ const main=document.querySelector('main');
+
+ const tab=document.createElement('button');
+ tab.textContent='Data Backup & Restore';
+ tab.dataset.tab='backup';
+ nav.appendChild(tab);
+
+ const section=document.createElement('section');
+ section.id='backup';
+ section.className='page hidden';
+ section.innerHTML=`
+  <h3>Data Backup & Restore</h3>
+  <div class="panel">
+   <h3>Download Business Backup</h3>
+   <p class="muted">
+    Download all your ERP records together in one JSON file.
+    Keep this file safe.
+   </p>
+   <button class="btn green" id="downloadBackup">
+    Download Full Backup
+   </button>
+  </div>
+  <div class="panel">
+   <h3>Restore Business Backup</h3>
+   <p class="muted">
+    Select a previously downloaded ERP backup file.
+    Restoring will replace the current records with the backup records.
+    A safety backup will be downloaded first.
+   </p>
+   <label>Select Backup File</label>
+   <input type="file" id="backupFile" accept=".json,application/json">
+   <button class="btn" id="restoreBackup">Restore Backup</button>
+   <p class="muted">
+    Do not close this page while restoring.
+   </p>
+  </div>
+  <div class="panel">
+   <h3>Important Information</h3>
+   <p>• Download backups regularly.</p>
+   <p>• Keep a copy outside your phone.</p>
+   <p>• Restoring replaces existing ERP records.</p>
+   <p>• Backup files include your supplier and purchase records.</p>
+  </div>
+ `;
+ main.appendChild(section);
+
+ function downloadFile(data,name){
+  const blob=new Blob(
+   [JSON.stringify(data,null,2)],
+   {type:'application/json'}
+  );
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+ }
+
+ function collectBackup(){
+  const records={};
+  keys.forEach(key=>{
+   records[key]=JSON.parse(localStorage.getItem(key)||'[]');
+  });
+  return {
+   app:'My Business ERP',
+   backupVersion:1,
+   backupDate:new Date().toISOString(),
+   records:records
+  };
+ }
+
+ document.getElementById('downloadBackup').onclick=function(){
+  try{
+   const backup=collectBackup();
+   downloadFile(
+    backup,
+    'My-Business-ERP-Backup-'+new Date().toISOString().slice(0,10)+'.json'
+   );
+   alert('Your full ERP backup has been downloaded successfully.');
+  }catch(error){
+   alert('Backup failed: '+error.message);
+  }
+ };
+
+ document.getElementById('restoreBackup').onclick=function(){
+  const input=document.getElementById('backupFile');
+  const file=input.files[0];
+
+  if(!file){
+   alert('Please select a backup JSON file first.');
+   return;
+  }
+
+  if(!confirm(
+   'WARNING: Restoring will replace all current ERP records. Continue?'
+  ))return;
+
+  const reader=new FileReader();
+
+  reader.onload=function(){
+   try{
+    const backup=JSON.parse(reader.result);
+
+    if(
+     backup.app!=='My Business ERP'||
+     !backup.records||
+     typeof backup.records!=='object'
+    ){
+     throw new Error('This is not a valid My Business ERP backup.');
+    }
+
+    keys.forEach(key=>{
+     if(!Array.isArray(backup.records[key])){
+      throw new Error('Backup is missing valid data for '+key);
+     }
+    });
+
+    const safety=collectBackup();
+
+    downloadFile(
+     safety,
+     'My-Business-ERP-Safety-Backup-'+new Date().toISOString().slice(0,10)+'.json'
+    );
+
+    keys.forEach(key=>{
+     localStorage.setItem(
+      key,
+      JSON.stringify(backup.records[key])
+     );
+    });
+
+    alert('Backup restored successfully. Your ERP will now reload.');
+    location.reload();
+
+   }catch(error){
+    alert('Restore failed: '+error.message);
+   }
+  };
+
+  reader.onerror=function(){
+   alert('Could not read the selected backup file.');
+  };
+
+  reader.readAsText(file);
+ };
+
+ tab.addEventListener('click',function(){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+  tab.classList.add('active');
+  section.classList.remove('hidden');
+ });
+})();
 </script>
+
 </body>
 </html>
