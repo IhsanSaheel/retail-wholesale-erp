@@ -1858,6 +1858,7 @@ renderAll();
   'mberp_suppliers',
   'mberp_purchases',
   'mberp_supplier_payments', 
+ 'mberp_supplier_returns',
   'mberp_customer_credit_limits',
  ];
 
@@ -2770,6 +2771,332 @@ renderAll();
  }
 
  renderReturns();
+})();
+</script>
+
+<script>
+(function(){
+ const KEY='mberp_supplier_returns';
+
+ if(document.getElementById('supplierReturns'))return;
+
+ function getReturns(){
+  try{return JSON.parse(localStorage.getItem(KEY)||'[]')}
+  catch(e){return []}
+ }
+ function saveReturns(data){
+  localStorage.setItem(KEY,JSON.stringify(data));
+ }
+ function returnedQty(purchaseId){
+  return getReturns()
+   .filter(r=>r.purchaseId===purchaseId)
+   .reduce((n,r)=>n+Number(r.qty||0),0);
+ }
+ function returnedValue(supplierId){
+  return getReturns()
+   .filter(r=>r.supplierId===supplierId)
+   .reduce((n,r)=>n+Number(r.amount||0),0);
+ }
+ function money(n){
+  return Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2});
+ }
+ function safe(v){
+  return String(v??'').replace(/[&<>"']/g,c=>({
+   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+ }
+
+ // Adjust supplier purchases and outstanding balance for returns.
+ const oldSupplierTotal=supplierTotal;
+ supplierTotal=function(sid){
+  return Math.max(0,oldSupplierTotal(sid)-returnedValue(sid));
+ };
+
+ const oldSupplierDue=supplierDue;
+ supplierDue=function(sid){
+  return Math.max(0,supplierTotal(sid)-supplierPaid(sid));
+ };
+
+ // Create separate navigation tab and page.
+ const nav=document.querySelector('nav');
+ const main=document.querySelector('main');
+
+ const tab=document.createElement('button');
+ tab.textContent='Purchase Returns';
+ tab.dataset.tab='supplierReturns';
+ nav.appendChild(tab);
+
+ const section=document.createElement('section');
+ section.id='supplierReturns';
+ section.className='page hidden';
+
+ section.innerHTML=`
+  <h3>Supplier Purchase Returns</h3>
+
+  <div class="panel">
+   <h3>Record New Purchase Return</h3>
+   <p class="muted">
+    Select the original purchase. Returned stock will be deducted
+    from its receiving branch.
+   </p>
+
+   <label>Original Purchase</label>
+   <select id="srPurchase"></select>
+
+   <div class="grid">
+    <div>
+     <label>Product</label>
+     <input id="srProduct" readonly>
+    </div>
+    <div>
+     <label>Supplier</label>
+     <input id="srSupplier" readonly>
+    </div>
+    <div>
+     <label>Return Quantity</label>
+     <input id="srQty" type="number" min="1" step="1" value="1">
+    </div>
+    <div>
+     <label>Return Date</label>
+     <input id="srDate" type="date">
+    </div>
+   </div>
+
+   <label>Reason / Note</label>
+   <input id="srNote" placeholder="Damaged, expired, wrong item, etc.">
+
+   <p class="total">Supplier Credit: PKR <span id="srAmount">0</span></p>
+   <p class="muted" id="srInfo">Select a purchase first.</p>
+
+   <button class="btn green" id="srSave">
+    Save Purchase Return & Update Stock
+   </button>
+  </div>
+
+  <div class="cards" id="srCards"></div>
+
+  <div class="panel">
+   <h3>Purchase Return History</h3>
+   <div class="table-wrap">
+    <table>
+     <thead>
+      <tr>
+       <th>Date</th>
+       <th>Return No.</th>
+       <th>Purchase</th>
+       <th>Supplier</th>
+       <th>Product</th>
+       <th>Qty</th>
+       <th>Credit</th>
+       <th>Note</th>
+      </tr>
+     </thead>
+     <tbody id="srTable"></tbody>
+    </table>
+   </div>
+  </div>
+ `;
+
+ main.appendChild(section);
+
+ document.getElementById('srDate').value=
+  new Date().toISOString().slice(0,10);
+
+ const purchaseSelect=document.getElementById('srPurchase');
+ const qtyInput=document.getElementById('srQty');
+
+ function selectedPurchase(){
+  return purchases.find(p=>p.id===purchaseSelect.value);
+ }
+
+ function updateReturnInfo(){
+  const p=selectedPurchase();
+  const qty=Number(qtyInput.value||0);
+
+  if(!p){
+   document.getElementById('srProduct').value='';
+   document.getElementById('srSupplier').value='';
+   document.getElementById('srAmount').textContent='0';
+   document.getElementById('srInfo').textContent='Select a purchase first.';
+   return;
+  }
+
+  const remaining=Math.max(0,Number(p.qty||0)-returnedQty(p.id));
+
+  document.getElementById('srProduct').value=p.productName||'';
+  document.getElementById('srSupplier').value=p.supplierName||'';
+  document.getElementById('srAmount').textContent=money(qty*Number(p.cost||0));
+
+  document.getElementById('srInfo').textContent=
+   'Purchase quantity: '+p.qty+
+   ' | Already returned: '+returnedQty(p.id)+
+   ' | Remaining: '+remaining+
+   ' | Branch: '+(p.branchName||'');
+ }
+
+ function renderSupplierReturns(){
+  const old=purchaseSelect.value;
+
+  purchaseSelect.innerHTML=
+   '<option value="">Select Original Purchase</option>';
+
+  purchases.forEach(p=>{
+   const remaining=Number(p.qty||0)-returnedQty(p.id);
+   if(remaining>0){
+    purchaseSelect.add(new Option(
+     (p.purchaseNo||p.id)+' - '+(p.supplierName||'Supplier')+
+     ' - '+(p.productName||'Product')+
+     ' (Remaining: '+remaining+')',
+     p.id
+    ));
+   }
+  });
+
+  if([...purchaseSelect.options].some(o=>o.value===old)){
+   purchaseSelect.value=old;
+  }
+
+  updateReturnInfo();
+
+  const records=getReturns();
+  const total=records.reduce((n,r)=>n+Number(r.amount||0),0);
+  const received=records.reduce((n,r)=>n+Number(r.refundReceived||0),0);
+
+  document.getElementById('srCards').innerHTML=`
+   <div class="card">
+    <small>Total Returns</small>
+    <strong>${records.length}</strong>
+   </div>
+   <div class="card">
+    <small>Total Supplier Credit</small>
+    <strong>PKR ${money(total)}</strong>
+   </div>
+   <div class="card">
+    <small>Refunds Received</small>
+    <strong>PKR ${money(received)}</strong>
+   </div>
+  `;
+
+  document.getElementById('srTable').innerHTML=
+   records.map(r=>`
+    <tr>
+     <td>${safe(r.date)}</td>
+     <td>${safe(r.returnNo)}</td>
+     <td>${safe(r.purchaseNo)}</td>
+     <td>${safe(r.supplierName)}</td>
+     <td>${safe(r.productName)}</td>
+     <td>${r.qty}</td>
+     <td>PKR ${money(r.amount)}</td>
+     <td>${safe(r.note||'-')}</td>
+    </tr>
+   `).join('')||
+   '<tr><td colspan="8" class="empty">No purchase returns recorded.</td></tr>';
+ }
+
+ purchaseSelect.addEventListener('change',updateReturnInfo);
+ qtyInput.addEventListener('input',updateReturnInfo);
+
+ document.getElementById('srSave').addEventListener('click',function(){
+  const p=selectedPurchase();
+  const qty=Number(qtyInput.value);
+  const date=document.getElementById('srDate').value;
+  const note=document.getElementById('srNote').value.trim();
+
+  if(!p)return alert('Select an original purchase.');
+  if(!Number.isInteger(qty)||qty<=0)
+   return alert('Enter a valid whole-number quantity.');
+  if(!date)return alert('Select return date.');
+
+  const remaining=Number(p.qty||0)-returnedQty(p.id);
+
+  if(qty>remaining)
+   return alert('Return quantity exceeds the remaining purchased quantity.');
+
+  const stock=products.find(x=>
+   x.id===p.productId&&x.branchId===p.branchId
+  );
+
+  if(!stock)
+   return alert('Original product not found in the purchase branch.');
+
+  if(Number(stock.qty||0)<qty)
+   return alert('Insufficient stock in this branch. Current stock: '+stock.qty);
+
+  const amount=qty*Number(p.cost||0);
+
+  if(!confirm(
+   'Confirm supplier purchase return?'+
+   '\n\nPurchase: '+p.purchaseNo+
+   '\nProduct: '+p.productName+
+   '\nQuantity: '+qty+
+   '\nSupplier credit: PKR '+money(amount)+
+   '\n\nStock will be reduced.'
+  ))return;
+
+  const records=getReturns();
+
+  const record={
+   id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+   returnNo:'SRET-'+Date.now(),
+   purchaseId:p.id,
+   purchaseNo:p.purchaseNo||p.id,
+   supplierId:p.supplierId,
+   supplierName:p.supplierName||'Unknown Supplier',
+   branchId:p.branchId,
+   branchName:p.branchName||'',
+   productId:p.productId,
+   productName:p.productName,
+   qty:qty,
+   cost:Number(p.cost||0),
+   amount:amount,
+   refundReceived:0,
+   date:date,
+   note:note
+  };
+
+  const oldStock=Number(stock.qty||0);
+  stock.qty=oldStock-qty;
+  records.unshift(record);
+
+  try{
+   saveAll();
+   saveReturns(records);
+  }catch(e){
+   stock.qty=oldStock;
+   return alert('Could not save return: '+e.message);
+  }
+
+  qtyInput.value=1;
+  document.getElementById('srNote').value='';
+  document.getElementById('srDate').value=new Date().toISOString().slice(0,10);
+
+  renderAll();
+  renderSupplierReturns();
+
+  alert(
+   'Purchase return saved successfully.'+
+   '\nStock has been reduced.'+
+   '\nSupplier credit: PKR '+money(amount)
+  );
+ });
+
+ tab.addEventListener('click',function(){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+  tab.classList.add('active');
+  section.classList.remove('hidden');
+  renderAll();
+  renderSupplierReturns();
+ });
+
+ // Refresh the return module whenever the ERP refreshes.
+ const previousRenderAll=renderAll;
+ renderAll=function(){
+  previousRenderAll();
+  renderSupplierReturns();
+ };
+
+ renderSupplierReturns();
 })();
 </script>
 
