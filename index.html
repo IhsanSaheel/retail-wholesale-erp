@@ -2461,5 +2461,317 @@ renderAll();
  updateCredit();
 })();
 </script>
+
+ 
+<script>
+(function(){
+ const KEY='mberp_sales_returns';
+ const nav=document.querySelector('nav');
+ const main=document.querySelector('main');
+
+ if(document.getElementById('returns'))return;
+
+ function read(key){
+  try{return JSON.parse(localStorage.getItem(key)||'[]')}
+  catch(e){return []}
+ }
+ function save(key,data){
+  localStorage.setItem(key,JSON.stringify(data));
+ }
+ function money(n){
+  return Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2});
+ }
+ function safe(v){
+  return String(v??'').replace(/[&<>"']/g,c=>({
+   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+ }
+ function getReturns(){return read(KEY)}
+ function returnedQty(saleId,productId){
+  return getReturns().filter(r=>r.saleId===saleId&&r.productId===productId)
+   .reduce((n,r)=>n+Number(r.qty||0),0);
+ }
+ function returnValue(saleId){
+  return getReturns().filter(r=>r.saleId===saleId)
+   .reduce((n,r)=>n+Number(r.amount||0),0);
+ }
+ function refundValue(saleId){
+  return getReturns().filter(r=>r.saleId===saleId)
+   .reduce((n,r)=>n+Number(r.refundAmount||0),0);
+ }
+ function returnCost(saleId){
+  return getReturns().filter(r=>r.saleId===saleId)
+   .reduce((n,r)=>n+Number(r.cost||0)*Number(r.qty||0),0);
+ }
+
+ const tab=document.createElement('button');
+ tab.textContent='Sales Returns';
+ tab.dataset.tab='returns';
+ nav.appendChild(tab);
+
+ const section=document.createElement('section');
+ section.id='returns';
+ section.className='page hidden';
+ section.innerHTML=`
+  <h3>Sales Returns & Refunds</h3>
+  <div class="panel">
+   <h3>Record a Product Return</h3>
+   <p class="muted">Select the original invoice and the product being returned.</p>
+   <label>Original Invoice</label>
+   <select id="returnInvoice"></select>
+   <label>Product</label>
+   <select id="returnProduct"></select>
+   <div class="grid">
+    <div>
+     <label>Return Quantity</label>
+     <input id="returnQty" type="number" min="1" step="1" value="1">
+    </div>
+    <div>
+     <label>Refund Method</label>
+     <select id="returnMethod">
+      <option>Cash</option>
+      <option>Bank Transfer</option>
+      <option>JazzCash</option>
+      <option>EasyPaisa</option>
+      <option>Cheque</option>
+      <option>Customer Credit</option>
+      <option>Other</option>
+     </select>
+    </div>
+   </div>
+   <label>Reason / Note</label>
+   <input id="returnNote" placeholder="Reason for return (optional)">
+   <p class="total">Return Amount: PKR <span id="returnAmount">0</span></p>
+   <p class="muted" id="returnInfo">Choose an invoice and product.</p>
+   <button class="btn green" id="saveReturn">Save Return & Update Stock</button>
+  </div>
+  <div class="cards" id="returnCards"></div>
+  <div class="panel">
+   <h3>Return History</h3>
+   <div class="table-wrap">
+    <table>
+     <thead><tr>
+      <th>Date</th><th>Return No.</th><th>Invoice</th>
+      <th>Product</th><th>Qty</th><th>Amount</th>
+      <th>Refund</th><th>Method</th><th>Note</th>
+     </tr></thead>
+     <tbody id="returnsTable"></tbody>
+    </table>
+   </div>
+  </div>
+ `;
+ main.appendChild(section);
+
+ tab.addEventListener('click',function(){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+  tab.classList.add('active');
+  section.classList.remove('hidden');
+  renderReturns();
+ });
+
+ const invoice=document.getElementById('returnInvoice');
+ const product=document.getElementById('returnProduct');
+ const qty=document.getElementById('returnQty');
+ const amount=document.getElementById('returnAmount');
+ const info=document.getElementById('returnInfo');
+
+ function getSale(){
+  return read('mberp_sales').find(s=>s.id===invoice.value);
+ }
+ function getItem(){
+  const sale=getSale();
+  return sale&&(sale.items||[]).find(i=>i.productId===product.value);
+ }
+ function availableQty(sale,item){
+  return Math.max(0,Number(item.qty||0)-returnedQty(sale.id,item.productId));
+ }
+ function updateAmount(){
+  const sale=getSale();
+  const item=getItem();
+  if(!sale||!item){
+   amount.textContent='0';
+   info.textContent='Choose an invoice and product.';
+   return;
+  }
+  const available=availableQty(sale,item);
+  const count=Number(qty.value||0);
+  amount.textContent=money(Number(item.price||0)*count);
+  info.textContent='Available to return: '+available+
+   ' | Original price: PKR '+money(item.price);
+ }
+ function renderReturnProducts(){
+  const sale=getSale();
+  product.innerHTML='';
+  if(!sale){
+   product.add(new Option('Select an invoice first',''));
+   updateAmount();
+   return;
+  }
+  (sale.items||[]).forEach(item=>{
+   const available=availableQty(sale,item);
+   if(available>0){
+    product.add(new Option(
+     item.name+' (Available: '+available+')',
+     item.productId
+    ));
+   }
+  });
+  if(!product.options.length){
+   product.add(new Option('No products available to return',''));
+  }
+  qty.value=1;
+  updateAmount();
+ }
+ function renderReturns(){
+  const sales=read('mberp_sales');
+  invoice.innerHTML='';
+  invoice.add(new Option('Select original invoice',''));
+  sales.forEach(s=>{
+   invoice.add(new Option(
+    (s.invoiceNo||s.id)+' - '+(s.customerName||'Walk-in Customer')+
+    ' - PKR '+money(s.total),
+    s.id
+   ));
+  });
+  renderReturnProducts();
+
+  const records=getReturns();
+  const total=records.reduce((n,r)=>n+Number(r.amount||0),0);
+  const refunds=records.reduce((n,r)=>n+Number(r.refundAmount||0),0);
+
+  document.getElementById('returnCards').innerHTML=`
+   <div class="card"><small>Total Returns</small><strong>${records.length}</strong></div>
+   <div class="card"><small>Returned Value</small><strong>PKR ${money(total)}</strong></div>
+   <div class="card"><small>Cash / Other Refunds</small><strong>PKR ${money(refunds)}</strong></div>
+  `;
+
+  document.getElementById('returnsTable').innerHTML=
+   records.map(r=>`
+    <tr>
+     <td>${safe(r.date)}</td>
+     <td>${safe(r.returnNo)}</td>
+     <td>${safe(r.invoiceNo)}</td>
+     <td>${safe(r.productName)}</td>
+     <td>${r.qty}</td>
+     <td>PKR ${money(r.amount)}</td>
+     <td>PKR ${money(r.refundAmount)}</td>
+     <td>${safe(r.method)}</td>
+     <td>${safe(r.note||'-')}</td>
+    </tr>
+   `).join('')||
+   '<tr><td colspan="9" class="empty">No returns recorded yet.</td></tr>';
+ }
+
+ invoice.addEventListener('change',renderReturnProducts);
+ product.addEventListener('change',updateAmount);
+ qty.addEventListener('input',updateAmount);
+
+ document.getElementById('saveReturn').addEventListener('click',function(){
+  const sale=getSale();
+  const item=getItem();
+  const count=Number(qty.value);
+
+  if(!sale||!item)return alert('Select an invoice and product.');
+  if(!Number.isInteger(count)||count<1)
+   return alert('Enter a valid return quantity.');
+
+  const available=availableQty(sale,item);
+  if(count>available)
+   return alert('Return quantity exceeds the remaining quantity.');
+
+  const value=Number(item.price||0)*count;
+  const cost=Number(item.cost||0);
+  const oldDue=Math.max(0,Number(sale.balance??(
+   Number(sale.total||0)-Number(sale.paid??sale.total??0)
+  )));
+  const refund=Math.max(0,value-oldDue);
+
+  if(!confirm(
+   'Confirm this return?\n\nProduct: '+item.name+
+   '\nQuantity: '+count+
+   '\nReturn value: PKR '+money(value)+
+   '\nRefund to customer: PKR '+money(refund)+
+   '\n\nStock will be restored.'
+  ))return;
+
+  const products=read('mberp_products');
+  const stock=products.find(p=>
+   p.id===item.productId&&p.branchId===sale.branchId
+  );
+  if(!stock){
+   return alert('The original product record was not found in its branch. No changes were made.');
+  }
+
+  const records=getReturns();
+  const record={
+   id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+   returnNo:'RET-'+Date.now(),
+   saleId:sale.id,
+   invoiceNo:sale.invoiceNo||sale.id,
+   date:new Date().toISOString().slice(0,10),
+   branchId:sale.branchId,
+   customerName:sale.customerName||'Walk-in Customer',
+   customerPhone:sale.customerPhone||'',
+   productId:item.productId,
+   productName:item.name,
+   qty:count,
+   price:Number(item.price||0),
+   cost:cost,
+   amount:value,
+   refundAmount:refund,
+   method:document.getElementById('returnMethod').value,
+   note:document.getElementById('returnNote').value.trim()
+  };
+
+  stock.qty=Number(stock.qty||0)+count;
+  records.unshift(record);
+
+  try{
+   save('mberp_products',products);
+   save(KEY,records);
+  }catch(e){
+   stock.qty=Number(stock.qty||0)-count;
+   return alert('Could not save the return: '+e.message);
+  }
+
+  document.getElementById('returnQty').value=1;
+  document.getElementById('returnNote').value='';
+  renderReturns();
+  if(typeof window.renderAll==='function')window.renderAll();
+  alert('Return saved and stock restored successfully.');
+ });
+
+ // Adjust sales totals, customer balances and profit calculations.
+ const originalSaleTotal=window.saleTotal;
+ const originalSalePaid=window.salePaid;
+ const originalSaleDue=window.saleDue;
+ const originalCostOfSale=window.costOfSale;
+
+ if(typeof originalSaleTotal==='function'){
+  window.saleTotal=function(s){
+   return Math.max(0,Number(originalSaleTotal(s)||0)-returnValue(s.id));
+  };
+ }
+ if(typeof originalSalePaid==='function'){
+  window.salePaid=function(s){
+   return Math.max(0,Number(originalSalePaid(s)||0)-refundValue(s.id));
+  };
+ }
+ if(typeof originalSaleDue==='function'){
+  window.saleDue=function(s){
+   return Math.max(0,window.saleTotal(s)-window.salePaid(s));
+  };
+ }
+ if(typeof originalCostOfSale==='function'){
+  window.costOfSale=function(s){
+   return Math.max(0,Number(originalCostOfSale(s)||0)-returnCost(s.id));
+  };
+ }
+
+ renderReturns();
+})();
+</script>
+
 </body>
 </html>
