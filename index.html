@@ -3201,5 +3201,141 @@ renderAll();
 })();
 </script>
 
+<script>
+(function(){
+ if(document.getElementById('saleDiscountType'))return;
+
+ const total=document.getElementById('cartTotal');
+ const paid=document.getElementById('salePaid');
+ if(!total||!paid||typeof window.cartAmount!=='function')return;
+
+ const originalCartAmount=window.cartAmount;
+ const originalCompleteSale=window.completeSale;
+ const originalClearCart=window.clearCart;
+
+ const panel=document.createElement('div');
+ panel.className='panel';
+ panel.innerHTML=`
+  <h3>Sales Discount</h3>
+  <div class="grid">
+   <div>
+    <label>Discount Type</label>
+    <select id="saleDiscountType">
+     <option value="fixed">Fixed Amount (PKR)</option>
+     <option value="percent">Percentage (%)</option>
+    </select>
+   </div>
+   <div>
+    <label>Discount Value</label>
+    <input id="saleDiscountValue" type="number" min="0" step="0.01" value="0">
+   </div>
+  </div>
+  <div class="cards">
+   <div class="card">
+    <small>Original Subtotal</small>
+    <strong id="saleSubtotal">PKR 0</strong>
+   </div>
+   <div class="card">
+    <small>Discount Amount</small>
+    <strong id="saleDiscountAmount">PKR 0</strong>
+   </div>
+   <div class="card">
+    <small>Final Payable</small>
+    <strong id="saleFinalTotal">PKR 0</strong>
+   </div>
+  </div>
+  <p class="muted">Discount cannot exceed the original bill subtotal.</p>
+ `;
+ document.getElementById('cartTotal').closest('p').after(panel);
+
+ const type=document.getElementById('saleDiscountType');
+ const value=document.getElementById('saleDiscountValue');
+
+ function fmt(n){
+  return Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2});
+ }
+ function discount(){
+  const subtotal=Number(originalCartAmount()||0);
+  const input=Number(value.value||0);
+  if(!Number.isFinite(input)||input<=0)return 0;
+  if(type.value==='percent'){
+   return subtotal*Math.min(input,100)/100;
+  }
+  return Math.min(input,subtotal);
+ }
+ function refresh(){
+  const subtotal=Number(originalCartAmount()||0);
+  const off=discount();
+  document.getElementById('saleSubtotal').textContent='PKR '+fmt(subtotal);
+  document.getElementById('saleDiscountAmount').textContent='PKR '+fmt(off);
+  document.getElementById('saleFinalTotal').textContent='PKR '+fmt(subtotal-off);
+  total.textContent=fmt(subtotal-off);
+
+  const received=Number(paid.value||0);
+  document.getElementById('saleBalance').value=
+   fmt(Math.max(0,subtotal-off-received));
+ }
+ window.cartAmount=function(){
+  return Math.max(0,Number(originalCartAmount()||0)-discount());
+ };
+
+ type.addEventListener('change',refresh);
+ value.addEventListener('input',refresh);
+
+ const originalRenderCart=window.renderCart;
+ if(typeof originalRenderCart==='function'){
+  window.renderCart=function(){
+   originalRenderCart();
+   refresh();
+  };
+ }
+
+ window.updateBalancePreview=refresh;
+
+ window.clearCart=function(){
+  originalClearCart();
+  value.value=0;
+  refresh();
+ };
+
+ window.completeSale=function(){
+  const subtotal=Number(originalCartAmount()||0);
+  const off=discount();
+  const discountType=type.value;
+  const discountInput=Number(value.value||0);
+
+  if(off>subtotal)return alert('Invalid discount amount.');
+
+  let previous=[];
+  try{
+   previous=JSON.parse(localStorage.getItem('mberp_sales')||'[]');
+  }catch(e){}
+
+  const previousIds=new Set(previous.map(s=>s.id));
+
+  originalCompleteSale();
+
+  let current=[];
+  try{
+   current=JSON.parse(localStorage.getItem('mberp_sales')||'[]');
+  }catch(e){}
+
+  const newSale=current.find(s=>!previousIds.has(s.id));
+
+  if(newSale){
+   newSale.discountAmount=off;
+   newSale.discountType=discountType;
+   newSale.discountInput=discountInput;
+   localStorage.setItem('mberp_sales',JSON.stringify(current));
+  }
+
+  value.value=0;
+  refresh();
+ };
+
+ refresh();
+})();
+</script>
+
 </body>
 </html>
