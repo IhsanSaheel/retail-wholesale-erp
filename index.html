@@ -3100,5 +3100,106 @@ renderAll();
 })();
 </script>
 
+<script>
+(function(){
+ if(document.getElementById('saleBarcode'))return;
+
+ const productSelect=document.getElementById('saleProduct');
+ const branchSelect=document.getElementById('saleBranch');
+
+ if(!productSelect||!branchSelect)return;
+
+ const wrapper=document.createElement('div');
+ wrapper.innerHTML=`
+  <label for="saleBarcode">Scan Product Barcode</label>
+  <input
+   id="saleBarcode"
+   type="text"
+   placeholder="Scan barcode here and press Enter"
+   autocomplete="off"
+   inputmode="none"
+  >
+  <small class="muted">
+   Scan a registered product barcode to add it to the bill.
+  </small>
+ `;
+ productSelect.parentElement.parentElement.insertBefore(
+  wrapper,
+  productSelect.parentElement
+ );
+
+ const scanner=document.getElementById('saleBarcode');
+
+ function scanProduct(){
+  const code=scanner.value.trim().toLowerCase();
+  if(!code)return;
+
+  let products=[];
+  try{
+   products=JSON.parse(localStorage.getItem('mberp_products')||'[]');
+  }catch(e){}
+
+  const branchId=branchSelect.value;
+
+  const matches=products.filter(p=>
+   p.branchId===branchId&&
+   String(p.sku||'').trim().toLowerCase()===code&&
+   Number(p.qty)>0
+  );
+
+  if(matches.length===0){
+   const exists=products.some(p=>
+    String(p.sku||'').trim().toLowerCase()===code
+   );
+   scanner.value='';
+   alert(exists
+    ?'Product barcode found, but no available stock in this branch.'
+    :'Barcode not registered. Please check the product SKU / Barcode.'
+   );
+   scanner.focus();
+   return;
+  }
+
+  if(matches.length>1){
+   scanner.value='';
+   alert('Duplicate barcode found in this branch. Please correct the product records.');
+   scanner.focus();
+   return;
+  }
+
+  productSelect.value=matches[0].id;
+  document.getElementById('saleQty').value=1;
+
+  scanner.value='';
+
+  if(typeof window.addToCart==='function'){
+   window.addToCart();
+  }else{
+   alert('POS Add to Bill function is unavailable.');
+  }
+
+  scanner.focus();
+ }
+
+ scanner.addEventListener('keydown',function(e){
+  if(e.key==='Enter'){
+   e.preventDefault();
+   scanProduct();
+  }
+ });
+
+ scanner.addEventListener('focus',function(){
+  scanner.style.borderColor='#1769aa';
+ });
+
+ scanner.addEventListener('blur',function(){
+  scanner.style.borderColor='#cbd5e1';
+ });
+
+ scanner.addEventListener('change',scanProduct);
+
+})();
+</script>
+
 </body>
 </html>
