@@ -3982,6 +3982,7 @@ if ('serviceWorker' in navigator) {
     return result;
   };
     window.addEventListener('etihad-data-saved', function() {
+  alert('CLOUD SYNC EVENT RECEIVED');
   message('Save detected! Starting cloud sync...');
   scheduleAutoSync();
 });
