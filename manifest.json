@@ -1,0 +1,19 @@
+{
+  "name": "Etihad Traders",
+  "short_name": "Etihad",
+  "description": "Etihad Traders Retail and Wholesale Management",
+  "start_url": "/retail-wholesale-erp/",
+  "scope": "/retail-wholesale-erp/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f3f6fa",
+  "theme_color": "#102a43",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
