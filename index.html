@@ -52,7 +52,77 @@ footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
 </style>
 </head>
 <body>
+<style>
+#etihadSplash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999999;
+  background: #102a43;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-family: Arial, sans-serif;
+  transition: opacity .5s ease;
+}
 
+#etihadSplash .et-logo {
+  width: 112px;
+  height: 112px;
+  border: 3px solid #d6b45c;
+  border-radius: 25px;
+  background: #1769aa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: bold;
+  margin-bottom: 25px;
+}
+
+#etihadSplash h1 {
+  font-size: 25px;
+  letter-spacing: 2px;
+  margin: 0 0 12px;
+}
+
+#etihadSplash p {
+  color: #d6b45c;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-align: center;
+}
+
+#etihadSplash .et-loading {
+  margin-top: 35px;
+  color: #ffffff;
+  font-size: 12px;
+}
+</style>
+
+<div id="etihadSplash">
+  <div class="et-logo">ET</div>
+  <h1>ETIHAD TRADERS</h1>
+  <p>RETAIL & WHOLESALE MANAGEMENT</p>
+  <div class="et-loading">Loading your business...</div>
+</div>
+
+<script>
+(function() {
+  setTimeout(function() {
+    const splash = document.getElementById('etihadSplash');
+
+    if (splash) {
+      splash.style.opacity = '0';
+
+      setTimeout(function() {
+        splash.style.display = 'none';
+      }, 500);
+    }
+  }, 1800);
+})();
+</script>
 <header>
 <div><h2>Etihad Traders</h2><small>Retail & Wholesale Management System</small></div>
 <div id="today"></div>
