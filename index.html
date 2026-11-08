@@ -3618,5 +3618,287 @@ if ('serviceWorker' in navigator) {
   updateStatus();
 })();
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+<script>
+(function () {
+  const SUPABASE_URL = 'https://njzhtxrmrqhuxhytxaay.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_HY1y3VDURIKAP7izixmtuQ_b-ezXoiA';
+
+  const KEYS = [
+    'mberp_products',
+    'mberp_branches',
+    'mberp_sales',
+    'mberp_payments',
+    'mberp_expenses',
+    'mberp_transfers',
+    'mberp_suppliers',
+    'mberp_purchases',
+    'mberp_supplier_payments',
+    'mberp_supplier_returns',
+    'mberp_sales_returns',
+    'mberp_customer_credit_limits'
+  ];
+
+  const client = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+  const panel = document.createElement('div');
+  panel.id = 'etihadCloudPanel';
+  panel.style.cssText =
+    'position:fixed;top:12px;left:12px;right:12px;' +
+    'z-index:999998;background:white;padding:15px;' +
+    'border:2px solid #1769aa;border-radius:12px;' +
+    'box-shadow:0 3px 15px #0003;font-family:Arial;' +
+    'max-width:480px;margin:auto;';
+
+  panel.innerHTML = `
+    <h3 style="margin:0 0 12px;color:#102a43">
+      Etihad Traders Cloud
+    </h3>
+
+    <div id="etihadCloudLogin">
+      <input id="etCloudEmail" type="email"
+        placeholder="Your Supabase email"
+        style="width:100%;padding:11px;margin-bottom:8px">
+
+      <input id="etCloudPassword" type="password"
+        placeholder="Your Supabase password"
+        style="width:100%;padding:11px;margin-bottom:8px">
+
+      <button id="etCloudLoginBtn"
+        style="padding:11px;background:#1769aa;color:white;border:0;border-radius:7px">
+        Login
+      </button>
+    </div>
+
+    <div id="etihadCloudControls" style="display:none">
+      <p id="etCloudUser"></p>
+
+      <button id="etCloudUpload"
+        style="padding:11px;background:#16845b;color:white;border:0;border-radius:7px;margin:3px">
+        Upload Local Data
+      </button>
+
+      <button id="etCloudDownload"
+        style="padding:11px;background:#1769aa;color:white;border:0;border-radius:7px;margin:3px">
+        Download Cloud Data
+      </button>
+
+      <button id="etCloudLogout"
+        style="padding:11px;background:#64748b;color:white;border:0;border-radius:7px;margin:3px">
+        Logout
+      </button>
+    </div>
+
+    <p id="etCloudStatus" style="font-size:13px;color:#475569">
+      Please log in to connect your cloud account.
+    </p>
+
+    <button id="etCloudClose"
+      style="padding:7px 12px;background:#e2e8f0;border:0;border-radius:6px">
+      Close
+    </button>
+  `;
+
+  document.body.appendChild(panel);
+
+  const status = document.getElementById('etCloudStatus');
+
+  function message(text) {
+    status.textContent = text;
+  }
+
+  function localRecords() {
+    const records = {};
+
+    KEYS.forEach(key => {
+      records[key] = JSON.parse(
+        localStorage.getItem(key) || '[]'
+      );
+    });
+
+    return records;
+  }
+
+  function downloadSafetyBackup(records) {
+    const backup = {
+      app: 'My Business ERP',
+      backupVersion: 1,
+      backupDate: new Date().toISOString(),
+      records: records
+    };
+
+    const blob = new Blob(
+      [JSON.stringify(backup, null, 2)],
+      { type: 'application/json' }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = 'Etihad-Traders-Before-Cloud-Restore.json';
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }
+
+  async function refreshLogin() {
+    const result = await client.auth.getSession();
+
+    if (result.error) {
+      message(result.error.message);
+      return;
+    }
+
+    const user = result.data.session?.user;
+
+    document.getElementById('etihadCloudLogin').style.display =
+      user ? 'none' : 'block';
+
+    document.getElementById('etihadCloudControls').style.display =
+      user ? 'block' : 'none';
+
+    if (user) {
+      document.getElementById('etCloudUser').textContent =
+        'Logged in: ' + user.email;
+
+      message('Cloud account connected. Choose an action.');
+    }
+  }
+
+  document.getElementById('etCloudLoginBtn').onclick =
+    async function () {
+      const email = document.getElementById('etCloudEmail').value.trim();
+      const password = document.getElementById('etCloudPassword').value;
+
+      if (!email || !password) {
+        message('Enter your email and password.');
+        return;
+      }
+
+      message('Logging in...');
+
+      const result = await client.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+      if (result.error) {
+        message('Login failed: ' + result.error.message);
+        return;
+      }
+
+      document.getElementById('etCloudPassword').value = '';
+
+      await refreshLogin();
+    };
+
+  document.getElementById('etCloudUpload').onclick =
+    async function () {
+      if (!confirm('Upload this device’s 12 ERP data collections to your cloud account? This will replace the cloud copy.')) return;
+
+      message('Uploading your ERP records...');
+
+      try {
+        const session = await client.auth.getSession();
+        const user = session.data.session?.user;
+
+        if (!user) throw new Error('Please log in again.');
+
+        const records = localRecords();
+
+        const result = await client
+          .from('erp_cloud_data')
+          .upsert({
+            user_id: user.id,
+            data: {
+              records: records,
+              updated_at: new Date().toISOString()
+            },
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+
+        if (result.error) throw result.error;
+
+        message('Upload successful! Your 12 collections are in the cloud.');
+
+      } catch (error) {
+        message('Upload failed: ' + error.message);
+      }
+    };
+
+  document.getElementById('etCloudDownload').onclick =
+    async function () {
+      if (!confirm('Download cloud records and replace the records on this device? A safety backup will be downloaded first.')) return;
+
+      message('Checking cloud records...');
+
+      try {
+        const session = await client.auth.getSession();
+        const user = session.data.session?.user;
+
+        if (!user) throw new Error('Please log in again.');
+
+        const result = await client
+          .from('erp_cloud_data')
+          .select('data')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (result.error) throw result.error;
+
+        if (!result.data || !result.data.data?.records) {
+          throw new Error('No cloud backup exists yet. Upload first.');
+        }
+
+        const records = result.data.data.records;
+
+        KEYS.forEach(key => {
+          if (!Array.isArray(records[key])) {
+            throw new Error('Cloud backup is missing: ' + key);
+          }
+        });
+
+        const safety = localRecords();
+        downloadSafetyBackup(safety);
+
+        KEYS.forEach(key => {
+          localStorage.setItem(
+            key,
+            JSON.stringify(records[key])
+          );
+        });
+
+        message('Cloud data restored. Reloading your ERP...');
+
+        setTimeout(() => location.reload(), 1500);
+
+      } catch (error) {
+        message('Download failed: ' + error.message);
+      }
+    };
+
+  document.getElementById('etCloudLogout').onclick =
+    async function () {
+      await client.auth.signOut();
+      await refreshLogin();
+      message('You have logged out.');
+    };
+
+  document.getElementById('etCloudClose').onclick =
+    function () {
+      panel.remove();
+    };
+
+  refreshLogin();
+})();
+</script>
+
 </body>
 </html>
