@@ -3461,5 +3461,43 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+ <style>
+#etihadNetworkStatus {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  z-index: 999999;
+  padding: 7px 13px;
+  border-radius: 20px;
+  color: white;
+  font: 12px Arial, sans-serif;
+  box-shadow: 0 2px 8px #0003;
+}
+</style>
+
+<div id="etihadNetworkStatus"></div>
+
+<script>
+(function(){
+  const status = document.getElementById(
+    'etihadNetworkStatus'
+  );
+
+  function updateStatus(){
+    if(navigator.onLine){
+      status.textContent = '● Online';
+      status.style.background = '#16845b';
+    } else {
+      status.textContent = '● Offline';
+      status.style.background = '#d97706';
+    }
+  }
+
+  window.addEventListener('online', updateStatus);
+  window.addEventListener('offline', updateStatus);
+
+  updateStatus();
+})();
+</script>
 </body>
 </html>
