@@ -3979,15 +3979,7 @@ if ('serviceWorker' in navigator) {
 
     return result;
   };
-  const originalSaveAll = window.saveAll;
-
-  if (typeof originalSaveAll === 'function') {
-    window.saveAll = function() {
-      const result = originalSaveAll.apply(this, arguments);
-      scheduleAutoSync();
-      return result;
-    };
-  }
+    window.addEventListener('etihad-data-saved', scheduleAutoSync);
   window.addEventListener('online', scheduleAutoSync);
 
   refreshLogin();
