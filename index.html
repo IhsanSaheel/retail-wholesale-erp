@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="manifest" href="manifest.json">
+
+<meta name="theme-color" content="#102a43">
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-title" content="Etihad Traders"> 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Etihad Traders</title>
@@ -3439,6 +3448,18 @@ renderAll();
  refresh();
 })();
 </script>
-
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(function(registration) {
+        console.log('Etihad Traders app is ready:', registration.scope);
+      })
+      .catch(function(error) {
+        console.error('App installation support error:', error);
+      });
+  });
+}
+</script>
 </body>
 </html>
