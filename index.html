@@ -3898,9 +3898,94 @@ if ('serviceWorker' in navigator) {
       panel.remove();
     };
 
+  
+  // Automatic cloud sync after local data changes
+  let autoSyncTimer = null;
+  let autoSyncBusy = false;
+  let autoSyncPending = false;
+
+  async function performAutoSync() {
+    if (!navigator.onLine) return;
+
+    if (autoSyncBusy) {
+      autoSyncPending = true;
+      return;
+    }
+
+    autoSyncBusy = true;
+
+    try {
+      const sessionResult = await client.auth.getSession();
+      const user = sessionResult.data.session?.user;
+
+      if (!user) return;
+
+      const records = localRecords();
+      const now = new Date().toISOString();
+
+      const result = await client
+        .from('erp_cloud_data')
+        .upsert({
+          user_id: user.id,
+          data: {
+            records: records,
+            updated_at: now
+          },
+          updated_at: now
+        }, { onConflict: 'user_id' });
+
+      if (result.error) throw result.error;
+
+      message('Automatic cloud sync successful.');
+
+    } catch (error) {
+      message('Automatic sync failed: ' + error.message);
+    } finally {
+      autoSyncBusy = false;
+
+      if (autoSyncPending) {
+        autoSyncPending = false;
+        scheduleAutoSync();
+      }
+    }
+  }
+
+  function scheduleAutoSync() {
+    if (!navigator.onLine) {
+      message('Offline: changes remain saved on this device.');
+      return;
+    }
+
+    clearTimeout(autoSyncTimer);
+
+    autoSyncTimer = setTimeout(
+      performAutoSync,
+      1500
+    );
+  }
+
+  const originalSetItem = Storage.prototype.setItem;
+
+  Storage.prototype.setItem = function(key, value) {
+    const result = originalSetItem.apply(this, arguments);
+
+    if (
+      this === localStorage &&
+      KEYS.includes(String(key)) &&
+      status.textContent !== 'Checking cloud records...'
+    ) {
+      scheduleAutoSync();
+    }
+
+    return result;
+  };
+
+  window.addEventListener('online', scheduleAutoSync);
+
   refreshLogin();
 })();
 </script>
+
 
 </body>
 </html>
