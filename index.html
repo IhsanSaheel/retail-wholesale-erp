@@ -49,6 +49,54 @@ th{background:#f8fafc;color:#475569}
 .hidden{display:none!important}
 footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
 @media(max-width:600px){main{padding:11px}header{padding:14px}nav button{padding:10px;font-size:12px}}
+  /* Etihad Traders Android Bottom Navigation */
+@media (max-width: 600px) {
+
+  body {
+    padding-bottom: 75px;
+  }
+
+  nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 99999;
+
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    background: #ffffff;
+    border-top: 2px solid #1769aa;
+    border-bottom: none;
+
+    padding: 8px 6px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+
+    box-shadow: 0 -3px 12px #0002;
+  }
+
+  nav button {
+    flex: 0 0 auto;
+    min-width: 85px;
+    padding: 12px 9px;
+    font-size: 12px;
+    border-radius: 9px;
+  }
+
+  nav button.active {
+    background: #102a43;
+    color: #ffffff;
+  }
+
+  main {
+    padding-bottom: 15px;
+  }
+}
 </style>
 </head>
 <body>
