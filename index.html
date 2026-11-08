@@ -3980,7 +3980,10 @@ if ('serviceWorker' in navigator) {
 
     return result;
   };
-    window.addEventListener('etihad-data-saved', scheduleAutoSync);
+    window.addEventListener('etihad-data-saved', function() {
+  message('Save detected! Starting cloud sync...');
+  scheduleAutoSync();
+});
   window.addEventListener('online', scheduleAutoSync);
 
   refreshLogin();
