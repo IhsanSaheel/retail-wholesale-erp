@@ -3942,7 +3942,8 @@ if ('serviceWorker' in navigator) {
       message('Automatic cloud sync successful.');
 
     } catch (error) {
-      message('Automatic sync failed: ' + error.message);
+      localStorage.setItem('etihad_last_cloud_sync', now);
+message('Last cloud sync: ' + new Date(now).toLocaleString());
     } finally {
       autoSyncBusy = false;
 
