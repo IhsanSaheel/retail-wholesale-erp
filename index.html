@@ -3953,28 +3953,19 @@ if ('serviceWorker' in navigator) {
     }
   }
 
-  function scheduleAutoSync() {
-  if (!navigator.onLine) {
-    message('Offline: changes remain saved on this device.');
-    return;
+   function scheduleAutoSync() {
+    if (!navigator.onLine) {
+      message('Offline: changes remain saved on this device.');
+      return;
+    }
+
+    if (autoSyncBusy) {
+      autoSyncPending = true;
+      return;
+    }
+
+    performAutoSync();
   }
-
-  if (autoSyncBusy) {
-    autoSyncPending = true;
-    return;
-  }
-
-  performAutoSync();
-}
-
-    clearTimeout(autoSyncTimer);
-
-    autoSyncTimer = setTimeout(
-      performAutoSync,
-      1500
-    );
-  }
-
   const originalSetItem = Storage.prototype.setItem;
 
   Storage.prototype.setItem = function(key, value) {
