@@ -3786,7 +3786,13 @@ if ('serviceWorker' in navigator) {
       message('Cloud account connected. Choose an action.');
       const lastSync = localStorage.getItem('etihad_last_cloud_sync');
 const syncDisplay = document.getElementById('etCloudLastSync');
+const dashboardSync = document.getElementById('dashboardLastSync');
 
+if (dashboardSync) {
+  dashboardSync.textContent = lastSync
+    ? 'Last cloud sync: ' + new Date(lastSync).toLocaleString()
+    : 'Last cloud sync: Not yet synced';
+}
 if (syncDisplay) {
   syncDisplay.textContent = lastSync
     ? 'Last cloud sync: ' + new Date(lastSync).toLocaleString()
