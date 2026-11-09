@@ -3986,6 +3986,13 @@ if (syncDisplay) {
     'Last cloud sync: ' + new Date(now).toLocaleString();
 }
 
+const cloudButton = document.getElementById('dashboardCloudButton');
+
+if (cloudButton) {
+  cloudButton.textContent = '☁ Cloud Sync ✓ Synced';
+  cloudButton.style.background = '#16845b';
+}
+
 message('Automatic cloud sync successful.');
 
 } catch (error) {
