@@ -3955,6 +3955,12 @@ if (syncDisplay) {
 
     } catch (error) {
       localStorage.setItem('etihad_last_cloud_sync', now);
+      const syncDisplay = document.getElementById('etCloudLastSync');
+
+if (syncDisplay) {
+  syncDisplay.textContent =
+    'Last cloud sync: ' + new Date(now).toLocaleString();
+}
 message('Last cloud sync: ' + new Date(now).toLocaleString());
     } finally {
       autoSyncBusy = false;
