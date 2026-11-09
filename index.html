@@ -3777,6 +3777,14 @@ if ('serviceWorker' in navigator) {
         'Logged in: ' + user.email;
 
       message('Cloud account connected. Choose an action.');
+      const lastSync = localStorage.getItem('etihad_last_cloud_sync');
+const syncDisplay = document.getElementById('etCloudLastSync');
+
+if (syncDisplay) {
+  syncDisplay.textContent = lastSync
+    ? 'Last cloud sync: ' + new Date(lastSync).toLocaleString()
+    : 'Last cloud sync: Not yet synced';
+}
     }
   }
 
