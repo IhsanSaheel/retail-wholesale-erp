@@ -3959,7 +3959,12 @@ if (syncDisplay) {
      if (result.error) throw result.error;
 
 localStorage.setItem('etihad_last_cloud_sync', now);
+const dashboardSync = document.getElementById('dashboardLastSync');
 
+if (dashboardSync) {
+  dashboardSync.textContent =
+    'Last cloud sync: ' + new Date(now).toLocaleString();
+}
 const syncDisplay = document.getElementById('etCloudLastSync');
 
 if (syncDisplay) {
