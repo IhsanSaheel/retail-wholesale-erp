@@ -3954,10 +3954,18 @@ if ('serviceWorker' in navigator) {
   }
 
   function scheduleAutoSync() {
-    if (!navigator.onLine) {
-      message('Offline: changes remain saved on this device.');
-      return;
-    }
+  if (!navigator.onLine) {
+    message('Offline: changes remain saved on this device.');
+    return;
+  }
+
+  if (autoSyncBusy) {
+    autoSyncPending = true;
+    return;
+  }
+
+  performAutoSync();
+}
 
     clearTimeout(autoSyncTimer);
 
