@@ -3718,7 +3718,7 @@ if ('serviceWorker' in navigator) {
   `;
 
   document.body.appendChild(panel);
-
+panel.style.display = 'none';
   const status = document.getElementById('etCloudStatus');
 
   function message(text) {
