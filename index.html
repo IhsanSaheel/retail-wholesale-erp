@@ -121,6 +121,10 @@ footer{padding:25px;color:#8492a6}
 @media(prefers-color-scheme:dark){body.etihad-auto-dark{--bg:#0b1422;--surface:#121f31;--line:#26364b;--ink:#e4edf8;color:var(--ink)}}
 </style>
 
+<style id="etihad-auth-startup-lock">
+/* Keep all ERP business screens hidden until the signed-in account is authorized. */
+body{visibility:hidden!important}body.etihad-auth-ready{visibility:visible!important}#etihadCloudPanel{visibility:visible!important}
+</style>
 </head>
 <body>
 <style>
@@ -1039,6 +1043,101 @@ function printInvoice(sid){
 
 
 
+
+<style id="etihad-pos-barcode-camera-style">
+#pos .etihad-pos-scan-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:end;margin:10px 0 14px}
+#pos .etihad-pos-scan-row label{display:block;font-size:12px;font-weight:700;margin:0 0 6px;color:var(--muted)}
+#pos .etihad-pos-scan-row input{width:100%;min-height:42px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit}
+#pos .etihad-pos-scan-row button{min-height:42px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+#pos .etihad-pos-camera-panel{display:none;margin:8px 0 14px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+#pos .etihad-pos-camera-panel video{display:block;width:100%;max-height:300px;object-fit:cover;background:#111;border-radius:8px}
+#pos .etihad-pos-camera-panel p{margin:7px 0;font-size:12px;color:var(--muted)}
+@media(max-width:560px){#pos .etihad-pos-scan-row{grid-template-columns:minmax(0,1fr) auto}.etihad-pos-scan-entry{grid-column:1/-1}}
+</style>
+<script id="etihad-pos-barcode-camera-upgrade">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const host=$('etihadPosProducts');
+ const branch=$('saleBranch');
+ const productSelect=$('saleProduct');
+ const qty=$('saleQty');
+ if(!host||!branch||!productSelect||!qty||$('etihadPosBarcode'))return;
+ const main=host.closest('.pos-pro-main');
+ if(!main)return;
+ const row=document.createElement('div');
+ row.className='etihad-pos-scan-row';
+ row.innerHTML='<div class="etihad-pos-scan-entry"><label for="etihadPosBarcode">Barcode / SKU</label><input id="etihadPosBarcode" type="text" placeholder="Enter or scan barcode, then press Enter" autocomplete="off" inputmode="text"></div><button type="button" id="etihadPosCameraStart">📷 Scan with Camera</button><button type="button" id="etihadPosCameraStop" style="display:none">Stop</button>';
+ const camera=document.createElement('div');
+ camera.className='etihad-pos-camera-panel';
+ camera.id='etihadPosCameraPanel';
+ camera.innerHTML='<video id="etihadPosCameraVideo" playsinline muted></video><p id="etihadPosCameraMessage">Point your camera at a product barcode.</p>';
+ const searchRow=main.querySelector('.pos-search-row');
+ if(searchRow)searchRow.insertAdjacentElement('afterend',row);else main.insertBefore(row,host);
+ row.insertAdjacentElement('afterend',camera);
+ const input=$('etihadPosBarcode'),start=$('etihadPosCameraStart'),stop=$('etihadPosCameraStop'),video=$('etihadPosCameraVideo'),message=$('etihadPosCameraMessage');
+ let stream=null,detector=null,raf=0,locked=false;
+ const norm=v=>String(v??'').trim().toLowerCase();
+ function branchMatches(p){
+  const id=String(branch.value||'');
+  const opt=Array.from(branch.options||[]).find(o=>String(o.value)===id);
+  const name=norm(opt?opt.textContent.replace(/\s*\(Inactive\)\s*$/,''):'');
+  const pid=String(p.branchId??'').trim();
+  if(pid&&pid===id)return true;
+  const pn=norm(p.branchName||p.branch);
+  if(pn&&name&&pn===name)return true;
+  const active=typeof activeBranches==='function'?activeBranches():[];
+  return !pid&&!pn&&active.length===1&&String(active[0].id)===id;
+ }
+ function getProducts(){try{return Array.isArray(products)?products:[]}catch(_){return []}}
+ function addByCode(raw){
+  const code=norm(raw);if(!code)return;
+  const branchProducts=getProducts().filter(branchMatches);
+  const found=branchProducts.filter(p=>[p.barcode,p.sku].some(v=>norm(v)===code));
+  if(found.length!==1){
+   const anywhere=getProducts().some(p=>[p.barcode,p.sku].some(v=>norm(v)===code));
+   alert(found.length>1?'This barcode is duplicated in the selected branch. Please correct the product records.':anywhere?'This product belongs to another branch or has no matching branch stock.':'Barcode / SKU not found. Check the product barcode in Inventory.');
+   input.value='';input.focus();return false;
+  }
+  const p=found[0];
+  if(Number(p.qty||0)<=0){alert('This product has no available stock in the selected branch.');input.value='';input.focus();return false;}
+  productSelect.innerHTML=branchProducts.filter(x=>Number(x.qty||0)>0).map(x=>'<option value="'+String(x.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+String(x.name||'').replace(/</g,'&lt;')+'</option>').join('');
+  productSelect.value=p.id;
+  qty.value=1;
+  input.value='';
+  if(typeof window.addToCart==='function')window.addToCart();
+  else alert('The POS add-to-cart function is unavailable.');
+  return true;
+ }
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addByCode(input.value)}});
+ function stopCamera(){if(raf)cancelAnimationFrame(raf);raf=0;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.pause();video.srcObject=null;camera.style.display='none';stop.style.display='none';start.style.display='';locked=false;}
+ stop.addEventListener('click',stopCamera);
+ async function scanFrame(){
+  if(!stream||!detector||locked)return;
+  try{
+   if(video.readyState>=2){
+    const codes=await detector.detect(video);
+    if(codes.length&&codes[0].rawValue){locked=true;const value=codes[0].rawValue;stopCamera();addByCode(value);return;}
+   }
+  }catch(e){message.textContent='Camera scanning error. Try entering the barcode manually.';}
+  if(stream)raf=requestAnimationFrame(scanFrame);
+ }
+ start.addEventListener('click',async()=>{
+  if(!navigator.mediaDevices?.getUserMedia){alert('Camera access requires HTTPS and a browser that supports camera access. Use the barcode field or open the app in Chrome.');return;}
+  if(!('BarcodeDetector' in window)){alert('This browser does not support built-in barcode scanning. Open Etihad Traders in the latest Google Chrome on your phone, or use a handheld scanner / barcode field.');return;}
+  try{
+   detector=new BarcodeDetector({formats:['code_128','code_39','ean_13','ean_8','upc_a','upc_e','itf','qr_code','codabar','data_matrix']});
+   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});
+   video.srcObject=stream;camera.style.display='block';start.style.display='none';stop.style.display='';message.textContent='Camera active — hold the barcode steady inside the frame.';
+   await video.play();scanFrame();
+  }catch(e){stopCamera();alert('Unable to open the camera. Allow camera permission for this website and try again.');}
+ });
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&stream)stopCamera()});
+ branch.addEventListener('change',()=>{input.value='';});
+ window.addEventListener('pagehide',stopCamera);
+})();
+<\/script>
+
 </body>
  </html>`;
 
@@ -1164,7 +1263,102 @@ function printPaymentReceipt(pid){
  <div class="line"><b>Total Paid So Far</b><span>PKR ${money(s?salePaid(s):p.amount)}</span></div>
  <div class="line"><b>Remaining Balance</b><span>PKR ${money(s?saleDue(s):0)}</span></div>
  <p class="note">Note: ${esc(p.note||'-')}</p><center><p>Thank you for your payment.</p><button onclick="window.print()">Print Receipt</button></center>
- </body></html>`;
+ 
+<style id="etihad-pos-barcode-camera-style">
+#pos .etihad-pos-scan-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:end;margin:10px 0 14px}
+#pos .etihad-pos-scan-row label{display:block;font-size:12px;font-weight:700;margin:0 0 6px;color:var(--muted)}
+#pos .etihad-pos-scan-row input{width:100%;min-height:42px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit}
+#pos .etihad-pos-scan-row button{min-height:42px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+#pos .etihad-pos-camera-panel{display:none;margin:8px 0 14px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+#pos .etihad-pos-camera-panel video{display:block;width:100%;max-height:300px;object-fit:cover;background:#111;border-radius:8px}
+#pos .etihad-pos-camera-panel p{margin:7px 0;font-size:12px;color:var(--muted)}
+@media(max-width:560px){#pos .etihad-pos-scan-row{grid-template-columns:minmax(0,1fr) auto}.etihad-pos-scan-entry{grid-column:1/-1}}
+</style>
+<script id="etihad-pos-barcode-camera-upgrade">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const host=$('etihadPosProducts');
+ const branch=$('saleBranch');
+ const productSelect=$('saleProduct');
+ const qty=$('saleQty');
+ if(!host||!branch||!productSelect||!qty||$('etihadPosBarcode'))return;
+ const main=host.closest('.pos-pro-main');
+ if(!main)return;
+ const row=document.createElement('div');
+ row.className='etihad-pos-scan-row';
+ row.innerHTML='<div class="etihad-pos-scan-entry"><label for="etihadPosBarcode">Barcode / SKU</label><input id="etihadPosBarcode" type="text" placeholder="Enter or scan barcode, then press Enter" autocomplete="off" inputmode="text"></div><button type="button" id="etihadPosCameraStart">📷 Scan with Camera</button><button type="button" id="etihadPosCameraStop" style="display:none">Stop</button>';
+ const camera=document.createElement('div');
+ camera.className='etihad-pos-camera-panel';
+ camera.id='etihadPosCameraPanel';
+ camera.innerHTML='<video id="etihadPosCameraVideo" playsinline muted></video><p id="etihadPosCameraMessage">Point your camera at a product barcode.</p>';
+ const searchRow=main.querySelector('.pos-search-row');
+ if(searchRow)searchRow.insertAdjacentElement('afterend',row);else main.insertBefore(row,host);
+ row.insertAdjacentElement('afterend',camera);
+ const input=$('etihadPosBarcode'),start=$('etihadPosCameraStart'),stop=$('etihadPosCameraStop'),video=$('etihadPosCameraVideo'),message=$('etihadPosCameraMessage');
+ let stream=null,detector=null,raf=0,locked=false;
+ const norm=v=>String(v??'').trim().toLowerCase();
+ function branchMatches(p){
+  const id=String(branch.value||'');
+  const opt=Array.from(branch.options||[]).find(o=>String(o.value)===id);
+  const name=norm(opt?opt.textContent.replace(/\s*\(Inactive\)\s*$/,''):'');
+  const pid=String(p.branchId??'').trim();
+  if(pid&&pid===id)return true;
+  const pn=norm(p.branchName||p.branch);
+  if(pn&&name&&pn===name)return true;
+  const active=typeof activeBranches==='function'?activeBranches():[];
+  return !pid&&!pn&&active.length===1&&String(active[0].id)===id;
+ }
+ function getProducts(){try{return Array.isArray(products)?products:[]}catch(_){return []}}
+ function addByCode(raw){
+  const code=norm(raw);if(!code)return;
+  const branchProducts=getProducts().filter(branchMatches);
+  const found=branchProducts.filter(p=>[p.barcode,p.sku].some(v=>norm(v)===code));
+  if(found.length!==1){
+   const anywhere=getProducts().some(p=>[p.barcode,p.sku].some(v=>norm(v)===code));
+   alert(found.length>1?'This barcode is duplicated in the selected branch. Please correct the product records.':anywhere?'This product belongs to another branch or has no matching branch stock.':'Barcode / SKU not found. Check the product barcode in Inventory.');
+   input.value='';input.focus();return false;
+  }
+  const p=found[0];
+  if(Number(p.qty||0)<=0){alert('This product has no available stock in the selected branch.');input.value='';input.focus();return false;}
+  productSelect.innerHTML=branchProducts.filter(x=>Number(x.qty||0)>0).map(x=>'<option value="'+String(x.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+String(x.name||'').replace(/</g,'&lt;')+'</option>').join('');
+  productSelect.value=p.id;
+  qty.value=1;
+  input.value='';
+  if(typeof window.addToCart==='function')window.addToCart();
+  else alert('The POS add-to-cart function is unavailable.');
+  return true;
+ }
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addByCode(input.value)}});
+ function stopCamera(){if(raf)cancelAnimationFrame(raf);raf=0;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.pause();video.srcObject=null;camera.style.display='none';stop.style.display='none';start.style.display='';locked=false;}
+ stop.addEventListener('click',stopCamera);
+ async function scanFrame(){
+  if(!stream||!detector||locked)return;
+  try{
+   if(video.readyState>=2){
+    const codes=await detector.detect(video);
+    if(codes.length&&codes[0].rawValue){locked=true;const value=codes[0].rawValue;stopCamera();addByCode(value);return;}
+   }
+  }catch(e){message.textContent='Camera scanning error. Try entering the barcode manually.';}
+  if(stream)raf=requestAnimationFrame(scanFrame);
+ }
+ start.addEventListener('click',async()=>{
+  if(!navigator.mediaDevices?.getUserMedia){alert('Camera access requires HTTPS and a browser that supports camera access. Use the barcode field or open the app in Chrome.');return;}
+  if(!('BarcodeDetector' in window)){alert('This browser does not support built-in barcode scanning. Open Etihad Traders in the latest Google Chrome on your phone, or use a handheld scanner / barcode field.');return;}
+  try{
+   detector=new BarcodeDetector({formats:['code_128','code_39','ean_13','ean_8','upc_a','upc_e','itf','qr_code','codabar','data_matrix']});
+   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});
+   video.srcObject=stream;camera.style.display='block';start.style.display='none';stop.style.display='';message.textContent='Camera active — hold the barcode steady inside the frame.';
+   await video.play();scanFrame();
+  }catch(e){stopCamera();alert('Unable to open the camera. Allow camera permission for this website and try again.');}
+ });
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&stream)stopCamera()});
+ branch.addEventListener('change',()=>{input.value='';});
+ window.addEventListener('pagehide',stopCamera);
+})();
+<\/script>
+
+</body></html>`;
  const win=window.open('','_blank');
  if(!win)return alert('Browser blocked the receipt window. Allow pop-ups and try again.');
  win.document.open();win.document.write(html);win.document.close();
@@ -1785,7 +1979,102 @@ function printPurchase(pid){
  <p class="total">Paid: PKR ${money(p.paid)}</p>
  <p class="total">Balance: PKR ${money(p.balance)}</p>
  <center><button onclick="window.print()">Print Purchase</button></center>
- </body></html>`;
+ 
+<style id="etihad-pos-barcode-camera-style">
+#pos .etihad-pos-scan-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:end;margin:10px 0 14px}
+#pos .etihad-pos-scan-row label{display:block;font-size:12px;font-weight:700;margin:0 0 6px;color:var(--muted)}
+#pos .etihad-pos-scan-row input{width:100%;min-height:42px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit}
+#pos .etihad-pos-scan-row button{min-height:42px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+#pos .etihad-pos-camera-panel{display:none;margin:8px 0 14px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+#pos .etihad-pos-camera-panel video{display:block;width:100%;max-height:300px;object-fit:cover;background:#111;border-radius:8px}
+#pos .etihad-pos-camera-panel p{margin:7px 0;font-size:12px;color:var(--muted)}
+@media(max-width:560px){#pos .etihad-pos-scan-row{grid-template-columns:minmax(0,1fr) auto}.etihad-pos-scan-entry{grid-column:1/-1}}
+</style>
+<script id="etihad-pos-barcode-camera-upgrade">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const host=$('etihadPosProducts');
+ const branch=$('saleBranch');
+ const productSelect=$('saleProduct');
+ const qty=$('saleQty');
+ if(!host||!branch||!productSelect||!qty||$('etihadPosBarcode'))return;
+ const main=host.closest('.pos-pro-main');
+ if(!main)return;
+ const row=document.createElement('div');
+ row.className='etihad-pos-scan-row';
+ row.innerHTML='<div class="etihad-pos-scan-entry"><label for="etihadPosBarcode">Barcode / SKU</label><input id="etihadPosBarcode" type="text" placeholder="Enter or scan barcode, then press Enter" autocomplete="off" inputmode="text"></div><button type="button" id="etihadPosCameraStart">📷 Scan with Camera</button><button type="button" id="etihadPosCameraStop" style="display:none">Stop</button>';
+ const camera=document.createElement('div');
+ camera.className='etihad-pos-camera-panel';
+ camera.id='etihadPosCameraPanel';
+ camera.innerHTML='<video id="etihadPosCameraVideo" playsinline muted></video><p id="etihadPosCameraMessage">Point your camera at a product barcode.</p>';
+ const searchRow=main.querySelector('.pos-search-row');
+ if(searchRow)searchRow.insertAdjacentElement('afterend',row);else main.insertBefore(row,host);
+ row.insertAdjacentElement('afterend',camera);
+ const input=$('etihadPosBarcode'),start=$('etihadPosCameraStart'),stop=$('etihadPosCameraStop'),video=$('etihadPosCameraVideo'),message=$('etihadPosCameraMessage');
+ let stream=null,detector=null,raf=0,locked=false;
+ const norm=v=>String(v??'').trim().toLowerCase();
+ function branchMatches(p){
+  const id=String(branch.value||'');
+  const opt=Array.from(branch.options||[]).find(o=>String(o.value)===id);
+  const name=norm(opt?opt.textContent.replace(/\s*\(Inactive\)\s*$/,''):'');
+  const pid=String(p.branchId??'').trim();
+  if(pid&&pid===id)return true;
+  const pn=norm(p.branchName||p.branch);
+  if(pn&&name&&pn===name)return true;
+  const active=typeof activeBranches==='function'?activeBranches():[];
+  return !pid&&!pn&&active.length===1&&String(active[0].id)===id;
+ }
+ function getProducts(){try{return Array.isArray(products)?products:[]}catch(_){return []}}
+ function addByCode(raw){
+  const code=norm(raw);if(!code)return;
+  const branchProducts=getProducts().filter(branchMatches);
+  const found=branchProducts.filter(p=>[p.barcode,p.sku].some(v=>norm(v)===code));
+  if(found.length!==1){
+   const anywhere=getProducts().some(p=>[p.barcode,p.sku].some(v=>norm(v)===code));
+   alert(found.length>1?'This barcode is duplicated in the selected branch. Please correct the product records.':anywhere?'This product belongs to another branch or has no matching branch stock.':'Barcode / SKU not found. Check the product barcode in Inventory.');
+   input.value='';input.focus();return false;
+  }
+  const p=found[0];
+  if(Number(p.qty||0)<=0){alert('This product has no available stock in the selected branch.');input.value='';input.focus();return false;}
+  productSelect.innerHTML=branchProducts.filter(x=>Number(x.qty||0)>0).map(x=>'<option value="'+String(x.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+String(x.name||'').replace(/</g,'&lt;')+'</option>').join('');
+  productSelect.value=p.id;
+  qty.value=1;
+  input.value='';
+  if(typeof window.addToCart==='function')window.addToCart();
+  else alert('The POS add-to-cart function is unavailable.');
+  return true;
+ }
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addByCode(input.value)}});
+ function stopCamera(){if(raf)cancelAnimationFrame(raf);raf=0;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.pause();video.srcObject=null;camera.style.display='none';stop.style.display='none';start.style.display='';locked=false;}
+ stop.addEventListener('click',stopCamera);
+ async function scanFrame(){
+  if(!stream||!detector||locked)return;
+  try{
+   if(video.readyState>=2){
+    const codes=await detector.detect(video);
+    if(codes.length&&codes[0].rawValue){locked=true;const value=codes[0].rawValue;stopCamera();addByCode(value);return;}
+   }
+  }catch(e){message.textContent='Camera scanning error. Try entering the barcode manually.';}
+  if(stream)raf=requestAnimationFrame(scanFrame);
+ }
+ start.addEventListener('click',async()=>{
+  if(!navigator.mediaDevices?.getUserMedia){alert('Camera access requires HTTPS and a browser that supports camera access. Use the barcode field or open the app in Chrome.');return;}
+  if(!('BarcodeDetector' in window)){alert('This browser does not support built-in barcode scanning. Open Etihad Traders in the latest Google Chrome on your phone, or use a handheld scanner / barcode field.');return;}
+  try{
+   detector=new BarcodeDetector({formats:['code_128','code_39','ean_13','ean_8','upc_a','upc_e','itf','qr_code','codabar','data_matrix']});
+   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});
+   video.srcObject=stream;camera.style.display='block';start.style.display='none';stop.style.display='';message.textContent='Camera active — hold the barcode steady inside the frame.';
+   await video.play();scanFrame();
+  }catch(e){stopCamera();alert('Unable to open the camera. Allow camera permission for this website and try again.');}
+ });
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&stream)stopCamera()});
+ branch.addEventListener('change',()=>{input.value='';});
+ window.addEventListener('pagehide',stopCamera);
+})();
+<\/script>
+
+</body></html>`;
 
  const win=window.open('','_blank');
  if(!win)return alert('Allow pop-ups to print purchase records.');
@@ -2131,7 +2420,102 @@ body.etihad-dark .etihad-theme-choice{background:#151f32;color:#e7edf8;border-co
  <tbody>${rows||`<tr><td colspan="${report.headers.length}">No records found.</td></tr>`}</tbody>
  </table>
  <p><button onclick="window.print()">Print / Save as PDF</button></p>
- </body></html>`;
+ 
+<style id="etihad-pos-barcode-camera-style">
+#pos .etihad-pos-scan-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:end;margin:10px 0 14px}
+#pos .etihad-pos-scan-row label{display:block;font-size:12px;font-weight:700;margin:0 0 6px;color:var(--muted)}
+#pos .etihad-pos-scan-row input{width:100%;min-height:42px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit}
+#pos .etihad-pos-scan-row button{min-height:42px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+#pos .etihad-pos-camera-panel{display:none;margin:8px 0 14px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+#pos .etihad-pos-camera-panel video{display:block;width:100%;max-height:300px;object-fit:cover;background:#111;border-radius:8px}
+#pos .etihad-pos-camera-panel p{margin:7px 0;font-size:12px;color:var(--muted)}
+@media(max-width:560px){#pos .etihad-pos-scan-row{grid-template-columns:minmax(0,1fr) auto}.etihad-pos-scan-entry{grid-column:1/-1}}
+</style>
+<script id="etihad-pos-barcode-camera-upgrade">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const host=$('etihadPosProducts');
+ const branch=$('saleBranch');
+ const productSelect=$('saleProduct');
+ const qty=$('saleQty');
+ if(!host||!branch||!productSelect||!qty||$('etihadPosBarcode'))return;
+ const main=host.closest('.pos-pro-main');
+ if(!main)return;
+ const row=document.createElement('div');
+ row.className='etihad-pos-scan-row';
+ row.innerHTML='<div class="etihad-pos-scan-entry"><label for="etihadPosBarcode">Barcode / SKU</label><input id="etihadPosBarcode" type="text" placeholder="Enter or scan barcode, then press Enter" autocomplete="off" inputmode="text"></div><button type="button" id="etihadPosCameraStart">📷 Scan with Camera</button><button type="button" id="etihadPosCameraStop" style="display:none">Stop</button>';
+ const camera=document.createElement('div');
+ camera.className='etihad-pos-camera-panel';
+ camera.id='etihadPosCameraPanel';
+ camera.innerHTML='<video id="etihadPosCameraVideo" playsinline muted></video><p id="etihadPosCameraMessage">Point your camera at a product barcode.</p>';
+ const searchRow=main.querySelector('.pos-search-row');
+ if(searchRow)searchRow.insertAdjacentElement('afterend',row);else main.insertBefore(row,host);
+ row.insertAdjacentElement('afterend',camera);
+ const input=$('etihadPosBarcode'),start=$('etihadPosCameraStart'),stop=$('etihadPosCameraStop'),video=$('etihadPosCameraVideo'),message=$('etihadPosCameraMessage');
+ let stream=null,detector=null,raf=0,locked=false;
+ const norm=v=>String(v??'').trim().toLowerCase();
+ function branchMatches(p){
+  const id=String(branch.value||'');
+  const opt=Array.from(branch.options||[]).find(o=>String(o.value)===id);
+  const name=norm(opt?opt.textContent.replace(/\s*\(Inactive\)\s*$/,''):'');
+  const pid=String(p.branchId??'').trim();
+  if(pid&&pid===id)return true;
+  const pn=norm(p.branchName||p.branch);
+  if(pn&&name&&pn===name)return true;
+  const active=typeof activeBranches==='function'?activeBranches():[];
+  return !pid&&!pn&&active.length===1&&String(active[0].id)===id;
+ }
+ function getProducts(){try{return Array.isArray(products)?products:[]}catch(_){return []}}
+ function addByCode(raw){
+  const code=norm(raw);if(!code)return;
+  const branchProducts=getProducts().filter(branchMatches);
+  const found=branchProducts.filter(p=>[p.barcode,p.sku].some(v=>norm(v)===code));
+  if(found.length!==1){
+   const anywhere=getProducts().some(p=>[p.barcode,p.sku].some(v=>norm(v)===code));
+   alert(found.length>1?'This barcode is duplicated in the selected branch. Please correct the product records.':anywhere?'This product belongs to another branch or has no matching branch stock.':'Barcode / SKU not found. Check the product barcode in Inventory.');
+   input.value='';input.focus();return false;
+  }
+  const p=found[0];
+  if(Number(p.qty||0)<=0){alert('This product has no available stock in the selected branch.');input.value='';input.focus();return false;}
+  productSelect.innerHTML=branchProducts.filter(x=>Number(x.qty||0)>0).map(x=>'<option value="'+String(x.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+String(x.name||'').replace(/</g,'&lt;')+'</option>').join('');
+  productSelect.value=p.id;
+  qty.value=1;
+  input.value='';
+  if(typeof window.addToCart==='function')window.addToCart();
+  else alert('The POS add-to-cart function is unavailable.');
+  return true;
+ }
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addByCode(input.value)}});
+ function stopCamera(){if(raf)cancelAnimationFrame(raf);raf=0;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.pause();video.srcObject=null;camera.style.display='none';stop.style.display='none';start.style.display='';locked=false;}
+ stop.addEventListener('click',stopCamera);
+ async function scanFrame(){
+  if(!stream||!detector||locked)return;
+  try{
+   if(video.readyState>=2){
+    const codes=await detector.detect(video);
+    if(codes.length&&codes[0].rawValue){locked=true;const value=codes[0].rawValue;stopCamera();addByCode(value);return;}
+   }
+  }catch(e){message.textContent='Camera scanning error. Try entering the barcode manually.';}
+  if(stream)raf=requestAnimationFrame(scanFrame);
+ }
+ start.addEventListener('click',async()=>{
+  if(!navigator.mediaDevices?.getUserMedia){alert('Camera access requires HTTPS and a browser that supports camera access. Use the barcode field or open the app in Chrome.');return;}
+  if(!('BarcodeDetector' in window)){alert('This browser does not support built-in barcode scanning. Open Etihad Traders in the latest Google Chrome on your phone, or use a handheld scanner / barcode field.');return;}
+  try{
+   detector=new BarcodeDetector({formats:['code_128','code_39','ean_13','ean_8','upc_a','upc_e','itf','qr_code','codabar','data_matrix']});
+   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});
+   video.srcObject=stream;camera.style.display='block';start.style.display='none';stop.style.display='';message.textContent='Camera active — hold the barcode steady inside the frame.';
+   await video.play();scanFrame();
+  }catch(e){stopCamera();alert('Unable to open the camera. Allow camera permission for this website and try again.');}
+ });
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&stream)stopCamera()});
+ branch.addEventListener('change',()=>{input.value='';});
+ window.addEventListener('pagehide',stopCamera);
+})();
+<\/script>
+
+</body></html>`;
 
  const win=window.open('','_blank');
  if(!win)return alert('Allow pop-ups in your browser to print or save PDF.');
@@ -3696,466 +4080,198 @@ if ('serviceWorker' in navigator) {
   
 <script>
 (function () {
+  'use strict';
   const SUPABASE_URL = 'https://njzhtxrmrqhuxhytxaay.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_HY1y3VDURIKAP7izixmtuQ_b-ezXoiA';
-
-  const KEYS = [
-    'mberp_products',
-    'mberp_branches',
-    'mberp_sales',
-    'mberp_payments',
-    'mberp_expenses',
-    'mberp_transfers',
-    'mberp_suppliers',
-    'mberp_purchases',
-    'mberp_supplier_payments',
-    'mberp_supplier_returns',
-    'mberp_sales_returns',
-    'mberp_customer_credit_limits'
+  const ORG_ID = 'd343ea3c-6c19-48f8-bf06-d47f883debcb';
+  const COLLECTIONS = [
+    'mberp_branches','mberp_suppliers','mberp_customer_credit_limits',
+    'mberp_products','mberp_purchases','mberp_sales','mberp_payments',
+    'mberp_expenses','mberp_transfers','mberp_supplier_payments',
+    'mberp_supplier_returns','mberp_sales_returns'
   ];
-
-  const client = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
-
+  const CACHE_KEY = 'etihad_verified_owner_session_v1';
+  const ACTIVE_USER_KEY = 'etihad_active_user_v1';
+  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
   const panel = document.createElement('div');
   panel.id = 'etihadCloudPanel';
-  panel.style.cssText =
-    'position:fixed;top:12px;left:12px;right:12px;' +
-    'z-index:999998;background:white;padding:15px;' +
-    'border:2px solid #1769aa;border-radius:12px;' +
-    'box-shadow:0 3px 15px #0003;font-family:Arial;' +
-    'max-width:480px;margin:auto;';
-
+  panel.style.cssText = 'position:fixed;inset:12px;z-index:2147483647;background:#fff;color:#102a43;visibility:visible;display:block;padding:18px;border:2px solid #1769aa;border-radius:14px;box-shadow:0 3px 25px #0004;font-family:Arial;max-width:520px;margin:auto;overflow:auto;max-height:calc(100vh - 24px);';
   panel.innerHTML = `
-    <h3 style="margin:0 0 12px;color:#102a43">
-      Etihad Traders Cloud
-    </h3>
-
+    <h3 style="margin:0 0 12px;color:#102a43">Etihad Traders — Secure Company Login</h3>
     <div id="etihadCloudLogin">
-      <input id="etCloudEmail" type="email"
-        placeholder="Your Supabase email"
-        style="width:100%;padding:11px;margin-bottom:8px">
-
-      <input id="etCloudPassword" type="password"
-        placeholder="Your Supabase password"
-        style="width:100%;padding:11px;margin-bottom:8px">
-
-      <button id="etCloudLoginBtn"
-        style="padding:11px;background:#1769aa;color:white;border:0;border-radius:7px">
-        Login
-      </button>
+      <p style="font-size:13px">Sign in with your authorized company account to open the ERP.</p>
+      <label>Email</label><input id="etCloudEmail" type="email" autocomplete="username" placeholder="Your company email" style="width:100%;box-sizing:border-box;padding:11px;margin:5px 0 10px">
+      <label>Password</label><input id="etCloudPassword" type="password" autocomplete="current-password" placeholder="Your password" style="width:100%;box-sizing:border-box;padding:11px;margin:5px 0 10px">
+      <button id="etCloudLoginBtn" style="padding:11px 18px;background:#1769aa;color:white;border:0;border-radius:7px">Login securely</button>
     </div>
-
     <div id="etihadCloudControls" style="display:none">
-      <p id="etCloudUser"></p>
-      <button id="etihadCreateOwner"
-  style="padding:11px;background:#b8860b;color:white;border:0;border-radius:7px;margin:3px">
-  Initialize Etihad Traders Owner Account
-</button>
-
-      <button id="etCloudUpload"
-        style="padding:11px;background:#16845b;color:white;border:0;border-radius:7px;margin:3px">
-        Upload Local Data
-      </button>
-
-      <button id="etCloudDownload"
-        style="padding:11px;background:#1769aa;color:white;border:0;border-radius:7px;margin:3px">
-        Download Cloud Data
-      </button>
-
-      <button id="etCloudLogout"
-        style="padding:11px;background:#64748b;color:white;border:0;border-radius:7px;margin:3px">
-        Logout
-      </button>
+      <p id="etCloudUser"></p><p id="etCloudRole" style="font-weight:bold"></p>
+      <button id="etCloudUpload" style="padding:11px;background:#16845b;color:white;border:0;border-radius:7px;margin:3px">Back up local records to company cloud</button>
+      <button id="etCloudDownload" style="padding:11px;background:#1769aa;color:white;border:0;border-radius:7px;margin:3px">Refresh my permitted company data</button>
+      <button id="etCloudLogout" style="padding:11px;background:#64748b;color:white;border:0;border-radius:7px;margin:3px">Logout</button>
     </div>
-
-    <p id="etCloudStatus" style="font-size:13px;color:#475569">
-  Please log in to connect your cloud account.
-</p>
-
-<p id="etCloudLastSync" style="font-size:13px;color:#16845b;font-weight:600">
-  Last cloud sync: Not yet synced
-</p>
-
-    <button id="etCloudClose"
-      style="padding:7px 12px;background:#e2e8f0;border:0;border-radius:6px">
-      Close
-    </button>
-  `;
-
+    <p id="etCloudStatus" role="status" style="font-size:13px;color:#475569;margin-top:14px">Checking your company account…</p>
+    <p style="font-size:12px;color:#9a5b00;background:#fff7e6;padding:10px;border-radius:8px">Your business screen stays locked until your account and company access are verified. Employee data is refreshed from the records your branch permissions allow.</p>
+    <button id="etCloudClose" style="display:none;padding:7px 12px;background:#e2e8f0;border:0;border-radius:6px">Close</button>`;
   document.body.appendChild(panel);
-panel.style.display = 'none';
-  const status = document.getElementById('etCloudStatus');
-
-  function message(text) {
-    status.textContent = text;
+  const $ = id => document.getElementById(id);
+  const status = $('etCloudStatus');
+  const message = t => { status.textContent = t; };
+  const readLocal = key => { try { const v=JSON.parse(localStorage.getItem(key)||'[]'); return Array.isArray(v)?v:[]; } catch (_) { throw new Error('Local data is not valid JSON: '+key); } };
+  const keyFor = r => String(r?.id ?? r?.key ?? '');
+  const collectionData = () => Object.fromEntries(COLLECTIONS.map(k=>[k,readLocal(k)]));
+  function backupLocal(){
+    const blob=new Blob([JSON.stringify({app:'Etihad Traders',backupDate:new Date().toISOString(),records:collectionData()},null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='Etihad-Traders-Safety-Backup-'+new Date().toISOString().slice(0,10)+'.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000);
   }
-
-  function localRecords() {
-    const records = {};
-
-    KEYS.forEach(key => {
-      records[key] = JSON.parse(
-        localStorage.getItem(key) || '[]'
-      );
-    });
-
-    return records;
+  async function sessionUser(){ const r=await client.auth.getSession(); if(r.error)throw r.error; return r.data.session?.user||null; }
+  async function membership(user){
+    const r=await client.from('etihad_memberships').select('role,active,branch_ids,permissions').eq('org_id',ORG_ID).eq('user_id',user.id).maybeSingle();
+    if(r.error)throw r.error; if(!r.data||!r.data.active)throw new Error('This account is not an active Etihad Traders member. Ask the owner to authorize it.'); return r.data;
   }
-
-  function downloadSafetyBackup(records) {
-    const backup = {
-      app: 'My Business ERP',
-      backupVersion: 1,
-      backupDate: new Date().toISOString(),
-      records: records
-    };
-
-    const blob = new Blob(
-      [JSON.stringify(backup, null, 2)],
-      { type: 'application/json' }
-    );
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-
-    link.href = url;
-    link.download = 'Etihad-Traders-Before-Cloud-Restore.json';
-
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  function revealApp(){ $('etCloudClose').style.display='inline-block'; document.body.classList.add('etihad-auth-ready'); panel.style.display='none'; }
+  function showLogin(){ $('etCloudClose').style.display='none'; document.body.classList.remove('etihad-auth-ready'); panel.style.display='block'; $('etihadCloudLogin').style.display='block'; $('etihadCloudControls').style.display='none'; }
+  async function permittedCloudRecords(){
+    const grouped=Object.fromEntries(COLLECTIONS.map(k=>[k,[]]));
+    let offset=0, total=0;
+    while(true){
+      const r=await client.from('etihad_records').select('collection,record_id,data').eq('org_id',ORG_ID).range(offset,offset+999);
+      if(r.error)throw r.error;
+      const rows=r.data||[];
+      for(const row of rows){ if(grouped[row.collection])grouped[row.collection].push(row.data); }
+      total+=rows.length; if(rows.length<1000)break; offset+=rows.length;
+    }
+    if(!grouped.mberp_branches.length)throw new Error('No company branch records are available to this account. Your data has not been changed.');
+    return {grouped,total};
   }
-
-  async function refreshLogin() {
-    const result = await client.auth.getSession();
-
-    if (result.error) {
-      message(result.error.message);
-      return;
+  function applyPermittedRecords(grouped){
+    let changed=false;
+    for(const key of COLLECTIONS){
+      const next=JSON.stringify(grouped[key]||[]);
+      if(localStorage.getItem(key)!==next){localStorage.setItem(key,next);changed=true;}
     }
-
-    const user = result.data.session?.user;
-
-    document.getElementById('etihadCloudLogin').style.display =
-      user ? 'none' : 'block';
-
-    document.getElementById('etihadCloudControls').style.display =
-      user ? 'block' : 'none';
-
-    if (user) {
-      document.getElementById('etCloudUser').textContent =
-        'Logged in: ' + user.email;
-
-      message('Cloud account connected. Choose an action.');
-      const lastSync = localStorage.getItem('etihad_last_cloud_sync');
-const syncDisplay = document.getElementById('etCloudLastSync');
-const dashboardSync = document.getElementById('dashboardLastSync');
-
-if (dashboardSync) {
-  dashboardSync.textContent = lastSync
-    ? 'Last cloud sync: ' + new Date(lastSync).toLocaleString()
-    : 'Last cloud sync: Not yet synced';
-}
-if (syncDisplay) {
-  syncDisplay.textContent = lastSync
-    ? 'Last cloud sync: ' + new Date(lastSync).toLocaleString()
-    : 'Last cloud sync: Not yet synced';
-}
-    }
+    return changed;
   }
-
-  document.getElementById('etCloudLoginBtn').onclick =
-    async function () {
-      const email = document.getElementById('etCloudEmail').value.trim();
-      const password = document.getElementById('etCloudPassword').value;
-
-      if (!email || !password) {
-        message('Enter your email and password.');
-        return;
-      }
-
-      message('Logging in...');
-
-      const result = await client.auth.signInWithPassword({
-        email: email,
-        password: password
-      });
-
-      if (result.error) {
-        message('Login failed: ' + result.error.message);
-        return;
-      }
-
-      document.getElementById('etCloudPassword').value = '';
-
-      await refreshLogin();
-    };
-
-  document.getElementById('etCloudUpload').onclick =
-    async function () {
-      if (!confirm('Upload this device’s 12 ERP data collections to your cloud account? This will replace the cloud copy.')) return;
-
-      message('Uploading your ERP records...');
-
-      try {
-        const session = await client.auth.getSession();
-        const user = session.data.session?.user;
-
-        if (!user) throw new Error('Please log in again.');
-
-        const records = localRecords();
-
-        const result = await client
-          .from('erp_cloud_data')
-          .upsert({
-            user_id: user.id,
-            data: {
-              records: records,
-              updated_at: new Date().toISOString()
-            },
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'user_id' });
-
-        if (result.error) throw result.error;
-
-        message('Upload successful! Your 12 collections are in the cloud.');
-
-      } catch (error) {
-        message('Upload failed: ' + error.message);
-      }
-    };
-
-  document.getElementById('etCloudDownload').onclick =
-    async function () {
-      if (!confirm('Download cloud records and replace the records on this device? A safety backup will be downloaded first.')) return;
-
-      message('Checking cloud records...');
-
-      try {
-        const session = await client.auth.getSession();
-        const user = session.data.session?.user;
-
-        if (!user) throw new Error('Please log in again.');
-
-        const result = await client
-          .from('erp_cloud_data')
-          .select('data')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (result.error) throw result.error;
-
-        if (!result.data || !result.data.data?.records) {
-          throw new Error('No cloud backup exists yet. Upload first.');
-        }
-
-        const records = result.data.data.records;
-
-        KEYS.forEach(key => {
-          if (!Array.isArray(records[key])) {
-            throw new Error('Cloud backup is missing: ' + key);
-          }
-        });
-
-        const safety = localRecords();
-        downloadSafetyBackup(safety);
-
-        KEYS.forEach(key => {
-          localStorage.setItem(
-            key,
-            JSON.stringify(records[key])
-          );
-        });
-
-        message('Cloud data restored. Reloading your ERP...');
-
-        setTimeout(() => location.reload(), 1500);
-
-      } catch (error) {
-        message('Download failed: ' + error.message);
-      }
-    };
-
-  document.getElementById('etCloudLogout').onclick =
-    async function () {
-      await client.auth.signOut();
-      await refreshLogin();
-      message('You have logged out.');
-    };
-
-document.getElementById('etCloudClose').onclick =
-    function () {
-      panel.style.display = 'none';
-    };
-
-  
-  // Automatic cloud sync after local data changes
-  let autoSyncTimer = null;
-  let autoSyncBusy = false;
-  let autoSyncPending = false;
-
-  async function performAutoSync() {
-  
-    if (!navigator.onLine) return;
-
-    if (autoSyncBusy) {
-      autoSyncPending = true;
-      return;
-    }
-
-    autoSyncBusy = true;
-
-    try {
-      const sessionResult = await client.auth.getSession();
-      const user = sessionResult.data.session?.user;
-
-      if (!user) return;
-
-      const records = localRecords();
-      const now = new Date().toISOString();
-
-      const result = await client
-        .from('erp_cloud_data')
-        .upsert({
-          user_id: user.id,
-          data: {
-            records: records,
-            updated_at: now
-          },
-          updated_at: now
-        }, { onConflict: 'user_id' });
-
-     if (result.error) throw result.error;
-
-localStorage.setItem('etihad_last_cloud_sync', now);
-const dashboardSync = document.getElementById('dashboardLastSync');
-
-if (dashboardSync) {
-  dashboardSync.textContent =
-    'Last cloud sync: ' + new Date(now).toLocaleString();
-}
-const syncDisplay = document.getElementById('etCloudLastSync');
-
-if (syncDisplay) {
-  syncDisplay.textContent =
-    'Last cloud sync: ' + new Date(now).toLocaleString();
-}
-
-const cloudButton = document.getElementById('dashboardCloudButton');
-
-if (cloudButton) {
-  cloudButton.textContent = '☁ Cloud Sync ✓ Synced';
-  cloudButton.style.background = '#16845b';
-}
-
-message('Automatic cloud sync successful.');
-
-} catch (error) {
-  message('Automatic sync failed: ' + error.message);
-}
-    finally {
-      autoSyncBusy = false;
-
-      if (autoSyncPending) {
-        autoSyncPending = false;
-        scheduleAutoSync();
-      }
-    }
-  }
-
-   function scheduleAutoSync() {
-    if (!navigator.onLine) {
-      message('Offline: changes remain saved on this device.');
-      return;
-    }
-
-    if (autoSyncBusy) {
-      autoSyncPending = true;
-      return;
-    }
-
-    performAutoSync();
-  }
-  const originalSetItem = Storage.prototype.setItem;
-
-  Storage.prototype.setItem = function(key, value) {
-    const result = originalSetItem.apply(this, arguments);
-
-    if (
-      this === localStorage &&
-      KEYS.includes(String(key)) &&
-      status.textContent !== 'Checking cloud records...'
-    ) {
-      scheduleAutoSync();
-    }
-
-    return result;
+  let syncUser=null, syncMembership=null, syncTimer=null, syncBusy=false, syncAgain=false;
+  const WRITE_COLLECTIONS={
+    owner:COLLECTIONS,
+    manager:COLLECTIONS,
+    cashier:['mberp_sales','mberp_payments','mberp_sales_returns'],
+    stockkeeper:['mberp_products','mberp_transfers','mberp_purchases'],
+    accountant:['mberp_payments','mberp_expenses','mberp_purchases','mberp_supplier_payments','mberp_supplier_returns','mberp_sales_returns']
   };
-
-    window.addEventListener('etihad-data-saved', function() {
-  
-  message('Save detected! Starting cloud sync...');
-  scheduleAutoSync();
-});
-  window.addEventListener('online', scheduleAutoSync);
-
-    // Initialize the Etihad Traders company and owner account.
-  const ownerButton = document.getElementById('etihadCreateOwner');
-
-  if (ownerButton) {
-    ownerButton.onclick = async function () {
-      const button = this;
-      button.disabled = true;
-
-      try {
-        message('Checking your owner account...');
-
-        const sessionResult = await client.auth.getSession();
-        if (sessionResult.error) throw sessionResult.error;
-
-        const user = sessionResult.data.session?.user;
-        if (!user) throw new Error('Please log in first.');
-
-        const existing = await client
-          .from('etihad_memberships')
-          .select('org_id, role, active')
-          .eq('user_id', user.id)
-          .eq('active', true)
-          .limit(1)
-          .maybeSingle();
-
-        if (existing.error) throw existing.error;
-
-        if (existing.data) {
-          message('Your account is already registered. Role: ' + existing.data.role);
-          return;
-        }
-
-        const result = await client.rpc(
-          'etihad_create_organization',
-          { p_name: 'Etihad Traders' }
-        );
-
-        if (result.error) throw result.error;
-
-        message('Success! Etihad Traders company created. Your account is the owner.');
-
-      } catch (error) {
-        message('Owner setup failed: ' + error.message);
-      } finally {
-        button.disabled = false;
-      }
-    };
+  function enableAutoSync(user,m){syncUser=user;syncMembership=m;window.addEventListener('etihad-data-saved',scheduleAutoSync);window.addEventListener('online',scheduleAutoSync);}
+  function scheduleAutoSync(){
+    if(!syncUser||!syncMembership)return;
+    clearTimeout(syncTimer);syncTimer=setTimeout(runAutoSync,1200);
   }
-
-  refreshLogin();
-})();
-</script>
+  async function runAutoSync(){
+    if(syncBusy){syncAgain=true;return;}
+    if(!navigator.onLine){message('Saved on this device. Cloud sync will resume when internet returns.');return;}
+    syncBusy=true;syncAgain=false;
+    try{
+      const user=await sessionUser();if(!user||user.id!==syncUser.id)throw new Error('Account changed; cloud sync paused.');
+      const allowed=WRITE_COLLECTIONS[syncMembership.role]||[];let sent=0;
+      let fingerprints={};try{fingerprints=JSON.parse(localStorage.getItem('etihad_record_sync_cache_v1')||'{}')||{};}catch(_){fingerprints={};}
+      for(const collection of allowed){
+        const records=readLocal(collection);
+        for(const record of records){
+          const rid=keyFor(record);if(!rid)throw new Error(collection+' contains a record without id; cloud sync paused.');
+          const cacheKey=collection+':'+rid, fingerprint=JSON.stringify(record);
+          if(fingerprints[cacheKey]===fingerprint)continue;
+          const r=await client.from('etihad_records').upsert({org_id:ORG_ID,collection,record_id:rid,data:record,updated_by:user.id},{onConflict:'org_id,collection,record_id'});
+          if(r.error)throw new Error(collection+' / '+rid+': '+r.error.message);
+          fingerprints[cacheKey]=fingerprint;sent++;
+        }
+      }
+      localStorage.setItem('etihad_record_sync_cache_v1',JSON.stringify(fingerprints));
+      const now=new Date().toISOString();localStorage.setItem('etihad_last_cloud_sync',now);
+      const d=$('dashboardLastSync');if(d)d.textContent='Last cloud sync: '+new Date(now).toLocaleString();
+      message('Cloud sync complete: '+sent+' permitted records saved. Deletions are not synchronized.');
+    }catch(e){message('Saved locally; cloud sync needs attention: '+(e.message||String(e)));}
+    finally{syncBusy=false;if(syncAgain)scheduleAutoSync();}
+  }
+  async function authorizeAndOpen(){
+    let user;
+    try{ user=await sessionUser(); }catch(e){ showLogin();message('Unable to verify your login session. Connect to the internet and try again. '+(e.message||String(e)));return; }
+    if(!user){showLogin();message('Please log in with your authorized Etihad Traders account.');return;}
+    try{
+      message('Verifying your company membership…');
+      let m;
+      try{
+        m=await membership(user);
+        if(m.role==='owner')localStorage.setItem(CACHE_KEY,JSON.stringify({user_id:user.id,role:'owner',verified_at:Date.now()}));
+      }catch(err){
+        let cached=null; try{cached=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');}catch(_){ }
+        if(!navigator.onLine && cached?.user_id===user.id && cached?.role==='owner' && (!localStorage.getItem(ACTIVE_USER_KEY)||localStorage.getItem(ACTIVE_USER_KEY)===user.id)){
+          $('etCloudUser').textContent='Logged in: '+(user.email||'Owner'); $('etCloudRole').textContent='Company role: owner (offline session)';
+          $('etihadCloudLogin').style.display='none'; $('etihadCloudControls').style.display='block';
+          $('etCloudUpload').disabled=true; $('etCloudDownload').disabled=true;
+          message('Offline owner access. Cloud sync and employee access require an internet connection.'); revealApp(); return;
+        }
+        throw err;
+      }
+      $('etCloudUser').textContent='Logged in: '+(user.email||'Company user');
+      $('etCloudRole').textContent='Company role: '+m.role;
+      $('etihadCloudLogin').style.display='none'; $('etihadCloudControls').style.display='block';
+      $('etCloudUpload').style.display=m.role==='owner'?'inline-block':'none';
+      const previousUser=localStorage.getItem(ACTIVE_USER_KEY);
+      const accountChanged=!!previousUser&&previousUser!==user.id;
+      if(m.role==='owner'&&!accountChanged){
+        // Preserve the owner's full local dataset on the owner's own device; cloud may be a partial first migration.
+        localStorage.setItem(ACTIVE_USER_KEY,user.id);
+        message('Owner access verified. Your local company data is preserved. Use the cloud backup button for the first full upload.');
+        revealApp(); enableAutoSync(user,m); return;
+      }
+      message(m.role==='owner'?'Account changed. Loading company-wide cloud records…':'Loading only the records permitted for your account…');
+      const result=await permittedCloudRecords();
+      const changed=applyPermittedRecords(result.grouped);
+      localStorage.setItem(ACTIVE_USER_KEY,user.id);
+      if(changed){message('Your authorized data is ready. Reloading safely…');location.reload();return;}
+      message('Access verified. '+result.total+' permitted company records loaded.');
+      revealApp(); enableAutoSync(user,m);
+    }catch(e){ showLogin(); message('Access not granted: '+(e.message||String(e))); }
+  }
+  $('etCloudLoginBtn').onclick=async()=>{
+    const email=$('etCloudEmail').value.trim(), password=$('etCloudPassword').value;
+    if(!email||!password)return message('Enter your company email and password.');
+    $('etCloudLoginBtn').disabled=true; message('Signing in and checking company access…');
+    try{const r=await client.auth.signInWithPassword({email,password});if(r.error)throw r.error;$('etCloudPassword').value='';await authorizeAndOpen();}
+    catch(e){message('Login failed: '+(e.message||String(e)));}
+    finally{$('etCloudLoginBtn').disabled=false;}
+  };
+  $('etCloudUpload').onclick=async()=>{
+    if(!confirm('Download a safety backup, then upload all local company records? This does not synchronize deletions. Continue?'))return;
+    try{
+      const user=await sessionUser();if(!user)throw new Error('Please log in again.');
+      const m=await membership(user);if(m.role!=='owner')throw new Error('Only the company owner can run the initial full-company upload.');
+      message('Creating a safety backup…');backupLocal();const data=collectionData();let done=0;let fingerprints={};
+      for(const collection of COLLECTIONS){for(const record of data[collection]){
+        const rid=keyFor(record);if(!rid)throw new Error(collection+' has a record without an id. Upload stopped.');
+        const r=await client.from('etihad_records').upsert({org_id:ORG_ID,collection,record_id:rid,data:record,updated_by:user.id},{onConflict:'org_id,collection,record_id'});
+        if(r.error)throw new Error(collection+' / '+rid+': '+r.error.message);
+        fingerprints[collection+':'+rid]=JSON.stringify(record);done++;
+      }}
+      localStorage.setItem('etihad_record_sync_cache_v1',JSON.stringify(fingerprints));
+      const now=new Date().toISOString();localStorage.setItem('etihad_last_cloud_sync',now);const d=$('dashboardLastSync');if(d)d.textContent='Last cloud sync: '+new Date(now).toLocaleString();
+      message('Upload complete: '+done+' records. Existing cloud-only records were preserved; deletions are not synchronized.');
+    }catch(e){message('Upload stopped: '+(e.message||String(e)));}
+  };
+  $('etCloudDownload').onclick=async()=>{
+    try{message('Refreshing your permitted company records…');const user=await sessionUser();if(!user)throw new Error('Please log in again.');await membership(user);const result=await permittedCloudRecords();backupLocal();applyPermittedRecords(result.grouped);message('Your permitted records were refreshed. Reloading…');location.reload();}
+    catch(e){message('Refresh stopped safely: '+(e.message||String(e)));}
+  };
+  $('etCloudLogout').onclick=async()=>{
+    if(!confirm('Log out of Etihad Traders on this device?'))return;
+    try{const r=await client.auth.signOut();if(r.error)throw r.error;document.body.classList.remove('etihad-auth-ready');location.reload();}
+    catch(e){message('Logout failed: '+(e.message||String(e)));}
+  };
+  $('etCloudClose').onclick=()=>{if(document.body.classList.contains('etihad-auth-ready'))panel.style.display='none';};
+  client.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){document.body.classList.remove('etihad-auth-ready');panel.style.display='block';showLogin();}});
+  authorizeAndOpen();
+})();</script>
 
 
 <script id="etihad-pos-usability">
@@ -4542,56 +4658,6 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
 .etihad-brand{max-width:calc(100% - 90px)}
 .etihad-brand-copy h2{margin:0}
 @media(max-width:600px){#pos .pos-pro-layout{display:flex;flex-direction:column}#pos .pos-pro-side{min-height:unset}#pos #etihadPosProfileHost{max-height:220px}}
-  
-/* ETIHAD TRADERS - LOGO SIZE FIX */
-#etihadHeaderLogo {
-  display: block !important;
-  width: 90px !important;
-  height: 48px !important;
-  max-width: 90px !important;
-  max-height: 48px !important;
-  min-width: 0 !important;
-  object-fit: contain !important;
-  flex-shrink: 0 !important;
-}
-
-#etihadLogoPreview {
-  display: block;
-  width: 160px;
-  height: 90px;
-  max-width: 100%;
-  object-fit: contain;
-  margin: 10px auto;
-}
-
-.etihad-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: calc(100% - 90px);
-  min-width: 0;
-}
-
-.etihad-brand-copy {
-  min-width: 0;
-}
-
-.etihad-brand-copy h2 {
-  margin: 0;
-  font-size: 20px;
-}
-
-@media (max-width: 600px) {
-  #etihadHeaderLogo {
-    width: 65px !important;
-    height: 42px !important;
-  }
-
-  .etihad-brand-copy h2 {
-    font-size: 16px;
-  }
-}
-
 </style>
 
 <script id="etihad-sales-navigation-and-report-periods">
@@ -5008,7 +5074,8 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
 #pos .pos-pro-head .pos-branch select{display:block!important;width:100%;min-height:42px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit}
 @media(max-width:560px){#pos .pos-pro-head{align-items:flex-start!important;gap:10px!important}#pos .pos-pro-head .pos-branch{width:55%;min-width:150px}}
 </style>
-  <style id="etihad-pos-barcode-camera-style">
+
+<style id="etihad-pos-barcode-camera-style">
 #pos .etihad-pos-scan-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:end;margin:10px 0 14px}
 #pos .etihad-pos-scan-row label{display:block;font-size:12px;font-weight:700;margin:0 0 6px;color:var(--muted)}
 #pos .etihad-pos-scan-row input{width:100%;min-height:42px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit}
@@ -5016,226 +5083,91 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
 #pos .etihad-pos-camera-panel{display:none;margin:8px 0 14px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
 #pos .etihad-pos-camera-panel video{display:block;width:100%;max-height:300px;object-fit:cover;background:#111;border-radius:8px}
 #pos .etihad-pos-camera-panel p{margin:7px 0;font-size:12px;color:var(--muted)}
-@media(max-width:560px){
- #pos .etihad-pos-scan-row{grid-template-columns:minmax(0,1fr) auto}
- .etihad-pos-scan-entry{grid-column:1/-1}
-}
-  </style>
-  <script id="etihad-pos-barcode-camera-upgrade">
+@media(max-width:560px){#pos .etihad-pos-scan-row{grid-template-columns:minmax(0,1fr) auto}.etihad-pos-scan-entry{grid-column:1/-1}}
+</style>
+<script id="etihad-pos-barcode-camera-upgrade">
 (function(){
-'use strict';
-
-const $=id=>document.getElementById(id);
-const host=$('etihadPosProducts');
-const branch=$('saleBranch');
-const productSelect=$('saleProduct');
-const qty=$('saleQty');
-
-if(!host||!branch||!productSelect||!qty||$('etihadPosBarcode'))return;
-
-const main=host.closest('.pos-pro-main');
-if(!main)return;
-
-const row=document.createElement('div');
-row.className='etihad-pos-scan-row';
-row.innerHTML=`
-<div class="etihad-pos-scan-entry">
-<label for="etihadPosBarcode">Barcode / SKU</label>
-<input id="etihadPosBarcode" type="text"
-placeholder="Enter or scan barcode, then press Enter"
-autocomplete="off">
-</div>
-<button type="button" id="etihadPosCameraStart">📷 Scan with Camera</button>
-<button type="button" id="etihadPosCameraStop" style="display:none">Stop</button>
-`;
-
-const camera=document.createElement('div');
-camera.className='etihad-pos-camera-panel';
-camera.innerHTML=`
-<video id="etihadPosCameraVideo" playsinline muted></video>
-<p id="etihadPosCameraMessage">Point your camera at a product barcode.</p>
-`;
-camera.id='etihadPosCameraPanel';
-
-const searchRow=main.querySelector('.pos-search-row');
-if(searchRow)searchRow.insertAdjacentElement('afterend',row);
-else main.insertBefore(row,host);
-
-row.insertAdjacentElement('afterend',camera);
-
-const input=$('etihadPosBarcode');
-const start=$('etihadPosCameraStart');
-const stop=$('etihadPosCameraStop');
-const video=$('etihadPosCameraVideo');
-const message=$('etihadPosCameraMessage');
-
-let stream=null,detector=null,raf=0,locked=false;
-const norm=v=>String(v??'').trim().toLowerCase();
-
-function branchMatches(p){
- const id=String(branch.value||'');
- const opt=Array.from(branch.options||[]).find(o=>String(o.value)===id);
- const name=norm(opt?opt.textContent.replace(/\s*\(Inactive\)\s*$/,''):'');
- const pid=String(p.branchId??'').trim();
-
- if(pid&&pid===id)return true;
-
- const pn=norm(p.branchName||p.branch);
- if(pn&&name&&pn===name)return true;
-
- const active=typeof activeBranches==='function'?activeBranches():[];
- return !pid&&!pn&&active.length===1&&String(active[0].id)===id;
-}
-
-function getProducts(){
- try{return Array.isArray(products)?products:[]}
- catch(e){return []}
-}
-
-function addByCode(raw){
- const code=norm(raw);
- if(!code)return;
-
- const branchProducts=getProducts().filter(branchMatches);
- const found=branchProducts.filter(p=>
-  [p.barcode,p.sku].some(v=>norm(v)===code)
- );
-
- if(found.length!==1){
-  const anywhere=getProducts().some(p=>
-   [p.barcode,p.sku].some(v=>norm(v)===code)
-  );
-
-  alert(found.length>1
-   ?'Duplicate barcode in this branch.'
-   :anywhere
-    ?'This product belongs to another branch.'
-    :'Barcode / SKU not found in Inventory.'
-  );
-
-  input.value='';
-  input.focus();
-  return false;
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const host=$('etihadPosProducts');
+ const branch=$('saleBranch');
+ const productSelect=$('saleProduct');
+ const qty=$('saleQty');
+ if(!host||!branch||!productSelect||!qty||$('etihadPosBarcode'))return;
+ const main=host.closest('.pos-pro-main');
+ if(!main)return;
+ const row=document.createElement('div');
+ row.className='etihad-pos-scan-row';
+ row.innerHTML='<div class="etihad-pos-scan-entry"><label for="etihadPosBarcode">Barcode / SKU</label><input id="etihadPosBarcode" type="text" placeholder="Enter or scan barcode, then press Enter" autocomplete="off" inputmode="text"></div><button type="button" id="etihadPosCameraStart">📷 Scan with Camera</button><button type="button" id="etihadPosCameraStop" style="display:none">Stop</button>';
+ const camera=document.createElement('div');
+ camera.className='etihad-pos-camera-panel';
+ camera.id='etihadPosCameraPanel';
+ camera.innerHTML='<video id="etihadPosCameraVideo" playsinline muted></video><p id="etihadPosCameraMessage">Point your camera at a product barcode.</p>';
+ const searchRow=main.querySelector('.pos-search-row');
+ if(searchRow)searchRow.insertAdjacentElement('afterend',row);else main.insertBefore(row,host);
+ row.insertAdjacentElement('afterend',camera);
+ const input=$('etihadPosBarcode'),start=$('etihadPosCameraStart'),stop=$('etihadPosCameraStop'),video=$('etihadPosCameraVideo'),message=$('etihadPosCameraMessage');
+ let stream=null,detector=null,raf=0,locked=false;
+ const norm=v=>String(v??'').trim().toLowerCase();
+ function branchMatches(p){
+  const id=String(branch.value||'');
+  const opt=Array.from(branch.options||[]).find(o=>String(o.value)===id);
+  const name=norm(opt?opt.textContent.replace(/\s*\(Inactive\)\s*$/,''):'');
+  const pid=String(p.branchId??'').trim();
+  if(pid&&pid===id)return true;
+  const pn=norm(p.branchName||p.branch);
+  if(pn&&name&&pn===name)return true;
+  const active=typeof activeBranches==='function'?activeBranches():[];
+  return !pid&&!pn&&active.length===1&&String(active[0].id)===id;
  }
-
- const p=found[0];
-
- if(Number(p.qty||0)<=0){
-  alert('No available stock in this branch.');
-  input.value='';
-  input.focus();
-  return false;
- }
-
- productSelect.innerHTML=branchProducts
-  .filter(x=>Number(x.qty||0)>0)
-  .map(x=>'<option value="'+
-   String(x.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+
-   '">'+String(x.name||'').replace(/</g,'&lt;')+'</option>')
-  .join('');
-
- productSelect.value=p.id;
- qty.value=1;
- input.value='';
-
- if(typeof window.addToCart==='function')window.addToCart();
- else alert('POS add-to-cart function unavailable.');
-
- return true;
-}
-
-input.addEventListener('keydown',e=>{
- if(e.key==='Enter'){
-  e.preventDefault();
-  addByCode(input.value);
- }
-});
-
-function stopCamera(){
- if(raf)cancelAnimationFrame(raf);
- raf=0;
-
- if(stream){
-  stream.getTracks().forEach(t=>t.stop());
-  stream=null;
- }
-
- video.pause();
- video.srcObject=null;
- camera.style.display='none';
- stop.style.display='none';
- start.style.display='';
- locked=false;
-}
-
-stop.addEventListener('click',stopCamera);
-
-async function scanFrame(){
- if(!stream||!detector||locked)return;
-
- try{
-  if(video.readyState>=2){
-   const codes=await detector.detect(video);
-
-   if(codes.length&&codes[0].rawValue){
-    locked=true;
-    const value=codes[0].rawValue;
-    stopCamera();
-    addByCode(value);
-    return;
-   }
+ function getProducts(){try{return Array.isArray(products)?products:[]}catch(_){return []}}
+ function addByCode(raw){
+  const code=norm(raw);if(!code)return;
+  const branchProducts=getProducts().filter(branchMatches);
+  const found=branchProducts.filter(p=>[p.barcode,p.sku].some(v=>norm(v)===code));
+  if(found.length!==1){
+   const anywhere=getProducts().some(p=>[p.barcode,p.sku].some(v=>norm(v)===code));
+   alert(found.length>1?'This barcode is duplicated in the selected branch. Please correct the product records.':anywhere?'This product belongs to another branch or has no matching branch stock.':'Barcode / SKU not found. Check the product barcode in Inventory.');
+   input.value='';input.focus();return false;
   }
- }catch(e){
-  message.textContent='Scanning error. Enter barcode manually.';
+  const p=found[0];
+  if(Number(p.qty||0)<=0){alert('This product has no available stock in the selected branch.');input.value='';input.focus();return false;}
+  productSelect.innerHTML=branchProducts.filter(x=>Number(x.qty||0)>0).map(x=>'<option value="'+String(x.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+String(x.name||'').replace(/</g,'&lt;')+'</option>').join('');
+  productSelect.value=p.id;
+  qty.value=1;
+  input.value='';
+  if(typeof window.addToCart==='function')window.addToCart();
+  else alert('The POS add-to-cart function is unavailable.');
+  return true;
  }
-
- if(stream)raf=requestAnimationFrame(scanFrame);
-}
-
-start.addEventListener('click',async()=>{
- if(!navigator.mediaDevices?.getUserMedia){
-  alert('Camera requires HTTPS and browser camera support.');
-  return;
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addByCode(input.value)}});
+ function stopCamera(){if(raf)cancelAnimationFrame(raf);raf=0;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.pause();video.srcObject=null;camera.style.display='none';stop.style.display='none';start.style.display='';locked=false;}
+ stop.addEventListener('click',stopCamera);
+ async function scanFrame(){
+  if(!stream||!detector||locked)return;
+  try{
+   if(video.readyState>=2){
+    const codes=await detector.detect(video);
+    if(codes.length&&codes[0].rawValue){locked=true;const value=codes[0].rawValue;stopCamera();addByCode(value);return;}
+   }
+  }catch(e){message.textContent='Camera scanning error. Try entering the barcode manually.';}
+  if(stream)raf=requestAnimationFrame(scanFrame);
  }
-
- if(!('BarcodeDetector' in window)){
-  alert('Camera barcode scanning is not supported by this browser. Use Chrome or a handheld scanner.');
-  return;
- }
-
- try{
-  detector=new BarcodeDetector({
-   formats:['code_128','code_39','ean_13','ean_8',
-   'upc_a','upc_e','itf','qr_code','codabar','data_matrix']
-  });
-
-  stream=await navigator.mediaDevices.getUserMedia({
-   audio:false,
-   video:{facingMode:{ideal:'environment'}}
-  });
-
-  video.srcObject=stream;
-  camera.style.display='block';
-  start.style.display='none';
-  stop.style.display='';
-  message.textContent='Camera active. Point it at the barcode.';
-
-  await video.play();
-  scanFrame();
-
- }catch(e){
-  stopCamera();
-  alert('Camera unavailable. Allow camera permission and try again.');
- }
-});
-
-branch.addEventListener('change',()=>input.value='');
-document.addEventListener('visibilitychange',()=>{
- if(document.hidden&&stream)stopCamera();
-});
-window.addEventListener('pagehide',stopCamera);
-
+ start.addEventListener('click',async()=>{
+  if(!navigator.mediaDevices?.getUserMedia){alert('Camera access requires HTTPS and a browser that supports camera access. Use the barcode field or open the app in Chrome.');return;}
+  if(!('BarcodeDetector' in window)){alert('This browser does not support built-in barcode scanning. Open Etihad Traders in the latest Google Chrome on your phone, or use a handheld scanner / barcode field.');return;}
+  try{
+   detector=new BarcodeDetector({formats:['code_128','code_39','ean_13','ean_8','upc_a','upc_e','itf','qr_code','codabar','data_matrix']});
+   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});
+   video.srcObject=stream;camera.style.display='block';start.style.display='none';stop.style.display='';message.textContent='Camera active — hold the barcode steady inside the frame.';
+   await video.play();scanFrame();
+  }catch(e){stopCamera();alert('Unable to open the camera. Allow camera permission for this website and try again.');}
+ });
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&stream)stopCamera()});
+ branch.addEventListener('change',()=>{input.value='';});
+ window.addEventListener('pagehide',stopCamera);
 })();
-                                   </script>
+</script>
+
 </body>
 </html>
