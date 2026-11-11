@@ -4368,9 +4368,9 @@ body.etihad-blackgold #pos .pos-product-card:hover{border-color:#d8b75c}
  const search=$('etihadPosSearch'),list=$('etihadPosProducts'),qtyView=$('etihadPosQty');
  function escape(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
  function format(v){return Number(v||0).toLocaleString('en-PK',{maximumFractionDigits:2})}
- function drawProducts(){let all=[];try{all=JSON.parse(localStorage.getItem('mberp_products')||'[]')}catch(e){};const bid=branch?.value||'',q=(search.value||'').trim().toLowerCase();const matches=q?all.filter(p=>String(p.branchId)===String(bid)&&Number(p.qty)>0&&[p.name,p.sku,p.barcode,p.category].some(v=>String(v||'').toLowerCase().includes(q))).slice(0,60):[];list.innerHTML='<table><thead><tr><th>No.</th><th>Qty.</th><th>Product</th><th style="text-align:right">Price</th></tr></thead><tbody>'+(matches.map((p,i)=>`<tr data-pos-product="${escape(p.id)}"><td>${i+1}</td><td>${format(Math.max(1,Math.floor(Number(qtyView.value)||1)))}</td><td>${escape(p.name)}<div class="muted" style="font-size:11px">${escape(p.sku||p.barcode||'')}</div></td><td class="product-price">${format(p.price)}</td></tr>`).join('')||'<tr><td colspan="4" class="product-empty">'+(q?'No matching products':'Search for a product to begin')+'</td></tr>')+'</tbody></table>'}
+ function drawProducts(){let all=[];try{all=Array.isArray(products)?products:[]}catch(e){};const bid=String(branch?.value||''),q=(search.value||'').trim().toLowerCase();const matches=q?all.filter(p=>String(p.branchId??'')===bid&&Number(p.qty)>0&&[p.name,p.sku,p.barcode,p.category].some(v=>String(v||'').toLowerCase().includes(q))).slice(0,60):[];list.innerHTML='<table><thead><tr><th>No.</th><th>Qty.</th><th>Product</th><th style="text-align:right">Price</th></tr></thead><tbody>'+(matches.map((p,i)=>`<tr data-pos-product="${escape(p.id)}"><td>${i+1}</td><td>${format(Math.max(1,Math.floor(Number(qtyView.value)||1)))}</td><td>${escape(p.name)}<div class="muted" style="font-size:11px">${escape(p.sku||p.barcode||'')}</div></td><td class="product-price">${format(p.price)}</td></tr>`).join('')||'<tr><td colspan="4" class="product-empty">'+(q?'No matching products':'Search for a product to begin')+'</td></tr>')+'</tbody></table>'}
  list.addEventListener('click',e=>{const b=e.target.closest('tr[data-pos-product]');if(!b)return;const p=allProducts().find(x=>String(x.id)===b.dataset.posProduct);if(!p)return;product.value=p.id;qty.value=Math.max(1,Math.floor(Number(qtyView.value)||1));if(typeof window.addToCart==='function')window.addToCart();qtyView.value=1;search.focus();});
- function allProducts(){try{return JSON.parse(localStorage.getItem('mberp_products')||'[]')}catch(e){return []}}
+ function allProducts(){try{return Array.isArray(products)?products:[]}catch(e){return []}}
  search.addEventListener('input',drawProducts);branch?.addEventListener('change',drawProducts);
  qtyView.addEventListener('input',()=>{qty.value=Math.max(1,Math.floor(Number(qtyView.value)||1))});
  search.addEventListener('keydown',e=>{if(e.key==='Enter'){const first=list.querySelector('[data-pos-product]');if(first){e.preventDefault();first.click()}}});
@@ -4835,87 +4835,66 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
 (function(){
  'use strict';
  const $=id=>document.getElementById(id);
- const pos=$('pos'), select=$('saleProduct'), branchSelect=$('saleBranch');
- if(!pos||!select||!branchSelect)return;
+ const search=$('etihadPosSearch'), host=$('etihadPosProducts');
+ const branch=$('saleBranch'), productSelect=$('saleProduct'), qty=$('saleQty'), qtyView=$('etihadPosQty');
+ if(!search||!host||!branch||!productSelect)return;
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const money=v=>Number(v||0).toLocaleString('en-PK',{maximumFractionDigits:2});
- // Use the live in-memory product collection, never a stale localStorage snapshot.
- function liveProducts(){
-  try{return Array.isArray(products)?products:[]}catch(_){return []}
+ const fmt=v=>Number(v||0).toLocaleString('en-PK',{maximumFractionDigits:2});
+ const norm=v=>String(v??'').trim().toLocaleLowerCase();
+ // `products` is the ERP's canonical in-memory collection. Do not read a
+ // detached/localStorage copy: that caused the visible POS search to go stale.
+ function getProducts(){
+  if(typeof products!=='undefined'&&Array.isArray(products))return products;
+  try{const v=JSON.parse(localStorage.getItem('mberp_products')||'[]');return Array.isArray(v)?v:[]}catch(_){return []}
  }
- function currentBranch(){
-  let bid=String(branchSelect.value||'');
-  if(!bid){
-   const first=branchSelect.options[0];
-   if(first&&first.value){branchSelect.value=first.value;bid=String(first.value)}
-  }
-  return bid;
+ function getSelectedBranch(){
+  const id=String(branch.value||'');
+  const list=Array.from(branch.options||[]);
+  const option=list.find(o=>String(o.value)===id);
+  return {id,name:option?norm(option.textContent.replace(/\s*\(Inactive\)\s*$/,'')):''};
  }
- function branchProducts(){
-  const bid=currentBranch();
-  return liveProducts().filter(p=>String(p.branchId??'')===bid);
+ function belongsToBranch(p,b){
+  const pid=String(p.branchId??'').trim();
+  if(pid&&pid===b.id)return true;
+  // Support older/imported records that stored branch name rather than ID.
+  const pBranchName=norm(p.branchName||p.branch);
+  if(pBranchName&&b.name&&pBranchName===b.name)return true;
+  // Legacy products without a branch ID can safely map only when there is
+  // exactly one active branch; never expose them across multiple branches.
+  const active=(typeof activeBranches==='function'?activeBranches():[]);
+  return !pid&&!pBranchName&&active.length===1&&String(active[0].id)===b.id;
  }
- function renderPicker(){
-  const old=select.value;
-  const list=branchProducts().slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
-  select.innerHTML=list.map(p=>{
-   const stock=Math.max(0,Number(p.qty||0));
-   const label=`${p.name||'Unnamed product'}${p.sku?' · '+p.sku:''} — PKR ${money(p.price)} · Stock ${stock}`;
-   return `<option value="${esc(p.id)}" ${stock<=0?'disabled':''}>${esc(label)}</option>`;
-  }).join('')||'<option value="">No products assigned to this branch</option>';
-  if(list.some(p=>String(p.id)===String(old)&&Number(p.qty||0)>0))select.value=old;
-  else {
-   const first=list.find(p=>Number(p.qty||0)>0);
-   if(first)select.value=String(first.id);
-  }
- }
- let search=$('etihadQuickSearch'),listHost=$('etihadQuickProducts');
- if(!search||!listHost){
-  const wrap=document.createElement('div');wrap.className='etihad-pos-live-picker';wrap.innerHTML='<label for="etihadQuickSearch">Find product</label><input id="etihadQuickSearch" type="search" autocomplete="off" placeholder="Search product name, SKU or barcode"><div id="etihadQuickProducts" aria-live="polite"></div><small class="muted">Products are shown for the selected branch. Out-of-stock products remain visible but cannot be added.</small>';
-  const anchor=select.closest('.grid')||select.parentElement;
-  anchor.parentNode.insertBefore(wrap,anchor.nextSibling);
-  search=$('etihadQuickSearch');listHost=$('etihadQuickProducts');
- }
+ function visibleProducts(){const b=getSelectedBranch();return getProducts().filter(p=>belongsToBranch(p,b));}
  function draw(){
-  const q=String(search.value||'').trim().toLocaleLowerCase();
-  const all=branchProducts();
-  const matches=all.filter(p=>!q||[p.name,p.sku,p.category].some(v=>String(v||'').toLocaleLowerCase().includes(q))).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
-  listHost.innerHTML=matches.slice(0,100).map(p=>{
-   const stock=Math.max(0,Number(p.qty||0));
-   const disabled=stock<=0;
-   return `<button type="button" data-etihad-product="${esc(p.id)}" ${disabled?'disabled aria-disabled="true"':''} title="${disabled?'Out of stock':'Add '+esc(p.name)+' to bill'}"><b>${esc(p.name||'Unnamed product')}</b><small>${esc(p.sku||'No barcode')} · Stock ${stock}</small><strong>PKR ${money(p.price)}</strong>${disabled?'<small>Out of stock</small>':''}</button>`;
-  }).join('')||`<div class="muted" style="padding:12px">${all.length?'No product matches your search.':'No products are assigned to the selected branch. Check the product\'s branch in Products.'}</div>`;
+  const q=norm(search.value), all=visibleProducts();
+  const matches=all.filter(p=>!q||[p.name,p.sku,p.barcode,p.category].some(v=>norm(v).includes(q)))
+   .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).slice(0,100);
+  host.innerHTML='<table><thead><tr><th>No.</th><th>Qty.</th><th>Product</th><th style="text-align:right">Price</th></tr></thead><tbody>'+
+   (matches.map((p,i)=>{const stock=Math.max(0,Number(p.qty)||0);return `<tr data-pos-product="${esc(p.id)}" style="${stock<=0?'opacity:.5':''};cursor:${stock>0?'pointer':'not-allowed'}"><td>${i+1}</td><td>${fmt(Math.max(1,Math.floor(Number(qtyView?.value)||1)))}</td><td>${esc(p.name||'Unnamed product')}<div class="muted" style="font-size:11px">${esc(p.sku||p.barcode||'')}</div>${stock<=0?'<small>Out of stock</small>':''}</td><td class="product-price">${fmt(p.price)}</td></tr>`}).join('')||`<tr><td colspan="4" class="product-empty">${q?'No matching product in this branch.':'Search for a product to begin.'} ${all.length===0?'Check the product branch assignment and available stock.':''}</td></tr>`)+
+   '</tbody></table>';
  }
- function refresh(){renderPicker();draw()}
- listHost.addEventListener('click',function(e){
-  const b=e.target.closest('button[data-etihad-product]');if(!b||b.disabled)return;
-  const pid=String(b.dataset.etihadProduct);
-  const product=liveProducts().find(p=>String(p.id)===pid&&String(p.branchId??'')===currentBranch());
-  if(!product){refresh();return alert('This product is no longer available in the selected branch. Refresh the page and try again.');}
-  if(Number(product.qty||0)<=0)return alert('This product is out of stock.');
-  select.value=pid;
-  if($('saleQty'))$('saleQty').value=1;
-  if(typeof window.addToCart==='function')window.addToCart();
-  else if(typeof addToCart==='function')addToCart();
-  refresh();
-  search.focus();
- });
+ function refresh(){
+  const all=visibleProducts(), old=String(productSelect.value||'');
+  const sellable=all.filter(p=>Number(p.qty||0)>0);
+  productSelect.innerHTML=sellable.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} — ${fmt(p.price)} (Stock: ${fmt(p.qty)})</option>`).join('')||'<option value="">No in-stock products for this branch</option>';
+  if(sellable.some(p=>String(p.id)===old))productSelect.value=old;
+  draw();
+ }
+ // The primary POS redesign already owns the single product-row click handler.
+ // Its allProducts() now reads the live in-memory ERP collection.
  search.addEventListener('input',draw);
- branchSelect.addEventListener('change',refresh);
- // Refresh on product save/import/purchase/transfer, including changes made by this app.
+ branch.addEventListener('change',refresh);
+ qtyView?.addEventListener('input',draw);
  window.addEventListener('etihad-data-saved',refresh);
  window.addEventListener('storage',e=>{if(!e.key||e.key==='mberp_products'||e.key==='mberp_branches')refresh()});
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
  window.addEventListener('focus',refresh);
- // Ensure the native dropdown and quick picker always use identical branch/product rules.
- window.renderSaleProductOptions=renderPicker;
- const priorRenderAll=window.renderAll;
- if(typeof priorRenderAll==='function'&&!window.__etihadPosLiveRefresh){
-  window.__etihadPosLiveRefresh=true;
-  window.renderAll=function(){priorRenderAll();refresh()};
- }
- // CSS keeps disabled stock clear and picker usable on desktop/mobile.
- const style=document.createElement('style');style.textContent=`#etihadQuickProducts{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:9px;margin:10px 0}#etihadQuickProducts button{display:block;text-align:left;border:1px solid var(--line,#dbe2ea);border-radius:10px;padding:11px;background:var(--surface,#fff);color:var(--ink,#172033);cursor:pointer;min-width:0}#etihadQuickProducts button:disabled{opacity:.48;cursor:not-allowed}#etihadQuickProducts b,#etihadQuickProducts small,#etihadQuickProducts strong{display:block;overflow-wrap:anywhere}#etihadQuickProducts small{font-size:11px;opacity:.72;margin-top:4px}#etihadQuickProducts strong{margin-top:6px}#etihadQuickSearch{width:100%;max-width:560px}`;document.head.appendChild(style);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+ window.etihadRefreshPOSProducts=refresh;
+ // Replace the legacy strict-ID dropdown renderer with the same live, normalized branch logic.
+ window.renderSaleProductOptions=refresh;
+ // Keep all ERP refresh routes connected to this exact visible POS picker.
+ const prior=window.renderAll;
+ if(typeof prior==='function'&&!window.__etihadVisiblePOSRefresh){window.__etihadVisiblePOSRefresh=true;window.renderAll=function(){const result=prior.apply(this,arguments);refresh();return result;};}
  refresh();
 })();
 </script>
