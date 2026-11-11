@@ -4955,5 +4955,234 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
 #pos .pos-pro-head .pos-branch select{display:block!important;width:100%;min-height:42px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit}
 @media(max-width:560px){#pos .pos-pro-head{align-items:flex-start!important;gap:10px!important}#pos .pos-pro-head .pos-branch{width:55%;min-width:150px}}
 </style>
+  <style id="etihad-pos-barcode-camera-style">
+#pos .etihad-pos-scan-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:end;margin:10px 0 14px}
+#pos .etihad-pos-scan-row label{display:block;font-size:12px;font-weight:700;margin:0 0 6px;color:var(--muted)}
+#pos .etihad-pos-scan-row input{width:100%;min-height:42px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit}
+#pos .etihad-pos-scan-row button{min-height:42px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+#pos .etihad-pos-camera-panel{display:none;margin:8px 0 14px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+#pos .etihad-pos-camera-panel video{display:block;width:100%;max-height:300px;object-fit:cover;background:#111;border-radius:8px}
+#pos .etihad-pos-camera-panel p{margin:7px 0;font-size:12px;color:var(--muted)}
+@media(max-width:560px){
+ #pos .etihad-pos-scan-row{grid-template-columns:minmax(0,1fr) auto}
+ .etihad-pos-scan-entry{grid-column:1/-1}
+}
+  </style>
+  <script id="etihad-pos-barcode-camera-upgrade">
+(function(){
+'use strict';
+
+const $=id=>document.getElementById(id);
+const host=$('etihadPosProducts');
+const branch=$('saleBranch');
+const productSelect=$('saleProduct');
+const qty=$('saleQty');
+
+if(!host||!branch||!productSelect||!qty||$('etihadPosBarcode'))return;
+
+const main=host.closest('.pos-pro-main');
+if(!main)return;
+
+const row=document.createElement('div');
+row.className='etihad-pos-scan-row';
+row.innerHTML=`
+<div class="etihad-pos-scan-entry">
+<label for="etihadPosBarcode">Barcode / SKU</label>
+<input id="etihadPosBarcode" type="text"
+placeholder="Enter or scan barcode, then press Enter"
+autocomplete="off">
+</div>
+<button type="button" id="etihadPosCameraStart">📷 Scan with Camera</button>
+<button type="button" id="etihadPosCameraStop" style="display:none">Stop</button>
+`;
+
+const camera=document.createElement('div');
+camera.className='etihad-pos-camera-panel';
+camera.innerHTML=`
+<video id="etihadPosCameraVideo" playsinline muted></video>
+<p id="etihadPosCameraMessage">Point your camera at a product barcode.</p>
+`;
+camera.id='etihadPosCameraPanel';
+
+const searchRow=main.querySelector('.pos-search-row');
+if(searchRow)searchRow.insertAdjacentElement('afterend',row);
+else main.insertBefore(row,host);
+
+row.insertAdjacentElement('afterend',camera);
+
+const input=$('etihadPosBarcode');
+const start=$('etihadPosCameraStart');
+const stop=$('etihadPosCameraStop');
+const video=$('etihadPosCameraVideo');
+const message=$('etihadPosCameraMessage');
+
+let stream=null,detector=null,raf=0,locked=false;
+const norm=v=>String(v??'').trim().toLowerCase();
+
+function branchMatches(p){
+ const id=String(branch.value||'');
+ const opt=Array.from(branch.options||[]).find(o=>String(o.value)===id);
+ const name=norm(opt?opt.textContent.replace(/\s*\(Inactive\)\s*$/,''):'');
+ const pid=String(p.branchId??'').trim();
+
+ if(pid&&pid===id)return true;
+
+ const pn=norm(p.branchName||p.branch);
+ if(pn&&name&&pn===name)return true;
+
+ const active=typeof activeBranches==='function'?activeBranches():[];
+ return !pid&&!pn&&active.length===1&&String(active[0].id)===id;
+}
+
+function getProducts(){
+ try{return Array.isArray(products)?products:[]}
+ catch(e){return []}
+}
+
+function addByCode(raw){
+ const code=norm(raw);
+ if(!code)return;
+
+ const branchProducts=getProducts().filter(branchMatches);
+ const found=branchProducts.filter(p=>
+  [p.barcode,p.sku].some(v=>norm(v)===code)
+ );
+
+ if(found.length!==1){
+  const anywhere=getProducts().some(p=>
+   [p.barcode,p.sku].some(v=>norm(v)===code)
+  );
+
+  alert(found.length>1
+   ?'Duplicate barcode in this branch.'
+   :anywhere
+    ?'This product belongs to another branch.'
+    :'Barcode / SKU not found in Inventory.'
+  );
+
+  input.value='';
+  input.focus();
+  return false;
+ }
+
+ const p=found[0];
+
+ if(Number(p.qty||0)<=0){
+  alert('No available stock in this branch.');
+  input.value='';
+  input.focus();
+  return false;
+ }
+
+ productSelect.innerHTML=branchProducts
+  .filter(x=>Number(x.qty||0)>0)
+  .map(x=>'<option value="'+
+   String(x.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+
+   '">'+String(x.name||'').replace(/</g,'&lt;')+'</option>')
+  .join('');
+
+ productSelect.value=p.id;
+ qty.value=1;
+ input.value='';
+
+ if(typeof window.addToCart==='function')window.addToCart();
+ else alert('POS add-to-cart function unavailable.');
+
+ return true;
+}
+
+input.addEventListener('keydown',e=>{
+ if(e.key==='Enter'){
+  e.preventDefault();
+  addByCode(input.value);
+ }
+});
+
+function stopCamera(){
+ if(raf)cancelAnimationFrame(raf);
+ raf=0;
+
+ if(stream){
+  stream.getTracks().forEach(t=>t.stop());
+  stream=null;
+ }
+
+ video.pause();
+ video.srcObject=null;
+ camera.style.display='none';
+ stop.style.display='none';
+ start.style.display='';
+ locked=false;
+}
+
+stop.addEventListener('click',stopCamera);
+
+async function scanFrame(){
+ if(!stream||!detector||locked)return;
+
+ try{
+  if(video.readyState>=2){
+   const codes=await detector.detect(video);
+
+   if(codes.length&&codes[0].rawValue){
+    locked=true;
+    const value=codes[0].rawValue;
+    stopCamera();
+    addByCode(value);
+    return;
+   }
+  }
+ }catch(e){
+  message.textContent='Scanning error. Enter barcode manually.';
+ }
+
+ if(stream)raf=requestAnimationFrame(scanFrame);
+}
+
+start.addEventListener('click',async()=>{
+ if(!navigator.mediaDevices?.getUserMedia){
+  alert('Camera requires HTTPS and browser camera support.');
+  return;
+ }
+
+ if(!('BarcodeDetector' in window)){
+  alert('Camera barcode scanning is not supported by this browser. Use Chrome or a handheld scanner.');
+  return;
+ }
+
+ try{
+  detector=new BarcodeDetector({
+   formats:['code_128','code_39','ean_13','ean_8',
+   'upc_a','upc_e','itf','qr_code','codabar','data_matrix']
+  });
+
+  stream=await navigator.mediaDevices.getUserMedia({
+   audio:false,
+   video:{facingMode:{ideal:'environment'}}
+  });
+
+  video.srcObject=stream;
+  camera.style.display='block';
+  start.style.display='none';
+  stop.style.display='';
+  message.textContent='Camera active. Point it at the barcode.';
+
+  await video.play();
+  scanFrame();
+
+ }catch(e){
+  stopCamera();
+  alert('Camera unavailable. Allow camera permission and try again.');
+ }
+});
+
+branch.addEventListener('change',()=>input.value='');
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden&&stream)stopCamera();
+});
+window.addEventListener('pagehide',stopCamera);
+
+})();
+                                   </script>
 </body>
 </html>
