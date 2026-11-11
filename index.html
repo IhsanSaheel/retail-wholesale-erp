@@ -1037,6 +1037,8 @@ function printInvoice(sid){
  </center>
  
 
+
+
 </body>
  </html>`;
 
@@ -4218,6 +4220,8 @@ message('Automatic cloud sync successful.');
  setLogo(logo);
  const file=$('etihadLogoFile');
  if(file)file.addEventListener('change',()=>{
+  // Replaced by the compressed, quota-safe handler at the end of this document.
+  return;
   const f=file.files&&file.files[0];if(!f)return;
   const status=$('etihadLogoStatus');
   if(!/^image\/(png|jpeg|webp|svg\+xml)$/.test(f.type)){status.textContent='Please choose a PNG, JPG, WEBP or SVG image.';file.value='';return;}
@@ -4321,15 +4325,31 @@ body.etihad-blackgold #pos .pos-product-card:hover{border-color:#d8b75c}
  if(qty){qty.classList.add('pos-hidden-original');qty.setAttribute('aria-hidden','true');hiddenControls.appendChild(qty);}
  const barcode=$('saleBarcode');if(barcode){barcode.classList.add('pos-hidden-original');hiddenControls.appendChild(barcode);}
  if(cartTable)shell.querySelector('#etihadPosCartHost').appendChild(cartTable);
+ // Keep the live bill-total element in the redesigned POS. The previous build
+ // removed its parent panel, which left renderCart() updating a missing element.
+ const totalLine=$('cartTotal')?.closest('p');
+ const totalHost=shell.querySelector('.pos-pro-total');
+ const paymentHost=shell.querySelector('#etihadPosPaymentHost');
+ if(totalLine&&totalHost)totalHost.insertBefore(totalLine,paymentHost);
+ // Preserve the discount controls as a compact expandable section.
+ const discountPanel=$('saleDiscountType')?.closest('.panel');
+ if(discountPanel&&totalHost){
+  const details=document.createElement('details');details.className='pos-discount-details';
+  const summary=document.createElement('summary');summary.textContent='Add / change discount';
+  details.appendChild(summary);details.appendChild(discountPanel);totalHost.insertBefore(details,paymentHost);
+ }
  if(nameWrap)shell.querySelector('#etihadNewCustomerFields').appendChild(nameWrap);
  if(phoneWrap)shell.querySelector('#etihadNewCustomerFields').appendChild(phoneWrap);
  if(savedWrap)shell.querySelector('#etihadSavedCustomerHost').appendChild(savedWrap);
- // Customer credit limits, ledger and history stay in the Customers area, not on the simple POS screen.
- if(credit)credit.classList.add('pos-hidden-original');
- if(history)history.classList.add('pos-hidden-original');
- // Keep the customer fields hidden until New customer is selected.
+ // Show the selected customer's previous invoices, paid amount, outstanding
+ // balance and credit limit directly inside the customer accordion.
+ const profileHost=document.createElement('div');profileHost.id='etihadPosProfileHost';
+ profileHost.hidden=true;shell.querySelector('#etihadPosCustomerHost').appendChild(profileHost);
+ if(credit){credit.classList.remove('pos-hidden-original');credit.style.margin='8px 0';profileHost.appendChild(credit)}
+ if(history){history.classList.remove('pos-hidden-original');history.style.margin='8px 0';profileHost.appendChild(history)}
+ // Keep new-customer entry fields collapsed until explicitly requested.
  const newFields=shell.querySelector('#etihadNewCustomerFields');newFields.hidden=true;
- if(saved){saved.style.width='100%';saved.setAttribute('aria-label','Select an existing customer');}
+ if(saved){saved.style.width='100%';saved.setAttribute('aria-label','Select an existing customer');savedWrap?.classList.add('pos-saved-customer');}
  if(name){name.placeholder='Customer full name';name.style.width='100%'}
  if(phone){phone.placeholder='Phone number (optional)';phone.style.width='100%'}
  // Move payment fields and original checkout buttons, retaining their IDs and click handlers.
@@ -4359,9 +4379,16 @@ body.etihad-blackgold #pos .pos-product-card:hover{border-color:#d8b75c}
  const oldRender=window.renderCart;if(typeof oldRender==='function')window.renderCart=function(){oldRender();updateCartSummary()};
  const oldRenderAll=window.renderAll;if(typeof oldRenderAll==='function')window.renderAll=function(){oldRenderAll();drawProducts();updateCartSummary();refreshCustomerTitle()};
  function refreshCustomerTitle(){const n=name?.value.trim(),p=phone?.value.trim();$('etihadPosCustomerTitle').textContent=n?'Customer — '+n:'Customer — Walk-in';}
- name?.addEventListener('input',refreshCustomerTitle);phone?.addEventListener('input',refreshCustomerTitle);
+ function refreshCustomerProfile(){
+  const hasCustomer=!!(name?.value.trim()||phone?.value.trim());
+  profileHost.hidden=!hasCustomer;
+  if(hasCustomer&&typeof window.renderPosCustomerHistory==='function')window.renderPosCustomerHistory();
+  refreshCustomerTitle();
+ }
+ name?.addEventListener('input',refreshCustomerProfile);phone?.addEventListener('input',refreshCustomerProfile);
+ saved?.addEventListener('change',()=>setTimeout(refreshCustomerProfile,30));
  $('etihadNewCustomer').addEventListener('click',()=>{newFields.hidden=false;name?.focus();$('etihadPosCustomerDetails').open=true;if(saved)saved.value='new'});
- $('etihadWalkIn').addEventListener('click',()=>{if(name)name.value='';if(phone)phone.value='';if(saved)saved.value='';newFields.hidden=true;refreshCustomerTitle();});
+ $('etihadWalkIn').addEventListener('click',()=>{if(name)name.value='';if(phone)phone.value='';if(saved)saved.value='';newFields.hidden=true;refreshCustomerProfile();});
  saved?.addEventListener('change',()=>{if(saved.value&&saved.value!=='new'){newFields.hidden=true;refreshCustomerTitle()}else if(saved.value==='new'){newFields.hidden=false;name?.focus()} });
  // Hide the manual fields after selecting a saved customer, but keep original inputs in the DOM.
  if(savedWrap){const lbl=savedWrap.querySelector('label');if(lbl)lbl.textContent='Choose existing customer';}
@@ -4371,10 +4398,97 @@ body.etihad-blackgold #pos .pos-product-card:hover{border-color:#d8b75c}
  if(paidWrap){const l=paidWrap.querySelector('label');if(l)l.textContent='Amount received (PKR)';}
  if(balanceWrap){const l=balanceWrap.querySelector('label');if(l)l.textContent='Balance due (PKR)';}
  if(complete)complete.textContent='Complete sale';if(clear)clear.textContent='Clear bill';
- drawProducts();updateCartSummary();refreshCustomerTitle();
+ drawProducts();updateCartSummary();refreshCustomerProfile();
  if(typeof window.renderSaleProductOptions==='function')window.renderSaleProductOptions();
 })();
 </script>
 
+
+<script id="etihad-pos-payment-logo-safety-fix">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ // A credit sale must belong to a named customer; a walk-in sale must be fully paid.
+ const originalComplete=window.completeSale;
+ if(typeof originalComplete==='function'){
+  window.completeSale=function(){
+   const total=Number(typeof window.cartAmount==='function'?window.cartAmount():0);
+   const received=Number($('salePaid')?.value||0);
+   const due=Math.max(0,total-received);
+   const customer=String($('saleCustomer')?.value||'').trim();
+   if(due>0&&!customer){alert('Select an existing customer or add a new customer before saving a credit bill.');$('etihadPosCustomerDetails')?.setAttribute('open','');$('etihadNewCustomerFields').hidden=false;$('saleCustomer')?.focus();return;}
+   if(received<0||received>total||!Number.isFinite(received)){alert('Please enter a valid amount received.');return;}
+   return originalComplete.apply(this,arguments);
+  };
+ }
+ // Customer profile refresh after saved-customer selection and after a sale.
+ document.addEventListener('change',e=>{if(e.target?.id==='savedCustomerSelect')setTimeout(()=>{window.renderPosCustomerHistory?.();},50)});
+ // Logo storage: resize/compress before localStorage so large photos cannot exhaust
+ // the browser's storage quota and disrupt the ERP's saved business records.
+ const file=$('etihadLogoFile');
+ if(file){
+  const safeHandler=async function(){
+   const f=file.files?.[0];if(!f)return;
+   const status=$('etihadLogoStatus');
+   if(!/^image\/(png|jpeg|webp)$/.test(f.type)){if(status)status.textContent='Please choose a PNG, JPG or WEBP logo image.';file.value='';return;}
+   if(f.size>5*1024*1024){if(status)status.textContent='Choose a logo smaller than 5 MB.';file.value='';return;}
+   try{
+    const url=URL.createObjectURL(f);const img=new Image();
+    await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
+    const scale=Math.min(1,640/Math.max(img.naturalWidth,img.naturalHeight));
+    const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));
+    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);URL.revokeObjectURL(url);
+    let data=canvas.toDataURL('image/webp',0.78);if(data.length>450000)data=canvas.toDataURL('image/jpeg',0.68);
+    if(data.length>650000)throw new Error('Logo is still too large after compression. Please use a simpler/smaller logo.');
+    localStorage.setItem('etihad_business_logo',data);
+    const headerLogo=$('etihadHeaderLogo'),preview=$('etihadLogoPreview');
+    [headerLogo,preview].forEach(el=>{if(el){el.src=data;el.classList.add('has-logo')}});
+    if(status)status.textContent='Logo saved safely (compressed for this device).';
+   }catch(err){if(status)status.textContent='Logo was not saved. Your ERP data is safe. Try a smaller PNG/JPG/WEBP logo.';}
+   finally{file.value='';}
+  };
+  file.addEventListener('change',safeHandler);
+ }
+ // Rebuild logo previews from saved compressed data without blocking app startup.
+ try{const data=localStorage.getItem('etihad_business_logo');if(data){['etihadHeaderLogo','etihadLogoPreview'].forEach(id=>{const el=$(id);if(el){el.src=data;el.classList.add('has-logo')}})}}catch(e){}
+})();
+</script>
+<style id="etihad-pos-payment-logo-fixes">
+
+/* Complete working theme palettes */
+body.etihad-dark{--bg:#0b1220;--surface:#131e2e;--ink:#e8eef7;--muted:#9aabc0;--line:#2a3a50;--shadow:0 10px 30px rgba(0,0,0,.28);background:var(--bg);color:var(--ink)}
+body.etihad-dark header{background:linear-gradient(115deg,#080e18,#17263a);border-bottom:1px solid #31445d}
+body.etihad-dark nav#etihadMainNav{background:rgba(14,23,37,.96);border-color:var(--line)}
+body.etihad-dark nav#etihadMainNav button{color:#c1cde0}body.etihad-dark nav#etihadMainNav button:hover,body.etihad-dark nav#etihadMainNav button.active{background:#263b58;color:#fff}
+body.etihad-dark h3,body.etihad-dark .page>h3,body.etihad-dark .card strong,body.etihad-dark .total{color:#e8eef7}
+body.etihad-dark .panel,body.etihad-dark .card{background:var(--surface);border-color:var(--line);box-shadow:var(--shadow)}
+body.etihad-dark label,body.etihad-dark .muted{color:var(--muted)}
+body.etihad-dark input,body.etihad-dark select,body.etihad-dark textarea{background:#0d1726;color:#e8eef7;border-color:#354861}
+body.etihad-dark th{background:#1c2a3d;color:#b9c8dc}body.etihad-dark td{color:#dce6f3;border-color:#29394e}body.etihad-dark tbody tr:hover{background:#1a2a3e}
+body.etihad-dark .table-wrap{border-color:var(--line)}body.etihad-dark .btn.light,body.etihad-dark .btn.gray{background:#293b53;color:#eaf1fb}
+body.etihad-emerald{--bg:#f1f8f5;--surface:#fff;--ink:#15382e;--muted:#668176;--line:#d5e8df;--primary:#08785c;--shadow:0 8px 26px rgba(8,120,92,.08);background:var(--bg);color:var(--ink)}
+body.etihad-emerald header{background:linear-gradient(115deg,#064e3b,#08785c);border-bottom:1px solid #0a916e}
+body.etihad-emerald nav#etihadMainNav{background:rgba(250,255,252,.96);border-color:var(--line)}
+body.etihad-emerald nav#etihadMainNav button{color:#356b59}body.etihad-emerald nav#etihadMainNav button:hover,body.etihad-emerald nav#etihadMainNav button.active{background:#d9f3e8;color:#075b43}
+body.etihad-emerald h3,body.etihad-emerald .page>h3{color:#12533f}body.etihad-emerald .panel,body.etihad-emerald .card{background:var(--surface);border-color:var(--line)}
+body.etihad-emerald input,body.etihad-emerald select,body.etihad-emerald textarea{background:#fbfefc;color:#15382e;border-color:#cfe3d9}
+body.etihad-emerald .btn{background:#08785c;color:#fff}body.etihad-emerald .btn.green{background:#0a966e}body.etihad-emerald .btn.light{background:#e2f4ec;color:#145b45}
+body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{color:#254b3d;border-color:#e1eee7}
+#pos .pos-pro-total>p.total{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:10px 0;padding:12px 0;border-top:1px solid var(--line);font-size:18px;font-weight:750;color:var(--ink)}
+#pos .pos-pro-total>p.total span{font-size:24px;font-weight:800;color:var(--ink)}
+#pos .pos-discount-details{margin:8px 0;border-bottom:1px solid var(--line);padding:7px 0}
+#pos .pos-discount-details>summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);padding:7px 0}
+#pos .pos-discount-details>.panel{padding:12px;margin:6px 0}
+#pos #etihadPosProfileHost{max-height:260px;overflow:auto}
+#pos #etihadPosProfileHost .panel{padding:10px;margin:8px 0;box-shadow:none}
+#pos #etihadPosProfileHost .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#pos #etihadPosProfileHost .card{min-height:65px;padding:9px}
+#pos #etihadPosProfileHost .card strong{font-size:15px}
+#pos #etihadPosProfileHost table{min-width:520px}
+#pos #etihadPosCustomerHost{min-width:0}
+.etihad-brand{max-width:calc(100% - 90px)}
+.etihad-brand-copy h2{margin:0}
+@media(max-width:600px){#pos .pos-pro-layout{display:flex;flex-direction:column}#pos .pos-pro-side{min-height:unset}#pos #etihadPosProfileHost{max-height:220px}}
+</style>
 </body>
 </html>
