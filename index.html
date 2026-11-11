@@ -4489,6 +4489,56 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
 .etihad-brand{max-width:calc(100% - 90px)}
 .etihad-brand-copy h2{margin:0}
 @media(max-width:600px){#pos .pos-pro-layout{display:flex;flex-direction:column}#pos .pos-pro-side{min-height:unset}#pos #etihadPosProfileHost{max-height:220px}}
+  
+/* ETIHAD TRADERS - LOGO SIZE FIX */
+#etihadHeaderLogo {
+  display: block !important;
+  width: 90px !important;
+  height: 48px !important;
+  max-width: 90px !important;
+  max-height: 48px !important;
+  min-width: 0 !important;
+  object-fit: contain !important;
+  flex-shrink: 0 !important;
+}
+
+#etihadLogoPreview {
+  display: block;
+  width: 160px;
+  height: 90px;
+  max-width: 100%;
+  object-fit: contain;
+  margin: 10px auto;
+}
+
+.etihad-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 90px);
+  min-width: 0;
+}
+
+.etihad-brand-copy {
+  min-width: 0;
+}
+
+.etihad-brand-copy h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+@media (max-width: 600px) {
+  #etihadHeaderLogo {
+    width: 65px !important;
+    height: 42px !important;
+  }
+
+  .etihad-brand-copy h2 {
+    font-size: 16px;
+  }
+}
+
 </style>
 
 <script id="etihad-sales-navigation-and-report-periods">
