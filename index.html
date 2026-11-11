@@ -4744,5 +4744,91 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
 })();
 </script>
 
+<script id="etihad-purchase-import-pro-upgrade">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const moneySafe=n=>Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2});
+ const norm=s=>String(s||'').trim().toLowerCase().replace(/[\s_-]+/g,'');
+ const escHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ function branchIdForImport(v){
+  const raw=String(v||'').trim(); if(!raw)return $('bulkProductBranch')?.value||'';
+  const b=branches.find(x=>String(x.id)===raw||String(x.name||'').toLowerCase()===raw.toLowerCase());return b?.id||'';
+ }
+ // Bulk product import: CSV works offline; .xlsx/.xls uses SheetJS when needed.
+ function installBulkImport(){
+  const page=$('products'); if(!page||$('etihadBulkImportPanel'))return;
+  const panel=document.createElement('div');panel.className='panel';panel.id='etihadBulkImportPanel';
+  panel.innerHTML=`<h3>Bulk Import Products</h3><p class="muted">Upload CSV or Excel (.xlsx/.xls). Required: Product Name. Optional: SKU/Barcode, Category, Branch, Quantity, Cost, Selling Price, Low Stock Alert.</p><div class="grid"><div><label>Default Branch</label><select id="bulkProductBranch"></select></div><div><label>CSV / Excel File</label><input id="bulkProductFile" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"></div></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn green" id="etihadImportProducts">Import Products</button><button type="button" class="btn light" id="etihadCsvTemplate">Download CSV Template</button></div><p class="muted" id="etihadImportStatus" aria-live="polite"></p>`;
+  const first=page.querySelector('.panel'); if(first)first.parentNode.insertBefore(panel,first.nextSibling);else page.appendChild(panel);
+  function fillBranches(){const s=$('bulkProductBranch'),old=s.value;s.innerHTML=(branches||[]).map(b=>`<option value="${escHtml(b.id)}">${escHtml(b.name)}</option>`).join('')||'<option value="">Add a branch first</option>';if([...s.options].some(o=>o.value===old))s.value=old;}
+  fillBranches();
+  $('etihadCsvTemplate').addEventListener('click',()=>{const csv='Product Name,SKU/Barcode,Category,Branch,Quantity,Cost,Selling Price,Low Stock Alert\nSample Product,123456789,General,,10,100,150,5\n';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='etihad-products-template.csv';a.click();URL.revokeObjectURL(a.href)});
+  $('etihadImportProducts').addEventListener('click',async()=>{
+   const file=$('bulkProductFile').files?.[0],status=$('etihadImportStatus');if(!file){status.textContent='Choose a CSV or Excel file first.';return;}
+   try{
+    let rows=[];const ext=file.name.split('.').pop().toLowerCase();
+    if(ext==='csv'){
+     const text=await file.text();
+     const parseCSV=t=>{const out=[];let row=[],v='',q=false;for(let i=0;i<t.length;i++){const c=t[i];if(c==='"'&&q&&t[i+1]==='"'){v+='"';i++;}else if(c==='"')q=!q;else if(c===','&&!q){row.push(v);v='';}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&t[i+1]==='\n')i++;row.push(v);if(row.some(x=>String(x).trim()))out.push(row);row=[];v='';}else v+=c;}row.push(v);if(row.some(x=>String(x).trim()))out.push(row);return out;};
+     const raw=parseCSV(text);if(raw.length<2)throw new Error('CSV file has no product rows.');const heads=raw.shift().map(norm);rows=raw.map(r=>Object.fromEntries(heads.map((h,i)=>[h,r[i]??''])));
+    }else if(ext==='xlsx'||ext==='xls'){
+     if(!window.XLSX){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';s.onload=resolve;s.onerror=()=>reject(new Error('Excel reader could not load. Save the spreadsheet as CSV and import again.'));document.head.appendChild(s)});}
+     const data=await file.arrayBuffer(),wb=XLSX.read(data,{type:'array'});rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+    }else throw new Error('Use a CSV, XLSX or XLS file.');
+    let added=0,updated=0,skipped=0;const headerMap={productname:['productname','name','product'],sku:['sku','barcode','skubarcode','productcode'],category:['category','type'],branch:['branch','branchname'],qty:['quantity','qty','stock'],cost:['cost','unitcost','purchasecost','lastcost'],price:['sellingprice','price','saleprice'],alert:['lowstockalert','alert','minimumstock']};
+    rows.forEach(row=>{const r={};for(const [target,aliases] of Object.entries(headerMap)){const key=Object.keys(row).find(k=>aliases.includes(norm(k)));r[target]=key===undefined?'':row[key];}
+     const name=String(r.productname||'').trim();if(!name){skipped++;return;}const bid=branchIdForImport(r.branch);if(!bid){skipped++;return;}
+     const sku=String(r.sku||'').trim(),qty=Number(r.qty||0),cost=Number(r.cost||0),price=Number(r.price||0),alert=Number(r.alert||5);
+     if([qty,cost,price,alert].some(n=>!Number.isFinite(n)||n<0)){skipped++;return;}
+     let p=products.find(x=>String(x.branchId)===String(bid)&&((sku&&String(x.sku||'').trim().toLowerCase()===sku.toLowerCase())||(!sku&&String(x.name||'').trim().toLowerCase()===name.toLowerCase())));
+     const d={name,sku,category:String(r.category||'').trim(),branchId:bid,qty,cost,price,alert};if(p){Object.assign(p,d);updated++;}else{products.push({id:id(),...d});added++;}
+    });
+    saveAll();if(typeof renderAll==='function')renderAll();fillBranches();status.textContent=`Import complete: ${added} added, ${updated} updated, ${skipped} skipped. Products are saved and refreshed in Sales/POS.`;$('bulkProductFile').value='';
+   }catch(e){status.textContent='Import failed: '+(e?.message||e);}
+  });
+ }
+ // Purchase product autocomplete: select known product to fill SKU/category and cost,
+ // while allowing the cost field to remain editable.
+ function installPurchaseLookup(){
+  const name=$('purchaseProduct');if(!name||$('etihadPurchaseLookup'))return;
+  const dl=document.createElement('datalist');dl.id='etihadPurchaseLookup';document.body.appendChild(dl);name.setAttribute('list',dl.id);name.setAttribute('autocomplete','off');
+  const hint=document.createElement('small');hint.id='etihadLastCostHint';hint.className='muted';hint.textContent='Select an existing product or type a new product name.';name.insertAdjacentElement('afterend',hint);
+  function draw(){dl.innerHTML=(products||[]).map(p=>`<option value="${escHtml(p.name)}">${escHtml(p.sku||'')}</option>`).join('');}
+  function match(){const val=name.value.trim().toLowerCase(),bid=$('purchaseBranch')?.value;let p=products.find(x=>String(x.branchId)===String(bid)&&String(x.name||'').trim().toLowerCase()===val)||products.find(x=>String(x.name||'').trim().toLowerCase()===val);if(!p)return;
+   $('purchaseSku').value=p.sku||'';$('purchaseCategory').value=p.category||'';
+   const past=(purchases||[]).filter(x=>String(x.productId)===String(p.id)||((String(x.sku||'').toLowerCase()===String(p.sku||'').toLowerCase())&&p.sku)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+   const last=past[0]?.cost??p.cost??0;$('purchaseCost').value=Number(last);hint.textContent=`Barcode: ${p.sku||'Not set'} · Current stock: ${Number(p.qty||0)} · Last purchase cost: PKR ${moneySafe(last)}. Cost can be changed.`;
+   if(typeof updatePurchaseTotal==='function')updatePurchaseTotal();
+  }
+  name.addEventListener('input',()=>{const exact=products.find(x=>String(x.name||'').trim().toLowerCase()===name.value.trim().toLowerCase());if(exact)match();});name.addEventListener('change',match);
+  $('purchaseBranch')?.addEventListener('change',match);draw();
+  const originalSave=window.savePurchase;
+  if(typeof originalSave==='function'&&!window.__etihadPurchaseLookupWrapped){window.__etihadPurchaseLookupWrapped=true;window.savePurchase=function(){match();return originalSave.apply(this,arguments)};}
+ }
+ // Edit previous purchase with stock delta reconciliation; preserve the purchase identity.
+ window.editPurchase=function(pid){
+  const p=purchases.find(x=>String(x.id)===String(pid));if(!p)return alert('Purchase not found.');
+  const product=products.find(x=>String(x.id)===String(p.productId));if(!product)return alert('Linked product not found. Purchase cannot be safely edited.');
+  const qtyText=prompt('Edit purchase quantity:',String(p.qty));if(qtyText===null)return;const qty=Number(qtyText);if(!Number.isInteger(qty)||qty<1)return alert('Enter a whole quantity greater than zero.');
+  const costText=prompt('Edit unit purchase cost (PKR):',String(p.cost));if(costText===null)return;const cost=Number(costText);if(!Number.isFinite(cost)||cost<0)return alert('Enter a valid cost.');
+  const paidText=prompt('Edit amount paid (PKR):',String(p.paid||0));if(paidText===null)return;const paid=Number(paidText),total=qty*cost;if(!Number.isFinite(paid)||paid<0||paid>total)return alert('Paid amount must be between zero and the revised total.');
+  const delta=qty-Number(p.qty||0);if(delta<0&&Number(product.qty||0)<Math.abs(delta))return alert('Cannot reduce this purchase quantity: some of its stock has already been sold or transferred.');
+  if(!confirm(`Update ${p.purchaseNo||p.id}?\nStock adjustment: ${delta>=0?'+':''}${delta}\nNew total: PKR ${moneySafe(total)}\nPaid: PKR ${moneySafe(paid)}\nDue: PKR ${moneySafe(total-paid)}`))return;
+  product.qty=Number(product.qty||0)+delta;product.cost=cost;p.qty=qty;p.cost=cost;p.total=total;p.paid=paid;p.balance=total-paid;p.editedAt=new Date().toISOString();
+  saveAll();if(typeof renderAll==='function')renderAll();if(typeof renderPurchases==='function')renderPurchases();alert('Purchase updated. Stock and supplier balance have been recalculated.');
+ };
+ // Refresh all dependent views after a product save/import/purchase, including POS list.
+ const oldRenderAll=window.renderAll;if(typeof oldRenderAll==='function'&&!window.__etihadRefreshProductViews){window.__etihadRefreshProductViews=true;window.renderAll=function(){const r=oldRenderAll.apply(this,arguments);try{if(typeof renderSaleProductOptions==='function')renderSaleProductOptions();if(typeof renderPurchases==='function')renderPurchases();}catch(e){}return r;};}
+ // Keep POS selector in sync on branch changes and after page activation.
+ $('saleBranch')?.addEventListener('change',()=>{if(typeof renderSaleProductOptions==='function')renderSaleProductOptions()});
+ // Add action buttons to purchase history: edit and receipt.
+ const oldRenderPurchases=window.renderPurchases;if(typeof oldRenderPurchases==='function'&&!window.__etihadPurchaseHistoryWrapped){window.__etihadPurchaseHistoryWrapped=true;window.renderPurchases=function(){oldRenderPurchases.apply(this,arguments);const body=$('purchasesTable');if(!body)return;body.querySelectorAll('tr').forEach(tr=>{const first=tr.querySelector('td');if(!first)return;const id=(purchases||[]).find(p=>String(p.purchaseNo||p.id)===first.textContent.trim())?.id;if(!id)return;const cell=tr.lastElementChild;if(cell){cell.innerHTML=`<button class="btn small light" onclick="printPurchase('${escHtml(id)}')">Receipt</button> <button class="btn small" onclick="editPurchase('${escHtml(id)}')">Edit</button>`;}});};}
+ document.addEventListener('DOMContentLoaded',()=>{installBulkImport();installPurchaseLookup();});
+ // This file runs at end of body; DOMContentLoaded may already have fired.
+ installBulkImport();installPurchaseLookup();
+})();
+</script>
+
 </body>
 </html>
