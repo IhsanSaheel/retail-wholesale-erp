@@ -98,6 +98,29 @@ footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
   }
 }
 </style>
+
+<style id="etihad-modern-upgrade">
+:root{--navy:#102a43;--blue:#2563eb;--bg:#f4f7fb;--line:#e5eaf2;--muted:#64748b;--green:#0f9f6e;--red:#dc4c4c;--surface:#fff;--ink:#172b4d;--shadow:0 8px 28px rgba(16,42,67,.07)}
+*{box-sizing:border-box}body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);letter-spacing:-.01em}
+header{position:sticky;top:0;z-index:1000;background:linear-gradient(115deg,#102a43,#174c72);padding:16px clamp(14px,3vw,34px);box-shadow:0 5px 20px #102a4320}header h2{font-size:21px;letter-spacing:-.04em}header small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#c7d7e8}#today{font-size:12px;color:#d9e5f1}
+nav{position:sticky;top:68px;z-index:900;display:flex;gap:7px;padding:10px clamp(10px,2vw,26px);background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);box-shadow:0 5px 18px #102a4308}
+nav button{border:0;background:transparent;color:#52627a;padding:10px 14px;border-radius:10px;font-weight:650;font-size:13px;transition:.18s}nav button:hover{background:#eef4ff;color:#1d4ed8}nav button.active{background:#e9f0ff;color:#1d4ed8;box-shadow:inset 0 0 0 1px #d8e5ff}
+main{max-width:1600px;padding:26px clamp(12px,2.5vw,34px) 90px}h3{font-size:18px;color:#183653;letter-spacing:-.035em;margin:3px 0 15px}.page>h3{font-size:23px;margin:4px 0 20px}
+.panel,.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:19px;margin-bottom:16px;box-shadow:var(--shadow)}.cards{gap:14px;margin-bottom:18px}.card{margin:0;min-height:106px;position:relative;overflow:hidden}.card:after{content:"";position:absolute;width:85px;height:85px;border-radius:50%;background:#2563eb0a;right:-28px;bottom:-35px}.card small{font-size:12px;color:#708198;font-weight:650}.card strong{font-size:23px;letter-spacing:-.04em;color:#163b61;margin-top:10px;overflow-wrap:anywhere}
+.grid{gap:14px}label{font-size:12px;color:#52627a;font-weight:700;margin-bottom:7px}input,select{border:1px solid #dce4ef;border-radius:10px;padding:11px 12px;background:#fbfcfe;color:#172b4d;min-height:42px;transition:.15s}input:focus,select:focus{outline:0;border-color:#76a4f8;box-shadow:0 0 0 3px #2563eb18;background:white}button{transition:transform .12s,filter .12s}button:active{transform:translateY(1px)}.btn{border:0;border-radius:10px;padding:11px 16px;background:#2563eb;color:white;font-weight:700;box-shadow:0 4px 10px #2563eb20}.btn:hover{filter:brightness(.96)}.green{background:#0f9f6e;box-shadow:0 4px 10px #0f9f6e20}.red{background:#dc4c4c}.gray{background:#64748b}.light{background:#edf3fc;color:#244c7a;box-shadow:none}.small{padding:7px 10px;border-radius:8px}
+table{border-collapse:separate;border-spacing:0;min-width:650px}th,td{padding:12px 11px;border-bottom:1px solid #edf1f6;font-size:13px}th{background:#f7f9fc;color:#62738a;font-size:11px;text-transform:uppercase;letter-spacing:.055em}tbody tr:hover{background:#fafcff}td{color:#30445e}.table-wrap{border:1px solid #edf1f6;border-radius:12px} .total{font-size:24px;color:#123b60}.muted{color:#74839a}.empty{padding:30px}
+#dashboard .cards{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}#dashboard .card:nth-child(4n+1){border-top:3px solid #2563eb}#dashboard .card:nth-child(4n+2){border-top:3px solid #0f9f6e}#dashboard .card:nth-child(4n+3){border-top:3px solid #e5a33b}#dashboard .card:nth-child(4n){border-top:3px solid #8b75db}
+/* Fast, clear point-of-sale workspace */
+#pos>h3{font-size:25px;margin-bottom:18px}#pos{max-width:1450px}#pos>.panel:first-of-type{border:0;background:transparent;box-shadow:none;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}#pos>.panel:first-of-type .grid{display:contents}#pos>.panel:first-of-type .grid>div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 15px;box-shadow:var(--shadow)}#pos>.panel:nth-of-type(2){display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.8fr);gap:12px;align-items:end}#pos>.panel:nth-of-type(2) h3{grid-column:1/-1}#pos>.panel:nth-of-type(2) .grid{display:contents}#pos>.panel:nth-of-type(2) .grid>div{min-width:0}#pos>.panel:nth-of-type(2) .btn{align-self:end;min-height:42px}#pos>.panel:nth-of-type(3){border:1px solid #dbe7f7;background:linear-gradient(145deg,#fff,#f8fbff)}#pos>.panel:nth-of-type(3)>h3{font-size:19px}#pos>.panel:nth-of-type(3) .total{display:flex;justify-content:flex-end;gap:8px;padding:8px 0}#pos>.panel:nth-of-type(3) .grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:650px;margin-left:auto}#pos>.panel:nth-of-type(3) .btn{min-width:155px}#pos .table-wrap{margin:12px 0}
+#etihadQuickProducts{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin:10px 0 16px}#etihadQuickProducts button{background:#fff;border:1px solid #e3eaf4;border-radius:12px;padding:12px;text-align:left;min-height:91px;color:#193b5d;box-shadow:0 3px 12px #102a4308}#etihadQuickProducts button:hover{border-color:#7da7f5;background:#f5f8ff}#etihadQuickProducts b{display:block;font-size:13px;margin-bottom:6px}#etihadQuickProducts small{display:block;color:#71829a;font-size:11px}#etihadQuickProducts strong{display:block;color:#1769aa;font-size:14px;margin-top:6px}#etihadQuickSearch{margin:8px 0 2px;max-width:560px}
+#saleBarcode{border:2px solid #a9c5f5;background:#f8fbff;font-weight:650}#saleBarcode:focus{border-color:#2563eb}#saleDiscountType,#saleDiscountValue{background:#fbfcff}#etihadNetworkStatus{bottom:14px!important;right:14px!important;padding:8px 13px!important;border-radius:30px!important;font-weight:700!important;box-shadow:0 5px 18px #102a4325!important}
+#etihadCloudPanel{border-radius:18px!important;box-shadow:0 20px 70px #102a4350!important;max-height:calc(100vh - 24px);overflow:auto}#etihadCloudPanel h3{color:#173b60!important}
+footer{padding:25px;color:#8492a6}
+@media(max-width:900px){nav{top:64px}#pos>.panel:first-of-type{grid-template-columns:1fr 1fr}#pos>.panel:nth-of-type(2){grid-template-columns:1fr 1fr}}
+@media(max-width:600px){header{position:relative;padding:13px 14px}nav{top:0;position:sticky;padding:7px;gap:4px;overflow-x:auto}nav button{font-size:11px;padding:10px 11px;flex:0 0 auto}main{padding:16px 10px 100px}.panel,.card{padding:14px;border-radius:13px}.page>h3{font-size:20px}#pos>.panel:first-of-type{grid-template-columns:1fr}#pos>.panel:nth-of-type(2){grid-template-columns:1fr}#pos>.panel:nth-of-type(2) h3{grid-column:auto}#pos>.panel:nth-of-type(3) .grid{grid-template-columns:1fr}#pos>.panel:nth-of-type(3) .total{justify-content:flex-start}#etihadQuickProducts{grid-template-columns:repeat(2,minmax(0,1fr))}#etihadQuickProducts button{padding:10px;min-height:85px}#etihadNetworkStatus{bottom:82px!important;right:8px!important}body{padding-bottom:70px}}
+@media(prefers-color-scheme:dark){body.etihad-auto-dark{--bg:#0b1422;--surface:#121f31;--line:#26364b;--ink:#e4edf8;color:var(--ink)}}
+</style>
+
 </head>
 <body>
 <style>
@@ -1012,7 +1035,9 @@ function printInvoice(sid){
  <p>Thank you for your business!</p>
  <button onclick="window.print()">Print Invoice</button>
  </center>
- </body>
+ 
+
+</body>
  </html>`;
 
  const win=window.open('','_blank');
@@ -2064,7 +2089,36 @@ function printBusinessReport(){
  th{background:#eee}
  button{padding:10px 18px;background:#1769aa;color:white;border:0}
  @media print{button{display:none}body{padding:0}}
- </style></head><body>
+ </style>
+<style id="etihad-premium-themes">
+/* Premium theme system: settings-controlled Light, Dark, Emerald and Black & Gold */
+body.etihad-blackgold{--bg:#0b0b0c;--surface:#171615;--ink:#f5f0e5;--muted:#b5a98f;--line:#3c3324;--primary:#c9a24d;--primary2:#e2c477;--shadow:0 14px 36px rgba(0,0,0,.35);color:var(--ink);background:var(--bg)}
+body.etihad-blackgold header{background:linear-gradient(115deg,#050505,#17130b 58%,#4a3818);border-bottom:1px solid #8d6b2e}
+body.etihad-blackgold header h2,body.etihad-blackgold .page>h3,body.etihad-blackgold h3,body.etihad-blackgold .card strong,body.etihad-blackgold .total{color:#f1d58e}
+body.etihad-blackgold header small{color:#cdb77f}
+body.etihad-blackgold nav#etihadMainNav{background:#11100eee;border-color:#554321}
+body.etihad-blackgold nav#etihadMainNav button{color:#c9bd9f}
+body.etihad-blackgold nav#etihadMainNav button:hover,body.etihad-blackgold nav#etihadMainNav button.active{background:#c9a24d;color:#17130b;box-shadow:0 4px 14px #c9a24d35}
+body.etihad-blackgold .panel,body.etihad-blackgold .card{background:#171615;border-color:#443821}
+body.etihad-blackgold .card{border-top:2px solid #a9873f}
+body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold textarea{background:#100f0d;color:#f5f0e5;border-color:#5a4828}
+body.etihad-blackgold input:focus,body.etihad-blackgold select:focus,body.etihad-blackgold textarea:focus{border-color:#d6b45c;box-shadow:0 0 0 3px #d6b45c25}
+body.etihad-blackgold label,body.etihad-blackgold .muted,body.etihad-blackgold .etihad-section-intro{color:#b9ad92}
+body.etihad-blackgold th{background:#252016;color:#d8c38e}body.etihad-blackgold td{color:#eee4cd;border-color:#3b3325}body.etihad-blackgold tbody tr:hover{background:#211c13}
+body.etihad-blackgold .btn{background:linear-gradient(135deg,#b68a36,#e0c16d);color:#17130b;box-shadow:0 5px 15px #c9a24d25}
+body.etihad-blackgold .btn.green{background:#246b50;color:white}body.etihad-blackgold .btn.red{background:#a83c3c;color:white}body.etihad-blackgold .btn.gray,body.etihad-blackgold .btn.light{background:#30291d;color:#ead9ae}
+body.etihad-blackgold #pos>.panel:first-of-type,body.etihad-blackgold #pos>.panel:nth-of-type(3),body.etihad-blackgold #customers #customerCreditManager{background:#1d1a14;border-color:#554321}
+body.etihad-blackgold #pos>.panel:first-of-type .grid>div,body.etihad-blackgold #etihadQuickProducts button{background:#171615;border-color:#554321;color:#f5f0e5}
+body.etihad-blackgold #etihadQuickProducts strong{color:#e4c16b}
+body.etihad-blackgold .table-wrap{border-color:#443821}
+.etihad-brand{display:flex;align-items:center;gap:13px;min-width:0}.etihad-brand-copy{display:flex;flex-direction:column;min-width:0}.etihad-brand-logo{width:43px;height:43px;object-fit:contain;border-radius:11px;background:#ffffff16;border:1px solid #ffffff35;padding:3px;display:none}.etihad-brand-logo.has-logo{display:block}
+.etihad-logo-preview{width:76px;height:76px;object-fit:contain;border-radius:16px;border:1px solid var(--line);background:var(--bg);padding:7px;display:none}.etihad-logo-preview.has-logo{display:block}
+.etihad-theme-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}.etihad-theme-choice{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;padding:14px;text-align:left;min-height:74px;font-weight:750}.etihad-theme-choice span{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:5px}.etihad-theme-choice[aria-pressed="true"]{outline:2px solid var(--primary);border-color:var(--primary)}.etihad-theme-swatch{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;vertical-align:middle}
+body.etihad-dark .etihad-theme-choice{background:#151f32;color:#e7edf8;border-color:#34445f}body.etihad-blackgold .etihad-theme-choice{background:#171615;color:#f5f0e5;border-color:#554321}
+@media(max-width:600px){.etihad-brand-logo{width:37px;height:37px}.etihad-brand{gap:9px}}
+</style>
+
+</head><body>
  <h1>MY BUSINESS ERP</h1>
  <h2>${esc(title)}</h2>
  <p>Generated: ${new Date().toLocaleString()}</p>
@@ -4045,6 +4099,280 @@ message('Automatic cloud sync successful.');
   window.addEventListener('online', scheduleAutoSync);
 
   refreshLogin();
+})();
+</script>
+
+
+<script id="etihad-pos-usability">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const pos=$('pos'); if(!pos)return;
+ const productSelect=$('saleProduct');
+ if(productSelect){
+  const quick=document.createElement('div');
+  quick.innerHTML='<label for="etihadQuickSearch">Quick product search</label><input id="etihadQuickSearch" type="search" placeholder="Type product name, SKU or barcode…"><div id="etihadQuickProducts" aria-label="Available products"></div><small class="muted">Tap an item to add it to the bill. You can also scan a barcode above.</small>';
+  const productField=productSelect.closest('.grid')||productSelect.parentElement;
+  productField.parentNode.insertBefore(quick,productField.nextSibling);
+  const search=$('etihadQuickSearch'),list=$('etihadQuickProducts');
+  function draw(){
+   let products=[];try{products=JSON.parse(localStorage.getItem('mberp_products')||'[]')}catch(e){}
+   const branch=$('saleBranch')?.value||'';const q=(search.value||'').trim().toLowerCase();
+   const available=products.filter(p=>String(p.branchId)===String(branch)&&Number(p.qty)>0&&(!q||[p.name,p.sku,p.category].some(v=>String(v||'').toLowerCase().includes(q)))).slice(0,36);
+   list.innerHTML=available.map(p=>`<button type="button" data-product="${String(p.id).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}"><b>${String(p.name||'Product').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</b><small>${String(p.sku||'No SKU')} · Stock ${Number(p.qty||0)}</small><strong>PKR ${Number(p.price||0).toLocaleString('en-PK')}</strong></button>`).join('')||'<div class="muted">No matching in-stock products for this branch.</div>';
+  }
+  list.addEventListener('click',e=>{const b=e.target.closest('button[data-product]');if(!b)return;productSelect.value=b.dataset.product;$('saleQty').value=1;if(typeof window.addToCart==='function')window.addToCart();search.focus();});
+  search.addEventListener('input',draw);$('saleBranch')?.addEventListener('change',draw);
+  const originalRender=window.renderAll;
+  if(typeof originalRender==='function')window.renderAll=function(){originalRender();draw()};
+  draw();
+ }
+ // Add a one-glance payment summary beside the existing bill total.
+ const bill=pos.querySelector('.panel:nth-of-type(3)');
+ if(bill&&!$('etihadPosHint')){const hint=document.createElement('div');hint.id='etihadPosHint';hint.className='muted';hint.style.cssText='font-size:12px;margin:0 0 10px';hint.textContent='Fast checkout: select branch → scan or tap products → enter received amount → complete sale.';const h=bill.querySelector('h3');if(h)h.after(hint)}
+})();
+</script>
+
+<script id="etihad-workflow-redesign">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id), nav=document.querySelector('nav'), main=document.querySelector('main');
+ if(!nav||!main)return;
+ // Move related workflows together without changing their original IDs or data logic.
+ const customers=$('customers'), suppliers=$('suppliers'), reports=$('reports');
+ function mergePage(sourceId,target){const source=$(sourceId);if(!source||!target)return;const wrapper=document.createElement('div');wrapper.id='etihadMerged_'+sourceId;while(source.firstChild)wrapper.appendChild(source.firstChild);target.appendChild(wrapper);source.remove();}
+ mergePage('returns',customers);
+ mergePage('supplierReturns',suppliers);
+ mergePage('businessReports',reports);
+ // Credit-limit manager belongs to the customer workspace. Keep the original POS guard logic alive but unobtrusive.
+ const oldCredit=$('customerCreditPanel');
+ if(oldCredit){oldCredit.style.display='none';const host=document.createElement('div');host.id='customerCreditManager';host.className='panel';host.innerHTML=`<h3>Customer credit profile</h3><p class="muted">Choose a customer from the records above, then set or review their credit limit here.</p><div class="grid"><div><label>Selected customer</label><input id="profileCreditCustomer" readonly placeholder="Select View Ledger on a customer"></div><div><label>Credit limit (PKR)</label><input id="profileCreditLimit" type="number" min="0" step="100" placeholder="0 = no limit"></div><div><label>Outstanding (PKR)</label><input id="profileCreditDue" readonly value="0"></div><div><label>Available credit (PKR)</label><input id="profileCreditAvailable" readonly value="—"></div></div><button class="btn green" id="profileCreditSave">Save customer credit limit</button><p id="profileCreditStatus" class="muted">Select a customer to manage their limit.</p>`;const inv=$('customerInvoices');inv?.parentNode.insertBefore(host,inv.nextSibling);
+ const getLimits=()=>{try{const v=JSON.parse(localStorage.getItem('mberp_customer_credit_limits')||'[]');if(Array.isArray(v))return Object.fromEntries(v.filter(x=>x&&x.key).map(x=>[x.key,Number(x.limit)||0]));return v||{}}catch(e){return {}}};
+ const keyFor=c=>{const ph=String(c.phone||'').replace(/\D/g,'');return ph?'phone:'+ph:'name:'+String(c.name||'').trim().toLowerCase()};
+ let currentKey='';
+ function refreshProfile(){if(!currentKey)return;const lim=getLimits(),limit=Number(lim[currentKey]||0);let due=0;try{const sales=JSON.parse(localStorage.getItem('mberp_sales')||'[]');due=sales.filter(s=>{const ph=String(s.customerPhone||'').replace(/\D/g,'');const nm=String(s.customerName||'').trim().toLowerCase();return currentKey.startsWith('phone:')?ph===currentKey.slice(6):nm===currentKey.slice(5)}).reduce((n,s)=>n+Math.max(0,Number(s.balance??(Number(s.total||0)-Number(s.paid||0)))),0)}catch(e){};$('profileCreditCustomer').value=$('customerInvoices')?.querySelector('h3')?.textContent?.split(' — ')[0]||currentKey;$('profileCreditLimit').value=limit||'';$('profileCreditDue').value=due.toLocaleString('en-PK');$('profileCreditAvailable').value=limit?Math.max(0,limit-due).toLocaleString('en-PK'):'Unlimited';$('profileCreditStatus').textContent=limit&&due>=limit?'Warning: this customer has reached or exceeded the credit limit.':limit?'Credit is within the assigned limit.':'No credit limit is set.';}
+ $('profileCreditSave').addEventListener('click',()=>{if(!currentKey)return alert('First select a customer using View Ledger.');const v=Number($('profileCreditLimit').value);if(!Number.isFinite(v)||v<0)return alert('Enter a valid credit limit.');const lim=getLimits();lim[currentKey]=v;localStorage.setItem('mberp_customer_credit_limits',JSON.stringify(Object.entries(lim).map(([key,limit])=>({key,limit:Number(limit)}))));refreshProfile();alert('Customer credit limit saved.');});
+ window.etihadSelectCustomerProfile=c=>{currentKey=keyFor(c);refreshProfile()};
+ }
+ // Add supplier purchase returns as a sub-workflow within supplier workspace.
+ // Build a clean, consolidated top navigation while leaving original pages and handlers intact.
+ const oldButtons=[...nav.querySelectorAll('button')];
+ const navMap={dashboard:'Dashboard',pos:'POS',customers:'Customers',suppliers:'Suppliers & Purchases',products:'Inventory',branches:'Branches',transfers:'Stock Transfers',expenses:'Expenses',reports:'Reports',backup:'Settings & Backup'};
+ const pageMap={dashboard:'dashboard',pos:'pos',customers:'customers',suppliers:'suppliers',products:'products',branches:'branches',transfers:'transfers',expenses:'expenses',reports:'reports',backup:'backup'};
+ nav.id='etihadMainNav';nav.innerHTML='';
+ Object.entries(navMap).forEach(([key,label])=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.dataset.tab=pageMap[key];b.addEventListener('click',()=>{nav.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));const page=$(pageMap[key]);if(page)page.classList.remove('hidden');if(typeof window.renderAll==='function')window.renderAll();});nav.appendChild(b)});
+ const theme=document.createElement('div');theme.className='etihad-theme-tools';theme.innerHTML='<button type="button" data-theme="light">Light</button><button type="button" data-theme="dark">Dark</button><button type="button" data-theme="emerald">Emerald</button>';nav.appendChild(theme);
+ theme.addEventListener('click',e=>{const b=e.target.closest('button[data-theme]');if(!b)return;document.body.classList.remove('etihad-dark','etihad-emerald');if(b.dataset.theme==='dark')document.body.classList.add('etihad-dark');if(b.dataset.theme==='emerald')document.body.classList.add('etihad-emerald');try{localStorage.setItem('etihad_theme',b.dataset.theme)}catch(e){}});
+ try{const t=localStorage.getItem('etihad_theme');if(t==='dark')document.body.classList.add('etihad-dark');if(t==='emerald')document.body.classList.add('etihad-emerald')}catch(e){}
+ // Existing viewCustomer() is preserved; wrap it to refresh the customer-specific credit panel.
+ const oldView=window.viewCustomer;if(typeof oldView==='function')window.viewCustomer=function(encoded){oldView(encoded);try{const key=decodeURIComponent(encoded);const c=(typeof getCustomers==='function'?getCustomers():[]).find(x=>x.key===key);if(c&&window.etihadSelectCustomerProfile)window.etihadSelectCustomerProfile(c)}catch(e){}};
+ // Make section labels and action groups clearer.
+ if(customers){const intro=document.createElement('p');intro.className='etihad-section-intro';intro.textContent='One customer workspace: customer profiles, invoices, payments, credit limits and sales returns.';customers.querySelector('h3')?.after(intro)}
+ if(suppliers){const intro=document.createElement('p');intro.className='etihad-section-intro';intro.textContent='One supplier workspace: supplier records, purchases, balances, payments, ledgers and purchase returns.';suppliers.querySelector('h3')?.after(intro)}
+ if($('pos')){const h=$('pos').querySelector('h3');if(h){const intro=document.createElement('p');intro.className='etihad-section-intro';intro.textContent='A simpler checkout: choose a customer, scan or tap products, review the bill and complete payment.';h.after(intro)}}
+ // Hide legacy detached page containers after their contents have been merged.
+ oldButtons.forEach(b=>b.remove());
+})();
+</script>
+<script id="etihad-settings-branding-and-themes">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const THEMES=['light','dark','emerald','blackgold'];
+ const themeNames={light:'Light',dark:'Dark',emerald:'Emerald',blackgold:'Black & Gold'};
+ function applyTheme(theme){
+  if(!THEMES.includes(theme))theme='light';
+  document.body.classList.remove('etihad-dark','etihad-emerald','etihad-blackgold');
+  if(theme==='dark')document.body.classList.add('etihad-dark');
+  if(theme==='emerald')document.body.classList.add('etihad-emerald');
+  if(theme==='blackgold')document.body.classList.add('etihad-blackgold');
+  try{localStorage.setItem('etihad_theme',theme)}catch(e){}
+  document.querySelectorAll('[data-etihad-theme]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.etihadTheme===theme)));
+  const current=$('etihadCurrentTheme');if(current)current.textContent=themeNames[theme]+' theme is active.';
+ }
+ let savedTheme='light';try{savedTheme=localStorage.getItem('etihad_theme')||'light'}catch(e){}
+ applyTheme(savedTheme);
+ // The existing backup page is the Settings destination; retain its backup/restore functions.
+ const settings=$('backup');
+ if(settings){
+  settings.querySelector('h3')?.replaceWith(Object.assign(document.createElement('h3'),{textContent:'Settings & Personalisation'}));
+  const panel=document.createElement('div');panel.className='panel';panel.id='etihadAppearanceSettings';
+  panel.innerHTML=`<h3>Appearance & Theme</h3><p class="muted">Choose the look that feels best for your business. Your selection is saved on this device.</p><div class="etihad-theme-options"><button type="button" class="etihad-theme-choice" data-etihad-theme="light" aria-pressed="false"><i class="etihad-theme-swatch" style="background:#f4f7fb;border:1px solid #cbd5e1"></i>Light<span>Bright, clean workspace</span></button><button type="button" class="etihad-theme-choice" data-etihad-theme="dark" aria-pressed="false"><i class="etihad-theme-swatch" style="background:#111827"></i>Dark<span>Comfortable low-light view</span></button><button type="button" class="etihad-theme-choice" data-etihad-theme="emerald" aria-pressed="false"><i class="etihad-theme-swatch" style="background:#07866d"></i>Emerald<span>Fresh green business style</span></button><button type="button" class="etihad-theme-choice" data-etihad-theme="blackgold" aria-pressed="false"><i class="etihad-theme-swatch" style="background:linear-gradient(135deg,#080808 50%,#d6b45c 50%)"></i>Black & Gold<span>Premium black and golden finish</span></button></div><p id="etihadCurrentTheme" class="muted" aria-live="polite"></p><div class="etihad-subheading"><h3>Business Logo</h3></div><p class="muted">Upload your shop or company logo. It will appear beside Etihad Traders at the top of the app and be saved on this device.</p><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:12px 0"><img id="etihadLogoPreview" class="etihad-logo-preview" alt="Business logo preview"><div style="flex:1;min-width:220px"><label for="etihadLogoFile">Choose logo image</label><input id="etihadLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"><small class="muted">PNG, JPG, WEBP or SVG · Maximum 2 MB</small></div></div><button type="button" class="btn gray" id="etihadRemoveLogo">Remove Logo</button><p id="etihadLogoStatus" class="muted" aria-live="polite"></p>`;
+  const backupHeading=settings.querySelector('h3');backupHeading?.after(panel);
+  const backupPanels=[...settings.querySelectorAll('.panel')];
+  if(backupPanels.length>1){const h=backupPanels[1].querySelector('h3');if(h)h.textContent='Data Backup & Restore';}
+ }
+ // Add the logo to the existing header without altering its business title or other controls.
+ const header=document.querySelector('header');
+ const brand=header?.firstElementChild;
+ if(brand&&!$('etihadHeaderLogo')){
+  brand.classList.add('etihad-brand');
+  const img=document.createElement('img');img.id='etihadHeaderLogo';img.className='etihad-brand-logo';img.alt='Etihad Traders logo';
+  const copy=document.createElement('div');copy.className='etihad-brand-copy';while(brand.firstChild)copy.appendChild(brand.firstChild);brand.appendChild(img);brand.appendChild(copy);
+ }
+ function setLogo(data){
+  const img=$('etihadHeaderLogo'),preview=$('etihadLogoPreview');
+  [img,preview].forEach(el=>{if(!el)return;if(data){el.src=data;el.classList.add('has-logo')}else{el.removeAttribute('src');el.classList.remove('has-logo')}});
+ }
+ let logo='';try{logo=localStorage.getItem('etihad_business_logo')||''}catch(e){}
+ setLogo(logo);
+ const file=$('etihadLogoFile');
+ if(file)file.addEventListener('change',()=>{
+  const f=file.files&&file.files[0];if(!f)return;
+  const status=$('etihadLogoStatus');
+  if(!/^image\/(png|jpeg|webp|svg\+xml)$/.test(f.type)){status.textContent='Please choose a PNG, JPG, WEBP or SVG image.';file.value='';return;}
+  if(f.size>2*1024*1024){status.textContent='Logo is larger than 2 MB. Please choose a smaller image.';file.value='';return;}
+  const reader=new FileReader();reader.onload=()=>{try{const data=String(reader.result||'');localStorage.setItem('etihad_business_logo',data);setLogo(data);status.textContent='Logo saved successfully on this device.';}catch(e){status.textContent='Could not save this logo. Try a smaller image.';}};reader.onerror=()=>status.textContent='Could not read this image.';reader.readAsDataURL(f);
+ });
+ $('etihadRemoveLogo')?.addEventListener('click',()=>{try{localStorage.removeItem('etihad_business_logo')}catch(e){}setLogo('');if(file)file.value='';const status=$('etihadLogoStatus');if(status)status.textContent='Business logo removed.';});
+ document.addEventListener('click',e=>{const b=e.target.closest('[data-etihad-theme]');if(b)applyTheme(b.dataset.etihadTheme)});
+ // Navigation wording: keep the inventory page under Products and P&L inside Reports.
+ const nav=document.querySelector('#etihadMainNav');
+ if(nav){nav.querySelector('.etihad-theme-tools')?.remove();nav.querySelectorAll('button[data-tab]').forEach(b=>{const id=b.dataset.tab;if(id==='products')b.textContent='Products';if(id==='reports')b.textContent='Reports';if(id==='backup')b.textContent='Settings';if(id==='branches')b.textContent='Branches & Transfers';if(id==='transfers')b.remove();});}
+ const transferPage=$('transfers'),branchPage=$('branches');if(transferPage&&branchPage){const heading=document.createElement('h3');heading.textContent='Stock Transfers';const wrap=document.createElement('div');wrap.id='etihadStockTransfers';wrap.className='panel';wrap.appendChild(heading);while(transferPage.firstChild)wrap.appendChild(transferPage.firstChild);branchPage.appendChild(wrap);transferPage.remove();}
+ const products=$('products');if(products){const h=products.querySelector('h3');if(h)h.textContent='Products & Inventory';}
+ const reports=$('reports');if(reports){const h=reports.querySelector('h3');if(h)h.textContent='Reports Centre';const p=document.createElement('p');p.className='etihad-section-intro';p.textContent='Business reports, including Profit & Loss, sales performance, expenses and financial summaries.';h?.after(p);}
+ const profit=$('profitCards');if(profit){const heading=profit.parentElement?.querySelector('h3');if(heading)heading.textContent='Profit & Loss Report';}
+})();
+</script>
+
+<style id="etihad-pos-pro-style">
+#pos.etihad-pos-pro{padding:0!important;max-width:none!important;color:var(--ink)}
+#pos .pos-pro-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:8px 2px 18px}
+#pos .pos-pro-head h2{font-size:25px;margin:0;font-weight:750;letter-spacing:-.6px}
+#pos .pos-pro-head .pos-branch{width:min(250px,48%)}
+#pos .pos-pro-head label,#pos .pos-pro label{font-size:12px;color:var(--muted);font-weight:650;margin-bottom:6px;display:block}
+#pos .pos-pro-layout{display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:18px;align-items:stretch}
+#pos .pos-pro-main,#pos .pos-pro-side{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 28px #0f172a0a;min-width:0}
+#pos .pos-pro-main{padding:20px;min-height:570px}
+#pos .pos-pro-side{padding:18px;display:flex;flex-direction:column;min-height:570px}
+#pos .pos-search-row{display:grid;grid-template-columns:90px minmax(0,1fr);gap:12px;margin-bottom:18px}
+#pos .pos-search-row input,#pos .pos-search-row select,#pos .pos-customer-fields input,#pos .pos-pro select,#pos .pos-pro input{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:11px;padding:11px 12px;width:100%;min-height:42px}
+#pos .pos-qty-box{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:12px;padding:0 10px;background:var(--bg)}
+#pos .pos-qty-box input{border:0;background:transparent;padding:8px 0;text-align:center;min-width:0}
+#pos #etihadPosSearch{padding-left:40px;background-image:radial-gradient(circle at 18px 19px,transparent 5px,var(--muted) 5.8px,var(--muted) 6.8px,transparent 7.5px),linear-gradient(45deg,transparent 47%,var(--muted) 48%,var(--muted) 56%,transparent 57%);background-size:18px 18px,7px 7px;background-position:10px 10px,25px 25px;background-repeat:no-repeat}
+#pos .pos-product-grid{max-height:calc(100vh - 230px);min-height:390px;overflow:auto;padding:0;border-top:1px solid var(--line)}
+#pos .pos-product-grid table{width:100%;border-collapse:collapse;font-size:13px}
+#pos .pos-product-grid th{font-size:11px;color:var(--muted);font-weight:500;text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}
+#pos .pos-product-grid td{padding:11px 12px;border-bottom:1px solid var(--line);color:var(--ink)}
+#pos .pos-product-grid tbody tr{cursor:pointer}#pos .pos-product-grid tbody tr:hover{background:var(--bg)}
+#pos .pos-product-grid .product-price{text-align:right;font-weight:650}
+#pos .pos-product-grid .product-empty{text-align:center;color:var(--muted);height:300px;cursor:default}
+#pos .pos-pro-main{border-radius:0;box-shadow:none;border:0;padding:0 18px 12px}
+#pos .pos-pro-side{border-radius:0;box-shadow:none;border:0;border-left:1px solid var(--line);padding:16px 20px}
+#pos .pos-pro-layout{gap:0;grid-template-columns:minmax(0,1fr) 370px}
+#pos .pos-pro-head{padding:8px 18px 16px}
+#pos .pos-pro-head h2{font-size:24px}
+#pos .pos-pro-head .pos-branch{display:none!important}
+#pos .pos-pro-main{min-height:calc(100vh - 110px)}
+#pos .pos-pro-side{min-height:calc(100vh - 110px)}
+#pos .pos-search-row{margin-bottom:18px}
+#pos .pos-pro-side h3{font-size:20px}
+#pos .pos-pro-side h3{margin:0;font-size:20px}#pos .pos-cart-sub{font-size:12px;color:var(--muted);margin:4px 0 14px}
+#pos .pos-cart-table{overflow:auto;flex:1;min-height:100px}#pos .pos-cart-table table{width:100%;font-size:12px}#pos .pos-cart-table th,#pos .pos-cart-table td{padding:9px 5px;white-space:nowrap}
+#pos .pos-cart-table .empty{white-space:normal;text-align:center;padding:35px 5px;color:var(--muted)}
+#pos .pos-customer-box{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:14px 0}
+#pos .pos-customer-box summary{list-style:none;cursor:pointer;font-weight:700;padding:14px 2px;display:flex;justify-content:space-between;align-items:center}
+#pos .pos-customer-box summary::-webkit-details-marker{display:none}#pos .pos-customer-box summary:after{content:'＋';font-size:18px;color:var(--muted)}#pos .pos-customer-box[open] summary:after{content:'−'}
+#pos .pos-customer-fields{display:grid;gap:10px;padding:0 0 14px}#pos .pos-customer-fields .muted{font-size:11px}
+#pos .pos-customer-actions{display:flex;gap:8px;flex-wrap:wrap}#pos .pos-customer-actions button{font-size:12px}
+#pos #customerCreditPanel,#pos #posCustomerHistory{margin:8px 0!important;padding:12px!important;border-radius:12px!important;background:var(--bg)!important;border:1px solid var(--line)!important;box-shadow:none!important}
+#pos #customerCreditPanel h3,#pos #posCustomerHistory h3{font-size:14px}
+#pos .pos-payments{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+#pos .pos-total-line{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);padding-top:12px;border-top:1px solid var(--line);margin-top:10px}
+#pos .pos-total-line strong{font-size:23px;color:var(--ink)}#pos .pos-pro-actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px}
+#pos .pos-pro-actions button{min-height:44px;border-radius:11px;font-weight:700}
+#pos .pos-recent{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;overflow:hidden}
+#pos .pos-hidden-original{display:none!important}#pos .pos-pro-head .pos-branch{display:none!important}
+body.etihad-blackgold #pos .pos-pro-main,body.etihad-blackgold #pos .pos-pro-side,body.etihad-blackgold #pos .pos-recent{border-color:#594725;box-shadow:0 10px 30px #0003}
+body.etihad-blackgold #pos .pos-product-card:hover{border-color:#d8b75c}
+@media(max-width:900px){#pos .pos-pro-layout{grid-template-columns:1fr}#pos .pos-pro-side{min-height:unset;border-left:0;border-top:1px solid var(--line)}#pos .pos-product-grid{max-height:330px;min-height:220px}}
+@media(max-width:560px){#pos .pos-pro-head{align-items:center;flex-direction:row}#pos .pos-pro-main,#pos .pos-pro-side{padding:12px}#pos .pos-search-row{grid-template-columns:76px minmax(0,1fr);gap:7px}#pos .pos-payments{grid-template-columns:1fr}#pos .pos-pro-actions{grid-template-columns:1fr}}
+</style>
+<script id="etihad-pos-screen-redesign">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const pos=$('pos'); if(!pos||pos.dataset.proBuilt)return; pos.dataset.proBuilt='1';
+ const branch=$('saleBranch'),product=$('saleProduct'),qty=$('saleQty'),name=$('saleCustomer'),phone=$('salePhone'),paid=$('salePaid'),balance=$('saleBalance'),cartBody=$('cartTable');
+ const cartTable=cartBody?.closest('table');
+ const saved=$('savedCustomerSelect');
+ const savedWrap=saved?.parentElement;
+ const nameWrap=name?.parentElement,phoneWrap=phone?.parentElement;
+ const credit=$('customerCreditPanel'),history=$('posCustomerHistory');
+ const oldPanels=[...pos.querySelectorAll(':scope > .panel')];
+ const salesPanel=oldPanels.find(p=>p.querySelector('#salesTable'));
+ const shell=document.createElement('div');shell.className='pos-pro';
+ shell.innerHTML=`
+  <div class="pos-pro-head"><h2>Sale</h2><div class="pos-branch" aria-hidden="true"></div></div>
+  <div class="pos-pro-layout">
+   <section class="pos-pro-main"><div class="pos-search-row"><div><label for="saleQty">Qty</label><div class="pos-qty-box"><input id="etihadPosQty" type="number" min="1" value="1" aria-label="Product quantity"></div></div><div><label for="etihadPosSearch">Product</label><input id="etihadPosSearch" type="search" placeholder="Search or scan barcode…" autocomplete="off"></div></div><div id="etihadPosProducts" class="pos-product-grid"></div></section>
+   <aside class="pos-pro-side"><div><h3 id="etihadPosCartTitle">No items</h3><div class="pos-cart-sub" id="etihadPosCartQty">Quantity: 0</div></div><div class="pos-cart-table" id="etihadPosCartHost"></div>
+    <details class="pos-customer-box" id="etihadPosCustomerDetails"><summary><span id="etihadPosCustomerTitle">Customer — Walk-in</span><small class="muted">Select / Add</small></summary><div class="pos-customer-fields" id="etihadPosCustomerHost"><div id="etihadSavedCustomerHost"></div><div class="pos-customer-actions"><button type="button" class="btn small light" id="etihadNewCustomer">＋ New customer</button><button type="button" class="btn small light" id="etihadWalkIn">Walk-in</button></div><div id="etihadNewCustomerFields"></div></div></details>
+    <div class="pos-pro-total"><div class="pos-total-line"><span>Total</span><strong>PKR <span id="etihadPosGrandTotal">0</span></strong></div><div class="pos-payments" id="etihadPosPaymentHost"></div></div>
+    <div class="pos-pro-actions" id="etihadPosActionHost"></div>
+   </aside>
+  </div>`;
+ // Preserve all original functional controls and move them into the new visual layout.
+ const hiddenBranchHolder=document.createElement('div');hiddenBranchHolder.className='pos-hidden-original';hiddenBranchHolder.style.display='none';shell.appendChild(hiddenBranchHolder);
+ const head=shell.querySelector('.pos-pro-head .pos-branch');if(branch){const branchWrap=branch.closest('div');branchWrap?.classList.add('pos-hidden-original');hiddenBranchHolder.appendChild(branchWrap);}
+ const hiddenControls=document.createElement('div');hiddenControls.className='pos-hidden-original';hiddenControls.style.display='none';shell.appendChild(hiddenControls);
+ if(product){product.classList.add('pos-hidden-original');product.setAttribute('aria-hidden','true');hiddenControls.appendChild(product);}
+ if(qty){qty.classList.add('pos-hidden-original');qty.setAttribute('aria-hidden','true');hiddenControls.appendChild(qty);}
+ const barcode=$('saleBarcode');if(barcode){barcode.classList.add('pos-hidden-original');hiddenControls.appendChild(barcode);}
+ if(cartTable)shell.querySelector('#etihadPosCartHost').appendChild(cartTable);
+ if(nameWrap)shell.querySelector('#etihadNewCustomerFields').appendChild(nameWrap);
+ if(phoneWrap)shell.querySelector('#etihadNewCustomerFields').appendChild(phoneWrap);
+ if(savedWrap)shell.querySelector('#etihadSavedCustomerHost').appendChild(savedWrap);
+ // Customer credit limits, ledger and history stay in the Customers area, not on the simple POS screen.
+ if(credit)credit.classList.add('pos-hidden-original');
+ if(history)history.classList.add('pos-hidden-original');
+ // Keep the customer fields hidden until New customer is selected.
+ const newFields=shell.querySelector('#etihadNewCustomerFields');newFields.hidden=true;
+ if(saved){saved.style.width='100%';saved.setAttribute('aria-label','Select an existing customer');}
+ if(name){name.placeholder='Customer full name';name.style.width='100%'}
+ if(phone){phone.placeholder='Phone number (optional)';phone.style.width='100%'}
+ // Move payment fields and original checkout buttons, retaining their IDs and click handlers.
+ const paidWrap=paid?.closest('div'),balanceWrap=balance?.closest('div');
+ const payHost=shell.querySelector('#etihadPosPaymentHost');
+ if(paidWrap)payHost.appendChild(paidWrap);if(balanceWrap&&balanceWrap!==paidWrap)payHost.appendChild(balanceWrap);
+ const complete=pos.querySelector('button[onclick="completeSale()"]'),clear=pos.querySelector('button[onclick="clearCart()"]');
+ const actionHost=shell.querySelector('#etihadPosActionHost');if(complete)actionHost.appendChild(complete);if(clear)actionHost.appendChild(clear);
+ if(salesPanel)salesPanel.classList.add('pos-hidden-original');
+ // Remove old POS panels only after all original controls have been safely relocated.
+ pos.querySelectorAll(':scope > .panel').forEach(p=>{if(p!==salesPanel)p.remove()});
+ pos.querySelectorAll(':scope > h3,:scope > .etihad-section-intro').forEach(e=>e.remove());
+ pos.appendChild(shell);pos.classList.add('etihad-pos-pro');
+ // Remove the previous quick-search block; this screen provides its own product picker.
+ $('etihadQuickSearch')?.closest('div')?.remove();
+ const search=$('etihadPosSearch'),list=$('etihadPosProducts'),qtyView=$('etihadPosQty');
+ function escape(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+ function format(v){return Number(v||0).toLocaleString('en-PK',{maximumFractionDigits:2})}
+ function drawProducts(){let all=[];try{all=JSON.parse(localStorage.getItem('mberp_products')||'[]')}catch(e){};const bid=branch?.value||'',q=(search.value||'').trim().toLowerCase();const matches=q?all.filter(p=>String(p.branchId)===String(bid)&&Number(p.qty)>0&&[p.name,p.sku,p.barcode,p.category].some(v=>String(v||'').toLowerCase().includes(q))).slice(0,60):[];list.innerHTML='<table><thead><tr><th>No.</th><th>Qty.</th><th>Product</th><th style="text-align:right">Price</th></tr></thead><tbody>'+(matches.map((p,i)=>`<tr data-pos-product="${escape(p.id)}"><td>${i+1}</td><td>${format(Math.max(1,Math.floor(Number(qtyView.value)||1)))}</td><td>${escape(p.name)}<div class="muted" style="font-size:11px">${escape(p.sku||p.barcode||'')}</div></td><td class="product-price">${format(p.price)}</td></tr>`).join('')||'<tr><td colspan="4" class="product-empty">'+(q?'No matching products':'Search for a product to begin')+'</td></tr>')+'</tbody></table>'}
+ list.addEventListener('click',e=>{const b=e.target.closest('tr[data-pos-product]');if(!b)return;const p=allProducts().find(x=>String(x.id)===b.dataset.posProduct);if(!p)return;product.value=p.id;qty.value=Math.max(1,Math.floor(Number(qtyView.value)||1));if(typeof window.addToCart==='function')window.addToCart();qtyView.value=1;search.focus();});
+ function allProducts(){try{return JSON.parse(localStorage.getItem('mberp_products')||'[]')}catch(e){return []}}
+ search.addEventListener('input',drawProducts);branch?.addEventListener('change',drawProducts);
+ qtyView.addEventListener('input',()=>{qty.value=Math.max(1,Math.floor(Number(qtyView.value)||1))});
+ search.addEventListener('keydown',e=>{if(e.key==='Enter'){const first=list.querySelector('[data-pos-product]');if(first){e.preventDefault();first.click()}}});
+ // Product search can accept barcode scanner input exactly like typed SKU/barcode.
+ function updateCartSummary(){const count=Array.isArray(window.cart)?window.cart.reduce((n,x)=>n+Number(x.qty||0),0):0;const items=Array.isArray(window.cart)?window.cart.length:0;$('etihadPosCartTitle').textContent=items?items+' item'+(items===1?'':'s'):'No items';$('etihadPosCartQty').textContent='Quantity: '+count;$('etihadPosGrandTotal').textContent=$('cartTotal')?.textContent||'0';}
+ const oldRender=window.renderCart;if(typeof oldRender==='function')window.renderCart=function(){oldRender();updateCartSummary()};
+ const oldRenderAll=window.renderAll;if(typeof oldRenderAll==='function')window.renderAll=function(){oldRenderAll();drawProducts();updateCartSummary();refreshCustomerTitle()};
+ function refreshCustomerTitle(){const n=name?.value.trim(),p=phone?.value.trim();$('etihadPosCustomerTitle').textContent=n?'Customer — '+n:'Customer — Walk-in';}
+ name?.addEventListener('input',refreshCustomerTitle);phone?.addEventListener('input',refreshCustomerTitle);
+ $('etihadNewCustomer').addEventListener('click',()=>{newFields.hidden=false;name?.focus();$('etihadPosCustomerDetails').open=true;if(saved)saved.value='new'});
+ $('etihadWalkIn').addEventListener('click',()=>{if(name)name.value='';if(phone)phone.value='';if(saved)saved.value='';newFields.hidden=true;refreshCustomerTitle();});
+ saved?.addEventListener('change',()=>{if(saved.value&&saved.value!=='new'){newFields.hidden=true;refreshCustomerTitle()}else if(saved.value==='new'){newFields.hidden=false;name?.focus()} });
+ // Hide the manual fields after selecting a saved customer, but keep original inputs in the DOM.
+ if(savedWrap){const lbl=savedWrap.querySelector('label');if(lbl)lbl.textContent='Choose existing customer';}
+ if(nameWrap){const l=nameWrap.querySelector('label');if(l)l.textContent='Customer name';}
+ if(phoneWrap){const l=phoneWrap.querySelector('label');if(l)l.textContent='Phone number';}
+ // Rename the payment controls for quick checkout and keep due preview live.
+ if(paidWrap){const l=paidWrap.querySelector('label');if(l)l.textContent='Amount received (PKR)';}
+ if(balanceWrap){const l=balanceWrap.querySelector('label');if(l)l.textContent='Balance due (PKR)';}
+ if(complete)complete.textContent='Complete sale';if(clear)clear.textContent='Clear bill';
+ drawProducts();updateCartSummary();refreshCustomerTitle();
+ if(typeof window.renderSaleProductOptions==='function')window.renderSaleProductOptions();
 })();
 </script>
 
