@@ -2407,6 +2407,56 @@ body.etihad-blackgold .table-wrap{border-color:#443821}
 .etihad-theme-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}.etihad-theme-choice{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;padding:14px;text-align:left;min-height:74px;font-weight:750}.etihad-theme-choice span{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:5px}.etihad-theme-choice[aria-pressed="true"]{outline:2px solid var(--primary);border-color:var(--primary)}.etihad-theme-swatch{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;vertical-align:middle}
 body.etihad-dark .etihad-theme-choice{background:#151f32;color:#e7edf8;border-color:#34445f}body.etihad-blackgold .etihad-theme-choice{background:#171615;color:#f5f0e5;border-color:#554321}
 @media(max-width:600px){.etihad-brand-logo{width:37px;height:37px}.etihad-brand{gap:9px}}
+
+/* ETIHAD TRADERS - LOGO SIZE FIX */
+#etihadHeaderLogo {
+  display: block !important;
+  width: 90px !important;
+  height: 48px !important;
+  max-width: 90px !important;
+  max-height: 48px !important;
+  min-width: 0 !important;
+  object-fit: contain !important;
+  flex-shrink: 0 !important;
+}
+
+#etihadLogoPreview {
+  display: block;
+  width: 160px;
+  height: 90px;
+  max-width: 100%;
+  object-fit: contain;
+  margin: 10px auto;
+}
+
+.etihad-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 90px);
+  min-width: 0;
+}
+
+.etihad-brand-copy {
+  min-width: 0;
+}
+
+.etihad-brand-copy h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+@media (max-width: 600px) {
+  #etihadHeaderLogo {
+    width: 65px !important;
+    height: 42px !important;
+  }
+
+  .etihad-brand-copy h2 {
+    font-size: 16px;
+  }
+}
+
 </style>
 
 </head><body>
