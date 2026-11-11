@@ -4308,7 +4308,7 @@ body.etihad-blackgold #pos .pos-product-card:hover{border-color:#d8b75c}
  const salesPanel=oldPanels.find(p=>p.querySelector('#salesTable'));
  const shell=document.createElement('div');shell.className='pos-pro';
  shell.innerHTML=`
-  <div class="pos-pro-head"><h2>Sale</h2><div class="pos-branch" aria-hidden="true"></div></div>
+  <div class="pos-pro-head"><h2>Sale</h2><div class="pos-branch"></div></div>
   <div class="pos-pro-layout">
    <section class="pos-pro-main"><div class="pos-search-row"><div><label for="saleQty">Qty</label><div class="pos-qty-box"><input id="etihadPosQty" type="number" min="1" value="1" aria-label="Product quantity"></div></div><div><label for="etihadPosSearch">Product</label><input id="etihadPosSearch" type="search" placeholder="Search or scan barcode…" autocomplete="off"></div></div><div id="etihadPosProducts" class="pos-product-grid"></div></section>
    <aside class="pos-pro-side"><div><h3 id="etihadPosCartTitle">No items</h3><div class="pos-cart-sub" id="etihadPosCartQty">Quantity: 0</div></div><div class="pos-cart-table" id="etihadPosCartHost"></div>
@@ -4319,7 +4319,7 @@ body.etihad-blackgold #pos .pos-product-card:hover{border-color:#d8b75c}
   </div>`;
  // Preserve all original functional controls and move them into the new visual layout.
  const hiddenBranchHolder=document.createElement('div');hiddenBranchHolder.className='pos-hidden-original';hiddenBranchHolder.style.display='none';shell.appendChild(hiddenBranchHolder);
- const head=shell.querySelector('.pos-pro-head .pos-branch');if(branch){const branchWrap=branch.closest('div');branchWrap?.classList.add('pos-hidden-original');hiddenBranchHolder.appendChild(branchWrap);}
+ const head=shell.querySelector('.pos-pro-head .pos-branch');if(branch){const branchWrap=branch.closest('div');if(branchWrap){branchWrap.classList.remove('pos-hidden-original');branchWrap.style.display='block';branchWrap.style.margin='0';head.appendChild(branchWrap);}}
  const hiddenControls=document.createElement('div');hiddenControls.className='pos-hidden-original';hiddenControls.style.display='none';shell.appendChild(hiddenControls);
  if(product){product.classList.add('pos-hidden-original');product.setAttribute('aria-hidden','true');hiddenControls.appendChild(product);}
  if(qty){qty.classList.add('pos-hidden-original');qty.setAttribute('aria-hidden','true');hiddenControls.appendChild(qty);}
@@ -4898,5 +4898,12 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
  refresh();
 })();
 </script>
+<style id="etihad-pos-visible-branch-selector-fix">
+#pos .pos-pro-head .pos-branch{display:block!important;width:min(280px,52%);min-width:190px}
+#pos .pos-pro-head .pos-branch>div{display:block!important;width:100%}
+#pos .pos-pro-head .pos-branch label{display:block!important;margin:0 0 6px!important;font-size:12px;font-weight:700;color:var(--muted)}
+#pos .pos-pro-head .pos-branch select{display:block!important;width:100%;min-height:42px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit}
+@media(max-width:560px){#pos .pos-pro-head{align-items:flex-start!important;gap:10px!important}#pos .pos-pro-head .pos-branch{width:55%;min-width:150px}}
+</style>
 </body>
 </html>
