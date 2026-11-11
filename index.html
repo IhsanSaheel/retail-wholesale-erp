@@ -204,7 +204,7 @@ footer{padding:25px;color:#8492a6}
 <button data-tab="products">Products & Inventory</button>
 <button data-tab="branches">Branches</button>
 <button data-tab="transfers">Stock Transfer</button>
-<button data-tab="pos">POS / Sales</button>
+<button data-tab="pos">Sales</button>
 <button data-tab="customers">Customers & Ledger</button>
 <button data-tab="expenses">Expenses</button>
 <button data-tab="reports">Profit & Loss</button>
@@ -4490,5 +4490,86 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
 .etihad-brand-copy h2{margin:0}
 @media(max-width:600px){#pos .pos-pro-layout{display:flex;flex-direction:column}#pos .pos-pro-side{min-height:unset}#pos #etihadPosProfileHost{max-height:220px}}
 </style>
+
+<script id="etihad-sales-navigation-and-report-periods">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const nav=document.querySelector('nav');
+ const pos=$('pos'), reports=$('reports');
+ if(!nav||!pos||!reports)return;
+
+ // Replace the POS navigation item with a single Sales workspace.
+ const oldPosNav=nav.querySelector('button[data-tab="pos"]');
+ if(oldPosNav){oldPosNav.dataset.tab='sales';oldPosNav.textContent='Sales';}
+
+ // Create a Sales Records page and move the existing sales table into it.
+ let salesPage=$('sales');
+ if(!salesPage){
+  salesPage=document.createElement('section');
+  salesPage.id='sales';salesPage.className='page hidden';
+  salesPage.innerHTML='<h3>Sales</h3><div class="panel" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b>Sales Records</b><div class="muted">View, open and print your completed sales</div></div><button type="button" class="btn" id="etihadNewSaleButton">New Sale - F3</button></div>';
+  const tablePanel=[...pos.querySelectorAll('.panel')].find(p=>p.querySelector('#salesTable'));
+  if(tablePanel){
+   const heading=tablePanel.querySelector('h3');if(heading)heading.textContent='All Sales';
+   salesPage.appendChild(tablePanel);
+  }else{
+   const panel=document.createElement('div');panel.className='panel';
+   panel.innerHTML='<div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Branch</th><th>Total</th><th>Paid</th><th>Due</th><th>Action</th></tr></thead><tbody id="salesTable"></tbody></table></div>';
+   salesPage.appendChild(panel);
+  }
+  pos.parentNode.insertBefore(salesPage,pos.nextSibling);
+ }
+ function openNewSale(){
+  document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+  pos.classList.remove('hidden');
+  nav.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='sales'));
+  const heading=pos.querySelector('h3');if(heading)heading.textContent='New Sale';
+  $('saleCustomer')?.focus();
+ }
+ $('etihadNewSaleButton')?.addEventListener('click',openNewSale);
+ // Return to Sales Records after a sale has been completed.
+ const originalComplete=window.completeSale;
+ if(typeof originalComplete==='function'&&!window.__etihadSalesCompleteWrapped){
+  window.__etihadSalesCompleteWrapped=true;
+  window.completeSale=function(){
+   const before=(JSON.parse(localStorage.getItem('mberp_sales')||'[]')).length;
+   const result=originalComplete.apply(this,arguments);
+   setTimeout(()=>{
+    const after=(JSON.parse(localStorage.getItem('mberp_sales')||'[]')).length;
+    if(after>before){
+     if(typeof window.renderAll==='function')window.renderAll();
+     if(typeof window.showTab==='function')window.showTab('sales');
+    }
+   },80);
+   return result;
+  };
+ }
+
+ // Add quick report period selectors; use local calendar dates and inclusive ranges.
+ const reportPanel=reports.querySelector('.panel');
+ if(reportPanel&&!$('etihadReportPeriods')){
+  const bar=document.createElement('div');bar.id='etihadReportPeriods';
+  bar.style.cssText='display:flex;gap:9px;flex-wrap:wrap;margin:12px 0 16px';
+  bar.innerHTML='<button type="button" class="btn light" data-period="today">Today</button><button type="button" class="btn light" data-period="7">Last 7 Days</button><button type="button" class="btn light" data-period="30">Last 30 Days</button>';
+  const intro=reportPanel.querySelector('p');(intro||reportPanel.firstChild).after(bar);
+  const from=$('reportFrom'),to=$('reportTo');
+  const localISO=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day};
+  bar.addEventListener('click',e=>{
+   const b=e.target.closest('button[data-period]');if(!b)return;
+   const now=new Date();now.setHours(0,0,0,0);
+   const start=new Date(now);
+   if(b.dataset.period==='7')start.setDate(start.getDate()-6);
+   if(b.dataset.period==='30')start.setDate(start.getDate()-29);
+   from.value=localISO(start);to.value=localISO(now);
+   bar.querySelectorAll('button').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',x===b?'true':'false')});
+   if(typeof window.renderProfitLoss==='function')window.renderProfitLoss();
+   // Also refresh the detailed sales report when the extended report workspace exists.
+   if(typeof window.renderBusinessReport==='function')window.renderBusinessReport();
+  });
+ }
+ // Show sales page first when user clicks Sales; New Sale opens the original checkout.
+})();
+</script>
 </body>
 </html>
