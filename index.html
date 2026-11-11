@@ -3750,6 +3750,10 @@ if ('serviceWorker' in navigator) {
 
     <div id="etihadCloudControls" style="display:none">
       <p id="etCloudUser"></p>
+      <button id="etihadCreateOwner"
+  style="padding:11px;background:#b8860b;color:white;border:0;border-radius:7px;margin:3px">
+  Initialize Etihad Traders Owner Account
+</button>
 
       <button id="etCloudUpload"
         style="padding:11px;background:#16845b;color:white;border:0;border-radius:7px;margin:3px">
@@ -4099,6 +4103,55 @@ message('Automatic cloud sync successful.');
   scheduleAutoSync();
 });
   window.addEventListener('online', scheduleAutoSync);
+
+    // Initialize the Etihad Traders company and owner account.
+  const ownerButton = document.getElementById('etihadCreateOwner');
+
+  if (ownerButton) {
+    ownerButton.onclick = async function () {
+      const button = this;
+      button.disabled = true;
+
+      try {
+        message('Checking your owner account...');
+
+        const sessionResult = await client.auth.getSession();
+        if (sessionResult.error) throw sessionResult.error;
+
+        const user = sessionResult.data.session?.user;
+        if (!user) throw new Error('Please log in first.');
+
+        const existing = await client
+          .from('etihad_memberships')
+          .select('org_id, role, active')
+          .eq('user_id', user.id)
+          .eq('active', true)
+          .limit(1)
+          .maybeSingle();
+
+        if (existing.error) throw existing.error;
+
+        if (existing.data) {
+          message('Your account is already registered. Role: ' + existing.data.role);
+          return;
+        }
+
+        const result = await client.rpc(
+          'etihad_create_organization',
+          { p_name: 'Etihad Traders' }
+        );
+
+        if (result.error) throw result.error;
+
+        message('Success! Etihad Traders company created. Your account is the owner.');
+
+      } catch (error) {
+        message('Owner setup failed: ' + error.message);
+      } finally {
+        button.disabled = false;
+      }
+    };
+  }
 
   refreshLogin();
 })();
