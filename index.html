@@ -5289,10 +5289,24 @@ body.etihad-blackgold .panel,body.etihad-blackgold .card,body.etihad-blackgold #
    panel.scrollIntoView({behavior:'smooth',block:'start'});
   });
  }
- function boot(){addCompanyProfile();installEmployeeProfiles();}
- boot();document.addEventListener('click',e=>{if(e.target.closest('#hrRefresh'))setTimeout(installEmployeeProfiles,100)});
+ // Keep the login screen lightweight: initialize profile and employee extras only
+ // after the main secure login flow has revealed the ERP.
+ let profileExtrasStarted=false;
+ function boot(){if(profileExtrasStarted||!document.body.classList.contains('etihad-auth-ready'))return;profileExtrasStarted=true;addCompanyProfile();installEmployeeProfiles();}
+ if(document.body.classList.contains('etihad-auth-ready'))boot();
+ else{
+  const readyObserver=new MutationObserver(()=>{
+   if(document.body.classList.contains('etihad-auth-ready')){readyObserver.disconnect();boot();}
+  });
+  readyObserver.observe(document.body,{attributes:true,attributeFilter:['class']});
+ }
+ document.addEventListener('click',e=>{if(e.target.closest('#hrRefresh'))setTimeout(installEmployeeProfiles,100)});
  const nav=$('etihadMainNav');nav?.addEventListener('click',()=>setTimeout(installEmployeeProfiles,150));
- const settingsObserver=new MutationObserver(()=>addCompanyProfile());const settings=$('backup');if(settings)settingsObserver.observe(settings,{childList:true,subtree:true});
+ const settings=$('backup');
+ if(settings){
+  const settingsObserver=new MutationObserver(()=>{if(profileExtrasStarted)addCompanyProfile();});
+  settingsObserver.observe(settings,{childList:true,subtree:true});
+ }
 })();
 </script>
 <style id="etihad-pro-max-profile-style">
