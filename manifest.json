@@ -6,11 +6,11 @@
   "scope": "/retail-wholesale-erp/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#000000",
-  "theme_color": "#102a43",
+  "background_color": "#080a0d",
+  "theme_color": "#11151b",
   "icons": [
     {
-      "src": "etihad-brand-192-v3.jpg",
+      "src": "etihad-icon-192.jpg",
       "sizes": "192x192",
       "type": "image/jpeg",
       "purpose": "any"
