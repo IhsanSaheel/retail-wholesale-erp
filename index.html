@@ -229,7 +229,7 @@ body{visibility:hidden!important}body.etihad-auth-ready{visibility:visible!impor
 </style>
 
 <div id="etihadSplash" role="status" aria-live="polite">
-  <img class="et-logo" src="etihad-icon-192.jpg" alt="Etihad Traders company logo">
+  <img class="et-logo" src="etihad-brand-192-v3.jpg" alt="Etihad Traders company logo">
   <span class="et-loading" aria-label="Loading"></span>
 </div>
 
@@ -1096,7 +1096,7 @@ function printInvoice(sid){
  <button onclick="window.print()">Print Invoice</button>
  </center>
 
-<style id="etihad-premium-design-system-v7">
+<style id="etihad-premium-design-system-v8">
 :root{--etihad-gold:#c49a45;--etihad-gold-light:#f0d58e;--etihad-radius:18px;--etihad-card-shadow:0 12px 34px rgba(15,23,42,.065)}
 body{background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
 header{background:linear-gradient(112deg,#101923,#202a36 55%,#3a2d18);border-bottom:1px solid rgba(196,154,69,.35);box-shadow:0 12px 32px rgba(15,23,42,.12);padding:16px clamp(16px,3vw,42px)}
@@ -1138,6 +1138,30 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
 @media(max-width:700px){main{padding:18px 11px 96px}.etihad-theme-options{grid-template-columns:repeat(2,minmax(0,1fr))!important}.etihad-theme-choice{min-height:116px;padding:12px!important}header{padding:13px 12px}}
 @media(max-width:380px){.etihad-theme-options{grid-template-columns:1fr!important}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Refined, tactile theme selector cards */
+.etihad-theme-options{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:16px!important;margin-top:20px}
+.etihad-theme-choice{position:relative!important;isolation:isolate;overflow:hidden;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:9px!important;min-height:158px!important;padding:13px!important;border:1px solid var(--line)!important;border-radius:19px!important;background:var(--surface)!important;color:var(--ink)!important;text-align:left!important;font-size:14px!important;font-weight:800!important;line-height:1.35!important;box-shadow:0 5px 18px rgba(15,23,42,.055)!important;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease!important;cursor:pointer}
+.etihad-theme-choice::before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(145deg,rgba(255,255,255,.07),transparent 62%);pointer-events:none}
+.etihad-theme-choice:hover{transform:translateY(-3px);border-color:var(--etihad-gold)!important;box-shadow:0 12px 28px rgba(15,23,42,.12)!important}
+.etihad-theme-choice:focus-visible{outline:3px solid var(--etihad-gold)!important;outline-offset:3px}
+.etihad-theme-choice .etihad-theme-swatch{position:relative;display:block!important;width:100%!important;height:62px!important;min-height:62px;border-radius:12px!important;margin:0!important;border:1px solid rgba(120,130,145,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.2);overflow:hidden}
+.etihad-theme-choice .etihad-theme-swatch::after{content:"Aa  123  ✓";position:absolute;right:11px;bottom:8px;color:rgba(255,255,255,.9);font-size:11px;font-weight:850;letter-spacing:.05em;text-shadow:0 1px 4px rgba(0,0,0,.28)}
+.etihad-theme-choice[data-etihad-theme="light"] .etihad-theme-swatch{background:linear-gradient(120deg,#fff 0 58%,#e7edf5 58%)!important}
+.etihad-theme-choice[data-etihad-theme="light"] .etihad-theme-swatch::after{color:#475569;text-shadow:none}
+.etihad-theme-choice[data-etihad-theme="dark"] .etihad-theme-swatch{background:linear-gradient(120deg,#111827 0 58%,#334155 58%)!important}
+.etihad-theme-choice[data-etihad-theme="emerald"] .etihad-theme-swatch{background:linear-gradient(120deg,#064e3b,#059669 58%,#a7f3d0)!important}
+.etihad-theme-choice[data-etihad-theme="blackgold"] .etihad-theme-swatch{background:linear-gradient(120deg,#090909 0 55%,#a77b2c 55%,#f0d58e)!important}
+.etihad-theme-choice[data-etihad-theme="ocean"] .etihad-theme-swatch{background:linear-gradient(120deg,#082f49,#0e7490 58%,#bae6fd)!important}
+.etihad-theme-choice[data-etihad-theme="graphite"] .etihad-theme-swatch{background:linear-gradient(120deg,#171b22,#465365 58%,#aab7c8)!important}
+.etihad-theme-choice[data-etihad-theme="sand"] .etihad-theme-swatch{background:linear-gradient(120deg,#f7f0e2,#c5a46d 58%,#76572c)!important}
+.etihad-theme-choice>span{display:block!important;color:var(--muted)!important;font-size:11px!important;font-weight:550!important;line-height:1.45!important}
+.etihad-theme-choice[aria-pressed="true"]{border:2px solid var(--etihad-gold)!important;padding:12px!important;box-shadow:0 0 0 3px rgba(196,154,69,.16),0 12px 28px rgba(15,23,42,.1)!important}
+.etihad-theme-choice[aria-pressed="true"]::after{content:"✓  CURRENT THEME";position:absolute;top:10px;right:10px;padding:5px 8px;border-radius:20px;background:#c49a45;color:#17130b;font-size:9px;font-weight:900;letter-spacing:.06em}
+@media(max-width:700px){.etihad-theme-options{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important}.etihad-theme-choice{min-height:146px!important;padding:10px!important;border-radius:15px!important}.etihad-theme-choice .etihad-theme-swatch{height:52px!important;min-height:52px}.etihad-theme-choice[aria-pressed="true"]{padding:9px!important}}
+@media(max-width:360px){.etihad-theme-options{grid-template-columns:1fr!important}}
+@media(prefers-reduced-motion:reduce){.etihad-theme-choice{transition:none!important}}
+
 </style>
 </body>
  </html>`;
