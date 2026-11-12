@@ -1214,6 +1214,119 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
 @media(prefers-reduced-motion:reduce){.etihad-theme-choice{transition:none!important}}
 
 </style>
+
+<style id="etihad-account-center-style">
+#etihadTopActions{display:flex;align-items:center;gap:10px;margin-left:auto;position:relative;z-index:30}
+#etihadTopActions .et-top-action{width:42px;height:42px;border:1px solid var(--line,#d8dee8);border-radius:50%;background:var(--surface,#fff);color:var(--ink,#172033);display:grid;place-items:center;cursor:pointer;font-weight:700;transition:transform .18s,border-color .18s,box-shadow .18s}
+#etihadTopActions .et-top-action:hover{transform:translateY(-1px);border-color:#bd984b;box-shadow:0 5px 16px #10182818}
+#etihadTopActions .et-avatar{background:linear-gradient(145deg,#182536,#b28a3b);color:#fff;border:0;font-size:13px;letter-spacing:.4px}
+#etihadTopActions .et-top-action svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.et-account-menu{position:absolute;right:0;top:52px;width:min(330px,calc(100vw - 28px));padding:10px;background:var(--surface,#fff);color:var(--ink,#172033);border:1px solid var(--line,#d8dee8);border-radius:16px;box-shadow:0 18px 55px #10182825;display:none}
+.et-account-menu.open{display:block;animation:etMenuIn .16s ease-out}
+@keyframes etMenuIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.et-account-identity{padding:13px;border-radius:12px;background:var(--bg,#f5f7fa);margin-bottom:8px;overflow-wrap:anywhere}
+.et-account-identity strong{display:block;font-size:14px}.et-account-identity small{display:block;color:var(--muted,#667085);margin-top:4px}
+.et-account-menu button{width:100%;display:flex;align-items:center;gap:11px;text-align:left;padding:11px 12px;border:0;border-radius:10px;background:transparent;color:inherit;font:inherit;font-size:13px;cursor:pointer}
+.et-account-menu button:hover{background:var(--bg,#f3f5f8)}
+.et-account-menu button .et-menu-icon{width:23px;text-align:center;font-size:16px;color:#a47d32}
+.et-account-menu .et-menu-danger{color:#b42318}
+.et-menu-separator{height:1px;background:var(--line,#e5e7eb);margin:6px 3px}
+#etihadPasswordDialog{position:fixed;inset:0;z-index:100000;display:none;place-items:center;padding:16px;background:#10182880;backdrop-filter:blur(4px)}
+#etihadPasswordDialog.open{display:grid}
+#etihadPasswordDialog .et-password-card{width:min(440px,100%);background:var(--surface,#fff);color:var(--ink,#172033);border:1px solid var(--line,#d8dee8);border-radius:20px;padding:24px;box-shadow:0 24px 80px #0004}
+#etihadPasswordDialog h3{margin:0 0 6px;font-size:20px}
+#etihadPasswordDialog p{color:var(--muted,#667085);font-size:13px;line-height:1.5}
+#etihadPasswordDialog label{display:block;margin:13px 0 6px;font-size:12px;font-weight:700}
+#etihadPasswordDialog input{box-sizing:border-box;width:100%;padding:12px;border:1px solid var(--line,#d8dee8);border-radius:10px;background:var(--bg,#fff);color:var(--ink,#172033);font:inherit}
+#etihadPasswordDialog .et-password-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px;flex-wrap:wrap}
+#etihadPasswordDialog .et-password-actions button{padding:10px 15px;border-radius:10px;border:1px solid var(--line,#d8dee8);cursor:pointer;font-weight:650}
+#etihadPasswordDialog #etPasswordSave{background:#172536;color:#fff;border-color:#172536}
+#etihadPasswordStatus{min-height:18px;margin:10px 0 0;font-size:12px}
+@media(max-width:600px){#etihadTopActions{gap:7px}#etihadTopActions .et-top-action{width:38px;height:38px}#etihadTopActions .et-account-menu{right:-4px}}
+</style>
+<script id="etihad-account-center-v1">
+(function(){
+ 'use strict';
+ if(window.__etihadAccountCenterReady)return;window.__etihadAccountCenterReady=true;
+ const $=id=>document.getElementById(id);
+ const header=document.querySelector('header');if(!header)return;
+ const supabaseUrl='https://njzhtxrmrqhuxhytxaay.supabase.co';
+ const supabaseKey='sb_publishable_HY1y3VDURIKAP7izixmtuQ_b-ezXoiA';
+ let accountClient=null,currentUser=null,currentRole='Member';
+ try{if(window.supabase?.createClient)accountClient=window.supabase.createClient(supabaseUrl,supabaseKey,{auth:{persistSession:true,autoRefreshToken:true}})}catch(_){}
+ const actions=document.createElement('div');actions.id='etihadTopActions';
+ actions.innerHTML=`
+  <button type="button" class="et-top-action et-avatar" id="etAccountToggle" aria-label="My account" aria-expanded="false" title="My account">ET</button>
+  <button type="button" class="et-top-action" id="etSettingsToggle" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 2.94-.08-.02a1.7 1.7 0 0 0-1.8.62l-.05.07h-3.4l-.03-.08a1.7 1.7 0 0 0-1.53-1.08 1.7 1.7 0 0 0-1.52 1.08l-.04.08H6.25l-.05-.07a1.7 1.7 0 0 0-1.8-.62l-.08.02-1.7-2.94.06-.06A1.7 1.7 0 0 0 3.02 15a1.7 1.7 0 0 0-1.3-1.14L1.64 13.8v-3.4l.08-.03a1.7 1.7 0 0 0 1.08-1.53 1.7 1.7 0 0 0-1.08-1.52l-.08-.04 1.7-2.94.08.02a1.7 1.7 0 0 0 1.8-.62l.05-.07h3.4l.03.08a1.7 1.7 0 0 0 1.53 1.08 1.7 1.7 0 0 0 1.52-1.08l.04-.08h3.4l.05.07a1.7 1.7 0 0 0 1.8.62l.08-.02 1.7 2.94-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.3 1.14l.08.03v3.4l-.08.03A1.7 1.7 0 0 0 19.4 15Z" transform="translate(1.5 1.5) scale(.88)"></path></svg></button>
+  <div class="et-account-menu" id="etAccountMenu" role="menu">
+   <div class="et-account-identity"><strong id="etAccountName">My Account</strong><small id="etAccountEmail">Checking secure session…</small><small id="etAccountRole">Company role: checking</small></div>
+   <button type="button" data-et-account="password"><span class="et-menu-icon">⌑</span>Change password</button>
+   <button type="button" data-et-account="employees" id="etAccountUsers" hidden><span class="et-menu-icon">♙</span>Manage users & permissions</button>
+   <button type="button" data-et-account="company"><span class="et-menu-icon">▣</span>Company profile & branches</button>
+   <button type="button" data-et-account="settings"><span class="et-menu-icon">⚙</span>Appearance, themes & backup</button>
+   <button type="button" data-et-account="cloud"><span class="et-menu-icon">☁</span>Cloud sync & account status</button>
+   <div class="et-menu-separator"></div>
+   <button type="button" data-et-account="switch"><span class="et-menu-icon">⇄</span>Switch account</button>
+   <button type="button" data-et-account="logout" class="et-menu-danger"><span class="et-menu-icon">↪</span>Sign out</button>
+  </div>`;
+ header.appendChild(actions);
+ const dialog=document.createElement('div');dialog.id='etihadPasswordDialog';dialog.innerHTML=`
+  <section class="et-password-card" role="dialog" aria-modal="true" aria-labelledby="etPasswordTitle">
+   <h3 id="etPasswordTitle">Change your password</h3><p>Choose a strong password with at least 10 characters. Your company records will not be affected.</p>
+   <form id="etPasswordForm"><label for="etPasswordNew">New password</label><input id="etPasswordNew" type="password" autocomplete="new-password" minlength="10" required>
+   <label for="etPasswordConfirm">Confirm new password</label><input id="etPasswordConfirm" type="password" autocomplete="new-password" minlength="10" required>
+   <p id="etPasswordStatus" role="status"></p><div class="et-password-actions"><button type="button" id="etPasswordCancel">Cancel</button><button type="submit" id="etPasswordSave">Update password</button></div></form>
+  </section>`;
+ document.body.appendChild(dialog);
+ const menu=$('etAccountMenu'),toggle=$('etAccountToggle');
+ function closeMenu(){menu.classList.remove('open');toggle.setAttribute('aria-expanded','false')}
+ function openMenu(){menu.classList.add('open');toggle.setAttribute('aria-expanded','true')}
+ toggle.addEventListener('click',e=>{e.stopPropagation();menu.classList.contains('open')?closeMenu():openMenu()});
+ $('etSettingsToggle').addEventListener('click',()=>go('settings'));
+ document.addEventListener('click',e=>{if(!actions.contains(e.target))closeMenu()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();dialog.classList.remove('open')}});
+ function clickNav(id){const b=document.querySelector('#etihadMainNav button[data-tab="'+id+'"],nav button[data-tab="'+id+'"]');if(b){b.click();window.scrollTo({top:0,behavior:'smooth'});return true}return false}
+ function go(action){
+  closeMenu();
+  if(action==='password'){dialog.classList.add('open');$('etPasswordNew').value='';$('etPasswordConfirm').value='';$('etPasswordStatus').textContent='';$('etPasswordNew').focus();return}
+  if(action==='employees'){if(currentRole!=='owner'){alert('Only the company owner can manage users and permissions.');return}if(!clickNav('employees'))alert('The employee management module is not available in this session.');return}
+  if(action==='company'){clickNav('backup');setTimeout(()=>{$('etihadCompanyProfile')?.scrollIntoView({behavior:'smooth',block:'start'});},250);return}
+  if(action==='settings'){clickNav('backup');setTimeout(()=>{$('etihadAppearanceSettings')?.scrollIntoView({behavior:'smooth',block:'start'});},250);return}
+  if(action==='cloud'){const b=$('dashboardCloudButton');if(b)b.click();else{const p=$('etihadCloudPanel');if(p)p.style.display='block';else alert('Open Cloud Sync from the Dashboard.')}return}
+  if(action==='switch'||action==='logout'){if(!confirm(action==='switch'?'Switch to another Etihad Traders account? You will be signed out on this device.':'Sign out of Etihad Traders on this device?'))return;accountClient?.auth.signOut().then(({error})=>{if(error)throw error;location.reload()}).catch(e=>alert('Sign out failed: '+(e.message||String(e))));}
+ }
+ menu.addEventListener('click',e=>{const b=e.target.closest('[data-et-account]');if(b)go(b.dataset.etAccount)});
+ $('etPasswordCancel').addEventListener('click',()=>dialog.classList.remove('open'));
+ dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.classList.remove('open')});
+ $('etPasswordForm').addEventListener('submit',async e=>{
+  e.preventDefault();const a=$('etPasswordNew').value,b=$('etPasswordConfirm').value,status=$('etPasswordStatus'),save=$('etPasswordSave');
+  if(a.length<10){status.textContent='Use at least 10 characters.';return}
+  if(a!==b){status.textContent='The passwords do not match.';return}
+  if(!accountClient){status.textContent='Secure account service is unavailable. Refresh and try again.';return}
+  save.disabled=true;save.textContent='Updating…';status.textContent='Verifying your account…';
+  try{const u=await accountClient.auth.getUser();if(u.error||!u.data.user)throw new Error('Your session has expired. Please sign in again.');const changed=await accountClient.auth.updateUser({password:a,data:{must_change_password:false}});if(changed.error)throw changed.error;status.textContent='Password updated successfully.';$('etPasswordForm').reset();setTimeout(()=>dialog.classList.remove('open'),1100)}
+  catch(err){status.textContent='Password was not changed: '+(err.message||String(err))}
+  finally{save.disabled=false;save.textContent='Update password'}
+ });
+ async function refreshIdentity(){
+  try{
+   if(!accountClient)throw new Error('Account service unavailable');
+   const result=await accountClient.auth.getUser();if(result.error)throw result.error;
+   currentUser=result.data.user;if(!currentUser)throw new Error('Not signed in');
+   const meta=currentUser.user_metadata||{},label=meta.full_name||meta.name||'My Account';
+   $('etAccountName').textContent=label;$('etAccountEmail').textContent=currentUser.email||'Signed-in company account';
+   toggle.textContent=(label.trim().split(/\s+/).map(x=>x[0]).join('').slice(0,2)||'ET').toUpperCase();
+   const m=await accountClient.from('etihad_memberships').select('role,active').eq('org_id','d343ea3c-6c19-48f8-bf06-d47f883debcb').eq('user_id',currentUser.id).maybeSingle();
+   if(m.error)throw m.error;currentRole=m.data?.active?m.data.role:'Member';
+   $('etAccountRole').textContent='Company role: '+currentRole;
+   $('etAccountUsers').hidden=currentRole!=='owner';
+  }catch(_){$('etAccountName').textContent='My Account';$('etAccountEmail').textContent='Sign in to view account details';$('etAccountRole').textContent='Company role: unavailable';$('etAccountUsers').hidden=true;toggle.textContent='ET'}
+ }
+ refreshIdentity();
+ if(accountClient)accountClient.auth.onAuthStateChange(()=>{setTimeout(refreshIdentity,0)});
+})();
+</script>
+
 </body>
  </html>`;
 
