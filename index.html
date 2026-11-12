@@ -3706,6 +3706,8 @@ if ('serviceWorker' in navigator) {
   const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
+  // Share one Supabase client across ERP modules to avoid competing auth/session locks.
+  window.etihadSupabaseClient = client;
   const panel = document.createElement('div');
   panel.id = 'etihadCloudPanel';
   panel.style.cssText = 'position:fixed;inset:12px;z-index:2147483647;background:#fff;color:#102a43;visibility:visible;display:block;padding:18px;border:2px solid #1769aa;border-radius:14px;box-shadow:0 3px 25px #0004;font-family:Arial;max-width:520px;margin:auto;overflow:auto;max-height:calc(100vh - 24px);';
@@ -4879,7 +4881,7 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
  const URL='https://njzhtxrmrqhuxhytxaay.supabase.co';
  const KEY='sb_publishable_HY1y3VDURIKAP7izixmtuQ_b-ezXoiA';
  if(!window.supabase||!document.querySelector('#etihadMainNav'))return;
- const db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+ const db=window.etihadSupabaseClient||window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true}});
  const $=id=>document.getElementById(id);
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const money=v=>'PKR '+Number(v||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -4998,7 +5000,24 @@ body.etihad-dark #employees .hr-tabs button.active{background:#c49a45;color:#171
  $('hrSavePayroll').addEventListener('click',async()=>{const status=$('hrPayStatusMsg'),btn=$('hrSavePayroll'),uid=$('hrPayEmployee').value,p=profiles.find(x=>x.user_id===uid),period=$('hrPayPeriod').value;if(!p||!period){status.textContent='Select an employee and payroll period.';return;}const base=Number($('hrPayBase').value||0),allow=Number($('hrPayAllowance').value||0),ded=Number($('hrPayDeduction').value||0),net=base+allow-ded;if([base,allow,ded].some(x=>!Number.isFinite(x)||x<0)||net<0){status.textContent='Check salary, allowance and deduction amounts.';return;}const row={org_id:ORG,employee_user_id:uid,employee_code:p.employee_code,employee_name:p.full_name,period_month:period+'-01',base_salary:base,allowances:allow,deductions:ded,net_salary:net,payment_status:$('hrPayStatus').value,payment_date:$('hrPayDate').value||null,payment_method:$('hrPayMethod').value,notes:$('hrPayNotes').value.trim(),created_by:user.id};btn.disabled=true;status.textContent='Saving payroll securely…';try{const r=await db.from('etihad_payroll').insert(row).select().single();if(r.error)throw r.error;status.textContent='Payroll saved. Payslip is ready below.';printSlip(r.data);$('hrPayAllowance').value='0';$('hrPayDeduction').value='0';$('hrPayNotes').value='';await loadWorkspace();setTab('payroll');}catch(e){status.textContent=e.code==='23505'?'A payroll record already exists for this employee and period. Open the existing payslip from Payroll History.':'Could not save payroll: '+e.message;}finally{btn.disabled=false;}});
  $('hrRefresh').addEventListener('click',loadWorkspace);
  $('hrPayPeriod').value=new Date().toISOString().slice(0,7);$('hrPayDate').value=new Date().toISOString().slice(0,10);
- loadWorkspace();
+ // Do not run employee-directory and payroll queries on the login screen.
+ // Start this workspace only after the secure login flow reveals the ERP.
+ let hrWorkspaceStarted=false;
+ const startHRWorkspace=()=>{
+  if(hrWorkspaceStarted||!document.body.classList.contains('etihad-auth-ready'))return;
+  hrWorkspaceStarted=true;
+  loadWorkspace();
+ };
+ if(document.body.classList.contains('etihad-auth-ready'))startHRWorkspace();
+ else{
+  const authReadyObserver=new MutationObserver(()=>{
+   if(document.body.classList.contains('etihad-auth-ready')){
+    authReadyObserver.disconnect();
+    startHRWorkspace();
+   }
+  });
+  authReadyObserver.observe(document.body,{attributes:true,attributeFilter:['class']});
+ }
 })();
 </script>
 
