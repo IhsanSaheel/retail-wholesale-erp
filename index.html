@@ -5700,7 +5700,27 @@ body.etihad-blackgold .panel,body.etihad-blackgold .card,body.etihad-blackgold #
     $('hrDocumentRows').innerHTML=`<tr><td colspan="4">Could not load documents: ${msg}</td></tr>`;
     $('hrPerformanceRows').innerHTML=`<tr><td colspan="4">Could not load performance reviews: ${msg}</td></tr>`;
    }
-   attForm.onsubmit=async ev=>{ev.preventDefault();const f=new FormData(attForm),date=f.get('work_date');const toIso=t=>t?new Date(`${date}T${t}`).toISOString():null;const row={org_id:ORG,employee_user_id:uid,employee_code:code,employee_name:name,work_date:date,attendance_status:f.get('attendance_status'),check_in:toIso(f.get('check_in')),check_out:toIso(f.get('check_out')),notes:String(f.get('notes')||''),recorded_by:user.id};showStatus('hrAttendanceStatus','Saving…');try{const q=await db.from('etihad_attendance').upsert(row,{onConflict:'org_id,employee_user_id,work_date'});if(q.error)throw q.error;showStatus('hrAttendanceStatus','Attendance saved.');attForm.elements.notes.value='';await loadRelated();}catch(err){showStatus('hrAttendanceStatus','Could not save: '+err.message);}};
+   attForm.onsubmit=async ev=>{
+    ev.preventDefault();
+    const f=new FormData(attForm),date=String(f.get('work_date')||''),inTime=String(f.get('check_in')||''),outTime=String(f.get('check_out')||'');
+    if(!date){showStatus('hrAttendanceStatus','Choose the work date.');return;}
+    const toIso=(day,time)=>time?new Date(`${day}T${time}`).toISOString():null;
+    let checkOutDate=date;
+    if(inTime&&outTime&&outTime<inTime){
+     const next=new Date(`${date}T00:00:00`);
+     next.setDate(next.getDate()+1);
+     checkOutDate=`${next.getFullYear()}-${String(next.getMonth()+1).padStart(2,'0')}-${String(next.getDate()).padStart(2,'0')}`;
+    }
+    const row={org_id:ORG,employee_user_id:uid,employee_code:code,employee_name:name,work_date:date,attendance_status:f.get('attendance_status'),check_in:toIso(date,inTime),check_out:toIso(checkOutDate,outTime),notes:String(f.get('notes')||''),recorded_by:user.id};
+    showStatus('hrAttendanceStatus','Saving attendance…');
+    try{
+     const q=await db.from('etihad_attendance').upsert(row,{onConflict:'org_id,employee_user_id,work_date'});
+     if(q.error)throw q.error;
+     showStatus('hrAttendanceStatus',checkOutDate!==date?'Attendance saved (overnight shift).':'Attendance saved.');
+     attForm.elements.notes.value='';
+     await loadRelated();
+    }catch(err){showStatus('hrAttendanceStatus','Could not save: '+(err?.message||String(err)));}
+   };
    leaveForm.onsubmit=async ev=>{ev.preventDefault();const f=new FormData(leaveForm),start=f.get('start_date'),end=f.get('end_date'),days=Number(f.get('total_days'));if(end<start||!Number.isFinite(days)||days<=0){showStatus('hrLeaveStatus','Check the dates and total days.');return;}const row={org_id:ORG,employee_user_id:uid,employee_code:code,employee_name:name,leave_type:f.get('leave_type'),start_date:start,end_date:end,total_days:days,reason:String(f.get('reason')||'')};showStatus('hrLeaveStatus','Saving…');try{const q=await db.from('etihad_leave_requests').insert(row);if(q.error)throw q.error;showStatus('hrLeaveStatus','Leave request added.');leaveForm.reset();await loadRelated();}catch(err){showStatus('hrLeaveStatus','Could not save: '+err.message);}};
    perfForm.onsubmit=async ev=>{ev.preventDefault();const f=new FormData(perfForm),start=f.get('period_start'),end=f.get('period_end');if(end<start){showStatus('hrPerformanceStatus','End date must be on or after start date.');return;}const row={org_id:ORG,employee_user_id:uid,employee_code:code,employee_name:name,period_start:start,period_end:end,overall_rating:Number(f.get('overall_rating')),strengths:String(f.get('strengths')||''),improvement_areas:String(f.get('improvement_areas')||''),goals:String(f.get('goals')||''),reviewer_notes:String(f.get('reviewer_notes')||''),review_status:f.get('review_status'),reviewer_user_id:user.id};showStatus('hrPerformanceStatus','Saving…');try{const q=await db.from('etihad_performance_reviews').insert(row);if(q.error)throw q.error;showStatus('hrPerformanceStatus','Performance review saved.');perfForm.reset();await loadRelated();}catch(err){showStatus('hrPerformanceStatus','Could not save: '+err.message);}};
    docForm.onsubmit=async ev=>{ev.preventDefault();const f=new FormData(docForm),file=f.get('document_file');if(!file||!file.size){showStatus('hrDocumentStatus','Choose a document file.');return;}if(file.size>10*1024*1024){showStatus('hrDocumentStatus','File must be 10 MB or smaller.');return;}const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_').slice(-100),path=`${ORG}/${uid}/${crypto.randomUUID()}_${safeName}`;showStatus('hrDocumentStatus','Uploading file securely…');try{const up=await db.storage.from('etihad-employee-documents').upload(path,file,{contentType:file.type,upsert:false});if(up.error)throw up.error;const row={org_id:ORG,employee_user_id:uid,employee_code:code,employee_name:name,document_category:f.get('document_category'),document_name:String(f.get('document_name')).trim(),storage_path:path,mime_type:file.type||'application/octet-stream',file_size_bytes:file.size,issue_date:f.get('issue_date')||null,expiry_date:f.get('expiry_date')||null,notes:String(f.get('notes')||''),uploaded_by:user.id};const ins=await db.from('etihad_employee_documents').insert(row);if(ins.error){await db.storage.from('etihad-employee-documents').remove([path]);throw ins.error;}showStatus('hrDocumentStatus','Document uploaded securely.');docForm.reset();await loadRelated();}catch(err){showStatus('hrDocumentStatus','Upload failed: '+err.message);}};
