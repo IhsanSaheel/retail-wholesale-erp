@@ -150,17 +150,13 @@ body{visibility:hidden!important}body.etihad-auth-ready{visibility:visible!impor
 }
 
 #etihadSplash .et-logo {
-  width: 112px;
-  height: 112px;
-  border: 3px solid #d6b45c;
-  border-radius: 25px;
-  background: #1769aa;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48px;
-  font-weight: bold;
-  margin-bottom: 25px;
+  width: min(78vw, 300px);
+  height: auto;
+  max-height: 42vh;
+  object-fit: contain;
+  display: block;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,.55));
 }
 
 #etihadSplash h1 {
@@ -184,7 +180,7 @@ body{visibility:hidden!important}body.etihad-auth-ready{visibility:visible!impor
 </style>
 
 <div id="etihadSplash">
-  <div class="et-logo">ET</div>
+  <img class="et-logo" src="etihad-brand-192-v3.jpg" alt="Etihad Traders company logo">
   <h1>ETIHAD TRADERS</h1>
   <p>RETAIL & WHOLESALE MANAGEMENT</p>
   <div class="et-loading">Loading your business...</div>
