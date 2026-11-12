@@ -3683,16 +3683,27 @@ if ('serviceWorker' in navigator) {
       const allowed=WRITE_COLLECTIONS[syncMembership.role]||[];let sent=0,skippedConflicts=0;
       let fingerprints={};try{fingerprints=JSON.parse(localStorage.getItem(SYNC_CACHE_KEY)||'{}')||{};}catch(_){fingerprints={};}
       let conflicts={};try{conflicts=JSON.parse(localStorage.getItem(CONFLICT_KEY)||'{}')||{};}catch(_){conflicts={};}
+      // Verify cloud row existence instead of trusting only this device's upload cache.
+      // This repairs records (including branches) that were marked synced locally but are missing in the cloud.
+      const cloudKeys=new Set();let cloudOffset=0;
+      while(true){
+        const cloudPage=await client.from('etihad_records').select('collection,record_id').eq('org_id',ORG_ID).range(cloudOffset,cloudOffset+999);
+        if(cloudPage.error)throw new Error('Unable to verify company cloud records: '+cloudPage.error.message);
+        const cloudRows=cloudPage.data||[];
+        for(const row of cloudRows)cloudKeys.add(row.collection+':'+row.record_id);
+        if(cloudRows.length<1000)break;
+        cloudOffset+=cloudRows.length;
+      }
       for(const collection of allowed){
         const records=readLocal(collection);
         for(const record of records){
           const rid=keyFor(record);if(!rid)throw new Error(collection+' contains a record without id; cloud sync paused.');
           const cacheKey=collection+':'+rid, fingerprint=JSON.stringify(record);
           if(conflicts[cacheKey]){skippedConflicts++;continue;}
-          if(fingerprints[cacheKey]===fingerprint)continue;
+          if(fingerprints[cacheKey]===fingerprint && cloudKeys.has(cacheKey))continue;
           const r=await client.from('etihad_records').upsert({org_id:ORG_ID,collection,record_id:rid,data:record,updated_by:user.id},{onConflict:'org_id,collection,record_id'});
           if(r.error)throw new Error(collection+' / '+rid+': '+r.error.message);
-          fingerprints[cacheKey]=fingerprint;sent++;
+          fingerprints[cacheKey]=fingerprint;cloudKeys.add(cacheKey);sent++;
         }
       }
       localStorage.setItem(SYNC_CACHE_KEY,JSON.stringify(fingerprints));
