@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="manifest" href="manifest.json">\n<link rel="apple-touch-icon" sizes="192x192" href="etihad-icon-192.jpg">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" sizes="192x192" href="etihad-icon-192.jpg">
 
 <meta name="theme-color" content="#102a43">
 
@@ -802,10 +803,15 @@ function completeTransfer(){
  };
 
  if(!confirm(
-  'Confirm stock transfer?\n\nProduct: '+source.name+
-  '\nQuantity: '+qty+
-  '\nFrom: '+fromBranch.name+
-  '\nTo: '+toBranch.name
+  'Confirm stock transfer?
+
+Product: '+source.name+
+  '
+Quantity: '+qty+
+  '
+From: '+fromBranch.name+
+  '
+To: '+toBranch.name
  ))return;
 
  // Deduct stock from sending branch.
@@ -834,7 +840,8 @@ function completeTransfer(){
  resetTransferForm();
  renderAll();
 
- alert('Stock transferred successfully!\nTransfer No: '+transfer.transferNo);
+ alert('Stock transferred successfully!
+Transfer No: '+transfer.transferNo);
 }
 
 function resetTransferForm(){
@@ -1149,7 +1156,9 @@ function recordPayment(){
  s.paid=salePaid(s)+amount;
  s.balance=Math.max(0,saleTotal(s)-s.paid);
  saveAll();
- alert('Payment recorded successfully!\nReceipt: '+receipt+'\nRemaining balance: PKR '+money(s.balance));
+ alert('Payment recorded successfully!
+Receipt: '+receipt+'
+Remaining balance: PKR '+money(s.balance));
  resetPaymentForm();renderAll();
  if(selectedCustomer)viewCustomer(encodeURIComponent(selectedCustomer));
  printPaymentReceipt(payment.id);
@@ -1613,11 +1622,17 @@ function savePurchase(){
  );
 
  if(!confirm(
-  'Save this purchase?\n\nProduct: '+name+
-  '\nQuantity: '+qty+
-  '\nTotal: PKR '+money(total)+
-  '\nPaid: PKR '+money(paid)+
-  '\nDue: PKR '+money(total-paid)
+  'Save this purchase?
+
+Product: '+name+
+  '
+Quantity: '+qty+
+  '
+Total: PKR '+money(total)+
+  '
+Paid: PKR '+money(paid)+
+  '
+Due: PKR '+money(total-paid)
  ))return;
 
  if(product){
@@ -1937,7 +1952,8 @@ function brReportBuild(){
  return {key,title:brTitles[key]||'Business Report',headers,rows,cards,note};
 }
 function renderBusinessReport(){updateBusinessReportFilters();brRenderCategories();brRenderReportList();brSetOverview();const r=brReportBuild();currentBusinessReportData=r;document.getElementById('businessReportHeading').textContent=r.title;document.getElementById('brReportCaption').textContent=(document.getElementById('businessReportFrom').value||'All dates')+' to '+(document.getElementById('businessReportTo').value||'All dates')+' · '+(document.getElementById('businessReportBranch').selectedOptions[0]?.textContent||'All branches');document.getElementById('businessReportCards').innerHTML=r.cards.map(c=>`<div><span>${esc(c[0])}</span><strong>${esc(c[1])}</strong></div>`).join('');document.getElementById('businessReportHead').innerHTML='<tr>'+r.headers.map(h=>`<th>${esc(h)}</th>`).join('')+'</tr>';document.getElementById('businessReportBody').innerHTML=r.rows.map(row=>'<tr>'+row.map(v=>`<td>${esc(v)}</td>`).join('')+'</tr>').join('')||`<tr><td colspan="${Math.max(1,r.headers.length)}">No records found for the selected filters.</td></tr>`;document.getElementById('brReportNote').textContent=r.note||'Figures are calculated from records currently saved in Etihad Traders.';}
-function exportBusinessReport(){const r=brReportBuild();if(!r.rows.length)return alert('There are no records to export.');const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const csv=[r.headers.map(q).join(','),...r.rows.map(row=>row.map(q).join(','))].join('\r\n');const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=(currentBusinessReport||'business')+'-report-'+todayISO()+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
+function exportBusinessReport(){const r=brReportBuild();if(!r.rows.length)return alert('There are no records to export.');const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const csv=[r.headers.map(q).join(','),...r.rows.map(row=>row.map(q).join(','))].join('\r
+');const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=(currentBusinessReport||'business')+'-report-'+todayISO()+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
 function printBusinessReport(){const r=brReportBuild(),rows=r.rows.map(row=>'<tr>'+row.map(v=>`<td>${esc(v)}</td>`).join('')+'</tr>').join('');const w=window.open('','_blank');if(!w)return alert('Allow pop-ups to print or save PDF.');w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(r.title)}</title><style>body{font:13px Arial;color:#172033;padding:28px}h1{color:#9b762d}p{color:#667085}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:9px;text-align:left}th{background:#f3f0e8}@media print{button{display:none}}</style></head><body><h1>ETIHAD TRADERS</h1><h2>${esc(r.title)}</h2><p>Generated: ${new Date().toLocaleString()}</p><p>Period: ${esc(document.getElementById('businessReportFrom').value||'All dates')} to ${esc(document.getElementById('businessReportTo').value||'All dates')} · Branch: ${esc(document.getElementById('businessReportBranch').selectedOptions[0]?.textContent||'All branches')}</p><table><thead><tr>${r.headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows||'<tr><td>No records found.</td></tr>'}</tbody></table><p>${esc(r.note||'')}</p><button onclick="window.print()">Print / Save PDF</button></body></html>`);w.document.close();}
 function clearBusinessReport(){['businessReportFrom','businessReportTo','businessReportBranch','businessReportSearch','brProductFilter','brCustomerFilter','brSupplierFilter','brCategoryFilter','brBrandFilter','brPaymentFilter'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});renderBusinessReport();}
 ['businessReportFrom','businessReportTo','businessReportBranch','businessReportSearch','brProductFilter','brCustomerFilter','brSupplierFilter','brCategoryFilter','brBrandFilter','brPaymentFilter'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('change',renderBusinessReport);});
@@ -2539,11 +2555,17 @@ renderAll();
 
    if(limit>0&&newDue>limit&&newDue>due){
     alert(
-     'CREDIT LIMIT EXCEEDED!\n\n' +
+     'CREDIT LIMIT EXCEEDED!
+
+' +
      'Current outstanding: PKR '+due.toLocaleString('en-PK')+
-     '\nNew outstanding: PKR '+newDue.toLocaleString('en-PK')+
-     '\nCredit limit: PKR '+limit.toLocaleString('en-PK')+
-     '\n\nCollect more payment or increase the credit limit.'
+     '
+New outstanding: PKR '+newDue.toLocaleString('en-PK')+
+     '
+Credit limit: PKR '+limit.toLocaleString('en-PK')+
+     '
+
+Collect more payment or increase the credit limit.'
     );
     updateCredit();
     return;
@@ -2788,11 +2810,18 @@ renderAll();
   const refund=Math.max(0,value-oldDue);
 
   if(!confirm(
-   'Confirm this return?\n\nProduct: '+item.name+
-   '\nQuantity: '+count+
-   '\nReturn value: PKR '+money(value)+
-   '\nRefund to customer: PKR '+money(refund)+
-   '\n\nStock will be restored.'
+   'Confirm this return?
+
+Product: '+item.name+
+   '
+Quantity: '+count+
+   '
+Return value: PKR '+money(value)+
+   '
+Refund to customer: PKR '+money(refund)+
+   '
+
+Stock will be restored.'
   ))return;
 
   const products=read('mberp_products');
@@ -3125,11 +3154,18 @@ renderAll();
 
   if(!confirm(
    'Confirm supplier purchase return?'+
-   '\n\nPurchase: '+p.purchaseNo+
-   '\nProduct: '+p.productName+
-   '\nQuantity: '+qty+
-   '\nSupplier credit: PKR '+money(amount)+
-   '\n\nStock will be reduced.'
+   '
+
+Purchase: '+p.purchaseNo+
+   '
+Product: '+p.productName+
+   '
+Quantity: '+qty+
+   '
+Supplier credit: PKR '+money(amount)+
+   '
+
+Stock will be reduced.'
   ))return;
 
   const records=getReturns();
@@ -3174,8 +3210,10 @@ renderAll();
 
   alert(
    'Purchase return saved successfully.'+
-   '\nStock has been reduced.'+
-   '\nSupplier credit: PKR '+money(amount)
+   '
+Stock has been reduced.'+
+   '
+Supplier credit: PKR '+money(amount)
   );
  });
 
@@ -4437,7 +4475,10 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   }
   saveAll();const extra=remaining;
   resetPaymentForm();renderAll();
-  alert('Payment recorded successfully.\nReceipt: '+receipt+'\nAllocated to outstanding bills: PKR '+fmt(allocated)+'\nAdded to customer advance: PKR '+fmt(extra));
+  alert('Payment recorded successfully.
+Receipt: '+receipt+'
+Allocated to outstanding bills: PKR '+fmt(allocated)+'
+Added to customer advance: PKR '+fmt(extra));
   if(allocated>0&&typeof printPaymentReceipt==='function'&&payments[0])printPaymentReceipt(payments[0].id);
  };
 
@@ -4512,14 +4553,18 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   const first=page.querySelector('.panel'); if(first)first.parentNode.insertBefore(panel,first.nextSibling);else page.appendChild(panel);
   function fillBranches(){const s=$('bulkProductBranch'),old=s.value;s.innerHTML=(branches||[]).map(b=>`<option value="${escHtml(b.id)}">${escHtml(b.name)}</option>`).join('')||'<option value="">Add a branch first</option>';if([...s.options].some(o=>o.value===old))s.value=old;}
   fillBranches();
-  $('etihadCsvTemplate').addEventListener('click',()=>{const csv='Product Name,SKU/Barcode,Category,Branch,Quantity,Cost,Selling Price,Low Stock Alert\nSample Product,123456789,General,,10,100,150,5\n';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='etihad-products-template.csv';a.click();URL.revokeObjectURL(a.href)});
+  $('etihadCsvTemplate').addEventListener('click',()=>{const csv='Product Name,SKU/Barcode,Category,Branch,Quantity,Cost,Selling Price,Low Stock Alert
+Sample Product,123456789,General,,10,100,150,5
+';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='etihad-products-template.csv';a.click();URL.revokeObjectURL(a.href)});
   $('etihadImportProducts').addEventListener('click',async()=>{
    const file=$('bulkProductFile').files?.[0],status=$('etihadImportStatus');if(!file){status.textContent='Choose a CSV or Excel file first.';return;}
    try{
     let rows=[];const ext=file.name.split('.').pop().toLowerCase();
     if(ext==='csv'){
      const text=await file.text();
-     const parseCSV=t=>{const out=[];let row=[],v='',q=false;for(let i=0;i<t.length;i++){const c=t[i];if(c==='"'&&q&&t[i+1]==='"'){v+='"';i++;}else if(c==='"')q=!q;else if(c===','&&!q){row.push(v);v='';}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&t[i+1]==='\n')i++;row.push(v);if(row.some(x=>String(x).trim()))out.push(row);row=[];v='';}else v+=c;}row.push(v);if(row.some(x=>String(x).trim()))out.push(row);return out;};
+     const parseCSV=t=>{const out=[];let row=[],v='',q=false;for(let i=0;i<t.length;i++){const c=t[i];if(c==='"'&&q&&t[i+1]==='"'){v+='"';i++;}else if(c==='"')q=!q;else if(c===','&&!q){row.push(v);v='';}else if((c==='
+'||c==='\r')&&!q){if(c==='\r'&&t[i+1]==='
+')i++;row.push(v);if(row.some(x=>String(x).trim()))out.push(row);row=[];v='';}else v+=c;}row.push(v);if(row.some(x=>String(x).trim()))out.push(row);return out;};
      const raw=parseCSV(text);if(raw.length<2)throw new Error('CSV file has no product rows.');const heads=raw.shift().map(norm);rows=raw.map(r=>Object.fromEntries(heads.map((h,i)=>[h,r[i]??''])));
     }else if(ext==='xlsx'||ext==='xls'){
      if(!window.XLSX){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';s.onload=resolve;s.onerror=()=>reject(new Error('Excel reader could not load. Save the spreadsheet as CSV and import again.'));document.head.appendChild(s)});}
@@ -4563,7 +4608,11 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   const costText=prompt('Edit unit purchase cost (PKR):',String(p.cost));if(costText===null)return;const cost=Number(costText);if(!Number.isFinite(cost)||cost<0)return alert('Enter a valid cost.');
   const paidText=prompt('Edit amount paid (PKR):',String(p.paid||0));if(paidText===null)return;const paid=Number(paidText),total=qty*cost;if(!Number.isFinite(paid)||paid<0||paid>total)return alert('Paid amount must be between zero and the revised total.');
   const delta=qty-Number(p.qty||0);if(delta<0&&Number(product.qty||0)<Math.abs(delta))return alert('Cannot reduce this purchase quantity: some of its stock has already been sold or transferred.');
-  if(!confirm(`Update ${p.purchaseNo||p.id}?\nStock adjustment: ${delta>=0?'+':''}${delta}\nNew total: PKR ${moneySafe(total)}\nPaid: PKR ${moneySafe(paid)}\nDue: PKR ${moneySafe(total-paid)}`))return;
+  if(!confirm(`Update ${p.purchaseNo||p.id}?
+Stock adjustment: ${delta>=0?'+':''}${delta}
+New total: PKR ${moneySafe(total)}
+Paid: PKR ${moneySafe(paid)}
+Due: PKR ${moneySafe(total-paid)}`))return;
   product.qty=Number(product.qty||0)+delta;product.cost=cost;p.qty=qty;p.cost=cost;p.total=total;p.paid=paid;p.balance=total-paid;p.editedAt=new Date().toISOString();
   saveAll();if(typeof renderAll==='function')renderAll();if(typeof renderPurchases==='function')renderPurchases();alert('Purchase updated. Stock and supplier balance have been recalculated.');
  };
