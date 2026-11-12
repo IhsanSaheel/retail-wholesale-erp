@@ -2088,415 +2088,138 @@ body.etihad-dark #employees .hr-tabs button.active{background:#c49a45;color:#171
  win.document.close();
 }
 
-/* BUSINESS REPORTS & EXPORT MODULE */
-
-const reportNav=document.createElement('button');
-reportNav.textContent='Business Reports & Export';
-reportNav.dataset.tab='businessReports';
-document.querySelector('nav').appendChild(reportNav);
-
+/* PROFESSIONAL BUSINESS REPORTS WORKSPACE */
+const legacyReportsNav=document.querySelector('nav button[data-tab="reports"]');
+if(legacyReportsNav)legacyReportsNav.textContent='Reports';
 const businessReportSection=document.createElement('section');
 businessReportSection.id='businessReports';
 businessReportSection.className='page hidden';
-
 businessReportSection.innerHTML=`
-<h3>Business Reports & Export</h3>
-
-<div class="panel">
-<p class="muted">Select a report and apply date or branch filters.</p>
-
-<div class="grid">
-<div>
-<label>Report Type</label>
-<select id="businessReportType">
-<option value="sales">Sales Report</option>
-<option value="purchases">Purchase Report</option>
-<option value="stock">Current Stock Report</option>
-<option value="customers">Customer Report</option>
-<option value="suppliers">Supplier Report</option>
-<option value="profit">Profit & Loss Report</option>
-</select>
-</div>
-
-<div>
-<label>From Date</label>
-<input type="date" id="businessReportFrom">
-</div>
-
-<div>
-<label>To Date</label>
-<input type="date" id="businessReportTo">
-</div>
-
-<div>
-<label>Branch</label>
-<select id="businessReportBranch"></select>
-</div>
-</div>
-
-<button class="btn" onclick="renderBusinessReport()">Generate Report</button>
-<button class="btn green" onclick="exportBusinessReport()">Download CSV / Excel</button>
-<button class="btn light" onclick="printBusinessReport()">Print / Save PDF</button>
-<button class="btn gray" onclick="clearBusinessReport()">Clear Filters</button>
-</div>
-
-<div class="cards" id="businessReportCards"></div>
-
-<div class="panel">
-<h3 id="businessReportHeading">Report Results</h3>
-<div class="table-wrap">
-<table>
-<thead id="businessReportHead"></thead>
-<tbody id="businessReportBody"></tbody>
-</table>
-</div>
-</div>
+<style>
+#businessReports{max-width:1500px;margin:0 auto;color:var(--ink)}
+#businessReports .br-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+#businessReports .br-head h2{font-size:clamp(23px,3vw,31px);margin:0 0 5px;letter-spacing:-.5px}
+#businessReports .br-sub{color:var(--muted);font-size:13px;margin:0}
+#businessReports .br-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
+#businessReports .br-kpi{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:16px;min-width:0;box-shadow:var(--shadow)}
+#businessReports .br-kpi span{display:block;color:var(--muted);font-size:12px;font-weight:650}
+#businessReports .br-kpi strong{display:block;font-size:clamp(18px,2vw,25px);margin-top:7px;overflow-wrap:anywhere;color:var(--ink)}
+#businessReports .br-kpi small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+#businessReports .br-filter{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:16px;margin:16px 0;box-shadow:var(--shadow)}
+#businessReports .br-filter h3{margin:0 0 12px;font-size:16px}
+#businessReports .br-filter-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+#businessReports label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
+#businessReports input,#businessReports select{box-sizing:border-box;width:100%;min-height:42px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);font:inherit}
+#businessReports .br-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+#businessReports .br-categories{display:flex;gap:8px;overflow:auto;padding:3px 0 12px;margin:8px 0;scrollbar-width:thin}
+#businessReports .br-categories button{white-space:nowrap;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:9px 15px;font-weight:700;cursor:pointer}
+#businessReports .br-categories button.active{background:var(--primary);color:#17130b;border-color:var(--primary)}
+#businessReports .br-workspace{display:grid;grid-template-columns:minmax(220px,280px) minmax(0,1fr);gap:14px;align-items:start}
+#businessReports .br-library,#businessReports .br-results{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:15px;box-shadow:var(--shadow);min-width:0}
+#businessReports .br-library h3,#businessReports .br-results h3{margin:0 0 5px;font-size:16px}
+#businessReports .br-library p{font-size:12px;color:var(--muted);margin:0 0 12px}
+#businessReports .br-report-list{display:grid;gap:6px}
+#businessReports .br-report-list button{text-align:left;border:1px solid transparent;background:transparent;color:var(--ink);border-radius:9px;padding:10px 11px;font:inherit;font-size:13px;cursor:pointer}
+#businessReports .br-report-list button:hover{background:var(--bg);border-color:var(--line)}
+#businessReports .br-report-list button.active{background:var(--bg);border-color:var(--primary);font-weight:800}
+#businessReports .br-results-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:13px}
+#businessReports .br-results-head p{font-size:12px;color:var(--muted);margin:4px 0 0}
+#businessReports .br-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
+#businessReports table{width:100%;border-collapse:collapse;min-width:580px;font-size:12px}
+#businessReports th{background:var(--bg);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+#businessReports th,#businessReports td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line)}
+#businessReports td{color:var(--ink)}#businessReports tbody tr:last-child td{border-bottom:0}
+#businessReports .br-note{font-size:12px;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-top:12px;line-height:1.5}
+#businessReports .br-mini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0}
+#businessReports .br-mini>div{padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+#businessReports .br-mini span{display:block;color:var(--muted);font-size:11px}#businessReports .br-mini strong{display:block;margin-top:4px;font-size:16px}
+@media(max-width:900px){#businessReports .br-workspace{grid-template-columns:1fr}#businessReports .br-report-list{grid-template-columns:repeat(2,minmax(0,1fr))}#businessReports .br-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){#businessReports .br-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#businessReports .br-mini{grid-template-columns:1fr 1fr}#businessReports .br-library,#businessReports .br-results,#businessReports .br-filter{padding:12px}}
+@media print{#businessReports .br-filter,#businessReports .br-library,#businessReports .br-categories,#businessReports .br-actions{display:none!important}#businessReports .br-workspace{display:block}#businessReports .br-results{box-shadow:none;border:0;padding:0}}
+</style>
+<div class="br-head"><div><h2>Business Intelligence & Reports</h2><p class="br-sub">A clear view of business performance, sales, purchases, customers and stock.</p></div><button class="btn light" type="button" onclick="printBusinessReport()">Print / Save PDF</button></div>
+<div class="br-overview" id="brOverview"></div>
+<div class="br-filter"><h3>Report filters</h3><div class="br-filter-grid">
+<div><label for="businessReportFrom">From date</label><input type="date" id="businessReportFrom"></div>
+<div><label for="businessReportTo">To date</label><input type="date" id="businessReportTo"></div>
+<div><label for="businessReportBranch">Branch</label><select id="businessReportBranch"><option value="">All branches</option></select></div>
+<div><label for="businessReportSearch">Search report</label><input id="businessReportSearch" type="search" placeholder="Product, customer, supplier…"></div>
+<div><label for="brProductFilter">Product</label><select id="brProductFilter"><option value="">All products</option></select></div>
+<div><label for="brCustomerFilter">Customer</label><select id="brCustomerFilter"><option value="">All customers</option></select></div>
+<div><label for="brSupplierFilter">Supplier</label><select id="brSupplierFilter"><option value="">All suppliers</option></select></div>
+<div><label for="brCategoryFilter">Category</label><select id="brCategoryFilter"><option value="">All categories</option></select></div>
+<div><label for="brBrandFilter">Brand</label><select id="brBrandFilter"><option value="">All brands</option></select></div>
+<div><label for="brPaymentFilter">Payment method</label><select id="brPaymentFilter"><option value="">All methods</option><option>Cash</option><option>Bank</option><option>Card</option><option>Online</option><option>Other</option></select></div>
+</div><div class="br-actions"><button class="btn" type="button" onclick="renderBusinessReport()">Apply filters</button><button class="btn green" type="button" onclick="exportBusinessReport()">Export CSV</button><button class="btn gray" type="button" onclick="clearBusinessReport()">Reset filters</button></div></div>
+<div class="br-categories" id="brCategories"></div>
+<div class="br-workspace"><aside class="br-library"><h3>Report library</h3><p>Choose the report you want to analyse.</p><div class="br-report-list" id="brReportList"></div></aside>
+<div class="br-results"><div class="br-results-head"><div><h3 id="businessReportHeading">Business Summary</h3><p id="brReportCaption">All available records · All branches</p></div><button class="btn light" type="button" onclick="printBusinessReport()">Print report</button></div><div class="br-mini" id="businessReportCards"></div><div class="br-table-wrap"><table><thead id="businessReportHead"></thead><tbody id="businessReportBody"></tbody></table></div><div class="br-note" id="brReportNote">Figures are calculated from records currently saved in Etihad Traders.</div></div></div>
 `;
-
 document.querySelector('main').appendChild(businessReportSection);
-
-reportNav.addEventListener('click',()=>{
- document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
- document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
- reportNav.classList.add('active');
- businessReportSection.classList.remove('hidden');
- renderBusinessReport();
-});
-
-function updateBusinessReportBranches(){
- const el=document.getElementById('businessReportBranch');
- const old=el.value;
- el.innerHTML='<option value="">All Branches</option>'+
- branches.map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
- if([...el.options].some(o=>o.value===old))el.value=old;
+if(legacyReportsNav){legacyReportsNav.addEventListener('click',()=>{document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));legacyReportsNav.classList.add('active');businessReportSection.classList.remove('hidden');renderBusinessReport();});}
+const brDefinitions=[
+ {group:'Overview',items:[['summary','Overall business summary']]},
+ {group:'Sales',items:[['soldProducts','Sold products'],['salesAnalytics','Sales analytics'],['salesSummary','Sales summary'],['paymentMethods','Payment methods'],['salesperson','Commission by salesperson'],['peakHours','Peak sales hours'],['salesCategory','Sales by category'],['salesProduct','Sales by product'],['salesBrand','Sales by brand'],['salesCustomer','Sales by customer'],['customerCategory','Sales by customer & category'],['customerProduct','Sales by customer & product']]},
+ {group:'Purchases & suppliers',items:[['purchaseProduct','Purchases by product'],['purchaseSupplier','Purchases by supplier'],['purchaseSummary','Purchase summary'],['supplierPayments','Supplier payments']]},
+ {group:'Finance',items:[['revenueExpenses','Revenue & expenses'],['expenseCategory','Expenses by category'],['profit','Profit & loss'],['cashflow','Payment collections']]},
+ {group:'Stock',items:[['stock','Current stock position'],['stockValue','Stock value by product'],['lowStock','Low stock report'],['movements','Product movements / transfers']]},
+ {group:'Customers',items:[['customerBalances','Customer outstanding balances']]}
+];
+let currentBusinessReport='summary';
+let currentBusinessReportData=null;
+const brTitles=Object.fromEntries(brDefinitions.flatMap(g=>g.items).map(x=>[x[0],x[1]]));
+function brArray(v){return Array.isArray(v)?v:[]}
+function brDate(v){return String(v||'').slice(0,10)}
+function brNum(v){const n=Number(v||0);return Number.isFinite(n)?n:0}
+function brDateOK(v){const d=brDate(v),from=document.getElementById('businessReportFrom')?.value||'',to=document.getElementById('businessReportTo')?.value||'';return (!from||d>=from)&&(!to||d<=to)}
+function brBranchOK(v){const b=document.getElementById('businessReportBranch')?.value||'';return !b||String(v||'')===b}
+function brSearchOK(values){const q=(document.getElementById('businessReportSearch')?.value||'').trim().toLowerCase();return !q||values.some(v=>String(v??'').toLowerCase().includes(q))}
+function brProduct(idv){return products.find(p=>String(p.id)===String(idv))||{}}
+function brItemProduct(it){return brProduct(it.productId)}
+function brProductName(it){return it.name||it.productName||brItemProduct(it).name||'Unknown product'}
+function brCustomer(s){return s.customerName||'Walk-in Customer'}
+function brLineItems(list){return list.flatMap(s=>brArray(s.items).map(it=>({sale:s,item:it,product:brItemProduct(it),qty:brNum(it.qty),amount:brNum(it.price)*brNum(it.qty),cost:brNum(it.cost??brItemProduct(it).cost)*brNum(it.qty)})))}
+function brFilteredSales(){const p=document.getElementById('brProductFilter').value,c=document.getElementById('brCustomerFilter').value,cat=document.getElementById('brCategoryFilter').value,brand=document.getElementById('brBrandFilter').value;return sales.filter(s=>brDateOK(s.date)&&brBranchOK(s.branchId)&&(!c||brCustomer(s)===c)&&brSearchOK([invoiceNo(s),brCustomer(s),s.customerPhone,s.salesperson,s.soldBy])&&(!p&&!cat&&!brand||brArray(s.items).some(it=>{const pr=brItemProduct(it);return (!p||String(it.productId)===p)&&(!cat||(pr.category||it.category)===cat)&&(!brand||(pr.brand||it.brand)===brand)})));}
+function brFilteredPurchases(){const sup=document.getElementById('brSupplierFilter').value,p=document.getElementById('brProductFilter').value,cat=document.getElementById('brCategoryFilter').value,brand=document.getElementById('brBrandFilter').value;return purchases.filter(x=>brDateOK(x.date)&&brBranchOK(x.branchId)&&(!sup||(x.supplierName||supplierName(x.supplierId))===sup)&&(!p||String(x.productId)===p)&&(!cat||(x.category||brProduct(x.productId).category)===cat)&&(!brand||(x.brand||brProduct(x.productId).brand)===brand)&&brSearchOK([x.purchaseNo,x.productName,x.sku,x.supplierName]));}
+function brFillSelect(id,items,label){const el=document.getElementById(id);if(!el)return;const old=el.value;el.innerHTML=`<option value="">${label}</option>`+items.filter(Boolean).sort((a,b)=>String(a).localeCompare(String(b))).map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');if([...el.options].some(o=>o.value===old))el.value=old;}
+function updateBusinessReportFilters(){
+ const b=document.getElementById('businessReportBranch'),old=b.value;b.innerHTML='<option value="">All branches</option>'+branches.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('');if([...b.options].some(o=>o.value===old))b.value=old;
+ const productOptions=products.map(p=>({id:String(p.id),name:p.name||p.sku||'Product'}));const pf=document.getElementById('brProductFilter'),po=pf.value;pf.innerHTML='<option value="">All products</option>'+productOptions.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');if([...pf.options].some(o=>o.value===po))pf.value=po;
+ brFillSelect('brCustomerFilter',[...new Set(sales.map(brCustomer))],'All customers');brFillSelect('brSupplierFilter',[...new Set(purchases.map(p=>p.supplierName||supplierName(p.supplierId)))],'All suppliers');
+ brFillSelect('brCategoryFilter',[...new Set(products.map(p=>p.category).concat(purchases.map(p=>p.category)).filter(Boolean))],'All categories');brFillSelect('brBrandFilter',[...new Set(products.map(p=>p.brand).filter(Boolean))],'All brands');
 }
-
-function businessReportData(){
- const type=document.getElementById('businessReportType').value;
- const from=document.getElementById('businessReportFrom').value;
- const to=document.getElementById('businessReportTo').value;
- const branch=document.getElementById('businessReportBranch').value;
-
- const inDate=d=>(!from||d>=from)&&(!to||d<=to);
- const inBranch=b=>!branch||b===branch;
-
- let headers=[];
- let rows=[];
- let cards=[];
-
- if(type==='sales'){
-  const list=sales.filter(s=>inDate(saleDate(s))&&inBranch(s.branchId));
-  headers=['Invoice','Date','Customer','Phone','Branch','Total','Paid','Due'];
-  rows=list.map(s=>[
-   invoiceNo(s),saleDate(s),s.customerName||'Walk-in Customer',
-   s.customerPhone||'',s.branchName||branchName(s.branchId),
-   saleTotal(s),salePaid(s),saleDue(s)
-  ]);
-  cards=[
-   ['Invoices',list.length],
-   ['Sales Total',money(list.reduce((n,s)=>n+saleTotal(s),0))],
-   ['Received',money(list.reduce((n,s)=>n+salePaid(s),0))],
-   ['Outstanding',money(list.reduce((n,s)=>n+saleDue(s),0))]
-  ];
- }
-
- if(type==='purchases'){
-  const list=purchases.filter(p=>inDate(String(p.date||''))&&inBranch(p.branchId));
-  headers=['Purchase No','Date','Supplier','Branch','Product','SKU','Quantity','Unit Cost','Total','Paid','Due'];
-  rows=list.map(p=>[
-   p.purchaseNo,p.date,p.supplierName,
-   p.branchName||branchName(p.branchId),p.productName,p.sku||'',
-   p.qty,p.cost,p.total,p.paid,p.balance
-  ]);
-  cards=[
-   ['Purchases',list.length],
-   ['Purchase Total',money(list.reduce((n,p)=>n+Number(p.total||0),0))],
-   ['Paid',money(list.reduce((n,p)=>n+Number(p.paid||0),0))],
-   ['Outstanding',money(list.reduce((n,p)=>n+Number(p.balance||0),0))]
-  ];
- }
-
- if(type==='stock'){
-  const list=products.filter(p=>inBranch(p.branchId));
-  headers=['Product','SKU','Category','Branch','Quantity','Unit Cost','Selling Price','Stock Value','Stock Status'];
-  rows=list.map(p=>[
-   p.name,p.sku||'',p.category||'',branchName(p.branchId),
-   Number(p.qty||0),Number(p.cost||0),Number(p.price||0),
-   Number(p.qty||0)*Number(p.cost||0),
-   Number(p.qty||0)<=Number(p.alert||0)?'Low Stock':'Available'
-  ]);
-  cards=[
-   ['Products',list.length],
-   ['Stock Units',list.reduce((n,p)=>n+Number(p.qty||0),0)],
-   ['Stock Value',money(list.reduce((n,p)=>n+Number(p.qty||0)*Number(p.cost||0),0))],
-   ['Low Stock',list.filter(p=>Number(p.qty||0)<=Number(p.alert||0)).length]
-  ];
- }
-
- if(type==='customers'){
-  const list=sales.filter(s=>inDate(saleDate(s))&&inBranch(s.branchId));
-  const map={};
-  list.forEach(s=>{
-   const name=s.customerName||'Walk-in Customer';
-   const phone=s.customerPhone||'';
-   const key=phone?'phone:'+phone:'name:'+name.toLowerCase();
-   if(!map[key])map[key]={name,phone,orders:0,total:0,paid:0,due:0};
-   map[key].orders++;
-   map[key].total+=saleTotal(s);
-   map[key].paid+=salePaid(s);
-   map[key].due+=saleDue(s);
-  });
-  const data=Object.values(map);
-  headers=['Customer','Phone','Orders','Purchases','Paid','Outstanding'];
-  rows=data.map(c=>[c.name,c.phone,c.orders,c.total,c.paid,c.due]);
-  cards=[
-   ['Customers',data.length],
-   ['Orders',list.length],
-   ['Purchases',money(data.reduce((n,c)=>n+c.total,0))],
-   ['Outstanding',money(data.reduce((n,c)=>n+c.due,0))]
-  ];
- }
-
- if(type==='suppliers'){
-  const list=purchases.filter(p=>inDate(String(p.date||''))&&inBranch(p.branchId));
-  const map={};
-  list.forEach(p=>{
-   const sid=p.supplierId;
-   if(!map[sid])map[sid]={
-    name:p.supplierName||supplierName(sid),
-    purchases:0,paid:0,due:0,orders:0
-   };
-   map[sid].purchases+=Number(p.total||0);
-   map[sid].paid+=Number(p.paid||0);
-   map[sid].due+=Number(p.balance||0);
-   map[sid].orders++;
-  });
-  const data=Object.values(map);
-  headers=['Supplier','Purchase Records','Purchase Total','Paid on Purchases','Outstanding on Purchases'];
-  rows=data.map(s=>[s.name,s.orders,s.purchases,s.paid,s.due]);
-  cards=[
-   ['Suppliers',data.length],
-   ['Purchase Records',list.length],
-   ['Purchase Total',money(list.reduce((n,p)=>n+Number(p.total||0),0))],
-   ['Outstanding',money(list.reduce((n,p)=>n+Number(p.balance||0),0))]
-  ];
- }
-
- if(type==='profit'){
-  const filteredSales=sales.filter(s=>inDate(saleDate(s))&&inBranch(s.branchId));
-  const filteredExpenses=expenses.filter(e=>
-   inDate(String(e.date||''))&&inBranch(e.branchId)
-  );
-  const revenue=filteredSales.reduce((n,s)=>n+saleTotal(s),0);
-  const cogs=filteredSales.reduce((n,s)=>n+costOfSale(s),0);
-  const gross=revenue-cogs;
-  const expenseTotal=filteredExpenses.reduce((n,e)=>n+Number(e.amount||0),0);
-  const net=gross-expenseTotal;
-  headers=['Description','Amount (PKR)'];
-  rows=[
-   ['Sales Revenue',revenue],
-   ['Cost of Goods Sold',cogs],
-   ['Gross Profit',gross],
-   ['Operating Expenses',expenseTotal],
-   ['Net Profit / Loss',net],
-   ['Customer Amount Received',filteredSales.reduce((n,s)=>n+salePaid(s),0)],
-   ['Customer Outstanding',filteredSales.reduce((n,s)=>n+saleDue(s),0)]
-  ];
-  cards=[
-   ['Sales Revenue',money(revenue)],
-   ['Gross Profit',money(gross)],
-   ['Expenses',money(expenseTotal)],
-   ['Net Profit / Loss',money(net)]
-  ];
- }
-
- return {type,headers,rows,cards};
+function brRenderCategories(){const el=document.getElementById('brCategories');el.innerHTML=brDefinitions.map((g,i)=>`<button type="button" data-br-group="${i}" class="${(el.dataset.active||'0')==String(i)?'active':''}">${esc(g.group)}</button>`).join('');el.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{el.dataset.active=btn.dataset.brGroup;brRenderCategories();brRenderReportList();}));}
+function brRenderReportList(){const groupIndex=Number(document.getElementById('brCategories').dataset.active||0),group=brDefinitions[groupIndex]||brDefinitions[0],el=document.getElementById('brReportList');el.innerHTML=group.items.map(([key,title])=>`<button type="button" data-report="${key}" class="${currentBusinessReport===key?'active':''}">${esc(title)}</button>`).join('');el.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{currentBusinessReport=btn.dataset.report;renderBusinessReport();}));}
+function brSetOverview(){const ss=sales.filter(s=>brDateOK(s.date)&&brBranchOK(s.branchId)),pp=purchases.filter(p=>brDateOK(p.date)&&brBranchOK(p.branchId)),ee=expenses.filter(e=>brDateOK(e.date)&&brBranchOK(e.branchId));const revenue=ss.reduce((n,s)=>n+saleTotal(s),0),cost=ss.reduce((n,s)=>n+costOfSale(s),0),expense=ee.reduce((n,e)=>n+brNum(e.amount),0),gross=revenue-cost,net=gross-expense,received=ss.reduce((n,s)=>n+salePaid(s),0),due=ss.reduce((n,s)=>n+saleDue(s),0),purchaseTotal=pp.reduce((n,p)=>n+brNum(p.total),0);const metrics=[['Sales revenue',money(revenue),'Across selected period'],['Gross profit',money(gross),'Revenue less product cost'],['Operating expenses',money(expense),'Recorded expenses'],['Net profit / loss',money(net),'Gross profit less expenses'],['Payments received',money(received),'Against filtered sales'],['Customer outstanding',money(due),'Remaining invoice balances'],['Purchases',money(purchaseTotal),'Recorded supplier purchases'],['Invoices',ss.length,'Sales transactions']];document.getElementById('brOverview').innerHTML=metrics.map((m,i)=>`<div class="br-kpi"><span>${m[0]}</span><strong>${i===3&&net<0?'−':''}PKR ${m[1]}</strong><small>${m[2]}</small></div>`).join('');}
+function brAggregate(items,keyFn,valueFn){const m=new Map();items.forEach(x=>{const k=keyFn(x)||'Not specified';if(!m.has(k))m.set(k,{name:k,count:0,qty:0,total:0,cost:0,paid:0,due:0});const a=m.get(k);a.count++;a.qty+=valueFn(x,'qty');a.total+=valueFn(x,'total');a.cost+=valueFn(x,'cost');a.paid+=valueFn(x,'paid');a.due+=valueFn(x,'due');});return [...m.values()].sort((a,b)=>b.total-a.total||b.qty-a.qty);}
+function brReportBuild(){
+ const key=currentBusinessReport,ss=brFilteredSales(),pp=brFilteredPurchases(),ee=expenses.filter(e=>brDateOK(e.date)&&brBranchOK(e.branchId)&&brSearchOK([e.title,e.category,e.method])),lines=brLineItems(ss),allPayments=payments.filter(p=>brDateOK(p.date)&&brBranchOK(sales.find(s=>s.id===p.saleId)?.branchId)&&(!document.getElementById('brPaymentFilter').value||p.method===document.getElementById('brPaymentFilter').value)&&brSearchOK([p.customerName,p.receiptNo,p.method])),sp=supplierPayments.filter(p=>brDateOK(p.date)&&(!document.getElementById('brSupplierFilter').value||(p.supplierName||supplierName(p.supplierId))===document.getElementById('brSupplierFilter').value)&&brSearchOK([p.supplierName,p.receiptNo,p.method]));
+ let headers=[],rows=[],cards=[],note='';const sum=(a,k)=>a.reduce((n,x)=>n+brNum(x[k]),0);const moneyCol=v=>money(v);
+ const aggregateLines=(nameFn)=>{const m=new Map();lines.forEach(x=>{const name=nameFn(x)||'Not specified';if(!m.has(name))m.set(name,{name,qty:0,sales:0,cost:0,orders:new Set()});const a=m.get(name);a.qty+=x.qty;a.sales+=x.amount;a.cost+=x.cost;a.orders.add(x.sale.id);});return [...m.values()].sort((a,b)=>b.sales-a.sales);};
+ const tabular=(data,cols)=>{headers=cols;rows=data.map(d=>cols.map(c=>d[c]??''));};
+ if(key==='summary'){const data=brAggregate(ss,s=>brCustomer(s),(s,k)=>k==='total'?saleTotal(s):k==='paid'?salePaid(s):k==='due'?saleDue(s):0);tabular(data.map(x=>({name:x.name,orders:x.count,total:moneyCol(x.total),paid:moneyCol(x.paid),due:moneyCol(x.due)})),['name','orders','total','paid','due']);cards=[['Sales',money(sum(ss.map(s=>({v:saleTotal(s)})),'v'))],['Expenses',money(sum(ee,'amount'))],['Profit / loss',money(ss.reduce((n,s)=>n+saleTotal(s)-costOfSale(s),0)-sum(ee,'amount'))]];note='Overall summary uses the selected dates and branch. Sales totals are calculated from saved invoices.';}
+ if(key==='soldProducts'||key==='salesProduct'){const d=aggregateLines(x=>brProductName(x.item));tabular(d.map(x=>({product:x.name,qty:x.qty,orders:x.orders.size,sales:moneyCol(x.sales),cost:moneyCol(x.cost),profit:moneyCol(x.sales-x.cost)})),['product','qty','orders','sales','cost','profit']);cards=[['Products sold',d.length],['Units sold',sum(d,'qty')],['Sales value',money(sum(d,'sales'))]];}
+ if(key==='salesAnalytics'||key==='salesSummary'){const m=new Map();ss.forEach(s=>{const day=brDate(s.date)||'Unknown';if(!m.has(day))m.set(day,{date:day,invoices:0,revenue:0,received:0,due:0});const a=m.get(day);a.invoices++;a.revenue+=saleTotal(s);a.received+=salePaid(s);a.due+=saleDue(s);});const d=[...m.values()].sort((a,b)=>a.date.localeCompare(b.date));tabular(d.map(x=>({date:x.date,invoices:x.invoices,revenue:moneyCol(x.revenue),received:moneyCol(x.received),due:moneyCol(x.due),average:moneyCol(x.invoices?x.revenue/x.invoices:0)})),['date','invoices','revenue','received','due','average']);cards=[['Invoices',ss.length],['Average invoice',money(ss.length?sum(ss.map(s=>({v:saleTotal(s)})),'v')/ss.length:0)],['Revenue',money(ss.reduce((n,s)=>n+saleTotal(s),0))]];}
+ if(key==='paymentMethods'){const byMethod=new Map();[...allPayments,...ss.filter(s=>s.method).map(s=>({method:s.method,amount:s.paid,date:s.date,customerName:brCustomer(s)}))].forEach(p=>{const k=p.method||'Not recorded';byMethod.set(k,(byMethod.get(k)||0)+brNum(p.amount));});const d=[...byMethod].map(([method,amount])=>({method,amount:moneyCol(amount)}));tabular(d,['method','amount']);cards=[['Payment entries',allPayments.length],['Collected',money(allPayments.reduce((n,p)=>n+brNum(p.amount),0))]];note='Payment method reporting uses saved payment receipts. Initial invoice payments are not assigned a method in the current sales record, so those amounts may not appear here.';}
+ if(key==='salesperson'){const d=new Map();ss.forEach(s=>{const name=s.salesperson||s.salesPerson||s.soldBy||s.createdBy||'';if(!name)return;const a=d.get(name)||{name,sales:0,commission:0,invoices:0};a.sales+=saleTotal(s);a.invoices++;a.commission+=brNum(s.commissionAmount);d.set(name,a);});const list=[...d.values()];tabular(list.map(x=>({name:x.name,invoices:x.invoices,sales:moneyCol(x.sales),commission:moneyCol(x.commission)})),['name','invoices','sales','commission']);cards=[['Salespeople tracked',list.length],['Commission recorded',money(list.reduce((n,x)=>n+x.commission,0))]];note=list.length?'Commission is shown only where salesperson and commission fields exist on saved sales.':'Sales records currently do not contain salesperson attribution or commission values. Add salesperson and commission tracking to sales before this report can produce reliable figures.';}
+ if(key==='peakHours'){const m=new Map();ss.forEach(s=>{const dt=new Date(s.date);if(Number.isNaN(dt.getTime()))return;const h=dt.getHours(),label=String(h).padStart(2,'0')+':00 – '+String((h+1)%24).padStart(2,'0')+':00';const a=m.get(h)||{hour:label,invoices:0,revenue:0};a.invoices++;a.revenue+=saleTotal(s);m.set(h,a);});const d=[...m.values()].sort((a,b)=>b.revenue-a.revenue);tabular(d.map(x=>({hour:x.hour,invoices:x.invoices,revenue:moneyCol(x.revenue)})),['hour','invoices','revenue']);cards=[['Peak hour',d[0]?.hour||'—'],['Invoices',ss.length]];note='Peak hours are calculated from the saved invoice timestamp. Older records without a usable time are excluded.';}
+ if(key==='salesCategory'||key==='salesBrand'){const d=aggregateLines(x=>key==='salesCategory'?(x.product.category||x.item.category):(x.product.brand||x.item.brand));tabular(d.map(x=>({group:x.name,qty:x.qty,orders:x.orders.size,sales:moneyCol(x.sales),profit:moneyCol(x.sales-x.cost)})),['group','qty','orders','sales','profit']);cards=[['Groups',d.length],['Units sold',sum(d,'qty')],['Sales',money(sum(d,'sales'))]];}
+ if(key==='salesCustomer'||key==='customerCategory'||key==='customerProduct'){const m=new Map();lines.forEach(x=>{const customer=brCustomer(x.sale),product=brProductName(x.item),category=x.product.category||x.item.category||'Uncategorised',group=key==='customerCategory'?customer+' · '+category:key==='customerProduct'?customer+' · '+product:customer;const a=m.get(group)||{group,customer,product: key==='customerProduct'?product:'',category:key==='customerCategory'?category:'',qty:0,sales:0,invoices:new Set()};a.qty+=x.qty;a.sales+=x.amount;a.invoices.add(x.sale.id);m.set(group,a);});const d=[...m.values()].sort((a,b)=>b.sales-a.sales);tabular(d.map(x=>({group:x.group,qty:x.qty,invoices:x.invoices.size,sales:moneyCol(x.sales)})),['group','qty','invoices','sales']);cards=[['Groups',d.length],['Units sold',sum(d,'qty')],['Sales',money(sum(d,'sales'))]];}
+ if(key==='purchaseProduct'){const m=new Map();pp.forEach(p=>{const n=p.productName||brProduct(p.productId).name||'Unknown product',a=m.get(n)||{product:n,qty:0,records:0,total:0,paid:0,due:0};a.qty+=brNum(p.qty);a.records++;a.total+=brNum(p.total);a.paid+=brNum(p.paid);a.due+=brNum(p.balance);m.set(n,a);});const d=[...m.values()].sort((a,b)=>b.total-a.total);tabular(d.map(x=>({product:x.product,qty:x.qty,records:x.records,total:moneyCol(x.total),paid:moneyCol(x.paid),due:moneyCol(x.due)})),['product','qty','records','total','paid','due']);cards=[['Products purchased',d.length],['Units purchased',sum(d,'qty')],['Purchase value',money(sum(d,'total'))]];}
+ if(key==='purchaseSupplier'||key==='purchaseSummary'){const m=new Map();pp.forEach(p=>{const n=p.supplierName||supplierName(p.supplierId)||'Unknown supplier',a=m.get(n)||{supplier:n,records:0,total:0,paid:0,due:0};a.records++;a.total+=brNum(p.total);a.paid+=brNum(p.paid);a.due+=brNum(p.balance);m.set(n,a);});const d=[...m.values()].sort((a,b)=>b.total-a.total);tabular(d.map(x=>({supplier:x.supplier,records:x.records,total:moneyCol(x.total),paid:moneyCol(x.paid),due:moneyCol(x.due)})),['supplier','records','total','paid','due']);cards=[['Suppliers',d.length],['Purchase records',pp.length],['Purchase value',money(sum(pp,'total'))]];}
+ if(key==='supplierPayments'){tabular(sp.map(p=>({date:brDate(p.date),receipt:p.receiptNo||'',supplier:p.supplierName||supplierName(p.supplierId),method:p.method||'',amount:moneyCol(p.amount)})),['date','receipt','supplier','method','amount']);cards=[['Payments',sp.length],['Amount paid',money(sum(sp,'amount'))]];}
+ if(key==='revenueExpenses'||key==='profit'||key==='cashflow'){const revenue=ss.reduce((n,s)=>n+saleTotal(s),0),cogs=ss.reduce((n,s)=>n+costOfSale(s),0),gross=revenue-cogs,expense=sum(ee,'amount'),received=ss.reduce((n,s)=>n+salePaid(s),0),outstanding=ss.reduce((n,s)=>n+saleDue(s),0);const d=[{item:'Sales revenue',amount:revenue},{item:'Cost of goods sold',amount:cogs},{item:'Gross profit',amount:gross},{item:'Operating expenses',amount:expense},{item:'Net profit / loss',amount:gross-expense},{item:'Customer payments received',amount:received},{item:'Customer outstanding',amount:outstanding}];tabular(d.map(x=>({item:x.item,amount:moneyCol(x.amount)})),['item','amount']);cards=[['Revenue',money(revenue)],['Expenses',money(expense)],['Net profit / loss',money(gross-expense)]];note='Profit is an estimate based on saved sale item costs and recorded operating expenses. It does not include unrecorded overheads or adjustments.';}
+ if(key==='expenseCategory'){const m=new Map();ee.forEach(e=>m.set(e.category||'Uncategorised',(m.get(e.category||'Uncategorised')||0)+brNum(e.amount)));const d=[...m].map(([category,amount])=>({category,amount:moneyCol(amount)})).sort((a,b)=>Number(b.amount.replace(/,/g,''))-Number(a.amount.replace(/,/g,'')));tabular(d,['category','amount']);cards=[['Expense records',ee.length],['Total expenses',money(sum(ee,'amount'))]];}
+ if(key==='stock'||key==='stockValue'||key==='lowStock'){let d=products.filter(p=>brBranchOK(p.branchId)&&(!document.getElementById('brProductFilter').value||String(p.id)===document.getElementById('brProductFilter').value)&&(!document.getElementById('brCategoryFilter').value||p.category===document.getElementById('brCategoryFilter').value)&&(!document.getElementById('brBrandFilter').value||p.brand===document.getElementById('brBrandFilter').value)&&brSearchOK([p.name,p.sku,p.category,p.brand]));if(key==='lowStock')d=d.filter(p=>brNum(p.qty)<=brNum(p.alert??5));d.sort((a,b)=>brNum(a.qty)*brNum(a.cost)-brNum(b.qty)*brNum(b.cost));tabular(d.map(p=>({product:p.name,sku:p.sku||'',category:p.category||'',brand:p.brand||'',branch:branchName(p.branchId),qty:brNum(p.qty),cost:moneyCol(p.cost),price:moneyCol(p.price),value:moneyCol(brNum(p.qty)*brNum(p.cost)),status:brNum(p.qty)<=brNum(p.alert??5)?'Low stock':'Available'})),['product','sku','category','brand','branch','qty','cost','price','value','status']);cards=[['Products',d.length],['Stock units',sum(d,'qty')],['Stock value',money(d.reduce((n,p)=>n+brNum(p.qty)*brNum(p.cost),0))]];}
+ if(key==='movements'){const ts=transfers.filter(t=>brDateOK(t.date)&&(!document.getElementById('businessReportBranch').value||t.fromBranchId===document.getElementById('businessReportBranch').value||t.toBranchId===document.getElementById('businessReportBranch').value)&&brSearchOK([t.productName,t.sku,t.transferNo]));tabular(ts.map(t=>({date:brDate(t.date),transfer:t.transferNo||'',product:t.productName||'',sku:t.sku||'',from:t.fromBranchName||branchName(t.fromBranchId),to:t.toBranchName||branchName(t.toBranchId),qty:brNum(t.qty)})),['date','transfer','product','sku','from','to','qty']);cards=[['Transfers',ts.length],['Units transferred',sum(ts,'qty')]];note='This report shows recorded branch transfers. The current stock system does not yet keep a complete historical log of every sale, purchase, return or manual stock adjustment.';}
+ if(key==='customerBalances'){const m=new Map();ss.forEach(s=>{const n=brCustomer(s),a=m.get(n)||{customer:n,invoices:0,total:0,paid:0,due:0};a.invoices++;a.total+=saleTotal(s);a.paid+=salePaid(s);a.due+=saleDue(s);m.set(n,a);});const d=[...m.values()].sort((a,b)=>b.due-a.due);tabular(d.map(x=>({customer:x.customer,invoices:x.invoices,total:moneyCol(x.total),paid:moneyCol(x.paid),due:moneyCol(x.due)})),['customer','invoices','total','paid','due']);cards=[['Customers',d.length],['Outstanding',money(sum(d,'due'))]];}
+ return {key,title:brTitles[key]||'Business Report',headers,rows,cards,note};
 }
-
-let currentBusinessReport=null;
-
-function renderBusinessReport(){
- updateBusinessReportBranches();
-
- const report=businessReportData();
- currentBusinessReport=report;
-
- const titles={
-  sales:'Sales Report',
-  purchases:'Purchase Report',
-  stock:'Current Stock Report',
-  customers:'Customer Report',
-  suppliers:'Supplier Report',
-  profit:'Profit & Loss Report'
- };
-
- document.getElementById('businessReportHeading').textContent=titles[report.type];
-
- document.getElementById('businessReportCards').innerHTML=
- report.cards.map(c=>`
- <div class="card"><small>${esc(c[0])}</small><strong>${esc(c[1])}</strong></div>
- `).join('');
-
- document.getElementById('businessReportHead').innerHTML=
- '<tr>'+report.headers.map(h=>`<th>${esc(h)}</th>`).join('')+'</tr>';
-
- document.getElementById('businessReportBody').innerHTML=
- report.rows.map(row=>'<tr>'+row.map(v=>`<td>${esc(v)}</td>`).join('')+'</tr>').join('')||
- `<tr><td colspan="${report.headers.length}" class="empty">No records found for these filters.</td></tr>`;
-}
-
-function exportBusinessReport(){
- const report=businessReportData();
- if(!report.rows.length)return alert('There are no records to export.');
-
- const quote=value=>'"'+String(value??'').replace(/"/g,'""')+'"';
- const csv=[
-  report.headers.map(quote).join(','),
-  ...report.rows.map(row=>row.map(quote).join(','))
- ].join('\r\n');
-
- const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
- const url=URL.createObjectURL(blob);
- const link=document.createElement('a');
- link.href=url;
- link.download=report.type+'-report-'+todayISO()+'.csv';
- document.body.appendChild(link);
- link.click();
- link.remove();
- URL.revokeObjectURL(url);
-}
-
-function printBusinessReport(){
- const report=businessReportData();
- const title=document.getElementById('businessReportHeading').textContent;
- const rows=report.rows.map(row=>
-  '<tr>'+row.map(v=>`<td>${esc(v)}</td>`).join('')+'</tr>'
- ).join('');
-
- const html=`<!DOCTYPE html><html><head>
- <meta name="viewport" content="width=device-width,initial-scale=1">
- <title>${esc(title)}</title>
- <style>
- body{font-family:Arial;padding:20px;color:#222}
- h1{text-align:center}
- p{color:#555}
- table{width:100%;border-collapse:collapse;margin-top:20px}
- th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:12px}
- th{background:#eee}
- button{padding:10px 18px;background:#1769aa;color:white;border:0}
- @media print{button{display:none}body{padding:0}}
- </style>
-<style id="etihad-premium-themes">
-/* Premium theme system: settings-controlled Light, Dark, Emerald and Black & Gold */
-body.etihad-blackgold{--bg:#0b0b0c;--surface:#171615;--ink:#f5f0e5;--muted:#b5a98f;--line:#3c3324;--primary:#c9a24d;--primary2:#e2c477;--shadow:0 14px 36px rgba(0,0,0,.35);color:var(--ink);background:var(--bg)}
-body.etihad-blackgold header{background:linear-gradient(115deg,#050505,#17130b 58%,#4a3818);border-bottom:1px solid #8d6b2e}
-body.etihad-blackgold header h2,body.etihad-blackgold .page>h3,body.etihad-blackgold h3,body.etihad-blackgold .card strong,body.etihad-blackgold .total{color:#f1d58e}
-body.etihad-blackgold header small{color:#cdb77f}
-body.etihad-blackgold nav#etihadMainNav{background:#11100eee;border-color:#554321}
-body.etihad-blackgold nav#etihadMainNav button{color:#c9bd9f}
-body.etihad-blackgold nav#etihadMainNav button:hover,body.etihad-blackgold nav#etihadMainNav button.active{background:#c9a24d;color:#17130b;box-shadow:0 4px 14px #c9a24d35}
-body.etihad-blackgold .panel,body.etihad-blackgold .card{background:#171615;border-color:#443821}
-body.etihad-blackgold .card{border-top:2px solid #a9873f}
-body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold textarea{background:#100f0d;color:#f5f0e5;border-color:#5a4828}
-body.etihad-blackgold input:focus,body.etihad-blackgold select:focus,body.etihad-blackgold textarea:focus{border-color:#d6b45c;box-shadow:0 0 0 3px #d6b45c25}
-body.etihad-blackgold label,body.etihad-blackgold .muted,body.etihad-blackgold .etihad-section-intro{color:#b9ad92}
-body.etihad-blackgold th{background:#252016;color:#d8c38e}body.etihad-blackgold td{color:#eee4cd;border-color:#3b3325}body.etihad-blackgold tbody tr:hover{background:#211c13}
-body.etihad-blackgold .btn{background:linear-gradient(135deg,#b68a36,#e0c16d);color:#17130b;box-shadow:0 5px 15px #c9a24d25}
-body.etihad-blackgold .btn.green{background:#246b50;color:white}body.etihad-blackgold .btn.red{background:#a83c3c;color:white}body.etihad-blackgold .btn.gray,body.etihad-blackgold .btn.light{background:#30291d;color:#ead9ae}
-body.etihad-blackgold #pos>.panel:first-of-type,body.etihad-blackgold #pos>.panel:nth-of-type(3),body.etihad-blackgold #customers #customerCreditManager{background:#1d1a14;border-color:#554321}
-body.etihad-blackgold #pos>.panel:first-of-type .grid>div,body.etihad-blackgold #etihadQuickProducts button{background:#171615;border-color:#554321;color:#f5f0e5}
-body.etihad-blackgold #etihadQuickProducts strong{color:#e4c16b}
-body.etihad-blackgold .table-wrap{border-color:#443821}
-.etihad-brand{display:flex;align-items:center;gap:13px;min-width:0}.etihad-brand-copy{display:flex;flex-direction:column;min-width:0}.etihad-brand-logo{width:43px;height:43px;object-fit:contain;border-radius:11px;background:#ffffff16;border:1px solid #ffffff35;padding:3px;display:none}.etihad-brand-logo.has-logo{display:block}
-.etihad-logo-preview{width:76px;height:76px;object-fit:contain;border-radius:16px;border:1px solid var(--line);background:var(--bg);padding:7px;display:none}.etihad-logo-preview.has-logo{display:block}
-.etihad-theme-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}.etihad-theme-choice{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;padding:14px;text-align:left;min-height:74px;font-weight:750}.etihad-theme-choice span{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:5px}.etihad-theme-choice[aria-pressed="true"]{outline:2px solid var(--primary);border-color:var(--primary)}.etihad-theme-swatch{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;vertical-align:middle}
-body.etihad-dark .etihad-theme-choice{background:#151f32;color:#e7edf8;border-color:#34445f}body.etihad-blackgold .etihad-theme-choice{background:#171615;color:#f5f0e5;border-color:#554321}
-@media(max-width:600px){.etihad-brand-logo{width:37px;height:37px}.etihad-brand{gap:9px}}
-</style>
-
-</head><body>
- <h1>MY BUSINESS ERP</h1>
- <h2>${esc(title)}</h2>
- <p>Generated: ${new Date().toLocaleString()}</p>
- <p>From: ${esc(document.getElementById('businessReportFrom').value||'All dates')}
- &nbsp; To: ${esc(document.getElementById('businessReportTo').value||'All dates')}</p>
- <p>Branch: ${esc(document.getElementById('businessReportBranch').selectedOptions[0]?.textContent||'All Branches')}</p>
- <table><thead><tr>${report.headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
- <tbody>${rows||`<tr><td colspan="${report.headers.length}">No records found.</td></tr>`}</tbody>
- </table>
- <p><button onclick="window.print()">Print / Save as PDF</button></p>
- 
-<style id="etihad-pos-barcode-camera-style">
-#pos .etihad-pos-scan-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:end;margin:10px 0 14px}
-#pos .etihad-pos-scan-row label{display:block;font-size:12px;font-weight:700;margin:0 0 6px;color:var(--muted)}
-#pos .etihad-pos-scan-row input{width:100%;min-height:42px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit}
-#pos .etihad-pos-scan-row button{min-height:42px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit;font-weight:700;cursor:pointer}
-#pos .etihad-pos-camera-panel{display:none;margin:8px 0 14px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
-#pos .etihad-pos-camera-panel video{display:block;width:100%;max-height:300px;object-fit:cover;background:#111;border-radius:8px}
-#pos .etihad-pos-camera-panel p{margin:7px 0;font-size:12px;color:var(--muted)}
-@media(max-width:560px){#pos .etihad-pos-scan-row{grid-template-columns:minmax(0,1fr) auto}.etihad-pos-scan-entry{grid-column:1/-1}}
-</style>
-<script id="etihad-pos-barcode-camera-upgrade">
-(function(){
- 'use strict';
- const $=id=>document.getElementById(id);
- const host=$('etihadPosProducts'),branch=$('saleBranch'),productSelect=$('saleProduct'),qty=$('saleQty');
- if(!host||!branch||!productSelect||!qty||$('etihadPosBarcode'))return;
- const main=host.closest('.pos-pro-main');if(!main)return;
- const row=document.createElement('div');row.className='etihad-pos-scan-row';
- row.innerHTML='<div class="etihad-pos-scan-entry"><label for="etihadPosBarcode">Barcode / SKU</label><input id="etihadPosBarcode" type="text" placeholder="Enter or scan barcode, then press Enter" autocomplete="off" inputmode="text"></div><button type="button" id="etihadPosCameraStart">📷 Scan with Camera</button><button type="button" id="etihadPosCameraStop" style="display:none">Stop</button>';
- const camera=document.createElement('div');camera.className='etihad-pos-camera-panel';camera.id='etihadPosCameraPanel';
- camera.innerHTML='<video id="etihadPosCameraVideo" playsinline muted></video><p id="etihadPosCameraMessage">Point your camera at a product barcode.</p>';
- const searchRow=main.querySelector('.pos-search-row');if(searchRow)searchRow.insertAdjacentElement('afterend',row);else main.insertBefore(row,host);row.insertAdjacentElement('afterend',camera);
- const input=$('etihadPosBarcode'),start=$('etihadPosCameraStart'),stop=$('etihadPosCameraStop'),video=$('etihadPosCameraVideo'),message=$('etihadPosCameraMessage');
- let stream=null,detector=null,raf=0,locked=false,zxingControls=null;
- const norm=v=>String(v??'').trim().toLowerCase();
- function branchMatches(p){const id=String(branch.value||''),opt=Array.from(branch.options||[]).find(o=>String(o.value)===id),name=norm(opt?opt.textContent.replace(/\s*\(Inactive\)\s*$/,''):''),pid=String(p.branchId??'').trim();if(pid&&pid===id)return true;const pn=norm(p.branchName||p.branch);if(pn&&name&&pn===name)return true;const active=typeof activeBranches==='function'?activeBranches():[];return !pid&&!pn&&active.length===1&&String(active[0].id)===id;}
- function getProducts(){try{return Array.isArray(products)?products:[]}catch(_){return [];}}
- function addByCode(raw){const code=norm(raw);if(!code)return;const branchProducts=getProducts().filter(branchMatches),found=branchProducts.filter(p=>[p.barcode,p.sku].some(v=>norm(v)===code));if(found.length!==1){const anywhere=getProducts().some(p=>[p.barcode,p.sku].some(v=>norm(v)===code));alert(found.length>1?'This barcode is duplicated in the selected branch. Please correct the product records.':anywhere?'This product belongs to another branch or has no matching branch stock.':'Barcode / SKU not found. Check the product barcode in Inventory.');input.value='';input.focus();return false;}const p=found[0];if(Number(p.qty||0)<=0){alert('This product has no available stock in the selected branch.');input.value='';input.focus();return false;}productSelect.innerHTML=branchProducts.filter(x=>Number(x.qty||0)>0).map(x=>'<option value="'+String(x.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+String(x.name||'').replace(/</g,'&lt;')+'</option>').join('');productSelect.value=p.id;qty.value=1;input.value='';if(typeof window.addToCart==='function')window.addToCart();else alert('The POS add-to-cart function is unavailable.');return true;}
- input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addByCode(input.value);}});
- function stopCamera(){if(raf)cancelAnimationFrame(raf);raf=0;try{if(zxingControls){zxingControls.stop();zxingControls=null;}}catch(_){}if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}try{video.pause();video.srcObject=null;}catch(_){}camera.style.display='none';stop.style.display='none';start.style.display='';locked=false;}
- stop.addEventListener('click',stopCamera);
- async function scanFrame(){if(!stream||!detector||locked)return;try{if(video.readyState>=2){const codes=await detector.detect(video);if(codes.length&&codes[0].rawValue){locked=true;const value=codes[0].rawValue;stopCamera();addByCode(value);return;}}}catch(e){message.textContent='Scanning… keep the barcode steady and well lit.';}if(stream)raf=requestAnimationFrame(scanFrame);}
- function loadZXing(){if(window.ZXingBrowser?.BrowserMultiFormatReader)return Promise.resolve();if(window.etihadZXingLoadPromise)return window.etihadZXingLoadPromise;window.etihadZXingLoadPromise=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://unpkg.com/@zxing/browser@0.1.5/umd/index.min.js';script.async=true;script.onload=()=>window.ZXingBrowser?.BrowserMultiFormatReader?resolve():reject(new Error('Scanner library did not initialize'));script.onerror=()=>reject(new Error('Could not load scanner library'));document.head.appendChild(script);});return window.etihadZXingLoadPromise;}
- start.addEventListener('click',async()=>{
-  if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){alert('Camera access requires HTTPS. Open Etihad Traders using its https:// website address and allow camera permission.');return;}
-  start.disabled=true;message.textContent='Starting camera…';camera.style.display='block';start.style.display='none';stop.style.display='';
-  try{
-   if('BarcodeDetector' in window){try{detector=new BarcodeDetector({formats:['code_128','code_39','ean_13','ean_8','upc_a','upc_e','itf','qr_code','codabar','data_matrix']});stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});video.srcObject=stream;message.textContent='Camera active — hold the barcode steady inside the frame.';await video.play();scanFrame();return;}catch(nativeError){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.srcObject=null;detector=null;message.textContent='Starting compatible barcode scanner…';}}
-   await loadZXing();const Reader=window.ZXingBrowser.BrowserMultiFormatReader,reader=new Reader();const devices=await reader.listVideoInputDevices();const rearCamera=devices.find(d=>/back|rear|environment/i.test(d.label));message.textContent='Camera active — point it at the barcode.';
-   zxingControls=await reader.decodeFromVideoDevice(rearCamera?.deviceId,video,(result,error,controls)=>{if(controls&&!zxingControls)zxingControls=controls;if(result&&!locked){locked=true;const value=result.getText();stopCamera();addByCode(value);}});
-  }catch(e){stopCamera();alert('Camera scanner could not start. Check camera permission and internet connection, then reload Etihad Traders. Details: '+(e&&e.message?e.message:'Unknown error'));}
-  finally{start.disabled=false;}
- });
- document.addEventListener('visibilitychange',()=>{if(document.hidden&&(stream||zxingControls))stopCamera();});branch.addEventListener('change',()=>{input.value='';});window.addEventListener('pagehide',stopCamera);
-})();
-</script>
-
-
-<style id="etihad-hr-workspace-style">
-#employees{max-width:1500px;margin:0 auto}#employees .hr-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}#employees .hr-head h2{margin:0;font-size:clamp(22px,3vw,30px);letter-spacing:-.5px}#employees .hr-refresh,#employees .hr-actions button,#employees .hr-pane-head>button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:9px 12px;font-weight:650;cursor:pointer}#employees .hr-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}#employees .hr-metric{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:16px;box-shadow:0 7px 22px #0f172a0a}#employees .hr-metric span{display:block;color:var(--muted);font-size:12px;font-weight:650}#employees .hr-metric strong{display:block;font-size:25px;margin-top:6px;color:var(--ink)}#employees .hr-tabs{display:flex;gap:8px;overflow:auto;padding:5px 0 12px;margin-bottom:10px}#employees .hr-tabs button{white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:10px 16px;background:var(--surface);color:var(--ink);font-weight:700}#employees .hr-tabs button.active{background:linear-gradient(135deg,#172b45,#28517a);color:white;border-color:#28517a}#employees .hr-pane{background:var(--surface);border:1px solid var(--line);border-radius:17px;padding:18px;margin-bottom:18px;box-shadow:0 8px 28px #0f172a0a}#employees .hr-pane h3{margin:0 0 7px}#employees .hr-pane p{color:var(--muted);font-size:13px}#employees .hr-pane-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}#employees .hr-pane-head h3{margin:0}#employees .hr-pane-head input{max-width:320px}#employees .hr-sub{display:block;color:var(--muted);font-size:11px;margin-top:4px;max-width:240px;overflow-wrap:anywhere}#employees .hr-pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:800}#employees .hr-pill.on{background:#dcfce7;color:#166534}#employees .hr-pill.off{background:#fef3c7;color:#92400e}#employees .hr-actions{display:flex;flex-wrap:wrap;gap:5px;min-width:160px}#employees .hr-actions button{font-size:11px;padding:7px 9px}#employees .hr-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:16px 0}#employees .hr-form-grid label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}#employees input,#employees select{box-sizing:border-box;width:100%;min-height:42px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);padding:10px 12px}#employees .hr-access-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}#employees .hr-access-grid>div,#employees .hr-payroll-help{background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:14px;min-width:0}#employees .hr-access-grid h4{margin:0 0 5px}#employees .hr-access-grid p{margin:0 0 10px}#employees .hr-check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#employees .hr-access-grid label{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--ink)}#employees .hr-access-grid input[type=checkbox]{width:17px;height:17px;min-height:17px;padding:0;flex:0 0 auto;accent-color:#b58a37}#employees .hr-primary{border:0;border-radius:11px;padding:12px 18px;background:linear-gradient(135deg,#98702a,#d6b15f);color:#17130b;font-weight:800;cursor:pointer;box-shadow:0 7px 18px #98702a25}#employees button:disabled{opacity:.55;cursor:wait}#employees .hr-status{font-size:13px;min-height:18px;color:var(--muted)}#employees .hr-edit{margin-top:18px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}#employees .hr-payroll-layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(240px,.8fr);gap:18px}#employees .hr-payroll-help h4{margin:0 0 8px}#employees .hr-statline{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:11px 0;font-size:13px}#employees .hr-net{display:flex;justify-content:space-between;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;margin:14px 0;font-size:14px}#employees .hr-net strong{font-size:21px;color:#b58a37}#employees .hr-wide{grid-column:1/-1}#employees .hr-list-title{margin:24px 0 12px}#employees .table-wrap table{min-width:760px}#employees .table-wrap th{white-space:nowrap}
-body.etihad-dark #employees .hr-tabs button.active{background:#c49a45;color:#17130b;border-color:#c49a45}body.etihad-dark #employees .hr-pill.on{background:#174b35;color:#a7f3d0}body.etihad-dark #employees .hr-pill.off{background:#59421a;color:#fde68a}body.etihad-emerald #employees .hr-tabs button.active{background:#176b50;color:white;border-color:#176b50}
-@media(max-width:700px){#employees .hr-head{align-items:center}#employees .hr-metrics{gap:7px}#employees .hr-metric{padding:11px}#employees .hr-metric strong{font-size:19px}#employees .hr-pane{padding:13px}#employees .hr-form-grid,#employees .hr-access-grid,#employees .hr-payroll-layout{grid-template-columns:1fr}#employees .hr-check-grid{grid-template-columns:1fr 1fr}#employees .hr-pane-head{align-items:stretch;flex-direction:column}#employees .hr-pane-head input{max-width:none}#employees .hr-actions{min-width:135px}}
-@media(max-width:420px){#employees .hr-check-grid{grid-template-columns:1fr}#employees .hr-tabs button{padding:9px 12px;font-size:12px}}
-@media print{#employees{display:none!important}}
-</style>
-
-</body></html>`;
-
- const win=window.open('','_blank');
- if(!win)return alert('Allow pop-ups in your browser to print or save PDF.');
- win.document.open();
- win.document.write(html);
- win.document.close();
-}
-
-function clearBusinessReport(){
- document.getElementById('businessReportFrom').value='';
- document.getElementById('businessReportTo').value='';
- document.getElementById('businessReportBranch').value='';
- renderBusinessReport();
-}
+function renderBusinessReport(){updateBusinessReportFilters();brRenderCategories();brRenderReportList();brSetOverview();const r=brReportBuild();currentBusinessReportData=r;document.getElementById('businessReportHeading').textContent=r.title;document.getElementById('brReportCaption').textContent=(document.getElementById('businessReportFrom').value||'All dates')+' to '+(document.getElementById('businessReportTo').value||'All dates')+' · '+(document.getElementById('businessReportBranch').selectedOptions[0]?.textContent||'All branches');document.getElementById('businessReportCards').innerHTML=r.cards.map(c=>`<div><span>${esc(c[0])}</span><strong>${esc(c[1])}</strong></div>`).join('');document.getElementById('businessReportHead').innerHTML='<tr>'+r.headers.map(h=>`<th>${esc(h)}</th>`).join('')+'</tr>';document.getElementById('businessReportBody').innerHTML=r.rows.map(row=>'<tr>'+row.map(v=>`<td>${esc(v)}</td>`).join('')+'</tr>').join('')||`<tr><td colspan="${Math.max(1,r.headers.length)}">No records found for the selected filters.</td></tr>`;document.getElementById('brReportNote').textContent=r.note||'Figures are calculated from records currently saved in Etihad Traders.';}
+function exportBusinessReport(){const r=brReportBuild();if(!r.rows.length)return alert('There are no records to export.');const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const csv=[r.headers.map(q).join(','),...r.rows.map(row=>row.map(q).join(','))].join('\r\n');const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=(currentBusinessReport||'business')+'-report-'+todayISO()+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
+function printBusinessReport(){const r=brReportBuild(),rows=r.rows.map(row=>'<tr>'+row.map(v=>`<td>${esc(v)}</td>`).join('')+'</tr>').join('');const w=window.open('','_blank');if(!w)return alert('Allow pop-ups to print or save PDF.');w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(r.title)}</title><style>body{font:13px Arial;color:#172033;padding:28px}h1{color:#9b762d}p{color:#667085}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:9px;text-align:left}th{background:#f3f0e8}@media print{button{display:none}}</style></head><body><h1>ETIHAD TRADERS</h1><h2>${esc(r.title)}</h2><p>Generated: ${new Date().toLocaleString()}</p><p>Period: ${esc(document.getElementById('businessReportFrom').value||'All dates')} to ${esc(document.getElementById('businessReportTo').value||'All dates')} · Branch: ${esc(document.getElementById('businessReportBranch').selectedOptions[0]?.textContent||'All branches')}</p><table><thead><tr>${r.headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows||'<tr><td>No records found.</td></tr>'}</tbody></table><p>${esc(r.note||'')}</p><button onclick="window.print()">Print / Save PDF</button></body></html>`);w.document.close();}
+function clearBusinessReport(){['businessReportFrom','businessReportTo','businessReportBranch','businessReportSearch','brProductFilter','brCustomerFilter','brSupplierFilter','brCategoryFilter','brBrandFilter','brPaymentFilter'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});renderBusinessReport();}
+['businessReportFrom','businessReportTo','businessReportBranch','businessReportSearch','brProductFilter','brCustomerFilter','brSupplierFilter','brCategoryFilter','brBrandFilter','brPaymentFilter'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('change',renderBusinessReport);});
 
 updatePurchaseTotal();
 
