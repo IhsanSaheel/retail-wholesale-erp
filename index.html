@@ -3843,14 +3843,18 @@ if ('serviceWorker' in navigator) {
       const active=document.activeElement;
       if(active && (['INPUT','TEXTAREA','SELECT'].includes(active.tagName)||active.isContentEditable))return;
       try{
+        // First safely receive cloud changes; then upload any local records missed by a save event.
         const result=await mergeCloudRecords();
         if(result.changed){
           message('Company updates received from another device. Refreshing safely…');
           location.reload();
-        }else if(result.conflicts){
+          return;
+        }
+        if(result.conflicts){
           message(result.conflicts+' record conflict(s) need owner review. Local and cloud copies were preserved.');
         }
-      }catch(e){message('Cloud refresh will retry automatically: '+(e.message||String(e)));}
+        await runAutoSync();
+      }catch(e){message('Automatic cloud sync will retry: '+(e.message||String(e)));}
     },20000);
   }
   function scheduleAutoSync(){
