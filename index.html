@@ -3603,7 +3603,45 @@ if ('serviceWorker' in navigator) {
     }
     return changed;
   }
-  let syncUser=null, syncMembership=null, syncTimer=null, syncBusy=false, syncAgain=false;
+  let syncUser=null, syncMembership=null, syncTimer=null, syncPollTimer=null, syncBusy=false, syncAgain=false;
+  const SYNC_CACHE_KEY='etihad_record_sync_cache_v1';
+  const CONFLICT_KEY='etihad_sync_conflicts_v1';
+  function syncJson(value){return JSON.stringify(value);}
+  async function mergeCloudRecords(){
+    const result=await permittedCloudRecords();
+    let fingerprints={};try{fingerprints=JSON.parse(localStorage.getItem(SYNC_CACHE_KEY)||'{}')||{};}catch(_){fingerprints={};}
+    let conflicts={};try{conflicts=JSON.parse(localStorage.getItem(CONFLICT_KEY)||'{}')||{};}catch(_){conflicts={};}
+    let changed=false, imported=0, updated=0, conflictCount=0;
+    for(const collection of COLLECTIONS){
+      const local=readLocal(collection), byId=new Map(local.map((r,i)=>[keyFor(r),i]));
+      for(const remote of (result.grouped[collection]||[])){
+        const rid=keyFor(remote);if(!rid)continue;
+        const cacheKey=collection+':'+rid, remoteJson=syncJson(remote);
+        if(!byId.has(rid)){
+          local.push(remote);byId.set(rid,local.length-1);
+          fingerprints[cacheKey]=remoteJson;delete conflicts[cacheKey];
+          changed=true;imported++;continue;
+        }
+        const index=byId.get(rid), localJson=syncJson(local[index]), baseline=fingerprints[cacheKey];
+        if(localJson===remoteJson){
+          fingerprints[cacheKey]=remoteJson;delete conflicts[cacheKey];continue;
+        }
+        if(baseline && localJson===baseline){
+          local[index]=remote;fingerprints[cacheKey]=remoteJson;delete conflicts[cacheKey];
+          changed=true;updated++;continue;
+        }
+        if(baseline && remoteJson===baseline){
+          delete conflicts[cacheKey];continue;
+        }
+        conflicts[cacheKey]={collection,record_id:rid,detected_at:new Date().toISOString()};
+        conflictCount++;
+      }
+      if(changed) localStorage.setItem(collection,syncJson(local));
+    }
+    localStorage.setItem(SYNC_CACHE_KEY,syncJson(fingerprints));
+    localStorage.setItem(CONFLICT_KEY,syncJson(conflicts));
+    return {changed,imported,updated,conflicts:conflictCount,total:result.total};
+  }
   const WRITE_COLLECTIONS={
     owner:COLLECTIONS,
     manager:COLLECTIONS,
@@ -3611,7 +3649,27 @@ if ('serviceWorker' in navigator) {
     stockkeeper:['mberp_products','mberp_transfers','mberp_purchases'],
     accountant:['mberp_payments','mberp_expenses','mberp_purchases','mberp_supplier_payments','mberp_supplier_returns','mberp_sales_returns']
   };
-  function enableAutoSync(user,m){syncUser=user;syncMembership=m;window.addEventListener('etihad-data-saved',scheduleAutoSync);window.addEventListener('online',scheduleAutoSync);}
+  function enableAutoSync(user,m){
+    syncUser=user;syncMembership=m;
+    window.removeEventListener('etihad-data-saved',scheduleAutoSync);
+    window.addEventListener('etihad-data-saved',scheduleAutoSync);
+    window.addEventListener('online',scheduleAutoSync);
+    if(syncPollTimer)clearInterval(syncPollTimer);
+    syncPollTimer=setInterval(async()=>{
+      if(!syncUser||!navigator.onLine||syncBusy)return;
+      const active=document.activeElement;
+      if(active && (['INPUT','TEXTAREA','SELECT'].includes(active.tagName)||active.isContentEditable))return;
+      try{
+        const result=await mergeCloudRecords();
+        if(result.changed){
+          message('Company updates received from another device. Refreshing safely…');
+          location.reload();
+        }else if(result.conflicts){
+          message(result.conflicts+' record conflict(s) need owner review. Local and cloud copies were preserved.');
+        }
+      }catch(e){message('Cloud refresh will retry automatically: '+(e.message||String(e)));}
+    },20000);
+  }
   function scheduleAutoSync(){
     if(!syncUser||!syncMembership)return;
     clearTimeout(syncTimer);syncTimer=setTimeout(runAutoSync,1200);
@@ -3622,23 +3680,25 @@ if ('serviceWorker' in navigator) {
     syncBusy=true;syncAgain=false;
     try{
       const user=await sessionUser();if(!user||user.id!==syncUser.id)throw new Error('Account changed; cloud sync paused.');
-      const allowed=WRITE_COLLECTIONS[syncMembership.role]||[];let sent=0;
-      let fingerprints={};try{fingerprints=JSON.parse(localStorage.getItem('etihad_record_sync_cache_v1')||'{}')||{};}catch(_){fingerprints={};}
+      const allowed=WRITE_COLLECTIONS[syncMembership.role]||[];let sent=0,skippedConflicts=0;
+      let fingerprints={};try{fingerprints=JSON.parse(localStorage.getItem(SYNC_CACHE_KEY)||'{}')||{};}catch(_){fingerprints={};}
+      let conflicts={};try{conflicts=JSON.parse(localStorage.getItem(CONFLICT_KEY)||'{}')||{};}catch(_){conflicts={};}
       for(const collection of allowed){
         const records=readLocal(collection);
         for(const record of records){
           const rid=keyFor(record);if(!rid)throw new Error(collection+' contains a record without id; cloud sync paused.');
           const cacheKey=collection+':'+rid, fingerprint=JSON.stringify(record);
+          if(conflicts[cacheKey]){skippedConflicts++;continue;}
           if(fingerprints[cacheKey]===fingerprint)continue;
           const r=await client.from('etihad_records').upsert({org_id:ORG_ID,collection,record_id:rid,data:record,updated_by:user.id},{onConflict:'org_id,collection,record_id'});
           if(r.error)throw new Error(collection+' / '+rid+': '+r.error.message);
           fingerprints[cacheKey]=fingerprint;sent++;
         }
       }
-      localStorage.setItem('etihad_record_sync_cache_v1',JSON.stringify(fingerprints));
+      localStorage.setItem(SYNC_CACHE_KEY,JSON.stringify(fingerprints));
       const now=new Date().toISOString();localStorage.setItem('etihad_last_cloud_sync',now);
       const d=$('dashboardLastSync');if(d)d.textContent='Last cloud sync: '+new Date(now).toLocaleString();
-      message('Cloud sync complete: '+sent+' permitted records saved. Deletions are not synchronized.');
+      message('Cloud sync complete: '+sent+' records uploaded.'+(skippedConflicts?' '+skippedConflicts+' conflicting records were held back for review.':'')+' Deletions are not synchronized yet.');
     }catch(e){message('Saved locally; cloud sync needs attention: '+(e.message||String(e)));}
     finally{syncBusy=false;if(syncAgain)scheduleAutoSync();}
   }
@@ -3678,17 +3738,26 @@ if ('serviceWorker' in navigator) {
       const previousUser=localStorage.getItem(ACTIVE_USER_KEY);
       const accountChanged=!!previousUser&&previousUser!==user.id;
       if(m.role==='owner'&&!accountChanged){
-        // Preserve the owner's full local dataset on the owner's own device; cloud may be a partial first migration.
+        // Merge cloud records without replacing local work. Empty/new devices receive the company records automatically.
         localStorage.setItem(ACTIVE_USER_KEY,user.id);
-        message('Owner access verified. Your local company data is preserved. Use the cloud backup button for the first full upload.');
+        try{
+          message('Checking company cloud and safely merging records…');
+          const merged=await mergeCloudRecords();
+          if(merged.changed){
+            message('Loaded '+merged.imported+' new and '+merged.updated+' updated company records. Reloading…');
+            location.reload();return;
+          }
+          message(merged.conflicts?'Owner access verified. '+merged.conflicts+' record conflict(s) were preserved for review.':'Owner access verified. Local and cloud records are synchronized.');
+        }catch(syncError){
+          message('Owner access verified. Local records were preserved; cloud merge will be available when the cloud is ready.');
+        }
         revealApp(); enableAutoSync(user,m); return;
       }
-      message(m.role==='owner'?'Account changed. Loading company-wide cloud records…':'Loading only the records permitted for your account…');
-      const result=await permittedCloudRecords();
-      const changed=applyPermittedRecords(result.grouped);
+      message(m.role==='owner'?'Account changed. Safely merging company-wide cloud records…':'Loading and safely merging only the records permitted for your account…');
+      const result=await mergeCloudRecords();
       localStorage.setItem(ACTIVE_USER_KEY,user.id);
-      if(changed){message('Your authorized data is ready. Reloading safely…');location.reload();return;}
-      message('Access verified. '+result.total+' permitted company records loaded.');
+      if(result.changed){message('Your authorized company records are ready. Reloading safely…');location.reload();return;}
+      message('Access verified. '+result.total+' permitted company records checked.'+(result.conflicts?' '+result.conflicts+' conflict(s) were preserved for review.':''));
       revealApp(); enableAutoSync(user,m);
     }catch(e){ showLogin(); message('Access not granted: '+(e.message||String(e))); }
   }
