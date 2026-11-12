@@ -230,9 +230,7 @@ body{visibility:hidden!important}body.etihad-auth-ready{visibility:visible!impor
 
 <div id="etihadSplash" role="status" aria-live="polite">
   <img class="et-logo" src="etihad-icon-192.jpg" alt="Etihad Traders company logo">
-  <h1>ETIHAD TRADERS</h1>
-  <p>RETAIL & WHOLESALE MANAGEMENT</p>
-  <div class="et-loading">Preparing your workspace...</div>
+  <span class="et-loading" aria-label="Loading"></span>
 </div>
 
 <script>
@@ -1098,6 +1096,49 @@ function printInvoice(sid){
  <button onclick="window.print()">Print Invoice</button>
  </center>
 
+<style id="etihad-premium-design-system-v7">
+:root{--etihad-gold:#c49a45;--etihad-gold-light:#f0d58e;--etihad-radius:18px;--etihad-card-shadow:0 12px 34px rgba(15,23,42,.065)}
+body{background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:linear-gradient(112deg,#101923,#202a36 55%,#3a2d18);border-bottom:1px solid rgba(196,154,69,.35);box-shadow:0 12px 32px rgba(15,23,42,.12);padding:16px clamp(16px,3vw,42px)}
+header .etihad-brand-copy h2{color:#fff;font-size:clamp(18px,2vw,23px);letter-spacing:-.045em}
+header .etihad-brand-copy small{color:#d8c69f}header #today{color:#eadcbf;font-weight:650}
+nav#etihadMainNav{gap:8px;padding:11px clamp(12px,2.5vw,34px);border-bottom:1px solid var(--line);box-shadow:0 8px 22px rgba(15,23,42,.045)}
+nav#etihadMainNav button{padding:11px 15px;border:1px solid transparent;border-radius:12px;font-weight:750}
+main{max-width:1680px;padding:30px clamp(14px,2.8vw,42px) 110px}
+.page>h3{font-size:clamp(22px,2.3vw,29px);letter-spacing:-.055em;margin:5px 0 22px}
+.panel,.card{border-radius:18px;border-color:var(--line);box-shadow:var(--etihad-card-shadow)}.panel{padding:clamp(15px,1.6vw,23px)}.card{padding:19px;min-height:120px}.card strong{font-size:clamp(21px,2vw,27px);font-weight:850}
+.btn,button.btn{border-radius:12px;font-weight:750}.table-wrap{border-radius:14px;border:1px solid var(--line)}th{font-size:10px;letter-spacing:.09em}input,select,textarea{border-radius:12px;min-height:45px}
+.etihad-theme-options{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px!important}
+.etihad-theme-choice{display:flex!important;flex-direction:column;align-items:flex-start;gap:7px;min-height:126px;padding:16px!important;border:1px solid var(--line)!important;border-radius:16px!important;background:var(--surface)!important;color:var(--ink)!important;text-align:left;font-weight:800;box-shadow:0 5px 18px rgba(15,23,42,.045)}
+.etihad-theme-choice span{font-size:11px;font-weight:550;color:var(--muted)}.etihad-theme-choice .etihad-theme-swatch{display:block;width:100%;height:34px;border-radius:9px;margin:0 0 4px}
+.etihad-theme-choice[aria-pressed="true"]{border:2px solid var(--etihad-gold)!important;box-shadow:0 0 0 3px rgba(196,154,69,.15),0 9px 24px rgba(15,23,42,.08)}
+.etihad-theme-choice[aria-pressed="true"]::after{content:"✓ ACTIVE THEME";font-size:9px;letter-spacing:.1em;color:var(--etihad-gold);font-weight:900}
+#etihadSplash{background:radial-gradient(ellipse at 50% 45%,rgba(197,151,58,.22),transparent 42%),linear-gradient(145deg,#050607,#111820 58%,#08090b)}
+#etihadSplash::before{inset:14px;border:1px solid rgba(218,178,91,.3);border-radius:22px}
+#etihadSplash::after{width:min(94vw,540px);height:min(94vw,540px);border-color:rgba(218,178,91,.1)}
+#etihadSplash .et-logo{width:min(82vw,390px);max-height:56vh;margin:0;filter:drop-shadow(0 16px 38px rgba(218,178,91,.2))}
+#etihadSplash h1,#etihadSplash p{display:none!important}
+#etihadSplash .et-loading{position:absolute;bottom:8vh;width:18px;height:18px;margin:0;padding:0;font-size:0;gap:0}
+#etihadSplash .et-loading::before{width:18px;height:18px;border-width:2px;border-color:rgba(218,178,91,.22);border-top-color:#e8c36c}
+#etihadSplash .et-loading:empty{display:block}
+body.etihad-ocean{--bg:#eef5f9;--surface:#fff;--ink:#102b3c;--muted:#607b8b;--line:#d8e6ed;--primary:#0e7490;--shadow:0 12px 32px rgba(8,47,73,.08);background:var(--bg);color:var(--ink)}
+body.etihad-ocean header{background:linear-gradient(120deg,#082f49,#0e7490)}body.etihad-ocean nav#etihadMainNav button{color:#31586b}body.etihad-ocean nav#etihadMainNav button.active{background:#d9edf4;color:#07506a}
+body.etihad-ocean .btn:not(.red):not(.gray){background:linear-gradient(135deg,#0e7490,#155e75)}body.etihad-ocean h3,body.etihad-ocean .page>h3,body.etihad-ocean .card strong{color:#123d55}body.etihad-ocean th{background:#e8f2f6;color:#456779}
+body.etihad-graphite{--bg:#171b22;--surface:#222832;--ink:#edf1f6;--muted:#a2adbb;--line:#343e4b;--primary:#a9b8ca;--shadow:0 12px 32px rgba(0,0,0,.24);background:var(--bg);color:var(--ink)}
+body.etihad-graphite header{background:linear-gradient(120deg,#101318,#303946)}body.etihad-graphite nav#etihadMainNav{background:#202630;border-color:var(--line)}body.etihad-graphite nav#etihadMainNav button{color:#c4ced9}body.etihad-graphite nav#etihadMainNav button.active{background:#3b4655;color:#fff}
+body.etihad-graphite h3,body.etihad-graphite .page>h3,body.etihad-graphite .card strong,body.etihad-graphite .total{color:#edf1f6}body.etihad-graphite .panel,body.etihad-graphite .card{background:var(--surface);border-color:var(--line)}
+body.etihad-graphite input,body.etihad-graphite select,body.etihad-graphite textarea{background:#171d25;color:#edf1f6;border-color:#46515f}body.etihad-graphite th{background:#2c3541;color:#d0d8e2}body.etihad-graphite td{color:#e0e6ed;border-color:#343e4b}
+body.etihad-sand{--bg:#f5f0e7;--surface:#fffdf8;--ink:#382f22;--muted:#82745f;--line:#e8ddca;--primary:#9a7135;--shadow:0 12px 30px rgba(91,66,28,.07);background:var(--bg);color:var(--ink)}
+body.etihad-sand header{background:linear-gradient(120deg,#46351e,#8a6834)}body.etihad-sand nav#etihadMainNav button{color:#6f5a3d}body.etihad-sand nav#etihadMainNav button.active{background:#efe3cd;color:#654719}
+body.etihad-sand h3,body.etihad-sand .page>h3,body.etihad-sand .card strong{color:#594323}body.etihad-sand .panel,body.etihad-sand .card{background:var(--surface);border-color:var(--line)}body.etihad-sand th{background:#f2eadc;color:#786346}body.etihad-sand .btn:not(.red):not(.gray){background:linear-gradient(135deg,#98702f,#bd9148);color:#fff}
+body.etihad-blackgold{--bg:#11100e;--surface:#1b1915;--ink:#f3ead6;--muted:#b6a98d;--line:#403725;--primary:#c49a45;--shadow:0 12px 34px rgba(0,0,0,.28);background:var(--bg);color:var(--ink)}
+body.etihad-blackgold header{background:linear-gradient(115deg,#080808,#201b12 60%,#59431f);border-color:#6f562a}body.etihad-blackgold nav#etihadMainNav{background:#191713;border-color:#403725}body.etihad-blackgold nav#etihadMainNav button{color:#d8c9a8}body.etihad-blackgold nav#etihadMainNav button.active{background:linear-gradient(135deg,#b58a37,#e4c675);color:#17130b}
+body.etihad-blackgold h3,body.etihad-blackgold .page>h3,body.etihad-blackgold .card strong,body.etihad-blackgold .total{color:#f0d58e}body.etihad-blackgold .panel,body.etihad-blackgold .card{background:var(--surface);border-color:var(--line)}
+body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold textarea{background:#12110e;color:#f3ead6;border-color:#594725}body.etihad-blackgold th{background:#28231a;color:#dfc98e}body.etihad-blackgold td{color:#eee5d2;border-color:#403725}body.etihad-blackgold .btn:not(.red):not(.gray){background:linear-gradient(135deg,#a77b2c,#d5b35c);color:#18140b}
+@media(max-width:700px){main{padding:18px 11px 96px}.etihad-theme-options{grid-template-columns:repeat(2,minmax(0,1fr))!important}.etihad-theme-choice{min-height:116px;padding:12px!important}header{padding:13px 12px}}
+@media(max-width:380px){.etihad-theme-options{grid-template-columns:1fr!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
 </body>
  </html>`;
 
@@ -3975,11 +4016,14 @@ if ('serviceWorker' in navigator) {
 (function(){
  'use strict';
  const $=id=>document.getElementById(id);
- const THEMES=['light','dark','emerald','blackgold'];
- const themeNames={light:'Light',dark:'Dark',emerald:'Emerald',blackgold:'Black & Gold'};
+ const THEMES=['light','dark','emerald','blackgold','ocean','graphite','sand'];
+ const themeNames={light:'Light',dark:'Dark',emerald:'Emerald',blackgold:'Black & Gold',ocean:'Ocean Blue',graphite:'Graphite',sand:'Warm Sand'};
  function applyTheme(theme){
   if(!THEMES.includes(theme))theme='light';
-  document.body.classList.remove('etihad-dark','etihad-emerald','etihad-blackgold');
+  document.body.classList.remove('etihad-dark','etihad-emerald','etihad-blackgold','etihad-ocean','etihad-graphite','etihad-sand');
+   if(theme==='ocean')document.body.classList.add('etihad-ocean');
+   if(theme==='graphite')document.body.classList.add('etihad-graphite');
+   if(theme==='sand')document.body.classList.add('etihad-sand');
   if(theme==='dark')document.body.classList.add('etihad-dark');
   if(theme==='emerald')document.body.classList.add('etihad-emerald');
   if(theme==='blackgold')document.body.classList.add('etihad-blackgold');
@@ -3994,7 +4038,7 @@ if ('serviceWorker' in navigator) {
  if(settings){
   settings.querySelector('h3')?.replaceWith(Object.assign(document.createElement('h3'),{textContent:'Settings & Personalisation'}));
   const panel=document.createElement('div');panel.className='panel';panel.id='etihadAppearanceSettings';
-  panel.innerHTML=`<h3>Appearance & Theme</h3><p class="muted">Choose the look that feels best for your business. Your selection is saved on this device.</p><div class="etihad-theme-options"><button type="button" class="etihad-theme-choice" data-etihad-theme="light" aria-pressed="false"><i class="etihad-theme-swatch" style="background:#f4f7fb;border:1px solid #cbd5e1"></i>Light<span>Bright, clean workspace</span></button><button type="button" class="etihad-theme-choice" data-etihad-theme="dark" aria-pressed="false"><i class="etihad-theme-swatch" style="background:#111827"></i>Dark<span>Comfortable low-light view</span></button><button type="button" class="etihad-theme-choice" data-etihad-theme="emerald" aria-pressed="false"><i class="etihad-theme-swatch" style="background:#07866d"></i>Emerald<span>Fresh green business style</span></button><button type="button" class="etihad-theme-choice" data-etihad-theme="blackgold" aria-pressed="false"><i class="etihad-theme-swatch" style="background:linear-gradient(135deg,#080808 50%,#d6b45c 50%)"></i>Black & Gold<span>Premium black and golden finish</span></button></div><p id="etihadCurrentTheme" class="muted" aria-live="polite"></p><div class="etihad-subheading"><h3>Business Logo</h3></div><p class="muted">Upload your shop or company logo. It will appear beside Etihad Traders at the top of the app and be saved on this device.</p><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:12px 0"><img id="etihadLogoPreview" class="etihad-logo-preview" alt="Business logo preview"><div style="flex:1;min-width:220px"><label for="etihadLogoFile">Choose logo image</label><input id="etihadLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"><small class="muted">PNG, JPG, WEBP or SVG · Maximum 2 MB</small></div></div><button type="button" class="btn gray" id="etihadRemoveLogo">Remove Logo</button><p id="etihadLogoStatus" class="muted" aria-live="polite"></p>`;
+  panel.innerHTML=`<h3>Appearance & Theme</h3><p class="muted">Choose the look that feels best for your business. Your selection is saved on this device.</p><div class="etihad-theme-options"><button type="button" class="etihad-theme-choice" data-etihad-theme="light" aria-pressed="false"><i class="etihad-theme-swatch" style="background:#f4f7fb;border:1px solid #cbd5e1"></i>Light<span>Bright, clean workspace</span></button><button type="button" class="etihad-theme-choice" data-etihad-theme="dark" aria-pressed="false"><i class="etihad-theme-swatch" style="background:#111827"></i>Dark<span>Comfortable low-light view</span></button><button type="button" class="etihad-theme-choice" data-etihad-theme="emerald" aria-pressed="false"><i class="etihad-theme-swatch" style="background:#07866d"></i>Emerald<span>Fresh green business style</span></button><button type="button" class="etihad-theme-choice" data-etihad-theme="blackgold" aria-pressed="false"><i class="etihad-theme-swatch" style="background:linear-gradient(135deg,#080808 50%,#d6b45c 50%)"></i>Black & Gold<span>Signature luxury brand finish</span></button><button type="button" class="etihad-theme-choice" data-etihad-theme="ocean" aria-pressed="false"><i class="etihad-theme-swatch" style="background:linear-gradient(135deg,#082f49,#0e7490)"></i>Ocean Blue<span>Confident modern business blue</span></button><button type="button" class="etihad-theme-choice" data-etihad-theme="graphite" aria-pressed="false"><i class="etihad-theme-swatch" style="background:linear-gradient(135deg,#171b22,#657184)"></i>Graphite<span>Minimal professional dark workspace</span></button><button type="button" class="etihad-theme-choice" data-etihad-theme="sand" aria-pressed="false"><i class="etihad-theme-swatch" style="background:linear-gradient(135deg,#f7f0e2,#c5a46d)"></i>Warm Sand<span>Soft elegant neutral workspace</span></button></div><p id="etihadCurrentTheme" class="muted" aria-live="polite"></p><div class="etihad-subheading"><h3>Business Logo</h3></div><p class="muted">Upload your shop or company logo. It will appear beside Etihad Traders at the top of the app and be saved on this device.</p><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:12px 0"><img id="etihadLogoPreview" class="etihad-logo-preview" alt="Business logo preview"><div style="flex:1;min-width:220px"><label for="etihadLogoFile">Choose logo image</label><input id="etihadLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"><small class="muted">PNG, JPG, WEBP or SVG · Maximum 2 MB</small></div></div><button type="button" class="btn gray" id="etihadRemoveLogo">Remove Logo</button><p id="etihadLogoStatus" class="muted" aria-live="polite"></p>`;
   const backupHeading=settings.querySelector('h3');backupHeading?.after(panel);
   const backupPanels=[...settings.querySelectorAll('.panel')];
   if(backupPanels.length>1){const h=backupPanels[1].querySelector('h3');if(h)h.textContent='Data Backup & Restore';}
