@@ -3435,19 +3435,57 @@ renderAll();
  refresh();
 })();
 </script>
+
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('service-worker.js')
-      .then(function(registration) {
-        console.log('Etihad Traders app is ready:', registration.scope);
-      })
-      .catch(function(error) {
-        console.error('App installation support error:', error);
-      });
+  window.addEventListener('load', async function() {
+    try {
+      const hadController = !!navigator.serviceWorker.controller;
+
+      const registration = await navigator.serviceWorker.register(
+        'service-worker.js',
+        { updateViaCache: 'none' }
+      );
+
+      console.log(
+        'Etihad Traders app is ready:',
+        registration.scope
+      );
+
+      // Check GitHub Pages for a newer application version.
+      await registration.update();
+
+      // Detect when a new version takes control.
+      let updatePromptShown = false;
+
+      navigator.serviceWorker.addEventListener(
+        'controllerchange',
+        function() {
+          if (!hadController || updatePromptShown) return;
+
+          updatePromptShown = true;
+
+          const reloadNow = confirm(
+            'A new Etihad Traders version is available. ' +
+            'Reload now to use the latest version?'
+          );
+
+          if (reloadNow) {
+            window.location.reload();
+          }
+        }
+      );
+
+    } catch (error) {
+      console.error(
+        'Etihad Traders update check failed:',
+        error
+      );
+    }
   });
 }
 </script>
+
  <style>
 #etihadNetworkStatus {
   position: fixed;
