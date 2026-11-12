@@ -132,6 +132,50 @@ body{visibility:hidden!important}body.etihad-auth-ready{visibility:visible!impor
 .etihad-brand-copy{min-width:0}.etihad-brand-copy h2{margin:0;font-size:20px;overflow-wrap:anywhere}
 @media(max-width:600px){#etihadHeaderLogo{width:65px!important;height:42px!important;min-width:65px!important;max-width:65px!important;max-height:42px!important;flex-basis:65px!important}.etihad-brand-copy h2{font-size:16px}}
 </style>
+<style id="etihad-live-premium-ui">
+:root{--et-gold:#c9a04e;--et-gold-bright:#efd58f;--et-radius:18px}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+header{background:linear-gradient(112deg,#111820 0%,#202a34 58%,#47371d 100%);border-bottom:1px solid rgba(201,160,78,.42);box-shadow:0 10px 30px rgba(9,15,22,.18)}
+nav#etihadMainNav{background:rgba(255,255,255,.94);backdrop-filter:blur(16px);gap:8px;padding:11px clamp(10px,2.5vw,30px);border-bottom:1px solid var(--line);box-shadow:0 6px 22px rgba(15,23,42,.06)}
+nav#etihadMainNav button{border:1px solid transparent;border-radius:12px;padding:11px 15px;color:#526174;font-weight:750;transition:background .18s,border-color .18s,transform .18s}
+nav#etihadMainNav button:hover{background:#f7f1e4;border-color:#ead9b2;color:#74551d}
+nav#etihadMainNav button.active{background:linear-gradient(135deg,#a97d2e,#d9b967);color:#17130b;box-shadow:0 5px 14px rgba(169,125,46,.22)}
+button,.btn{font-family:inherit}
+.btn,button.btn{border:1px solid transparent;border-radius:12px;padding:11px 16px;font-weight:750;box-shadow:0 5px 14px rgba(15,23,42,.09);transition:transform .18s,box-shadow .18s,filter .18s}
+.btn:hover,button.btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(15,23,42,.14);filter:brightness(1.04)}
+.btn:focus-visible,button:focus-visible{outline:3px solid rgba(201,160,78,.45);outline-offset:2px}
+.etihad-theme-options{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:15px!important;margin:18px 0 10px}
+.etihad-theme-choice{position:relative!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:10px!important;min-height:150px!important;padding:14px!important;border:1px solid var(--line)!important;border-radius:18px!important;background:var(--surface,#fff)!important;color:var(--ink,#172b4d)!important;text-align:left!important;font-size:14px!important;font-weight:800!important;line-height:1.35!important;box-shadow:0 6px 20px rgba(15,23,42,.07)!important;cursor:pointer!important;transition:transform .18s,border-color .18s,box-shadow .18s!important}
+.etihad-theme-choice:hover{transform:translateY(-3px)!important;border-color:var(--et-gold)!important;box-shadow:0 13px 28px rgba(15,23,42,.13)!important}
+.etihad-theme-choice .etihad-theme-swatch{display:block!important;position:relative;width:100%!important;height:64px!important;min-height:64px;border-radius:12px!important;margin:0!important;border:1px solid rgba(120,130,145,.22);overflow:hidden}
+.etihad-theme-choice .etihad-theme-swatch:after{content:"Aa  123  ✓";position:absolute;right:11px;bottom:8px;color:rgba(255,255,255,.94);font-size:11px;font-weight:850;letter-spacing:.04em;text-shadow:0 1px 4px #0007}
+.etihad-theme-choice[data-etihad-theme="light"] .etihad-theme-swatch{background:linear-gradient(120deg,#fff 0 58%,#e6edf5 58%)!important}
+.etihad-theme-choice[data-etihad-theme="light"] .etihad-theme-swatch:after{color:#475569;text-shadow:none}
+.etihad-theme-choice[data-etihad-theme="dark"] .etihad-theme-swatch{background:linear-gradient(120deg,#111827,#334155)!important}
+.etihad-theme-choice[data-etihad-theme="emerald"] .etihad-theme-swatch{background:linear-gradient(120deg,#064e3b,#059669 62%,#a7f3d0)!important}
+.etihad-theme-choice[data-etihad-theme="blackgold"] .etihad-theme-swatch{background:linear-gradient(120deg,#090909 0 55%,#a77b2c 55%,#f0d58e)!important}
+.etihad-theme-choice[data-etihad-theme="ocean"] .etihad-theme-swatch{background:linear-gradient(120deg,#082f49,#0e7490 62%,#bae6fd)!important}
+.etihad-theme-choice[data-etihad-theme="graphite"] .etihad-theme-swatch{background:linear-gradient(120deg,#171b22,#465365 62%,#aab7c8)!important}
+.etihad-theme-choice[data-etihad-theme="sand"] .etihad-theme-swatch{background:linear-gradient(120deg,#f7f0e2,#c5a46d 62%,#76572c)!important}
+.etihad-theme-choice>span{display:block!important;color:var(--muted,#64748b)!important;font-size:11px!important;font-weight:550!important;line-height:1.45!important}
+.etihad-theme-choice[aria-pressed="true"]{border:2px solid var(--et-gold)!important;padding:13px!important;box-shadow:0 0 0 3px rgba(201,160,78,.16),0 12px 26px rgba(15,23,42,.11)!important}
+.etihad-theme-choice[aria-pressed="true"]:after{content:"✓ ACTIVE THEME";position:absolute;right:11px;top:11px;padding:5px 8px;border-radius:20px;background:#c9a04e;color:#17130b;font-size:9px;font-weight:900;letter-spacing:.06em}
+body.etihad-dark{--bg:#0d1420;--surface:#172233;--ink:#edf3fa;--muted:#a5b3c5;--line:#2b3a4e;background:var(--bg);color:var(--ink)}
+body.etihad-dark header{background:linear-gradient(115deg,#080d15,#1a2a3c)}body.etihad-dark nav#etihadMainNav{background:#131e2d;border-color:var(--line)}body.etihad-dark nav#etihadMainNav button{color:#c4d0df}body.etihad-dark nav#etihadMainNav button.active{background:#d0aa5b;color:#17130b}
+body.etihad-dark .panel,body.etihad-dark .card{background:var(--surface);border-color:var(--line)}body.etihad-dark h3,body.etihad-dark .page>h3,body.etihad-dark .card strong,body.etihad-dark td{color:var(--ink)}body.etihad-dark th{background:#202e40;color:#d7e0eb}body.etihad-dark input,body.etihad-dark select,body.etihad-dark textarea{background:#101a28;color:var(--ink);border-color:var(--line)}
+body.etihad-emerald{--bg:#eef7f3;--surface:#fff;--ink:#123c30;--muted:#668477;--line:#d5e8df;background:var(--bg);color:var(--ink)}
+body.etihad-emerald header{background:linear-gradient(115deg,#073c2f,#0b7557)}body.etihad-emerald nav#etihadMainNav button.active{background:linear-gradient(135deg,#087653,#22a477);color:white}body.etihad-emerald h3,body.etihad-emerald .page>h3,body.etihad-emerald .card strong{color:#14533f}
+body.etihad-ocean{--bg:#eef5f9;--surface:#fff;--ink:#102b3c;--muted:#607b8b;--line:#d8e6ed;background:var(--bg);color:var(--ink)}
+body.etihad-graphite{--bg:#171b22;--surface:#222832;--ink:#edf1f6;--muted:#a2adbb;--line:#343e4b;background:var(--bg);color:var(--ink)}
+body.etihad-sand{--bg:#f5f0e7;--surface:#fffdf8;--ink:#382f22;--muted:#82745f;--line:#e8ddca;background:var(--bg);color:var(--ink)}
+body.etihad-blackgold{--bg:#11100e;--surface:#1b1915;--ink:#f3ead6;--muted:#b6a98d;--line:#403725;background:var(--bg);color:var(--ink)}
+body.etihad-blackgold header{background:linear-gradient(115deg,#080808,#201b12 60%,#59431f)}
+body.etihad-blackgold nav#etihadMainNav{background:#191713;border-color:#403725}body.etihad-blackgold nav#etihadMainNav button{color:#d8c9a8}body.etihad-blackgold nav#etihadMainNav button.active{background:linear-gradient(135deg,#b58a37,#e4c675);color:#17130b}
+body.etihad-blackgold .panel,body.etihad-blackgold .card{background:var(--surface);border-color:var(--line)}body.etihad-blackgold h3,body.etihad-blackgold .page>h3,body.etihad-blackgold .card strong,body.etihad-blackgold .total{color:#f0d58e}body.etihad-blackgold th{background:#28231a;color:#dfc98e}body.etihad-blackgold td{color:#eee5d2}
+@media(max-width:700px){.etihad-theme-options{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.etihad-theme-choice{min-height:137px!important;padding:11px!important;border-radius:15px!important}.etihad-theme-choice .etihad-theme-swatch{height:54px!important;min-height:54px!important}nav#etihadMainNav button{padding:10px 12px;font-size:12px}}
+@media(max-width:360px){.etihad-theme-options{grid-template-columns:1fr!important}}
+@media(prefers-reduced-motion:reduce){.etihad-theme-choice,.btn,button{transition:none!important}}
+</style>
 </head>
 <body>
 <style>
@@ -228,24 +272,31 @@ body{visibility:hidden!important}body.etihad-auth-ready{visibility:visible!impor
 }
 </style>
 
+<style id="etihad-splash-fallback">
+#etihadSplash{background:radial-gradient(ellipse at 50% 40%,rgba(201,160,78,.2),transparent 48%),linear-gradient(145deg,#050607,#111820 58%,#08090b)}
+#etihadSplash.etihad-splash-leaving{opacity:0;pointer-events:none}
+#etihadSplash .et-logo-fallback{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:16px;color:#f0d58e;font-family:Georgia,serif;letter-spacing:.16em}
+#etihadSplash .et-logo-fallback span{display:grid;place-items:center;width:118px;height:118px;border:2px solid #c9a04e;border-radius:50%;font-size:42px;font-weight:800;box-shadow:0 0 0 8px rgba(201,160,78,.08),0 14px 45px #0008}
+#etihadSplash .et-logo-fallback b{font:800 13px/1.4 Inter,Arial,sans-serif;letter-spacing:.24em}
+</style>
 <div id="etihadSplash" role="status" aria-live="polite">
-  <img class="et-logo" src="etihad-brand-192-v3.jpg" alt="Etihad Traders company logo">
+  <img class="et-logo" src="etihad-brand-192-v3.jpg" alt="Etihad Traders company logo" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'et-logo-fallback',innerHTML:'<span>ET</span><b>ETIHAD TRADERS</b>'}))">
   <span class="et-loading" aria-label="Loading"></span>
 </div>
 
 <script>
 (function() {
-  setTimeout(function() {
-    const splash = document.getElementById('etihadSplash');
-
-    if (splash) {
-      splash.style.opacity = '0';
-
-      setTimeout(function() {
-        splash.style.display = 'none';
-      }, 500);
-    }
-  }, 1800);
+  const splash = document.getElementById('etihadSplash');
+  const logo = splash && splash.querySelector('.et-logo');
+  try {
+    const savedLogo = localStorage.getItem('etihad_business_logo');
+    if (logo && savedLogo && /^data:image\/(png|jpeg|webp);base64,/i.test(savedLogo)) logo.src = savedLogo;
+  } catch (_) {}
+  window.setTimeout(function() {
+    if (!splash) return;
+    splash.classList.add('etihad-splash-leaving');
+    window.setTimeout(function() { splash.remove(); }, 420);
+  }, 1100);
 })();
 </script>
 <header>
