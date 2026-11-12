@@ -3559,6 +3559,7 @@ if ('serviceWorker' in navigator) {
       <p id="etCloudUser"></p><p id="etCloudRole" style="font-weight:bold"></p>
       <button id="etCloudUpload" style="padding:11px;background:#16845b;color:white;border:0;border-radius:7px;margin:3px">Back up local records to company cloud</button>
       <button id="etCloudDownload" style="padding:11px;background:#1769aa;color:white;border:0;border-radius:7px;margin:3px">Refresh my permitted company data</button>
+      <button id="etCloudUseCompany" style="padding:11px;background:#7c3aed;color:white;border:0;border-radius:7px;margin:3px;display:none">Use company cloud records on this device</button>
       <button id="etCloudLogout" style="padding:11px;background:#64748b;color:white;border:0;border-radius:7px;margin:3px">Logout</button>
     </div>
     <p id="etCloudStatus" role="status" style="font-size:13px;color:#475569;margin-top:14px">Checking your company account…</p>
@@ -3641,6 +3642,26 @@ if ('serviceWorker' in navigator) {
     localStorage.setItem(SYNC_CACHE_KEY,syncJson(fingerprints));
     localStorage.setItem(CONFLICT_KEY,syncJson(conflicts));
     return {changed,imported,updated,conflicts:conflictCount,total:result.total};
+  }
+  async function applyCompanyCloudAsSource(){
+    const result=await permittedCloudRecords();
+    const fingerprints=(()=>{try{return JSON.parse(localStorage.getItem(SYNC_CACHE_KEY)||'{}')||{};}catch(_){return {};}})();
+    const conflicts=(()=>{try{return JSON.parse(localStorage.getItem(CONFLICT_KEY)||'{}')||{};}catch(_){return {};}})();
+    let replaced=0, imported=0;
+    for(const collection of COLLECTIONS){
+      const local=readLocal(collection), byId=new Map(local.map((r,i)=>[keyFor(r),i]));
+      for(const remote of (result.grouped[collection]||[])){
+        const rid=keyFor(remote);if(!rid)continue;
+        const cacheKey=collection+':'+rid, index=byId.get(rid);
+        if(index===undefined){local.push(remote);byId.set(rid,local.length-1);imported++;}
+        else if(syncJson(local[index])!==syncJson(remote)){local[index]=remote;replaced++;}
+        fingerprints[cacheKey]=syncJson(remote);delete conflicts[cacheKey];
+      }
+      localStorage.setItem(collection,syncJson(local));
+    }
+    localStorage.setItem(SYNC_CACHE_KEY,syncJson(fingerprints));
+    localStorage.setItem(CONFLICT_KEY,syncJson(conflicts));
+    return {replaced,imported,total:result.total};
   }
   const WRITE_COLLECTIONS={
     owner:COLLECTIONS,
@@ -3746,6 +3767,7 @@ if ('serviceWorker' in navigator) {
       $('etCloudRole').textContent='Company role: '+m.role;
       $('etihadCloudLogin').style.display='none'; $('etihadCloudControls').style.display='block';
       $('etCloudUpload').style.display=m.role==='owner'?'inline-block':'none';
+      $('etCloudUseCompany').style.display=m.role==='owner'?'inline-block':'none';
       const previousUser=localStorage.getItem(ACTIVE_USER_KEY);
       const accountChanged=!!previousUser&&previousUser!==user.id;
       if(m.role==='owner'&&!accountChanged){
@@ -3806,6 +3828,20 @@ if ('serviceWorker' in navigator) {
       message('Cloud refresh complete: '+result.imported+' new and '+result.updated+' updated records.'+(result.conflicts?' '+result.conflicts+' conflicts were preserved without overwriting either copy.':''));
       if(result.changed)location.reload();
     }catch(e){message('Refresh stopped safely: '+(e.message||String(e)));}
+  };
+  $('etCloudUseCompany').onclick=async()=>{
+    if(!confirm('Use the company cloud as the correct source for records on THIS device? A safety backup will be downloaded first. Matching local records will be replaced by their cloud copies; device-only records will be kept.'))return;
+    const button=$('etCloudUseCompany');button.disabled=true;
+    try{
+      message('Downloading a safety backup before resolving conflicts…');
+      const user=await sessionUser();if(!user)throw new Error('Please log in again.');
+      const m=await membership(user);if(m.role!=='owner')throw new Error('Only the company owner can resolve these conflicts.');
+      backupLocal();
+      const result=await applyCompanyCloudAsSource();
+      message('Company cloud applied safely: '+result.replaced+' matching records updated, '+result.imported+' cloud records added. Device-only records were preserved. Reloading…');
+      setTimeout(()=>location.reload(),900);
+    }catch(e){message('Conflict resolution stopped safely: '+(e.message||String(e)));}
+    finally{button.disabled=false;}
   };
   $('etCloudLogout').onclick=async()=>{
     if(!confirm('Log out of Etihad Traders on this device?'))return;
