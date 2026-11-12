@@ -3787,8 +3787,14 @@ if ('serviceWorker' in navigator) {
     }catch(e){message('Upload stopped: '+(e.message||String(e)));}
   };
   $('etCloudDownload').onclick=async()=>{
-    try{message('Refreshing your permitted company records…');const user=await sessionUser();if(!user)throw new Error('Please log in again.');await membership(user);const result=await permittedCloudRecords();backupLocal();applyPermittedRecords(result.grouped);message('Your permitted records were refreshed. Reloading…');location.reload();}
-    catch(e){message('Refresh stopped safely: '+(e.message||String(e)));}
+    try{
+      message('Creating a safety backup and merging permitted company records…');
+      const user=await sessionUser();if(!user)throw new Error('Please log in again.');
+      await membership(user);backupLocal();
+      const result=await mergeCloudRecords();
+      message('Cloud refresh complete: '+result.imported+' new and '+result.updated+' updated records.'+(result.conflicts?' '+result.conflicts+' conflicts were preserved without overwriting either copy.':''));
+      if(result.changed)location.reload();
+    }catch(e){message('Refresh stopped safely: '+(e.message||String(e)));}
   };
   $('etCloudLogout').onclick=async()=>{
     if(!confirm('Log out of Etihad Traders on this device?'))return;
