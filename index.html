@@ -1214,6 +1214,134 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
 @media(prefers-reduced-motion:reduce){.etihad-theme-choice{transition:none!important}}
 
 </style>
+
+<script id="etihad-simple-customer-ledger">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const digits=v=>String(v||'').replace(/\D/g,'');
+ const identity=(name,phone)=>digits(phone)?'phone:'+digits(phone):'name:'+String(name||'').trim().toLowerCase();
+ const keyFor=(name,phone,branch)=>identity(name,phone)+'|branch:'+String(branch||'');
+ const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const fmt=v=>'PKR '+Number(v||0).toLocaleString('en-PK',{maximumFractionDigits:2});
+ const stamp=v=>{const d=new Date(v||Date.now());return Number.isNaN(d.getTime())?'—':d.toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'});};
+ const paymentBranch=p=>p.branchId||(p.saleId?(sales.find(s=>String(s.id)===String(p.saleId))||{}).branchId:'')||'';
+ const paymentIdentity=p=>identity(p.customerName,p.customerPhone);
+ const sameAccount=(p,c)=>paymentIdentity(p)===identity(c.name,c.phone)&&String(paymentBranch(p))===String(c.branchId);
+ function advanceBalance(c){return payments.filter(p=>sameAccount(p,c)).reduce((n,p)=>n+(p.type==='customer_advance'?Number(p.amount||0):p.type==='advance_applied'?-Number(p.amount||0):0),0);}
+ function accountRows(){
+  const map=new Map();
+  function ensure(name,phone,branch,label){
+   const key=keyFor(name,phone,branch);
+   if(!map.has(key))map.set(key,{key,name:name||'Customer',phone:phone||'',branchId:String(branch||''),branchName:label||branchName(branch),sales:[],total:0,paid:0,due:0,advance:0});
+   const c=map.get(key);if((!c.name||c.name==='Customer')&&name)c.name=name;if(!c.phone&&phone)c.phone=phone;return c;
+  }
+  sales.forEach(s=>{const name=s.customerName||'Walk-in Customer',phone=s.customerPhone||'',branch=String(s.branchId||'');if(name==='Walk-in Customer'&&!phone)return;const c=ensure(name,phone,branch,s.branchName);c.sales.push(s);c.total+=saleTotal(s);c.paid+=salePaid(s);c.due+=saleDue(s);});
+  payments.filter(p=>p.type==='customer_advance').forEach(p=>{const branch=paymentBranch(p);if(branch)ensure(p.customerName,p.customerPhone,branch,p.branchName);});
+  map.forEach(c=>c.advance=advanceBalance(c));
+  return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name)||a.branchName.localeCompare(b.branchName));
+ }
+ function invoicePayments(s){return payments.filter(p=>String(p.saleId||'')===String(s.id)&&p.type!=='advance_applied'&&p.type!=='customer_advance');}
+ function eventsFor(c){
+  const out=[];
+  c.sales.forEach(s=>{
+   const later=invoicePayments(s).reduce((n,p)=>n+Number(p.amount||0),0),used=Number(s.advanceApplied||0),atSale=Math.max(0,salePaid(s)-later-used);
+   out.push({date:s.date,type:'Products taken / invoice',ref:invoiceNo(s),amount:-saleTotal(s),detail:(s.items||[]).map(i=>(i.name||'Product')+' × '+Number(i.qty||0)).join(', ')||'Sale invoice'});
+   if(atSale>0)out.push({date:s.date,type:'Paid at checkout',ref:invoiceNo(s),amount:atSale,detail:'Payment received with sale'});
+   if(used>0)out.push({date:s.date,type:'Advance used for invoice',ref:invoiceNo(s),amount:0,display:used,detail:'Used from saved customer advance'});
+   invoicePayments(s).forEach(p=>out.push({date:p.date,type:'Payment received',ref:p.receiptNo||invoiceNo(s),amount:Number(p.amount||0),detail:(p.method||'Payment')+(p.note?' · '+p.note:'' )}));
+  });
+  payments.filter(p=>sameAccount(p,c)).forEach(p=>{
+   if(p.type==='customer_advance')out.push({date:p.date,type:'Extra cash added to account',ref:p.receiptNo||'ADVANCE',amount:Number(p.amount||0),detail:(p.method||'Cash')+(p.note?' · '+p.note:'' )});
+   else if(p.type==='advance_applied'&&!c.sales.some(s=>String(s.id)===String(p.saleId)))out.push({date:p.date,type:'Advance used for invoice',ref:p.invoiceNo||'Invoice',amount:0,display:Number(p.amount||0),detail:'Used from saved customer advance'});
+  });
+  return out.sort((a,b)=>new Date(a.date||0)-new Date(b.date||0));
+ }
+ let selectedKey='';
+ function currentAccount(){return accountRows().find(c=>c.key===selectedKey)||null;}
+ window.renderCustomers=function(){
+  const list=accountRows(),q=($('customerSearch')?.value||'').trim().toLowerCase();
+  const due=list.reduce((n,c)=>n+c.due,0),advance=list.reduce((n,c)=>n+c.advance,0);
+  $('customerCards').innerHTML='<div class="card"><small>Customer accounts</small><strong>'+list.length+'</strong></div><div class="card"><small>Customers owe</small><strong class="bad">'+fmt(due)+'</strong></div><div class="card"><small>Extra cash held</small><strong class="good">'+fmt(advance)+'</strong></div>';
+  const filtered=list.filter(c=>(c.name+' '+c.phone+' '+c.branchName).toLowerCase().includes(q));
+  $('customersTable').innerHTML=filtered.map(c=>'<tr><td><b>'+safe(c.name)+'</b><br><small>'+safe(c.branchName)+'</small></td><td>'+safe(c.phone||'—')+'</td><td>'+c.sales.length+'</td><td>'+fmt(c.total)+'</td><td>'+fmt(c.paid)+'</td><td class="'+(c.due>0?'bad':'good')+'">'+(c.due>0?'−':'')+fmt(c.due)+'</td><td class="good">+'+fmt(c.advance)+'</td><td><button class="btn small light" data-et-ledger-open="'+encodeURIComponent(c.key)+'">Open account</button></td></tr>').join('')||'<tr><td colspan="8" class="empty">No customer accounts found.</td></tr>';
+  const table=$('customersTable').closest('table');
+  if(table&&table.tHead&&table.tHead.rows[0]&&table.tHead.rows[0].cells.length===7)table.tHead.rows[0].insertAdjacentHTML('beforeend','<th>Extra cash</th>');
+ };
+ window.viewCustomerLedger=function(encoded){
+  const c=accountRows().find(x=>x.key===decodeURIComponent(encoded));if(!c)return;
+  selectedKey=c.key;selectedCustomer=c.key;
+  const ev=eventsFor(c).slice().reverse(),net=c.advance-c.due;
+  const invoices=c.sales.slice().sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).map(s=>'<tr><td>'+safe(invoiceNo(s))+'</td><td>'+safe(stamp(s.date))+'</td><td>'+safe((s.items||[]).map(i=>(i.name||'Product')+' × '+Number(i.qty||0)).join(', '))+'</td><td>'+fmt(saleTotal(s))+'</td><td>'+fmt(salePaid(s))+'</td><td class="'+(saleDue(s)>0?'bad':'good')+'">'+fmt(saleDue(s))+'</td><td><button class="btn small light" data-et-invoice="'+safe(s.id)+'">Invoice</button>'+(saleDue(s)>0?'<button class="btn small green" data-et-collect="'+safe(s.id)+'">Receive payment</button>':'')+'</td></tr>').join('');
+  const history=ev.map(e=>'<tr><td>'+safe(stamp(e.date))+'</td><td>'+safe(e.type)+'</td><td>'+safe(e.ref||'—')+'</td><td>'+safe(e.detail||'—')+'</td><td class="'+(e.amount>0?'good':e.amount<0?'bad':'muted')+'">'+(e.amount>0?'+':e.amount<0?'−':'')+fmt(Math.abs(e.amount||e.display||0))+'</td></tr>').join('');
+  $('customerInvoices').innerHTML='<div class="et-ledger-head"><div><small class="et-ledger-kicker">CUSTOMER ACCOUNT · '+safe(c.branchName)+'</small><h3>'+safe(c.name)+' · '+safe(c.phone||'No phone')+'</h3><p class="muted">All purchases and payments for this branch, in one place.</p></div><button class="btn light" data-et-pdf>Download PDF statement</button></div>'+
+   '<div class="et-ledger-balances"><div class="et-ledger-balance"><small>Customer owes</small><strong class="'+(c.due>0?'bad':'good')+'">'+(c.due>0?'−':'')+fmt(c.due)+'</strong></div><div class="et-ledger-balance"><small>Extra cash / advance</small><strong class="good">+'+fmt(c.advance)+'</strong></div><div class="et-ledger-balance"><small>Net account balance</small><strong class="'+(net<0?'bad':'good')+'">'+(net<0?'−':'+')+fmt(Math.abs(net))+'</strong></div></div>'+
+   '<div class="panel et-ledger-add"><h3>Add cash to customer account</h3><p class="muted">For extra money the customer wants to keep for the next bill.</p><div class="grid"><div><label>Amount (PKR)</label><input id="etLedgerAdvanceAmount" type="number" min="1" step="0.01" placeholder="Enter amount"></div><div><label>Payment method</label><select id="etLedgerAdvanceMethod"><option>Cash</option><option>Bank Transfer</option><option>JazzCash</option><option>EasyPaisa</option><option>Cheque</option><option>Other</option></select></div><div><label>Note (optional)</label><input id="etLedgerAdvanceNote" placeholder="Extra cash for next bill"></div></div><button class="btn green" data-et-add-advance>＋ Save extra cash</button></div>'+
+   '<h3>Customer invoices</h3><div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Date & time</th><th>Products</th><th>Total</th><th>Paid</th><th>Due</th><th>Action</th></tr></thead><tbody>'+invoices+'</tbody></table></div>'+
+   '<h3 style="margin-top:22px">Complete account history</h3><p class="muted">Red amounts are owed. Green amounts are money received.</p><div class="table-wrap"><table><thead><tr><th>Date & time</th><th>Transaction</th><th>Reference</th><th>Details</th><th>Amount</th></tr></thead><tbody>'+history+'</tbody></table></div>'+
+   '<p class="muted" style="font-size:12px">This account is for '+safe(c.branchName)+' only.</p>';
+  if(window.etihadSelectCustomerProfile)window.etihadSelectCustomerProfile({name:c.name,phone:c.phone});
+ };
+ window.viewCustomer=function(encoded){
+  const old=decodeURIComponent(encoded),c=accountRows().find(x=>x.key===old)||accountRows().find(x=>identity(x.name,x.phone)===old);
+  if(c)window.viewCustomerLedger(encodeURIComponent(c.key));
+ };
+ window.addCustomerAdvance=function(){
+  const c=currentAccount();if(!c)return alert('Open a customer account first.');
+  const amount=Number($('etLedgerAdvanceAmount')?.value||0);if(!Number.isFinite(amount)||amount<=0)return alert('Enter an amount greater than zero.');
+  const now=new Date().toISOString(),receipt='ADV-'+new Date().getFullYear()+'-'+String(payments.length+1).padStart(5,'0');
+  payments.unshift({id:id(),receiptNo:receipt,saleId:null,invoiceNo:'Customer account deposit',customerName:c.name,customerPhone:c.phone,date:now,amount,method:$('etLedgerAdvanceMethod').value||'Cash',note:($('etLedgerAdvanceNote').value||'').trim(),type:'customer_advance',branchId:c.branchId,branchName:c.branchName});
+  saveAll();renderAll();window.viewCustomerLedger(encodeURIComponent(c.key));alert('Extra cash saved. Receipt: '+receipt);
+ };
+ window.downloadCustomerStatement=function(){
+  const c=currentAccount();if(!c)return alert('Open a customer account first.');
+  const events=eventsFor(c),due=c.sales.reduce((n,s)=>n+saleDue(s),0),advance=advanceBalance(c);
+  const rows=events.map(e=>'<tr><td>'+safe(stamp(e.date))+'</td><td>'+safe(e.type)+'</td><td>'+safe(e.ref||'—')+'</td><td>'+safe(e.detail||'—')+'</td><td style="text-align:right;color:'+(e.amount>0?'#16845b':e.amount<0?'#c0392b':'#64748b')+'">'+(e.amount>0?'+':e.amount<0?'−':'')+fmt(Math.abs(e.amount||e.display||0))+'</td></tr>').join('');
+  const logo=localStorage.getItem('etihad_business_logo')||'';
+  const html='<!doctype html><html><head><meta charset="utf-8"><title>Customer Statement</title><style>body{font-family:Arial;color:#172b4d;margin:28px}header{display:flex;gap:16px;align-items:center;border-bottom:3px solid #b58a3a;padding-bottom:14px}header img{width:76px;height:60px;object-fit:contain}h1{margin:0;font-size:22px}small{color:#64748b}.summary{display:flex;gap:12px;margin:22px 0}.box{flex:1;border:1px solid #ddd;border-radius:8px;padding:12px}.box b{display:block;font-size:19px;margin-top:7px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left;vertical-align:top}th{background:#f3f5f8}.note{margin-top:24px;color:#64748b;font-size:11px}@media print{body{margin:12mm}.no-print{display:none}.summary,tr{break-inside:avoid}}</style></head><body><header>'+(logo?'<img src="'+logo+'" alt="Logo">':'')+'<div><h1>ETIHAD TRADERS</h1><b>Customer Account Statement</b><br><small>Generated: '+safe(stamp(new Date().toISOString()))+'</small></div></header><h2>'+safe(c.name)+'</h2><p>Phone: '+safe(c.phone||'—')+' · Branch: '+safe(c.branchName)+'</p><div class="summary"><div class="box">Customer owes <b style="color:#c0392b">− '+fmt(due)+'</b></div><div class="box">Extra cash / advance <b style="color:#16845b">+ '+fmt(advance)+'</b></div><div class="box">Net balance <b>'+fmt(advance-due)+'</b></div></div><h3>All transactions with date and time</h3><table><thead><tr><th>Date & time</th><th>Transaction</th><th>Reference</th><th>Products / details</th><th>Amount</th></tr></thead><tbody>'+rows+'</tbody></table><p class="note">Statement includes invoices, products taken, payments received, extra cash deposits and advance amounts used.</p><p class="no-print"><button onclick="window.print()">Print / Save as PDF</button> Choose “Save as PDF” in the print window to download and share.</p><script>window.onload=function(){setTimeout(function(){window.print()},350)};<\/script></body></html>';
+  const w=window.open('','_blank');if(!w)return alert('Please allow pop-ups for the customer PDF statement.');w.document.open();w.document.write(html);w.document.close();
+ };
+ const page=$('customers');
+ if(page&&!page.dataset.etLedgerEvents){
+  page.dataset.etLedgerEvents='1';
+  page.addEventListener('click',e=>{
+   const b=e.target.closest('button');if(!b)return;
+   if(b.hasAttribute('data-et-ledger-open'))window.viewCustomerLedger(b.dataset.etLedgerOpen);
+   else if(b.hasAttribute('data-et-add-advance'))window.addCustomerAdvance();
+   else if(b.hasAttribute('data-et-pdf'))window.downloadCustomerStatement();
+   else if(b.hasAttribute('data-et-invoice'))window.printInvoice(b.dataset.etInvoice);
+   else if(b.hasAttribute('data-et-collect'))window.selectPaymentInvoice(b.dataset.etCollect);
+  });
+ }
+ window.recordPayment=function(){
+  if(!selectedInvoice)return alert('Select an unpaid invoice first.');
+  const s=sales.find(x=>String(x.id)===String(selectedInvoice));if(!s)return alert('Invoice not found.');
+  const amount=Number($('paymentAmount').value),due=saleDue(s);
+  if(!Number.isFinite(amount)||amount<=0)return alert('Enter a payment amount greater than zero.');
+  const applied=Math.min(amount,due),extra=Math.max(0,amount-applied),now=new Date().toISOString(),method=$('paymentMethod').value||'Cash',note=($('paymentNote').value||'').trim();
+  if(applied>0){const receipt='REC-'+new Date().getFullYear()+'-'+String(payments.length+1).padStart(5,'0');payments.unshift({id:id(),receiptNo:receipt,saleId:s.id,invoiceNo:invoiceNo(s),customerName:s.customerName||'Walk-in Customer',customerPhone:s.customerPhone||'',date:now,amount:applied,method,note,type:'invoice_payment',branchId:s.branchId,branchName:s.branchName||branchName(s.branchId)});s.paid=salePaid(s)+applied;s.balance=Math.max(0,saleTotal(s)-s.paid);}
+  let extraReceipt='';if(extra>0){extraReceipt='ADV-'+new Date().getFullYear()+'-'+String(payments.length+1).padStart(5,'0');payments.unshift({id:id(),receiptNo:extraReceipt,saleId:null,invoiceNo:'Customer account deposit',customerName:s.customerName||'Walk-in Customer',customerPhone:s.customerPhone||'',date:now,amount:extra,method,note:'Extra amount after invoice payment. '+note,type:'customer_advance',branchId:s.branchId,branchName:s.branchName||branchName(s.branchId)});}
+  const key=selectedKey;saveAll();resetPaymentForm();renderAll();if(key)window.viewCustomerLedger(encodeURIComponent(key));
+  alert('Payment saved. Invoice payment: '+fmt(applied)+(extra?' · Extra cash saved: '+fmt(extra):''));
+ };
+ const originalCompleteSale=window.completeSale;
+ window.completeSale=function(){
+  const name=$('saleCustomer')?.value.trim()||'Walk-in Customer',phone=$('salePhone')?.value.trim()||'',branch=$('saleBranch')?.value||'',cash=Number($('salePaid')?.value||0),total=typeof window.cartAmount==='function'?Number(window.cartAmount()):0;
+  const c={name,phone,branchId:branch},available=Math.max(0,advanceBalance(c)),apply=Math.min(available,Math.max(0,total-cash)),before=sales.length;
+  if($('salePaid'))$('salePaid').value=String(cash+apply);
+  originalCompleteSale.apply(this,arguments);
+  if(sales.length>before&&apply>0){const s=sales[0];s.advanceApplied=apply;payments.unshift({id:id(),receiptNo:'ADV-USE-'+String(payments.length+1).padStart(5,'0'),saleId:s.id,invoiceNo:invoiceNo(s),customerName:s.customerName,customerPhone:s.customerPhone,date:s.date,amount:apply,method:'Customer advance',note:'Saved advance applied automatically to this bill.',type:'advance_applied',branchId:s.branchId,branchName:s.branchName});saveAll();renderAll();}
+  else if($('salePaid'))$('salePaid').value=String(cash);
+ };
+ const style=document.createElement('style');
+ style.textContent='.et-ledger-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}.et-ledger-kicker{font-size:10px;font-weight:850;letter-spacing:1.4px;color:#a17a32}.et-ledger-head h3{margin:7px 0}.et-ledger-balances{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:15px 0}.et-ledger-balance{padding:15px;border:1px solid var(--line);border-radius:13px;background:var(--surface)}.et-ledger-balance small{display:block;color:var(--muted);font-weight:700}.et-ledger-balance strong{display:block;font-size:20px;margin-top:8px;overflow-wrap:anywhere}.et-ledger-add{margin:16px 0;padding:16px;background:var(--bg);box-shadow:none}.et-ledger-add h3{margin:0 0 5px}@media(max-width:650px){.et-ledger-balances{grid-template-columns:1fr}.et-ledger-head{display:block}}';
+ document.head.appendChild(style);
+ const pos=$('pos')?.querySelector('.panel:nth-of-type(3)');
+ if(pos&&!$('etLedgerAdvanceHint')){const hint=document.createElement('p');hint.id='etLedgerAdvanceHint';hint.className='muted';hint.style.cssText='font-size:12px;margin-top:8px';hint.textContent='Saved customer advance is automatically used for the next bill at this same branch.';pos.appendChild(hint);}
+ if(typeof window.renderCustomers==='function')window.renderCustomers();
+})();
+</script>
+
 </body>
  </html>`;
 
