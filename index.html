@@ -1266,7 +1266,7 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
   const filtered=list.filter(c=>(c.name+' '+c.phone+' '+c.branchName).toLowerCase().includes(q));
   $('customersTable').innerHTML=filtered.map(c=>'<tr><td><b>'+safe(c.name)+'</b><br><small>'+safe(c.branchName)+'</small></td><td>'+safe(c.phone||'—')+'</td><td>'+c.sales.length+'</td><td>'+fmt(c.total)+'</td><td>'+fmt(c.paid)+'</td><td class="'+(c.due>0?'bad':'good')+'">'+(c.due>0?'−':'')+fmt(c.due)+'</td><td class="good">+'+fmt(c.advance)+'</td><td><button class="btn small light" data-et-ledger-open="'+encodeURIComponent(c.key)+'">Open account</button></td></tr>').join('')||'<tr><td colspan="8" class="empty">No customer accounts found.</td></tr>';
   const table=$('customersTable').closest('table');
-  if(table&&table.tHead&&table.tHead.rows[0]&&table.tHead.rows[0].cells.length===7)table.tHead.rows[0].insertAdjacentHTML('beforeend','<th>Extra cash</th>');
+  if(table&&table.tHead&&table.tHead.rows[0]&&table.tHead.rows[0].cells.length===7){table.tHead.rows[0].cells[6].textContent='Extra cash';table.tHead.rows[0].insertAdjacentHTML('beforeend','<th>Account</th>');}
  };
  window.viewCustomerLedger=function(encoded){
   const c=accountRows().find(x=>x.key===decodeURIComponent(encoded));if(!c)return;
