@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'etihad-traders-v3';
+const CACHE_NAME = 'etihad-traders-v4';
 const APP_PREFIX = '/retail-wholesale-erp/';
 
 const APP_FILES = [
@@ -7,7 +7,7 @@ const APP_FILES = [
   `${APP_PREFIX}index.html`,
   `${APP_PREFIX}manifest.json`,
   `${APP_PREFIX}icon.svg`,
-  `${APP_PREFIX}etihad-icon-192.jpg`
+  `${APP_PREFIX}etihad-icon-192-v2.jpg`
 ];
 
 // Install the new application cache.
