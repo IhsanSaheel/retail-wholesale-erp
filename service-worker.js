@@ -1,10 +1,11 @@
 
-const CACHE_NAME = 'etihad-traders-v9';
+const CACHE_NAME = 'etihad-traders-v10';
 const APP_PREFIX = '/retail-wholesale-erp/';
 
 const APP_FILES = [
   APP_PREFIX,
   `${APP_PREFIX}index.html`,
+  `${APP_PREFIX}demo.html`,
   `${APP_PREFIX}manifest.json`,
   `${APP_PREFIX}icon.svg`,
   `${APP_PREFIX}etihad-icon-192.jpg`,
