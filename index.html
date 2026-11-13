@@ -5152,7 +5152,7 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   const key=kind==='open'?KEY_ORDERS:KEY_QUOTES,record=read(key).find(x=>x.id===id);if(!record)return renderList(kind);
   const total=(record.items||[]).reduce((n,x)=>n+Number(x.qty||0)*Number(x.price||0),0);
   shell((kind==='open'?'Order ':'Quotation ')+record.number,'Saved record details',
-   '<div class="grid"><div class="card"><small>Customer</small><h3>'+esc(record.customer)+'</h3><p>'+esc(record.phone||'No phone')+'</p></div><div class="card"><small>Total</small><h3>PKR '+money(total)+'</h3><p>'+esc(record.date||'')+' · '+esc(record.branchName||'')+'</p></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>Subtotal</th></tr></thead><tbody>'+(record.items||[]).map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.price)+'</td><td>'+money(x.qty*x.price)+'</td></tr>').join('')+'</tbody></table></div><p><b>Notes:</b> '+esc(record.notes||'—')+'</p></div><div class="et-workflow-actions"><button class="btn" data-workflow-edit="'+esc(record.id)+'">Edit</button><button class="btn light" data-workflow-back>Back to '+(kind==='open'?'Open orders':'Quotations')+'</button></div>');
+   '<div class="grid"><div class="card"><small>Customer</small><h3>'+esc(record.customer)+'</h3><p>'+esc(record.phone||'No phone')+'</p></div><div class="card"><small>Total</small><h3>PKR '+money(total)+'</h3><p>'+esc(record.date||'')+' · '+esc(record.branchName||'')+'</p></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>Subtotal</th></tr></thead><tbody>'+(record.items||[]).map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.price)+'</td><td>'+money(x.qty*x.price)+'</td></tr>').join('')+'</tbody></table></div><p><b>Notes:</b> '+esc(record.notes||'—')+'</p></div><div class="et-workflow-actions"><button class="btn" data-workflow-print="'+esc(record.id)+'">Print / Save PDF</button><button class="btn" data-workflow-edit="'+esc(record.id)+'">Edit</button><button class="btn light" data-workflow-back>Back to '+(kind==='open'?'Open orders':'Quotations')+'</button></div>');
  }
  function currentKind(){return document.querySelector('[data-sales-view].active')?.dataset.salesView||'records';}
  function handleAction(e){
@@ -5161,6 +5161,18 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
    e.preventDefault();e.stopImmediatePropagation();showForm(t.id==='etihadNewOrderButton'?'order':'quote');return;
   }
   const kind=currentKind();
+  if(t.hasAttribute('data-workflow-print')){
+   const key=kind==='open'?KEY_ORDERS:KEY_QUOTES;
+   const record=read(key).find(x=>x.id===t.dataset.workflowPrint);
+   if(!record)return alert('Saved record not found.');
+   const isOrder=kind==='open';
+   const lines=(record.items||[]).map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+Number(x.qty||0)+'</td><td>PKR '+money(x.price)+'</td><td>PKR '+money(Number(x.qty||0)*Number(x.price||0))+'</td></tr>').join('');
+   const total=(record.items||[]).reduce((n,x)=>n+Number(x.qty||0)*Number(x.price||0),0);
+   const popup=window.open('','_blank','width=850,height=750');
+   if(!popup)return alert('Please allow pop-ups to print or save this document as PDF.');
+   popup.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(record.number)+'</title><style>body{font:14px Arial,sans-serif;color:#222;padding:30px}h1{margin-bottom:4px}small{color:#666}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:24px 0}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ccc;padding:10px;text-align:left}th{background:#f2f2f2}.total{text-align:right;font-size:20px;font-weight:bold;margin-top:22px}.notes{margin-top:24px;white-space:pre-wrap}</style></head><body><h1>ETIHAD TRADERS</h1><small>'+(isOrder?'CUSTOMER SALES ORDER':'SALES QUOTATION')+'</small><div class="meta"><div><b>Document No:</b> '+esc(record.number)+'</div><div><b>Date:</b> '+esc(record.date||'')+'</div><div><b>Customer:</b> '+esc(record.customer||'Walk-in Customer')+'</div><div><b>Phone:</b> '+esc(record.phone||'—')+'</div><div><b>Branch:</b> '+esc(record.branchName||'—')+'</div><div><b>Status:</b> '+esc(record.status||(isOrder?'Open':'Draft'))+'</div></div><table><thead><tr><th>Product</th><th>Quantity</th><th>Unit Price</th><th>Subtotal</th></tr></thead><tbody>'+lines+'</tbody></table><p class="total">Total: PKR '+money(total)+'</p><p class="notes"><b>Notes:</b> '+esc(record.notes||'—')+'</p><p><small>'+(isOrder?'Order only — stock is not deducted until invoiced.':'Quotation only — not a tax invoice and does not deduct stock.')+'</small></p><script>window.onload=function(){window.print();};<\\/script></body></html>');
+   popup.document.close();return;
+  }
   if(t.matches('[data-workflow-create]')){showForm(t.dataset.workflowCreate==='order'?'order':'quote');return;}
   if(t.hasAttribute('data-workflow-back')){renderList(kind);return;}
   if(t.hasAttribute('data-workflow-view')){renderView(kind,t.dataset.workflowView);return;}
