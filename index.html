@@ -2913,11 +2913,11 @@ renderAll();
   const saved=Array.isArray(sales)&&sales.length>before?sales[0]:null;
   if(!saved){$('salePaid').value=oldValue;return result}
   if(note)saved.note=note;\n  saved.paymentMethod=String($('etSalePaymentMethod')?.value||'Cash');
-  if(extra>0){
+  if(extra>0&&$('etSaleAddExtra').checked){
    const key=phone?'phone:'+phone:'name:'+name.toLowerCase();
    const creditKey='mberp_customer_account_credits';
    let entries=[];try{const parsed=JSON.parse(localStorage.getItem(creditKey)||'[]');if(Array.isArray(parsed))entries=parsed}catch(_){}
-   entries.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),customerKey:key,customerName:name,customerPhone:phone,date:new Date().toISOString(),amount:extra,remaining:extra,method:'Cash',note:'Extra amount received on invoice '+String(saved.invoiceNo||saved.id),receiptNo:String(saved.invoiceNo||saved.id)});
+   entries.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),customerKey:key,customerName:name,customerPhone:phone,date:new Date().toISOString(),amount:extra,remaining:extra,method:String($('etSalePaymentMethod')?.value||'Cash'),note:'Extra amount received on invoice '+String(saved.invoiceNo||saved.id),receiptNo:String(saved.invoiceNo||saved.id)});
    localStorage.setItem(creditKey,JSON.stringify(entries));
   }
   if(typeof window.saveAll==='function')window.saveAll();
