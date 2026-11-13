@@ -6626,5 +6626,49 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
 })();
 </script>
 
+<script id="etihad-purchase-history-tools">
+(function(){
+ const style=document.createElement('style');
+ style.textContent='#etihad-purchase-history-tools .purchase-filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:12px 0}#etihad-purchase-history-tools .purchase-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}#etihad-purchase-history-tools .purchase-kpi{background:var(--panel,#f5f5f5);border:1px solid var(--border,#ddd);border-radius:10px;padding:12px}#etihad-purchase-history-tools .purchase-kpi strong{display:block;font-size:18px;margin-top:5px}';
+ document.head.appendChild(style);
+ function setup(){
+  const table=document.getElementById('purchasesTable');
+  if(!table||document.getElementById('purchaseHistoryFrom'))return;
+  const panel=table.closest('.panel');if(!panel)return;
+  const tools=document.createElement('div');tools.id='etihad-purchase-history-tools';
+  tools.innerHTML='<div class="purchase-filter-grid"><div><label>From date</label><input id="purchaseHistoryFrom" type="date"></div><div><label>To date</label><input id="purchaseHistoryTo" type="date"></div><div><label>Supplier</label><select id="purchaseHistorySupplier"><option value="">All suppliers</option></select></div><div><label>Branch</label><select id="purchaseHistoryBranch"><option value="">All branches</option></select></div><div><label>Search purchase / product</label><input id="purchaseHistorySearch" placeholder="Purchase no., product, SKU"></div></div><div class="purchase-kpis"><div class="purchase-kpi">Purchases<strong id="purchaseHistoryCount">0</strong></div><div class="purchase-kpi">Purchase total<strong id="purchaseHistoryTotal">PKR 0</strong></div><div class="purchase-kpi">Paid<strong id="purchaseHistoryPaid">PKR 0</strong></div><div class="purchase-kpi">Outstanding<strong id="purchaseHistoryDue">PKR 0</strong></div></div><button type="button" class="btn light" id="purchaseHistoryReset">Reset Filters</button> <button type="button" class="btn gray" id="purchaseHistoryExport">Export Filtered CSV</button>';
+  panel.insertBefore(tools,table.closest('.table-wrap'));
+  ['purchaseHistoryFrom','purchaseHistoryTo','purchaseHistorySupplier','purchaseHistoryBranch','purchaseHistorySearch'].forEach(id=>{document.getElementById(id).addEventListener('input',renderPurchases);document.getElementById(id).addEventListener('change',renderPurchases);});
+  document.getElementById('purchaseHistoryReset').addEventListener('click',()=>{['purchaseHistoryFrom','purchaseHistoryTo','purchaseHistorySupplier','purchaseHistoryBranch','purchaseHistorySearch'].forEach(id=>document.getElementById(id).value='');renderPurchases();});
+  document.getElementById('purchaseHistoryExport').addEventListener('click',exportCsv);
+ }
+ function escCsv(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"';}
+ function filtered(){
+  const val=id=>document.getElementById(id)?.value||'';
+  const from=val('purchaseHistoryFrom'),to=val('purchaseHistoryTo'),sid=val('purchaseHistorySupplier'),bid=val('purchaseHistoryBranch'),q=val('purchaseHistorySearch').trim().toLowerCase();
+  return (purchases||[]).filter(p=>{const d=String(p.date||'').slice(0,10);return (!from||d>=from)&&(!to||d<=to)&&(!sid||p.supplierId===sid)&&(!bid||p.branchId===bid)&&(!q||[p.purchaseNo,p.id,p.productName,p.sku,p.supplierName,p.branchName].some(v=>String(v||'').toLowerCase().includes(q)));});
+ }
+ window.renderPurchases=function(){
+  const table=document.getElementById('purchasesTable');if(!table)return;setup();
+  const supplier=document.getElementById('purchaseHistorySupplier'),branch=document.getElementById('purchaseHistoryBranch');
+  if(supplier){const old=supplier.value;supplier.innerHTML='<option value="">All suppliers</option>'+(suppliers||[]).map(s=>'<option value="'+esc(s.id)+'">'+esc(s.name)+'</option>').join('');supplier.value=old;}
+  if(branch){const old=branch.value;branch.innerHTML='<option value="">All branches</option>'+(branches||[]).map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');branch.value=old;}
+  const rows=filtered(),sum=k=>rows.reduce((n,p)=>n+Number(p[k]||0),0);
+  document.getElementById('purchaseHistoryCount').textContent=rows.length;
+  document.getElementById('purchaseHistoryTotal').textContent='PKR '+money(sum('total'));
+  document.getElementById('purchaseHistoryPaid').textContent='PKR '+money(sum('paid'));
+  document.getElementById('purchaseHistoryDue').textContent='PKR '+money(sum('balance'));
+  table.innerHTML=rows.map(p=>'<tr><td><b>'+esc(p.purchaseNo||p.id)+'</b></td><td>'+esc(p.date)+'</td><td>'+esc(p.supplierName||supplierName(p.supplierId))+'</td><td>'+esc(p.branchName||branchName(p.branchId))+'</td><td>'+esc(p.productName)+'</td><td>'+Number(p.qty)+'</td><td>'+money(p.total)+'</td><td>'+money(p.paid)+'</td><td class="'+(Number(p.balance)>0?'bad':'good')+'">'+money(p.balance)+'</td><td><button class="btn small light" onclick="printPurchase(\''+esc(p.id)+'\')">Print</button></td></tr>').join('')||'<tr><td colspan="10" class="empty">No purchases match these filters.</td></tr>';
+ };
+ function exportCsv(){
+  const rows=filtered();if(!rows.length)return alert('There are no filtered purchases to export.');
+  const header=['Purchase No','Date','Supplier','Branch','Product','SKU','Quantity','Unit Cost','Total','Paid','Outstanding','Method','Note'];
+  const lines=[header,...rows.map(p=>[p.purchaseNo||p.id,p.date,p.supplierName||supplierName(p.supplierId),p.branchName||branchName(p.branchId),p.productName,p.sku,p.qty,p.cost,p.total,p.paid,p.balance,p.method,p.note])].map(r=>r.map(escCsv).join(','));
+  const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='etihad-purchase-history-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
+})();
+</script>
 </body>
 </html>
