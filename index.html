@@ -2898,7 +2898,7 @@ renderAll();
  window.completeSale=function(){
   const total=amountTotal(),raw=Number($('salePaid')?.value||0),received=Number.isFinite(raw)?raw:0;
   const due=Math.max(0,total-received),extra=Math.max(0,received-total),name=customer(),phone=String($('salePhone')?.value||'').trim();
-  if(due>0&&!$('etSaleAddDue').checked){alert('Please tick “Add remaining due to customer account” to save this unpaid balance.');return;}
+  if(due>0&&!name){alert('Select a named customer to record the remaining amount as customer dues.');$('etihadPosCustomerDetails')?.setAttribute('open','');$('etihadNewCustomerFields').hidden=false;$('saleCustomer')?.focus();return;}
   
   if((due>0||extra>0)&&!name){alert('Select or add a customer before assigning a due amount or extra payment to their account.');$('etihadPosCustomerDetails')?.setAttribute('open','');$('etihadNewCustomerFields').hidden=false;$('saleCustomer')?.focus();return;}
   if(!Number.isFinite(received)||received<0){alert('Enter a valid received amount.');return;}
@@ -2912,7 +2912,8 @@ renderAll();
   try{result=original.apply(this,arguments)}catch(error){$('salePaid').value=oldValue;throw error}
   const saved=Array.isArray(sales)&&sales.length>before?sales[0]:null;
   if(!saved){$('salePaid').value=oldValue;return result}
-  if(note)saved.note=note;\n  saved.paymentMethod=String($('etSalePaymentMethod')?.value||'Cash');
+  if(note)saved.note=note;
+  saved.paymentMethod=String($('etSalePaymentMethod')?.value||'Cash');
   if(extra>0&&$('etSaleAddExtra').checked){
    const key=phone?'phone:'+phone:'name:'+name.toLowerCase();
    const creditKey='mberp_customer_account_credits';
