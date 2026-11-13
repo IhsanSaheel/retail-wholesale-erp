@@ -7091,5 +7091,42 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  render();
 })();
 </script>
+<script id="etihad-code128-labels-v1">
+(function(){
+ 'use strict';
+ const page=document.getElementById('etihadLabelsExpiry'),button=document.getElementById('etLabelPrint');
+ if(!page||!button)return;
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const money=v=>'PKR '+Number(v||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
+ button.addEventListener('click',function(event){
+  event.preventDefault();event.stopImmediatePropagation();
+  const selected=[...page.querySelectorAll('[data-label-id]:checked')].map(x=>String(x.dataset.labelId));
+  const items=(Array.isArray(window.products)?window.products:[]).filter(p=>selected.includes(String(p.id)));
+  if(!items.length)return alert('Select at least one product.');
+  const branches=Array.isArray(window.branches)?window.branches:[];
+  const labels=items.map(function(p){
+   const code=String(p.sku||p.barcode||'').trim();
+   let branch=branches.find(function(b){return String(b.id)===String(p.branchId);});
+   if(typeof window.branchName==='function')branch={name:window.branchName(p.branchId)};
+   const barcode=code?'<svg class="barcode" data-code="'+esc(code)+'"></svg><div class="sku">'+esc(code)+'</div>':'<div class="no-code">SKU / barcode missing. Add a unique SKU for a scannable label.</div>';
+   return '<article class="label"><b>'+esc(p.name)+'</b>'+barcode+'<strong>'+money(p.price)+'</strong><small>'+esc(branch&&branch.name||'')+'</small></article>';
+  }).join('');
+  const w=window.open('','_blank','width=900,height=700');
+  if(!w)return alert('Allow pop-ups to print labels.');
+  w.document.write('<!doctype html><html><head><title>Etihad Traders Product Barcode Labels</title><style>body{font-family:Arial,sans-serif;margin:10mm}.sheet{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm}.label{border:1px solid #333;padding:5mm;min-height:35mm;break-inside:avoid;text-align:center}.label b{font-size:12pt;display:block}.barcode{width:100%;height:18mm;margin-top:2mm}.sku{font-family:monospace;font-size:9pt;margin:1mm 0}.label strong{font-size:14pt;display:block}.label small{display:block;margin-top:2mm}.no-code{font-size:9pt;color:#9b1c1c;margin:5mm 0}@media print{body{margin:8mm}}</style></head><body><div class="sheet">'+labels+'</div><p id="barcodeStatus">Preparing Code 128 barcodes…</p></body></html>');
+  w.document.close();
+  const script=w.document.createElement('script');
+  script.src='https://cdn.jsdelivr.net/npm/jsbarcode@3.12.1/dist/JsBarcode.code128.min.js';
+  script.onload=function(){
+   let failed=0;
+   w.document.querySelectorAll('svg.barcode').forEach(function(el){try{w.JsBarcode(el,el.getAttribute('data-code'),{format:'CODE128',displayValue:false,margin:0,height:48,width:1.5});}catch(error){failed++;el.outerHTML='<div class="no-code">Invalid SKU — barcode not generated.</div>'; }});
+   w.document.getElementById('barcodeStatus').textContent=failed?'Some barcodes could not be generated. Check the affected SKUs.':'Code 128 barcodes ready for scanning.';
+   w.setTimeout(function(){w.print();},400);
+  };
+  script.onerror=function(){w.document.getElementById('barcodeStatus').textContent='Barcode library unavailable. Connect to the internet and try again; no fake barcode was printed.';};
+  w.document.head.appendChild(script);
+ },true);
+})();
+</script>
 </body>
 </html>
