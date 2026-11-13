@@ -5446,7 +5446,7 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
  const $=id=>document.getElementById(id);
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const money=v=>'PKR '+Number(v||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
- const perms=[['branches','Branches'],['products','Products'],['purchases','Purchases'],['sales','Sales / POS'],['payments','Payments'],['expenses','Expenses'],['stock','Stock transfers'],['suppliers','Suppliers'],['supplier_payments','Supplier payments'],['supplier_returns','Supplier returns'],['sales_returns','Sales returns'],['customer_balances','Customer balances']];
+ const perms=[['branches','Branches'],['products','Products'],['purchases','Purchases'],['sales','Sales / POS'],['payments','Payments'],['expenses','Expenses'],['stock','Stock transfers'],['suppliers','Suppliers'],['supplier_payments','Supplier payments'],['supplier_returns','Supplier returns'],['sales_returns','Sales returns'],['customer_balances','Customer balances'],['orders','Sales orders'],['quotations','Quotations'],['customer_account_credits','Customer account credits']];
  let user=null,membership=null,profiles=[],memberships=[],payroll=[],branchRows=[],editing=null;
  window.etihadHRGetContext=()=>({db,ORG,user,profiles,membership});
  const main=document.querySelector('main'),nav=$('etihadMainNav');
