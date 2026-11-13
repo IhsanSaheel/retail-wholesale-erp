@@ -4756,7 +4756,7 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   if(currentView!=='records'){
    if(tablePanel)tablePanel.hidden=true;
    if(filters)filters.hidden=true;
-   if(empty){empty.hidden=false;const label={open:'Open orders',quotations:'Quotations'}[currentView]||'Sales';empty.innerHTML='<h3>'+label+'</h3><p class="muted">There are no '+label.toLowerCase()+' records available in this version. No placeholder records have been created.</p>';}
+   if(empty)empty.hidden=false; // Orders and Quotations workflow renders the selected list.
    return;
   }
   if(tablePanel)tablePanel.hidden=false;
@@ -4875,7 +4875,8 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
  const branchOptions=()=>getBranches().map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');
  const productOptions=bid=>getProducts().filter(p=>String(p.branchId)===String(bid)).map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+' · PKR '+money(p.price)+' · Stock '+Number(p.qty||0)+'</option>').join('');
  function shell(title,description,body){
-  empty.innerHTML='<div class="et-workflow-head"><div><h3>'+title+'</h3><p class="muted">'+description+'</p></div><button type="button" class="btn light" data-workflow-back>Back to '+(title==='Open Orders'?'Open orders':'Quotations')+'</button></div>'+body;
+  const back=currentKind()==='open'?'Open orders':'Quotations';
+   empty.innerHTML='<div class="et-workflow-head"><div><h3>'+title+'</h3><p class="muted">'+description+'</p></div><button type="button" class="btn light" data-workflow-back>Back to '+back+'</button></div>'+body;
  }
  function renderList(kind){
   const orders=kind==='open',key=orders?KEY_ORDERS:KEY_QUOTES,records=read(key);
@@ -6153,7 +6154,7 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
 })();
 </script>
 
-<style id="etihad-navigation-menu-cleanup-v1">
+<style id="etihad-navigation-menu-cleanup-style-v1">
 #etihadMainNav{position:relative;overflow:visible}
 #etihadMainNav button[data-etihad-secondary="true"]{display:none!important}
 #etihadDesktopMoreButton{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:10px 16px;border:1px solid var(--line);border-radius:11px;background:var(--surface,#fff);color:var(--ink,#334155);font-weight:800}
@@ -6167,7 +6168,7 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  #etihadDesktopMoreButton,#etihadDesktopMoreMenu{display:none!important}
 }
 </style>
-<script id="etihad-navigation-menu-cleanup-v1">
+<script id="etihad-navigation-menu-cleanup-script-v1">
 (function(){
  'use strict';
  const nav=document.getElementById('etihadMainNav')||document.querySelector('body>nav');
