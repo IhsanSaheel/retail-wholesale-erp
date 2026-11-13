@@ -2481,7 +2481,7 @@ renderAll();
   <div class="panel">
    <h3>Deletion Audit & Recovery Copies</h3>
    <p class="muted">Private copies of supported deleted records and sales reopened for editing are retained on this device. Export this log regularly. It does not yet synchronize to the company cloud.</p>
-   <button class="btn" id="exportDeletionAudit">Export Deletion Audit</button><p id="deletionAuditCount" class="muted"></p>
+   <button class="btn" id="exportDeletionAudit">Export Deletion Audit</button> <button class="btn" id="testDeletionAudit">Run Safe Audit Test</button><p id="deletionAuditCount" class="muted"></p><p id="deletionAuditTestStatus" class="muted" role="status"></p>
   </div>
   <div class="panel">
    <h3>Important Information</h3>
@@ -2509,7 +2509,8 @@ renderAll();
  }
 
  document.getElementById('exportDeletionAudit').onclick=function(){let entries=[];try{entries=JSON.parse(localStorage.getItem('etihad_deletion_audit_v1')||'[]');}catch(_){}document.getElementById('deletionAuditCount').textContent=entries.length+' retained audit entr'+(entries.length===1?'y':'ies')+' (maximum 250).';downloadFile({app:'Etihad Traders',auditVersion:1,exportedAt:new Date().toISOString(),entries},'Etihad-Traders-Deletion-Audit-'+new Date().toISOString().slice(0,10)+'.json');};
-  const initialAudit=(()=>{try{return JSON.parse(localStorage.getItem('etihad_deletion_audit_v1')||'[]');}catch(_){return [];}})();document.getElementById('deletionAuditCount').textContent=initialAudit.length+' retained audit entr'+(initialAudit.length===1?'y':'ies')+' (maximum 250).';
+
+ document.getElementById('testDeletionAudit').onclick=function(){const status=document.getElementById('deletionAuditTestStatus');const key='etihad_deletion_audit_v1';const before=localStorage.getItem(key);const sample={id:'SAFE-TEST-'+Date.now(),name:'Temporary audit test (no business record)'};if(!recordDeletion('test_records',sample,'TEST ONLY — no business record deleted')){status.textContent='Test failed: this device could not save an audit copy. No business record was changed.';return;}try{const entries=JSON.parse(localStorage.getItem(key)||'[]');const testEntry=entries.find(x=>x.recordId===sample.id);if(!testEntry||!testEntry.snapshot||testEntry.snapshot.name!==sample.name)throw new Error('Test entry could not be verified');const remaining=entries.filter(x=>x.recordId!==sample.id);localStorage.setItem(key,JSON.stringify(remaining));status.textContent='PASS: audit copy was saved and verified, then the temporary test entry was removed. No real business record was deleted or changed.';const count=remaining.length;document.getElementById('deletionAuditCount').textContent=count+' retained audit entr'+(count===1?'y':'ies')+' (maximum 250).';}catch(error){try{if(before===null)localStorage.removeItem(key);else localStorage.setItem(key,before);}catch(_){}status.textContent='Test could not be fully completed. Your business records were not changed. Please export the audit log before further testing.';console.warn('Safe deletion audit test:',error);}};  const initialAudit=(()=>{try{return JSON.parse(localStorage.getItem('etihad_deletion_audit_v1')||'[]');}catch(_){return [];}})();document.getElementById('deletionAuditCount').textContent=initialAudit.length+' retained audit entr'+(initialAudit.length===1?'y':'ies')+' (maximum 250).';
 
  function collectBackup(){
   const records={};
