@@ -98,6 +98,23 @@ footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
     padding-bottom: 15px;
   }
 }
+
+/* Nex-inspired vertical workspace navigation */
+:root{--et-sidebar-width:248px;--et-sidebar-bg:#102a43;--et-sidebar-muted:#9fb3c8;--et-sidebar-active:#1d4f78}
+header{position:sticky;top:0;z-index:1000;min-height:72px;padding-left:22px}
+#etihadMainNav{position:fixed;z-index:990;left:0;top:72px;bottom:0;width:var(--et-sidebar-width);display:flex;flex-direction:column;align-items:stretch;gap:0;overflow-y:auto;overflow-x:hidden;padding:15px 12px 14px;background:var(--et-sidebar-bg);border:0;border-right:1px solid #0b2238;border-radius:0;box-shadow:3px 0 14px #0b22381a}
+.et-sidebar-brand{display:flex;align-items:center;gap:10px;padding:5px 9px 20px;color:#fff;border-bottom:1px solid #ffffff1c;margin-bottom:12px}
+.et-brand-mark{width:36px;height:36px;border-radius:10px;background:#d5a83b;color:#102a43;display:grid;place-items:center;font-weight:900;font-size:13px}
+.et-sidebar-brand strong,.et-sidebar-brand small{display:block}.et-sidebar-brand strong{font-size:11px;letter-spacing:1px}.et-sidebar-brand small{font-size:9px;color:var(--et-sidebar-muted);letter-spacing:.8px;margin-top:4px}
+.et-nav-group{margin:4px 0 12px}.et-nav-label{padding:7px 11px;color:#8fa8bf;font-size:9px;font-weight:800;letter-spacing:1.3px}
+#etihadMainNav button{width:100%;min-height:42px;display:flex;align-items:center;gap:12px;padding:10px 12px;margin:2px 0;border:0;border-radius:7px;background:transparent;color:#d8e3ed;text-align:left;font-size:13px;font-weight:600;white-space:normal}
+#etihadMainNav button:hover{background:#ffffff12;color:#fff}#etihadMainNav button.active{background:var(--et-sidebar-active);color:#fff;box-shadow:inset 3px 0 #e2b84b}
+.et-nav-icon{width:19px;flex:0 0 19px;text-align:center;color:#a9c0d5;font-size:17px}.et-sidebar-footer{margin-top:auto;padding:13px 10px 4px;border-top:1px solid #ffffff1c;color:#a9bdcf;font-size:11px}.et-online-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#36c58a;margin-right:7px}
+main{width:calc(100% - var(--et-sidebar-width));max-width:none;margin:0 0 0 var(--et-sidebar-width);padding:22px 26px;min-height:calc(100vh - 72px)}
+.et-menu-toggle{display:none;position:fixed;z-index:1100;top:16px;left:14px;width:40px;height:40px;border:1px solid #ffffff40;border-radius:9px;background:#ffffff15;color:#fff;font-size:20px}
+.et-sidebar-backdrop{display:none}
+@media(max-width:760px){header{padding-left:65px;min-height:66px}header h2{font-size:18px}#etihadMainNav{top:0;bottom:0;width:min(280px,84vw);padding-top:18px;transform:translateX(-105%);transition:transform .22s ease;z-index:1200;box-shadow:8px 0 30px #0004}body.et-sidebar-open #etihadMainNav{transform:translateX(0)}.et-menu-toggle{display:block}body.et-sidebar-open .et-sidebar-backdrop{display:block;position:fixed;inset:0;background:#0b1725a6;z-index:1150}main{width:100%;margin:0;padding:16px 12px 90px}body{padding-bottom:0}nav button{min-width:0;flex:initial} }
+@media(min-width:761px){.et-menu-toggle{display:none}}
 </style>
 
 <style id="etihad-modern-upgrade">
@@ -556,15 +573,31 @@ body.etihad-dark #dashboard .et-dashboard-welcome,body.etihad-blackgold #dashboa
 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><a href="demo.html" style="display:inline-block;padding:9px 13px;border:1px solid #d5a83b;border-radius:8px;color:#fff;text-decoration:none;font-size:13px;font-weight:700">Demo Mode</a><div id="today"></div></div>
 </header>
 
-<nav>
-<button class="active" data-tab="dashboard">Dashboard</button>
-<button data-tab="products">Products & Inventory</button>
-<button data-tab="branches">Branches</button>
-<button data-tab="transfers">Stock Transfer</button>
-<button data-tab="pos">Sales</button>
-<button data-tab="customers">Customers & Ledger</button>
-<button data-tab="expenses">Expenses</button>
-<button data-tab="reports">Profit & Loss</button>
+<button id="etihadMenuToggle" class="et-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+<div id="etihadSidebarBackdrop" class="et-sidebar-backdrop"></div>
+<nav id="etihadMainNav" aria-label="Main navigation">
+  <div class="et-sidebar-brand"><span class="et-brand-mark">ET</span><span><strong>ETIHAD TRADERS</strong><small>BUSINESS MANAGEMENT</small></span></div>
+  <div class="et-nav-group"><div class="et-nav-label">WORKSPACE</div>
+    <button class="active" data-tab="dashboard"><span class="et-nav-icon">▦</span><span>Dashboard</span></button>
+  </div>
+  <div class="et-nav-group"><div class="et-nav-label">SALES & CUSTOMERS</div>
+    <button data-tab="pos"><span class="et-nav-icon">▣</span><span>Sales / POS</span></button>
+    <button data-tab="customers"><span class="et-nav-icon">♙</span><span>Customers</span></button>
+  </div>
+  <div class="et-nav-group"><div class="et-nav-label">CATALOG & INVENTORY</div>
+    <button data-tab="products"><span class="et-nav-icon">▤</span><span>Products</span></button>
+    <button data-tab="stockcontrol"><span class="et-nav-icon">▥</span><span>Stock Control</span></button>
+    <button data-tab="transfers"><span class="et-nav-icon">⇄</span><span>Stock Transfers</span></button>
+  </div>
+  <div class="et-nav-group"><div class="et-nav-label">FINANCE</div>
+    <button data-tab="cashregister"><span class="et-nav-icon">▣</span><span>Cash Register</span></button>
+    <button data-tab="expenses"><span class="et-nav-icon">↗</span><span>Expenses</span></button>
+    <button data-tab="reports"><span class="et-nav-icon">▥</span><span>Reports</span></button>
+  </div>
+  <div class="et-nav-group"><div class="et-nav-label">COMPANY</div>
+    <button data-tab="branches"><span class="et-nav-icon">⌂</span><span>Branches</span></button>
+  </div>
+  <div class="et-sidebar-footer"><span class="et-online-dot"></span> Company workspace</div>
 </nav>
 
 <main>
@@ -952,12 +985,19 @@ document.getElementById('today').textContent=new Date().toLocaleDateString();
 document.getElementById('expenseDate').value=todayISO();
 document.getElementById('transferDate').value=todayISO();
 
-document.querySelectorAll('nav button').forEach(btn=>{
+const etMenuToggle=document.getElementById('etihadMenuToggle');
+const etSidebarBackdrop=document.getElementById('etihadSidebarBackdrop');
+function closeEtihadSidebar(){document.body.classList.remove('et-sidebar-open');etMenuToggle?.setAttribute('aria-expanded','false');}
+etMenuToggle?.addEventListener('click',()=>{const open=document.body.classList.toggle('et-sidebar-open');etMenuToggle.setAttribute('aria-expanded',String(open));});
+etSidebarBackdrop?.addEventListener('click',closeEtihadSidebar);
+document.querySelectorAll('#etihadMainNav button[data-tab]').forEach(btn=>{
  btn.addEventListener('click',()=>{
-  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#etihadMainNav button[data-tab]').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
   btn.classList.add('active');
-  document.getElementById(btn.dataset.tab).classList.remove('hidden');
+  const target=document.getElementById(btn.dataset.tab);
+  if(target)target.classList.remove('hidden');
+  closeEtihadSidebar();
   renderAll();
  });
 });
