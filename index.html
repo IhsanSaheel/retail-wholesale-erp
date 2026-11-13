@@ -5215,6 +5215,7 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
  function shell(title,description,body){
   const back=currentKind()==='open'?'Open orders':'Quotations';
    empty.innerHTML='<div class="et-workflow-head"><div><h3>'+title+'</h3><p class="muted">'+description+'</p></div><button type="button" class="btn light" data-workflow-back>Back to '+back+'</button></div>'+body;
+  return empty;
  }
  function renderList(kind){
   const orders=kind==='open',key=orders?KEY_ORDERS:KEY_QUOTES,records=read(key);
