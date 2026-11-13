@@ -613,6 +613,7 @@ style="padding:10px 16px;background:#1769aa;color:white;border:0;border-radius:7
 
 <section id="products" class="page hidden">
 <h3>Products & Inventory</h3>
+<div class="cards" id="productInventoryMetrics"></div>
 <div class="panel">
 <h3 id="productFormTitle">Add New Product</h3>
 <input type="hidden" id="productId">
@@ -631,8 +632,10 @@ style="padding:10px 16px;background:#1769aa;color:white;border:0;border-radius:7
 </div>
 <div class="panel">
 <div class="grid">
-<div><label>Search Products</label><input id="productSearch" oninput="renderProducts()" placeholder="Search products"></div>
+<div><label>Search Products / SKU / Barcode</label><input id="productSearch" oninput="renderProducts()" placeholder="Search name, SKU or barcode"></div>
 <div><label>Filter Branch</label><select id="productFilter" onchange="renderProducts()"></select></div>
+<div><label>Category</label><select id="productCategoryFilter" onchange="renderProducts()"><option value="">All categories</option></select></div>
+<div><label>Stock status</label><select id="productStockFilter" onchange="renderProducts()"><option value="">All stock levels</option><option value="out">Out of stock</option><option value="low">Low stock</option><option value="healthy">Healthy stock</option></select></div>
 </div>
 <div class="table-wrap"><table>
 <thead><tr><th>Product</th><th>SKU</th><th>Branch</th><th>Qty</th><th>Cost</th><th>Price</th><th>Value</th><th>Actions</th></tr></thead>
@@ -1073,16 +1076,43 @@ function resetProductForm(){
  document.getElementById('productFormTitle').textContent='Add New Product';
 }
 function renderProducts(){
- const q=(document.getElementById('productSearch').value||'').toLowerCase();
+ const q=(document.getElementById('productSearch').value||'').trim().toLowerCase();
  const filter=document.getElementById('productFilter').value;
- const list=products.filter(p=>(!filter||p.branchId===filter)&&[p.name,p.sku,p.category].join(' ').toLowerCase().includes(q));
- document.getElementById('productsTable').innerHTML=list.map(p=>`
- <tr><td><b>${esc(p.name)}</b><br><small class="muted">${esc(p.category||'')}</small></td>
- <td>${esc(p.sku||'-')}</td><td>${esc(branchName(p.branchId))}</td>
- <td>${Number(p.qty||0)} ${Number(p.qty||0)<=Number(p.alert||0)?'<span class="bad">Low</span>':''}</td>
- <td>${money(p.cost)}</td><td>${money(p.price)}</td><td>${money(Number(p.qty||0)*Number(p.cost||0))}</td>
+ const categorySelect=document.getElementById('productCategoryFilter');
+ const stockStatus=document.getElementById('productStockFilter').value;
+ const selectedCategory=categorySelect.value;
+ const categories=[...new Set(products.map(p=>String(p.category||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+ categorySelect.innerHTML='<option value="">All categories</option>'+categories.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
+ if(categories.includes(selectedCategory))categorySelect.value=selectedCategory;
+ const category=categorySelect.value;
+ const branchProducts=products.filter(p=>!filter||p.branchId===filter);
+ const list=branchProducts.filter(p=>{
+  const qty=Number(p.qty||0),alertQty=Number(p.alert||0);
+  const matchesSearch=[p.name,p.sku,p.barcode,p.category].join(' ').toLowerCase().includes(q);
+  const matchesCategory=!category||String(p.category||'').trim()===category;
+  const matchesStock=!stockStatus||(stockStatus==='out'?qty<=0:stockStatus==='low'?qty>0&&qty<=alertQty:qty>alertQty);
+  return matchesSearch&&matchesCategory&&matchesStock;
+ });
+ const total=branchProducts.length;
+ const low=branchProducts.filter(p=>Number(p.qty||0)>0&&Number(p.qty||0)<=Number(p.alert||0)).length;
+ const out=branchProducts.filter(p=>Number(p.qty||0)<=0).length;
+ const stockValue=branchProducts.reduce((sum,p)=>sum+Number(p.qty||0)*Number(p.cost||0),0);
+ document.getElementById('productInventoryMetrics').innerHTML=[
+  ['Products',total,'In selected branch'],
+  ['Low stock',low,'At or below alert level'],
+  ['Out of stock',out,'Require replenishment'],
+  ['Stock cost value','PKR '+money(stockValue),'Current inventory at cost']
+ ].map(([label,value,note])=>'<div class="card"><div class="muted">'+label+'</div><h2>'+value+'</h2><small class="muted">'+note+'</small></div>').join('');
+ document.getElementById('productsTable').innerHTML=list.map(p=>{
+  const qty=Number(p.qty||0),alertQty=Number(p.alert||0);
+  const stockBadge=qty<=0?'<span class="bad">Out of stock</span>':qty<=alertQty?'<span class="bad">Low</span>':'<span class="good">In stock</span>';
+  return `<tr><td><b>${esc(p.name)}</b><br><small class="muted">${esc(p.category||'')}</small></td>
+ <td>${esc(p.sku||p.barcode||'-')}</td><td>${esc(branchName(p.branchId))}</td>
+ <td>${qty} ${stockBadge}</td>
+ <td>${money(p.cost)}</td><td>${money(p.price)}</td><td>${money(qty*Number(p.cost||0))}</td>
  <td><button class="btn small light" onclick="editProduct('${esc(p.id)}')">Edit</button>
- <button class="btn small red" onclick="deleteProduct('${esc(p.id)}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No products found.</td></tr>';
+ <button class="btn small red" onclick="deleteProduct('${esc(p.id)}')">Delete</button></td></tr>`;
+ }).join('')||'<tr><td colspan="8" class="empty">No products match these filters.</td></tr>';
 }
 
 /* STOCK TRANSFER MANAGEMENT */
