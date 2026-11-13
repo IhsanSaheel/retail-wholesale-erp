@@ -4760,7 +4760,9 @@ if ('serviceWorker' in navigator) {
     }catch(e){message('Could not load snapshots: '+(e.message||String(e)));}
     finally{button.disabled=false;}
   };
+  function etihadStableJson(value){if(Array.isArray(value))return '['+value.map(etihadStableJson).join(',')+']';if(value&&typeof value==='object')return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+etihadStableJson(value[k])).join(',')+'}';return JSON.stringify(value);}
   $('etCloudRestoreSnapshot').onclick=async()=>{
+    let safetySnapshotId=null;
     const button=$('etCloudRestoreSnapshot');button.disabled=true;
     try{
       const user=await sessionUser();if(!user||(await membership(user)).role!=='owner')throw new Error('Only the company owner can restore a company snapshot.');
@@ -4774,7 +4776,7 @@ if ('serviceWorker' in navigator) {
       const preview='Snapshot date: '+(snapshot.backupDate||'unknown')+'\nTotal records: '+total+'\n\n'+counts.join('\n')+'\n\nRestore will UPSERT these records by ID. Records not included in this snapshot will be kept; newer versions of matching records will be replaced. A fresh cloud safety snapshot will be created first. Continue?';
       if(!window.confirm(preview))return;
       message('Creating and verifying a fresh safety snapshot before restore…');
-      const safety=await createVerifiedCloudSnapshot(user);
+      const safety=await createVerifiedCloudSnapshot(user);safetySnapshotId=safety.id;
       message('Safety snapshot verified. Restoring '+total+' records…');
       let restored=0;
       for(const collection of COLLECTIONS){
@@ -4798,7 +4800,7 @@ if ('serviceWorker' in navigator) {
           if(check.error)throw check.error;
           const actual=new Map((check.data||[]).map(row=>[row.record_id,row.data]));
           for(const record of expected.slice(i,i+100)){
-            if(!actual.has(keyFor(record))||JSON.stringify(actual.get(keyFor(record)))!==JSON.stringify(record))throw new Error('Verification mismatch in '+collection+' for record '+keyFor(record)+'. Safety snapshot: '+safety.id);
+            if(!actual.has(keyFor(record))||etihadStableJson(actual.get(keyFor(record)))!==etihadStableJson(record))throw new Error('Verification mismatch in '+collection+' for record '+keyFor(record)+'. Safety snapshot: '+safety.id);
           }
         }
       }
@@ -4806,7 +4808,7 @@ if ('serviceWorker' in navigator) {
       try{await mergeCloudRecords();}catch(_){}
       alert('Cloud snapshot restore completed and verified. Your device will reload.');
       location.reload();
-    }catch(e){message('Cloud restore stopped safely: '+(e.message||String(e))+'. Existing and restored records have not been bulk-deleted.');}
+    }catch(e){message('Cloud restore stopped: '+(e.message||String(e))+(safetySnapshotId?' Some batches may already have been restored. Recovery snapshot: '+safetySnapshotId+'.':' No restore batches were started.')+' No cloud records were bulk-deleted.');}
     finally{button.disabled=false;}
   };
   $('etCloudLogout').onclick=async()=>{
