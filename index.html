@@ -7612,5 +7612,197 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',syncMobile,{once:true});else syncMobile();
 })();
 </script>
+
+<style id="etihad-professional-workspace-v1">
+:root{
+  --et-ui-bg:#f4f6f9;--et-ui-surface:#fff;--et-ui-text:#172b43;--et-ui-muted:#718096;
+  --et-ui-line:#e3e9f0;--et-ui-navy:#142b43;--et-ui-blue:#2463a6;--et-ui-gold:#c8a45b;
+  --et-ui-shadow:0 3px 14px rgba(19,42,67,.055);
+}
+html{scroll-behavior:smooth}
+body{background:var(--et-ui-bg)!important;color:var(--et-ui-text)!important;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif!important;letter-spacing:0!important}
+header{position:sticky!important;top:0!important;z-index:1100!important;min-height:72px!important;padding:10px 24px!important;background:linear-gradient(110deg,#142536,#203c56 72%,#46391f)!important;border-bottom:1px solid rgba(200,164,91,.45)!important;box-shadow:0 5px 22px rgba(10,25,43,.16)!important}
+header h2{font-size:20px!important;letter-spacing:-.035em!important}
+#today{font-size:12px!important;color:#d7e1ec!important}
+#etihadMainNav{
+ position:fixed!important;z-index:1200!important;left:0!important;top:72px!important;bottom:0!important;
+ width:252px!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;
+ flex-wrap:nowrap!important;justify-content:flex-start!important;gap:0!important;overflow-x:hidden!important;overflow-y:auto!important;
+ padding:16px 12px 14px!important;background:#142b43!important;border:0!important;border-right:1px solid #0d2032!important;
+ border-radius:0!important;box-shadow:4px 0 18px rgba(12,31,50,.12)!important;backdrop-filter:none!important
+}
+#etihadMainNav .et-sidebar-brand{flex:0 0 auto!important;display:flex!important;align-items:center!important;gap:11px!important;padding:5px 9px 18px!important;margin:0 0 14px!important;border-bottom:1px solid #ffffff1c!important;color:#fff!important}
+#etihadMainNav .et-brand-mark{width:38px!important;height:38px!important;border-radius:11px!important;background:linear-gradient(145deg,#d9bd7a,#b58a3c)!important;color:#192838!important;box-shadow:0 3px 10px #0002!important}
+#etihadMainNav .et-sidebar-brand strong{font-size:11px!important;letter-spacing:1.1px!important}
+#etihadMainNav .et-sidebar-brand small{font-size:9px!important;color:#9fb1c4!important;letter-spacing:.85px!important}
+#etihadMainNav .et-nav-group{display:flex!important;flex:0 0 auto!important;flex-direction:column!important;align-items:stretch!important;gap:3px!important;width:100%!important;margin:0 0 13px!important;padding:0!important}
+#etihadMainNav .et-nav-label{display:block!important;padding:8px 10px 6px!important;color:#8ea4b9!important;font-size:9px!important;font-weight:850!important;letter-spacing:1.35px!important;text-transform:uppercase!important}
+#etihadMainNav button[data-tab]{
+ display:flex!important;flex:0 0 auto!important;align-items:center!important;justify-content:flex-start!important;gap:11px!important;
+ width:100%!important;min-width:0!important;min-height:40px!important;margin:1px 0!important;padding:9px 11px!important;
+ border:1px solid transparent!important;border-radius:8px!important;background:transparent!important;color:#d6e1eb!important;
+ text-align:left!important;text-transform:none!important;white-space:normal!important;font:600 12.5px/1.3 Inter,ui-sans-serif,system-ui,Arial,sans-serif!important;
+ box-shadow:none!important;cursor:pointer!important;transition:background .15s ease,color .15s ease,border-color .15s ease!important
+}
+#etihadMainNav button[data-tab]:hover{background:#ffffff10!important;color:#fff!important;border-color:#ffffff0d!important}
+#etihadMainNav button[data-tab].active{background:#234a6a!important;color:#fff!important;border-color:#315b7d!important;box-shadow:inset 3px 0 #dfbd70!important}
+#etihadMainNav .et-nav-icon{display:inline-flex!important;flex:0 0 20px!important;align-items:center!important;justify-content:center!important;width:20px!important;color:#afc1d1!important;font-size:16px!important;line-height:1!important}
+#etihadMainNav button.active .et-nav-icon{color:#e5c982!important}
+#etihadMainNav .et-sidebar-footer{display:block!important;flex:0 0 auto!important;margin-top:auto!important;padding:13px 10px 3px!important;border-top:1px solid #ffffff1c!important;color:#a7bacb!important;font-size:10px!important}
+#etihadDesktopMoreButton,#etihadDesktopMoreMenu,#etihadMobileBar,#etihadMobileMore{display:none!important}
+#etihadMenuToggle{display:none!important}
+main{display:block!important;width:calc(100% - 252px)!important;max-width:1680px!important;min-height:calc(100vh - 72px)!important;margin:0 0 0 252px!important;padding:25px clamp(16px,2.2vw,34px) 70px!important}
+main>.page{width:100%!important;max-width:1580px!important;margin:0 auto!important}
+.page>h3:first-child{margin:0 0 19px!important;padding:0 0 13px!important;border-bottom:1px solid var(--et-ui-line)!important;color:#183953!important;font-size:23px!important;font-weight:780!important;letter-spacing:-.04em!important;line-height:1.2!important}
+.page>.sales-hero{margin-bottom:18px!important}
+.panel,.card{border:1px solid var(--et-ui-line)!important;border-radius:13px!important;background:var(--et-ui-surface)!important;box-shadow:var(--et-ui-shadow)!important}
+.panel{padding:18px!important;margin-bottom:16px!important}
+.panel>h3{margin:0 0 13px!important;color:#1d3a55!important;font-size:16px!important;font-weight:750!important;letter-spacing:-.02em!important}
+.card{padding:16px!important}
+.card small{color:var(--et-ui-muted)!important;font-size:11px!important;font-weight:700!important}
+.card strong{color:#173a5b!important;font-size:23px!important;font-weight:800!important;letter-spacing:-.04em!important}
+label{display:block!important;margin:0 0 6px!important;color:#50647a!important;font-size:11px!important;font-weight:750!important;letter-spacing:.01em!important}
+input,select,textarea{width:100%;max-width:100%;min-height:41px!important;padding:10px 12px!important;border:1px solid #d7e0e9!important;border-radius:8px!important;background:#fbfcfd!important;color:#20364d!important;font:500 13px/1.4 Inter,ui-sans-serif,system-ui,Arial,sans-serif!important;box-shadow:none!important}
+input:focus,select:focus,textarea:focus{outline:0!important;border-color:#6f9bc4!important;box-shadow:0 0 0 3px rgba(36,99,166,.11)!important;background:#fff!important}
+textarea{min-height:82px!important;resize:vertical}
+.grid{gap:13px!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,205px),1fr))!important}
+.btn,button.btn{min-height:37px!important;padding:9px 13px!important;border:1px solid transparent!important;border-radius:8px!important;background:#245f95!important;color:#fff!important;font-size:12px!important;font-weight:750!important;box-shadow:none!important}
+.btn:hover,button.btn:hover{filter:brightness(1.05)!important;transform:translateY(-1px)!important;box-shadow:0 4px 11px rgba(24,67,107,.14)!important}
+.btn.green,button.btn.green{background:#187b5a!important;color:#fff!important}
+.btn.red,button.btn.red{background:#b94747!important;color:#fff!important}
+.btn.gray,button.btn.gray{background:#62758a!important;color:#fff!important}
+.btn.light,button.btn.light{background:#edf2f7!important;color:#29445f!important;border-color:#dce5ed!important}
+.btn.small,button.btn.small{min-height:30px!important;padding:6px 9px!important;font-size:11px!important}
+.table-wrap{max-width:100%!important;overflow:auto!important;border:1px solid #e5ebf1!important;border-radius:9px!important;background:#fff!important}
+table{width:100%!important;border-collapse:separate!important;border-spacing:0!important}
+th{position:sticky!important;top:0!important;padding:11px 12px!important;background:#f4f7fa!important;color:#5d7085!important;font-size:10px!important;font-weight:850!important;letter-spacing:.06em!important;white-space:nowrap!important}
+td{padding:11px 12px!important;border-bottom:1px solid #edf1f5!important;color:#344b62!important;font-size:12px!important;vertical-align:middle!important}
+tbody tr:last-child td{border-bottom:0!important}
+tbody tr:hover{background:#f8fafc!important}
+.empty{padding:25px!important;color:#8795a6!important;text-align:center!important}
+.muted{color:#75869a!important;font-size:12px!important;line-height:1.55!important}
+.total{color:#173b5d!important;font-size:21px!important;font-weight:800!important}
+#sales .et-sales-actions{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;flex-wrap:wrap!important;padding:16px!important}
+#sales .et-sales-action-buttons{display:flex!important;gap:8px!important;flex-wrap:wrap!important}
+#sales .et-sales-tabs{display:flex!important;align-items:center!important;gap:5px!important;flex-wrap:wrap!important;margin:8px 0 14px!important;padding:4px!important;border-bottom:1px solid var(--et-ui-line)!important}
+#sales .et-sales-tabs button{min-height:36px!important;padding:8px 15px!important;border:1px solid transparent!important;border-radius:7px 7px 0 0!important;background:transparent!important;color:#607287!important;font-size:12px!important;font-weight:750!important}
+#sales .et-sales-tabs button.active{border-color:#dce5ee!important;border-bottom-color:#fff!important;background:#fff!important;color:#1f5c91!important;box-shadow:0 -2px 0 #c8a45b inset!important}
+#sales .et-sales-filters{display:grid!important;grid-template-columns:minmax(200px,1fr) minmax(150px,220px)!important;gap:10px 14px!important;align-items:end!important}
+#sales .et-sales-filters label{margin:0!important}
+#customers .cards{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))!important}
+#pos .sales-metrics{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important}
+.sales-metric{border:1px solid var(--et-ui-line)!important;border-radius:12px!important;background:#fff!important;box-shadow:var(--et-ui-shadow)!important}
+.sales-hero{border-radius:14px!important}
+#pos .sales-records-panel{margin-top:18px!important}
+#pos .sales-search-row{display:flex!important;gap:10px!important;align-items:center!important;flex-wrap:wrap!important}
+#pos .sales-search-row input{max-width:480px!important}
+#pos .sales-records-heading h3{margin:0 0 4px!important}
+#pos .sales-records-heading p{margin:0!important;color:var(--et-ui-muted)!important;font-size:12px!important}
+@media(max-width:1050px){
+ main{padding:20px 17px 60px!important}
+ #pos .sales-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:760px){
+ header{min-height:66px!important;padding:10px 13px 10px 62px!important}
+ header h2{font-size:17px!important}
+ #etihadMenuToggle{display:block!important;position:fixed!important;z-index:1450!important;top:12px!important;left:12px!important;width:39px!important;height:39px!important;padding:0!important;border:1px solid #ffffff50!important;border-radius:9px!important;background:#ffffff18!important;color:#fff!important;font-size:20px!important;box-shadow:none!important}
+ #etihadMainNav{top:0!important;bottom:0!important;left:0!important;width:min(286px,86vw)!important;max-height:100dvh!important;padding:16px 12px 20px!important;transform:translateX(-105%)!important;transition:transform .22s ease!important;z-index:1400!important;box-shadow:10px 0 30px #06182c45!important}
+ body.et-sidebar-open #etihadMainNav{transform:translateX(0)!important}
+ #etihadSidebarBackdrop{display:none!important}
+ body.et-sidebar-open #etihadSidebarBackdrop{display:block!important;position:fixed!important;inset:0!important;z-index:1350!important;background:rgba(8,20,33,.58)!important}
+ main{width:100%!important;max-width:none!important;margin:0!important;padding:18px 12px 70px!important}
+ .page>h3:first-child{font-size:20px!important;margin-bottom:15px!important}
+ .panel{padding:14px!important}
+ #sales .et-sales-filters{grid-template-columns:1fr!important}
+ #pos .sales-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #pos>.panel:first-of-type{grid-template-columns:1fr!important}
+ #pos>.panel:nth-of-type(2){grid-template-columns:1fr!important}
+ #pos>.panel:nth-of-type(2) h3{grid-column:auto!important}
+}
+@media(max-width:390px){
+ #pos .sales-metrics{grid-template-columns:1fr 1fr!important}
+ .sales-metric{padding:11px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ #etihadMainNav,.btn,button{transition:none!important}
+}
+body.etihad-dark #etihadMainNav{background:#101d2c!important;border-color:#26384a!important}
+body.etihad-dark #etihadMainNav button[data-tab]{color:#d1dce8!important}
+body.etihad-dark #etihadMainNav button[data-tab].active{background:#2a4864!important;color:#fff!important}
+body.etihad-dark .page>h3:first-child{color:#e8eef6!important;border-color:var(--line)!important}
+body.etihad-dark .table-wrap{background:var(--surface)!important;border-color:var(--line)!important}
+body.etihad-dark th{background:#202e40!important;color:#d7e0eb!important}
+body.etihad-dark td{color:#d5dfeb!important;border-color:var(--line)!important}
+body.etihad-dark input,body.etihad-dark select,body.etihad-dark textarea{background:#101a28!important;color:#e6edf6!important;border-color:var(--line)!important}
+</style>
+<script id="etihad-professional-navigation-v1">
+(function(){
+ 'use strict';
+ const nav=document.getElementById('etihadMainNav');
+ if(!nav||window.__etihadProfessionalNavigationV1)return;
+ window.__etihadProfessionalNavigationV1=true;
+ const map=new Map();
+ nav.querySelectorAll('button[data-tab]').forEach(button=>map.set(button.dataset.tab,button));
+ const brand=nav.querySelector('.et-sidebar-brand')||Object.assign(document.createElement('div'),{className:'et-sidebar-brand',innerHTML:'<span class="et-brand-mark">ET</span><span><strong>ETIHAD TRADERS</strong><small>BUSINESS MANAGEMENT</small></span>'});
+ const footer=nav.querySelector('.et-sidebar-footer')||Object.assign(document.createElement('div'),{className:'et-sidebar-footer',innerHTML:'<span class="et-online-dot"></span> Company workspace'});
+ const groups=[
+  {title:'WORKSPACE',items:[['dashboard','Dashboard','▦']]},
+  {title:'SALES & CUSTOMERS',items:[['sales','Sales','▣'],['customers','Customers','♙'],['returns','Sales Returns','↩']]},
+  {title:'PURCHASING & PAYABLES',items:[['suppliers','Suppliers & Purchases','▤'],['supplierReturns','Purchase Returns','↪']]},
+  {title:'PRODUCTS & INVENTORY',items:[['products','Products','▥'],['etihadLabelsExpiry','Labels & Expiry','▧'],['etihadPriceAdjustment','Price Readjustment','↗'],['etihadBatchLots','Batch & Expiry','◷'],['stockcontrol','Stock Control','⇅'],['stockledger','Stock Ledger','≋']]},
+  {title:'BRANCHES & REGISTER',items:[['branches','Branches','⌂'],['transfers','Stock Transfers','⇄'],['cashregister','Cash Register','▣']]},
+  {title:'FINANCE & REPORTS',items:[['expenses','Expenses','↗'],['reports','Reports','▤']]},
+  {title:'PEOPLE & ADMINISTRATION',items:[['employees','Employees & Payroll','♙']]},
+  {title:'SYSTEM',items:[['backup','Settings & Backup','⚙']]}
+ ];
+ const known=new Set();
+ nav.replaceChildren(brand);
+ function addGroup(title,items){
+  const available=items.filter(item=>map.has(item[0]));
+  if(!available.length)return;
+  const group=document.createElement('div');group.className='et-nav-group';
+  const heading=document.createElement('div');heading.className='et-nav-label';heading.textContent=title;group.appendChild(heading);
+  available.forEach(([key,label,icon])=>{
+   const button=map.get(key);known.add(key);
+   button.hidden=false;button.removeAttribute('hidden');button.removeAttribute('aria-hidden');
+   button.removeAttribute('data-etihad-secondary');button.type='button';button.classList.remove('active');
+   button.setAttribute('aria-label',label);button.title=label;
+   button.innerHTML='<span class="et-nav-icon" aria-hidden="true">'+icon+'</span><span class="et-nav-text"></span>';
+   button.querySelector('.et-nav-text').textContent=label;
+   group.appendChild(button);
+  });
+  nav.appendChild(group);
+ }
+ groups.forEach(g=>addGroup(g.title,g.items));
+ const ungrouped=[...map.keys()].filter(key=>!known.has(key));
+ if(ungrouped.length)addGroup('OTHER WORKSPACES',ungrouped.map(key=>[key,map.get(key).textContent.trim()||key,'•']));
+ footer.innerHTML='<span class="et-online-dot"></span> Company workspace';
+ nav.appendChild(footer);
+ document.getElementById('etihadDesktopMoreMenu')?.remove();
+ document.getElementById('etihadDesktopMoreButton')?.remove();
+ const toggle=document.getElementById('etihadMenuToggle'),backdrop=document.getElementById('etihadSidebarBackdrop');
+ function closeDrawer(){document.body.classList.remove('et-sidebar-open');toggle?.setAttribute('aria-expanded','false');}
+ toggle?.addEventListener('click',function(){
+  const open=document.body.classList.toggle('et-sidebar-open');
+  toggle.setAttribute('aria-expanded',String(open));
+ });
+ backdrop?.addEventListener('click',closeDrawer);
+ nav.addEventListener('click',function(event){
+  const button=event.target.closest('button[data-tab]');if(!button)return;
+  nav.querySelectorAll('button[data-tab]').forEach(item=>item.classList.toggle('active',item===button));
+  closeDrawer();
+ });
+ document.addEventListener('keydown',event=>{if(event.key==='Escape')closeDrawer();});
+ document.querySelectorAll('main>.page').forEach(page=>{
+  if(page.id==='pos')page.dataset.workspace='point-of-sale';
+  else page.dataset.workspace=page.id;
+  const heading=page.querySelector(':scope > h3');
+  if(heading)heading.classList.add('et-professional-page-title');
+ });
+ const active=nav.querySelector('button[data-tab].active')||nav.querySelector('button[data-tab="dashboard"]');
+ if(active)active.classList.add('active');
+})();
+</script>
+
 </body>
 </html>
