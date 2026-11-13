@@ -6670,5 +6670,48 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
 })();
 </script>
+<script id="etihad-supplier-payment-tools">
+(function(){
+ function setup(){
+  const table=document.getElementById('supplierPaymentsTable');if(!table||document.getElementById('supplierPaymentFrom'))return;
+  const panel=table.closest('.panel');if(!panel)return;
+  const ui=document.createElement('div');ui.id='etihad-supplier-payment-tools';
+  ui.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:12px 0"><div><label>From date</label><input id="supplierPaymentFrom" type="date"></div><div><label>To date</label><input id="supplierPaymentTo" type="date"></div><div><label>Supplier</label><select id="supplierPaymentSupplier"><option value="">All suppliers</option></select></div><div><label>Method</label><select id="supplierPaymentMethodFilter"><option value="">All methods</option><option>Cash</option><option>Bank Transfer</option><option>JazzCash</option><option>EasyPaisa</option><option>Cheque</option><option>Other</option><option>Credit</option></select></div><div><label>Search receipt / note</label><input id="supplierPaymentSearch" placeholder="Receipt number or note"></div></div><div class="cards"><div class="card"><small>Payments</small><strong id="supplierPaymentCount">0</strong></div><div class="card"><small>Total paid</small><strong id="supplierPaymentTotal">PKR 0</strong></div></div><button type="button" class="btn light" id="supplierPaymentReset">Reset Filters</button> <button type="button" class="btn gray" id="supplierPaymentExport">Export CSV</button>';
+  panel.insertBefore(ui,table.closest('.table-wrap'));
+  ['supplierPaymentFrom','supplierPaymentTo','supplierPaymentSupplier','supplierPaymentMethodFilter','supplierPaymentSearch'].forEach(id=>{document.getElementById(id).addEventListener('input',renderSupplierPayments);document.getElementById(id).addEventListener('change',renderSupplierPayments);});
+  document.getElementById('supplierPaymentReset').addEventListener('click',()=>{['supplierPaymentFrom','supplierPaymentTo','supplierPaymentSupplier','supplierPaymentMethodFilter','supplierPaymentSearch'].forEach(id=>document.getElementById(id).value='');renderSupplierPayments();});
+  document.getElementById('supplierPaymentExport').addEventListener('click',exportCsv);
+ }
+ function filtered(){
+  const v=id=>document.getElementById(id)?.value||'';
+  const from=v('supplierPaymentFrom'),to=v('supplierPaymentTo'),sid=v('supplierPaymentSupplier'),method=v('supplierPaymentMethodFilter'),q=v('supplierPaymentSearch').trim().toLowerCase();
+  return (supplierPayments||[]).filter(p=>{const d=String(p.date||'').slice(0,10);return (!from||d>=from)&&(!to||d<=to)&&(!sid||p.supplierId===sid)&&(!method||p.method===method)&&(!q||[p.receiptNo,p.note,p.supplierName].some(x=>String(x||'').toLowerCase().includes(q)));});
+ }
+ window.renderSupplierPayments=function(){
+  const table=document.getElementById('supplierPaymentsTable');if(!table)return;setup();
+  const sel=document.getElementById('supplierPaymentSupplier');
+  if(sel){const old=sel.value;sel.innerHTML='<option value="">All suppliers</option>'+(suppliers||[]).map(s=>'<option value="'+esc(s.id)+'">'+esc(s.name)+'</option>').join('');sel.value=old;}
+  const rows=filtered(),total=rows.reduce((n,p)=>n+Number(p.amount||0),0);
+  document.getElementById('supplierPaymentCount').textContent=rows.length;
+  document.getElementById('supplierPaymentTotal').textContent='PKR '+money(total);
+  table.innerHTML=rows.map(p=>'<tr><td>'+esc(new Date(p.date).toLocaleString())+'</td><td><b>'+esc(p.receiptNo)+'</b></td><td>'+esc(p.supplierName||supplierName(p.supplierId))+'</td><td>'+esc(p.method)+'</td><td>'+money(p.amount)+'</td><td><button class="btn small light" onclick="printSupplierPayment(\''+esc(p.id)+'\')">Print</button></td></tr>').join('')||'<tr><td colspan="6" class="empty">No supplier payments match these filters.</td></tr>';
+  const head=table.closest('table')?.querySelector('thead tr');if(head&&head.children.length===5){const th=document.createElement('th');th.textContent='Receipt';head.appendChild(th);}
+ };
+ function csv(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"';}
+ function exportCsv(){
+  const rows=filtered();if(!rows.length)return alert('No supplier payments match these filters.');
+  const data=[['Receipt','Date','Supplier','Method','Amount','Note'],...rows.map(p=>[p.receiptNo,p.date,p.supplierName||supplierName(p.supplierId),p.method,p.amount,p.note])];
+  const blob=new Blob(['\ufeff'+data.map(r=>r.map(csv).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='etihad-supplier-payments-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+ }
+ window.printSupplierPayment=function(pid){
+  const p=(supplierPayments||[]).find(x=>x.id===pid);if(!p)return alert('Payment receipt not found.');
+  const w=window.open('','_blank');if(!w)return alert('Allow pop-ups to print payment receipts.');
+  w.document.write('<!doctype html><html><head><title>'+esc(p.receiptNo)+'</title><style>body{font-family:Arial;padding:28px;max-width:650px;margin:auto}h2{text-align:center}hr{margin:20px 0}.row{padding:9px 0;border-bottom:1px solid #ddd}.amount{font-size:22px;font-weight:bold;text-align:right;margin-top:25px}@media print{button{display:none}}</style></head><body><h2>ETIHAD TRADERS</h2><p style="text-align:center">Supplier Payment Receipt</p><hr><div class="row"><b>Receipt:</b> '+esc(p.receiptNo)+'</div><div class="row"><b>Date:</b> '+esc(new Date(p.date).toLocaleString())+'</div><div class="row"><b>Supplier:</b> '+esc(p.supplierName||supplierName(p.supplierId))+'</div><div class="row"><b>Method:</b> '+esc(p.method)+'</div><div class="row"><b>Note:</b> '+esc(p.note||'-')+'</div><div class="amount">Paid: PKR '+money(p.amount)+'</div><p style="text-align:center;margin-top:50px">Received with thanks</p><button onclick="window.print()">Print</button></body></html>');
+  w.document.close();
+ };
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
+})();
+</script>
 </body>
 </html>
