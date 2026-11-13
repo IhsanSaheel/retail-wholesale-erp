@@ -6152,5 +6152,84 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  window.addEventListener('resize',build);
 })();
 </script>
+
+<style id="etihad-navigation-menu-cleanup-v1">
+#etihadMainNav{position:relative;overflow:visible}
+#etihadMainNav button[data-etihad-secondary="true"]{display:none!important}
+#etihadDesktopMoreButton{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:10px 16px;border:1px solid var(--line);border-radius:11px;background:var(--surface,#fff);color:var(--ink,#334155);font-weight:800}
+#etihadDesktopMoreButton[aria-expanded="true"]{background:var(--primary,#1769aa);color:#fff}
+#etihadDesktopMoreMenu{position:fixed;z-index:2147482000;display:none;min-width:230px;max-width:min(300px,calc(100vw - 24px));padding:8px;border:1px solid var(--line,#dce3ec);border-radius:14px;background:var(--surface,#fff);box-shadow:0 16px 42px rgba(15,23,42,.2)}
+#etihadDesktopMoreMenu.open{display:grid;gap:5px}
+#etihadDesktopMoreMenu button{width:100%;min-height:42px;padding:10px 12px;border:0;border-radius:9px;background:transparent;color:var(--ink,#26384d);text-align:left;font:inherit;font-weight:700;cursor:pointer}
+#etihadDesktopMoreMenu button:hover,#etihadDesktopMoreMenu button:focus-visible{background:var(--bg,#f3f6fa)}
+#etihadDesktopMoreMenu button.active{background:var(--primary,#1769aa);color:#fff}
+@media(max-width:760px){
+ #etihadDesktopMoreButton,#etihadDesktopMoreMenu{display:none!important}
+}
+</style>
+<script id="etihad-navigation-menu-cleanup-v1">
+(function(){
+ 'use strict';
+ const nav=document.getElementById('etihadMainNav')||document.querySelector('body>nav');
+ if(!nav||window.__etihadNavigationMenuCleanupV1)return;
+ window.__etihadNavigationMenuCleanupV1=true;
+ // Remove duplicate theme shortcuts; all seven themes live in Settings.
+ nav.querySelector('.etihad-theme-tools')?.remove();
+ // Hide secondary destinations from the crowded top row, but retain their original
+ // buttons and event handlers so every existing module keeps its original behavior.
+ const secondary=[
+  ['branches','Branches'],
+  ['transfers','Stock Transfers'],
+  ['employees','Employees & Payroll']
+ ];
+ const sources=secondary.map(([tab,label])=>{
+  const source=[...nav.querySelectorAll('button[data-tab]')].find(b=>b.dataset.tab===tab);
+  if(source){source.dataset.etihadSecondary='true';source.setAttribute('aria-hidden','true');}
+  return {tab,label,source};
+ }).filter(x=>x.source);
+ if(!sources.length)return;
+ const trigger=document.createElement('button');
+ trigger.type='button';trigger.id='etihadDesktopMoreButton';
+ trigger.textContent='More ▾';trigger.setAttribute('aria-haspopup','menu');trigger.setAttribute('aria-expanded','false');
+ nav.appendChild(trigger);
+ const menu=document.createElement('div');
+ menu.id='etihadDesktopMoreMenu';menu.setAttribute('role','menu');menu.setAttribute('aria-label','More business sections');
+ sources.forEach(({tab,label,source})=>{
+  const item=document.createElement('button');item.type='button';item.textContent=label;item.setAttribute('role','menuitem');item.dataset.menuTab=tab;
+  item.addEventListener('click',()=>{source.click();menu.classList.remove('open');trigger.setAttribute('aria-expanded','false');});
+  menu.appendChild(item);
+  source.addEventListener('click',()=>{
+   trigger.classList.add('active');
+   menu.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.menuTab===tab));
+   menu.classList.remove('open');trigger.setAttribute('aria-expanded','false');
+  });
+ });
+ document.body.appendChild(menu);
+ function positionMenu(){
+  const r=trigger.getBoundingClientRect();
+  menu.style.top=Math.min(window.innerHeight-menu.offsetHeight-12,r.bottom+8)+'px';
+  menu.style.right=Math.max(12,window.innerWidth-r.right)+'px';
+ }
+ trigger.addEventListener('click',()=>{
+  const open=!menu.classList.contains('open');
+  if(open){positionMenu();menu.classList.add('open');}
+  else menu.classList.remove('open');
+  trigger.setAttribute('aria-expanded',String(open));
+ });
+ document.addEventListener('click',e=>{
+  if(!menu.contains(e.target)&&!trigger.contains(e.target)){
+   menu.classList.remove('open');trigger.setAttribute('aria-expanded','false');
+  }
+ });
+ document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){menu.classList.remove('open');trigger.setAttribute('aria-expanded','false');trigger.focus();}
+ });
+ window.addEventListener('resize',()=>{if(menu.classList.contains('open'))positionMenu();});
+ // Online Orders has no connected marketplace/source integration in this release.
+ // Remove this non-functional view rather than exposing a dead tab.
+ document.querySelector('#sales [data-sales-view="online"]')?.remove();
+})();
+</script>
+
 </body>
 </html>
