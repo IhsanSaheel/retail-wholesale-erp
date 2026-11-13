@@ -95,5 +95,24 @@ const cloudCode = cloudStart >= 0 && cloudEnd > cloudStart ? html.slice(cloudSta
 if (!cloudCode || !cloudCode.includes(".eq('org_id',ORG_ID)")) fail('cloud record download is missing its organization filter');
 else pass('cloud record download is restricted to the configured organization');
 
+
+const cloudStartForSecurity = html.indexOf('async function permittedCloudRecords()');
+const cloudEndForSecurity = html.indexOf('async function authorizeAndOpen()', cloudStartForSecurity);
+const cloudSecurityCode = cloudStartForSecurity >= 0 && cloudEndForSecurity > cloudStartForSecurity
+  ? html.slice(cloudStartForSecurity, cloudEndForSecurity)
+  : '';
+const securityChecks = [
+  ['active company membership is required', cloudSecurityCode.includes('!r.data||!r.data.active')],
+  ['automatic sync verifies the signed-in user', cloudSecurityCode.includes('user.id!==syncUser.id')],
+  ['initial full-company upload is owner-only', cloudSecurityCode.includes("m.role!=='owner'")],
+  ['cloud uploads use the signed-in user as updater', cloudSecurityCode.includes('updated_by:user.id')],
+  ['deletion sync limitation is disclosed', cloudSecurityCode.includes('Deletions are not synchronized yet')]
+];
+for (const [name, ok] of securityChecks) ok ? pass('cloud safeguard: ' + name) : fail('missing cloud safeguard: ' + name);
+
+if (/service_role|SUPABASE_SERVICE_ROLE_KEY/i.test(html)) {
+  fail('a Supabase service-role credential marker was found in the browser application');
+} else pass('no Supabase service-role credential marker appears in index.html');
+
 if (process.exitCode) process.exit(process.exitCode);
 console.log('Etihad Traders source validation completed.');
