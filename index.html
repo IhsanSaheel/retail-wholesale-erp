@@ -1624,7 +1624,7 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
  $('etPriceHistoryRows').addEventListener('click',e=>{const b=e.target.closest('[data-price-history]');if(!b)return;const x=history.find(v=>String(v.id)===b.dataset.priceHistory);if(x)alert(x.changes.map(c=>c.name+': '+money(c.before)+' → '+money(c.after)).join('\n'));});
  fillFilters();renderHistory();
 })();
-</script>
+<\/script>
 
 <script id="etihad-product-labels-and-expiry-v1">
 (function(){
@@ -1658,7 +1658,7 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
  $('etExpiryRows').addEventListener('click',e=>{const b=e.target.closest('[data-expiry-edit]');if(!b)return;const p=products().find(x=>String(x.id)===b.dataset.expiryEdit);if(!p)return;const v=prompt('Enter expiry date (YYYY-MM-DD). Leave blank to clear:',p.expiryDate||'');if(v===null)return;if(v&&!/^\d{4}-\d{2}-\d{2}$/.test(v))return alert('Use YYYY-MM-DD format.');const before=p.expiryDate||'';p.expiryDate=v;try{if(typeof window.saveAll!=='function')throw new Error('Save function unavailable');window.saveAll();}catch(err){p.expiryDate=before;return alert('Could not save the expiry date: '+err.message);}renderExpiry();});
  fillBranches();renderLabels();renderExpiry();
 })();
-</script>
+<\/script>
 </body>
  </html>`;
 
