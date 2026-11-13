@@ -1,10 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="100" fill="#102a43"/>
-  <rect x="75" y="75" width="362" height="362"
-        rx="65" fill="#1769aa"/>
-  <path d="M145 155 H367 V210 H210 V230 H345 V280 H210 V302 H367 V357 H145 Z"
-        fill="#ffffff"/>
-  <path d="M145 115 H367" stroke="#ffffff"
-        stroke-width="12" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#102a43"/>
+  <rect x="34" y="34" width="444" height="444" rx="92" fill="#173e5b" stroke="#c9a04e" stroke-width="12"/>
+  <path d="M130 139h252v58H196v44h164v56H196v46h186v58H130z" fill="#fff"/>
+  <path d="M130 106h252" stroke="#e3c477" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="382" cy="382" r="22" fill="#c9a04e"/>
 </svg>
