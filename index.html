@@ -7754,8 +7754,8 @@ body.etihad-dark #stockcontrol .et-stock-help,body.etihad-dark #stockcontrol #et
  const help=document.createElement('div');help.className='et-stock-help';help.innerHTML='<span aria-hidden="true">ⓘ</span><span><strong>Stock accuracy tip</strong><br>Choose the correct branch before changing quantities. Use physical count for verified shelf counts and manual adjustment for documented corrections. Review the movement history after saving.</span>';
  panels[1].appendChild(help);
  function draw(){
-  const list=Array.isArray(window.products)?window.products:[];
-  const activeBranches=Array.isArray(window.branches)?window.branches.filter(b=>b.active!==false):[];
+  const list=typeof products!=='undefined'&&Array.isArray(products)?products:[];
+  const activeBranches=typeof branches!=='undefined'&&Array.isArray(branches)?branches.filter(b=>b.active!==false):[];
   const threshold=p=>Math.max(0,Number(p.alert??p.lowStockAlert??5)||0);
   const qty=p=>Number(p.qty||0);
   const low=list.filter(p=>qty(p)>0&&qty(p)<=threshold(p)).length;
