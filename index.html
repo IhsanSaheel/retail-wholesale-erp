@@ -1494,6 +1494,99 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
 
 
 
+
+<!-- ETIHAD MOBILE APP NAVIGATION V3 -->
+<style id="etihad-mobile-native-shell-v3">
+@media (max-width:760px){
+ html,body{width:100%;max-width:100%;overflow-x:hidden}
+ body{padding-bottom:calc(76px + env(safe-area-inset-bottom))!important}
+ body>nav#etihadMainNav{display:none!important}
+ header{position:relative!important;top:auto!important;display:flex!important;align-items:center!important;justify-content:space-between!important;flex-wrap:nowrap!important;gap:8px!important;padding:10px 12px!important;min-height:58px}
+ header>div:first-child{min-width:0!important;flex:1 1 auto!important}
+ header h2{font-size:17px!important;line-height:1.2!important;margin:0!important}
+ header small{font-size:9px!important}
+ header>div:nth-child(2){flex:0 0 auto!important;gap:5px!important}
+ header a{font-size:10px!important;padding:7px 8px!important;white-space:nowrap}
+ #today{font-size:10px!important;white-space:nowrap}
+ main{width:100%!important;max-width:none!important;margin:0!important;padding:12px 10px 20px!important}
+ main>.page{width:100%!important;min-width:0!important}
+ main>.page>h3{font-size:20px!important;margin:2px 0 13px!important}
+ .cards{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+ .card,.panel{min-width:0!important;padding:12px!important;margin-bottom:10px!important;border-radius:13px!important}
+ .card strong{font-size:18px!important;overflow-wrap:anywhere}
+ .grid{grid-template-columns:minmax(0,1fr)!important;gap:9px!important}
+ input,select,textarea{min-width:0!important;max-width:100%!important;width:100%!important;min-height:44px!important;font-size:16px!important}
+ .table-wrap{max-width:100%!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch!important}
+ .table-wrap table{min-width:620px}
+ #pos .pos-pro-layout{display:flex!important;flex-direction:column!important;gap:10px!important}
+ #pos .pos-pro-main,#pos .pos-pro-side{width:100%!important;min-width:0!important;max-height:none!important;position:static!important}
+ #pos .pos-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #etihadMobileBar{position:fixed!important;z-index:2147483000!important;left:0!important;right:0!important;bottom:0!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:2px!important;padding:6px 5px calc(6px + env(safe-area-inset-bottom))!important;background:rgba(255,255,255,.98)!important;border-top:1px solid #dce3ec!important;box-shadow:0 -5px 22px rgba(15,23,42,.13)!important;backdrop-filter:blur(16px)!important}
+ #etihadMobileBar button{display:flex!important;min-width:0!important;min-height:49px!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important;padding:4px 2px!important;border:0!important;border-radius:10px!important;background:transparent!important;color:#65758a!important;font-size:9px!important;font-weight:750!important;line-height:1.1!important;box-shadow:none!important}
+ #etihadMobileBar button .et-mob-icon{font-size:19px!important;line-height:1.1!important}
+ #etihadMobileBar button.active{background:#f5edda!important;color:#795a22!important}
+ #etihadMobileMore{position:fixed!important;z-index:2147483001!important;inset:auto 10px calc(68px + env(safe-area-inset-bottom)) 10px!important;max-height:min(65vh,520px)!important;overflow:auto!important;padding:13px!important;border:1px solid #e0e5ec!important;border-radius:18px!important;background:#fff!important;box-shadow:0 14px 45px rgba(15,23,42,.24)!important;display:none}
+ #etihadMobileMore.open{display:block!important}
+ #etihadMobileMore h3{margin:2px 4px 10px!important;font-size:14px!important;color:#102a43!important}
+ #etihadMobileMore .et-more-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+ #etihadMobileMore button{min-height:44px!important;padding:10px!important;border:1px solid #e4e8ee!important;border-radius:11px!important;background:#f8fafc!important;color:#26384d!important;text-align:left!important;font-size:12px!important;font-weight:700!important;box-shadow:none!important}
+ #etihadNetworkStatus{bottom:calc(82px + env(safe-area-inset-bottom))!important}
+}
+@media(max-width:380px){header h2{font-size:15px!important}header small{display:none!important}main{padding-left:8px!important;padding-right:8px!important}}
+</style>
+<script id="etihad-mobile-navigation-v3">
+(function(){
+ 'use strict';
+ if(window.__etihadMobileNavigationV3)return;
+ window.__etihadMobileNavigationV3=true;
+ function build(){
+  const nav=document.querySelector('nav#etihadMainNav')||document.querySelector('body>nav');
+  if(!nav||document.getElementById('etihadMobileBar'))return;
+  const primary=[
+   {tab:'dashboard',label:'Home',icon:'⌂'},
+   {tab:'pos',label:'Sales',icon:'▣'},
+   {tab:'products',label:'Stock',icon:'▤'},
+   {tab:'customers',label:'Customers',icon:'♙'}
+  ];
+  const bar=document.createElement('div');bar.id='etihadMobileBar';bar.setAttribute('aria-label','Main mobile navigation');
+  const more=document.createElement('button');more.type='button';more.innerHTML='<span class="et-mob-icon">☰</span><span>More</span>';more.setAttribute('aria-expanded','false');
+  function activate(tab){
+   const target=[...nav.querySelectorAll('button[data-tab]')].find(b=>b.dataset.tab===tab);
+   if(target)target.click();
+   bar.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.mobileTab===tab));
+   document.getElementById('etihadMobileMore')?.classList.remove('open');
+   more.setAttribute('aria-expanded','false');
+  }
+  primary.forEach(item=>{
+   const b=document.createElement('button');b.type='button';b.dataset.mobileTab=item.tab;b.innerHTML='<span class="et-mob-icon">'+item.icon+'</span><span>'+item.label+'</span>';
+   b.addEventListener('click',()=>activate(item.tab));bar.appendChild(b);
+  });
+  more.addEventListener('click',()=>{
+   const sheet=document.getElementById('etihadMobileMore');if(!sheet)return;
+   sheet.classList.toggle('open');more.setAttribute('aria-expanded',String(sheet.classList.contains('open')));
+  });
+  bar.appendChild(more);
+  const sheet=document.createElement('section');sheet.id='etihadMobileMore';sheet.setAttribute('aria-label','More sections');
+  sheet.innerHTML='<h3>All business sections</h3><div class="et-more-grid"></div>';
+  const grid=sheet.querySelector('.et-more-grid');
+  [...nav.querySelectorAll('button[data-tab]')].forEach(source=>{
+   const tab=source.dataset.tab;if(primary.some(x=>x.tab===tab))return;
+   const b=document.createElement('button');b.type='button';b.textContent=source.textContent.trim();
+   b.addEventListener('click',()=>activate(tab));grid.appendChild(b);
+  });
+  const theme=nav.querySelector('.etihad-theme-tools');
+  if(theme){const themeButton=document.createElement('button');themeButton.type='button';themeButton.textContent='Appearance & themes';themeButton.addEventListener('click',()=>{activate('backup');setTimeout(()=>document.getElementById('etihadAppearanceSettings')?.scrollIntoView({behavior:'smooth',block:'start'}),100)});grid.appendChild(themeButton);}
+  document.body.appendChild(sheet);document.body.appendChild(bar);
+  document.addEventListener('click',e=>{if(!sheet.contains(e.target)&&!bar.contains(e.target)){sheet.classList.remove('open');more.setAttribute('aria-expanded','false')}});
+  nav.addEventListener('click',e=>{const source=e.target.closest('button[data-tab]');if(source){bar.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.mobileTab===source.dataset.tab));}});
+  const active=nav.querySelector('button.active[data-tab]')||nav.querySelector('button[data-tab="dashboard"]');
+  if(active)bar.querySelector('[data-mobile-tab="'+active.dataset.tab+'"]')?.classList.add('active');
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build,{once:true});else build();
+ window.addEventListener('resize',build);
+})();
+</script>
+
 </body>
  </html>`;
 
