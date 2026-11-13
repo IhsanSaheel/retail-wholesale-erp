@@ -6121,7 +6121,8 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
   function activate(tab){
    const target=[...nav.querySelectorAll('button[data-tab]')].find(b=>b.dataset.tab===tab);
    if(target)target.click();
-   bar.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.mobileTab===tab));
+   const isPrimary=primary.some(x=>x.tab===tab);
+   bar.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.mobileTab===tab||(!isPrimary&&b===more)));
    document.getElementById('etihadMobileMore')?.classList.remove('open');
    more.setAttribute('aria-expanded','false');
   }
@@ -6148,7 +6149,10 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
   document.addEventListener('click',e=>{if(!sheet.contains(e.target)&&!bar.contains(e.target)){sheet.classList.remove('open');more.setAttribute('aria-expanded','false')}});
   nav.addEventListener('click',e=>{const source=e.target.closest('button[data-tab]');if(source){bar.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.mobileTab===source.dataset.tab));}});
   const active=nav.querySelector('button.active[data-tab]')||nav.querySelector('button[data-tab="dashboard"]');
-  if(active)bar.querySelector('[data-mobile-tab="'+active.dataset.tab+'"]')?.classList.add('active');
+  if(active){
+   const primaryActive=bar.querySelector('[data-mobile-tab="'+active.dataset.tab+'"]');
+   if(primaryActive)primaryActive.classList.add('active');else more.classList.add('active');
+  }
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build,{once:true});else build();
  window.addEventListener('resize',build);
