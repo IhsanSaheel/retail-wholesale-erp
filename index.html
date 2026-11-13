@@ -7862,7 +7862,7 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
   event.preventDefault();
   const list=getProducts().filter(p=>selected.has(String(p.id)));
   if(!list.length){alert('Select at least one product first.');return;}
-  const labels=list.map(p=>{const code=p.barcode||p.sku||'';return '<article class="label"><b>'+esc(p.name||'Unnamed product')+'</b>'+code39Svg(code)+'<strong>'+money(p.price)+'</strong><small>Etihad Traders</small><small>Expiry: '+esc(p.expiryDate||'Not set')+'</small></article>';}).join('');
+  const labels=list.map(p=>{const code=p.barcode||('ET'+String(p.id||'').replace(/[^0-9A-Z]/gi,'').toUpperCase());return '<article class="label"><b>'+esc(p.name||'Unnamed product')+'</b>'+code39Svg(code)+'<strong>'+money(p.price)+'</strong><small>Etihad Traders</small><small>Expiry: '+esc(p.expiryDate||'Not set')+'</small></article>';}).join('');
   const w=window.open('','_blank');
   if(!w){alert('Chrome blocked the print window. Allow pop-ups for this ERP site, then try again.');return;}
   w.document.open();
@@ -7938,7 +7938,7 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
   if(!code)return '<small>Barcode not set</small>';
   const full='*'+code+'*';let x=10,bars='';
   for(let ci=0;ci<full.length;ci++){const pat=patterns[full[ci]];if(!pat)continue;for(let j=0;j<9;j++){const width=pat[j]==='w'?3:1;if(j%2===0)bars+='<rect x="'+x+'" y="0" width="'+width+'" height="42" fill="#111"/>';x+=width;}if(ci<full.length-1)x++;}
-  return '<svg class="et-code39" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+(x+10)+' 42" role="img" aria-label="Barcode '+esc(code)+'" preserveAspectRatio="none">'+bars+'</svg><small class="et-code-text">'+esc(code)+'</small>';
+  return '<svg class="et-code39" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+(x+10)+' 42" role="img" aria-label="Product barcode" preserveAspectRatio="none">'+bars+'</svg>';
  }
  function branchNameOf(id){return typeof branchName==='function'?branchName(id):(getBranches().find(b=>String(b.id)===String(id))?.name||'');}
  function fillBranches(){const html='<option value="all">All branches</option>'+getBranches().filter(b=>b.active!==false).map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');$('etLabelBranch').innerHTML=html;$('etExpiryBranch').innerHTML=html;}
