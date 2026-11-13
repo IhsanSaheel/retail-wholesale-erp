@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#102a43">
+<title>Etihad Traders — Demo Mode</title>
+<style>
+:root{--navy:#102a43;--gold:#d5a83b;--bg:#f3f6fa;--line:#e2e8f0;--muted:#64748b;--green:#16845b;--red:#c0392b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#1e293b;font:15px Arial,sans-serif}
+header{background:var(--navy);color:#fff;padding:17px max(18px,calc((100% - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+header h1{font-size:21px;margin:0 0 4px}header small{color:#cbd5e1}
+a{color:inherit}.back{border:1px solid #ffffff55;border-radius:8px;padding:10px 13px;text-decoration:none;font-weight:700}
+main{max-width:1180px;margin:auto;padding:22px 16px 60px}
+.notice{background:#fff7df;border:1px solid #efd68b;border-radius:12px;padding:13px 15px;margin-bottom:18px;color:#6d5314}
+h2{color:var(--navy);font-size:20px;margin:0 0 14px}.muted{color:var(--muted);font-size:13px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:15px 0}
+.card,.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+.metric-label{color:var(--muted);font-size:13px}.metric-value{font-size:25px;font-weight:750;color:var(--navy);margin-top:8px}
+.layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:15px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+button{border:0;border-radius:8px;padding:11px 14px;background:var(--navy);color:white;font-weight:700;cursor:pointer}
+button.secondary{background:#edf2f7;color:#26384b}button.gold{background:var(--gold);color:#241b08}button:focus-visible,a:focus-visible{outline:3px solid #5b9bd5;outline-offset:2px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:700}
+.steps{display:grid;gap:10px}.step{border:1px solid var(--line);border-radius:10px;padding:12px}.step b{display:block;margin-bottom:5px;color:var(--navy)}
+.status{font-size:13px;color:var(--green);min-height:18px;margin-top:8px}
+footer{text-align:center;padding:20px;color:var(--muted);font-size:12px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}main{padding:16px 11px 40px}.metric-value{font-size:22px}}
+</style>
+</head>
+<body>
+<header><div><h1>Etihad Traders</h1><small>Interactive sample workspace</small></div><a class="back" href="index.html">← Back to real business app</a></header>
+<main>
+<div class="notice"><b>DEMO MODE — SAMPLE DATA ONLY.</b> This page runs as a self-contained demonstration. It does not read or write your real ERP records, browser business storage, employee accounts, or company cloud. Changes reset when this page is refreshed.</div>
+<h2>Explore a sample business day</h2>
+<p class="muted">Try the sample actions below to see how sales, stock receiving and customer payments affect the demo dashboard.</p>
+<div class="metrics">
+ <div class="card"><div class="metric-label">Demo sales today</div><div class="metric-value" id="salesTotal">Rs. 0</div></div>
+ <div class="card"><div class="metric-label">Demo invoices</div><div class="metric-value" id="invoiceCount">0</div></div>
+ <div class="card"><div class="metric-label">Demo stock items</div><div class="metric-value" id="stockCount">0</div></div>
+ <div class="card"><div class="metric-label">Customer balance collected</div><div class="metric-value" id="collected">Rs. 0</div></div>
+</div>
+<div class="layout">
+ <section class="panel">
+  <h2>Sample workflows</h2>
+  <div class="actions">
+   <button id="saleBtn">＋ Complete sample sale</button>
+   <button class="secondary" id="purchaseBtn">Receive sample stock</button>
+   <button class="secondary" id="paymentBtn">Collect sample payment</button>
+   <button class="gold" id="resetBtn">Reset demo</button>
+  </div>
+  <div id="status" class="status" role="status" aria-live="polite">Ready — try completing a sample sale.</div>
+  <h2 style="margin-top:20px">Demo invoices</h2>
+  <div style="overflow:auto"><table><thead><tr><th>Invoice</th><th>Sample item</th><th>Total</th><th>Time</th></tr></thead><tbody id="salesRows"><tr><td colspan="4" class="muted">No demo sales yet</td></tr></tbody></table></div>
+ </section>
+ <aside class="panel">
+  <h2>Sample inventory</h2>
+  <div style="overflow:auto"><table><thead><tr><th>Product</th><th>Stock</th><th>Price</th></tr></thead><tbody id="productRows"></tbody></table></div>
+  <h2 style="margin-top:22px">How the process works</h2>
+  <div class="steps">
+   <div class="step"><b>1. Complete a sale</b><span class="muted">An example invoice is created and demo stock decreases.</span></div>
+   <div class="step"><b>2. Receive stock</b><span class="muted">A sample purchase receipt increases the demo inventory.</span></div>
+   <div class="step"><b>3. Collect a payment</b><span class="muted">A sample customer payment updates the demo collection total.</span></div>
+   <div class="step"><b>4. Reset the demo</b><span class="muted">Restore the original sample figures at any time.</span></div>
+  </div>
+ </aside>
+</div>
+</main>
+<footer>Etihad Traders · Demonstration only · No real business data is used</footer>
+<script>
+(function(){
+ 'use strict';
+ const initial=[{name:'Rice 5kg Bag',stock:24,price:1850},{name:'Cooking Oil 1L',stock:36,price:560},{name:'Sugar 1kg',stock:50,price:175}];
+ let products=[],sales=[],collected=0,sequence=1001;
+ const $=id=>document.getElementById(id);
+ const money=n=>'Rs. '+Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2});
+ function reset(){products=initial.map(p=>({...p}));sales=[];collected=0;sequence=1001;render();$('status').textContent='Demo reset. Sample data restored.'}
+ function render(){
+  $('salesTotal').textContent=money(sales.reduce((a,s)=>a+s.total,0));
+  $('invoiceCount').textContent=String(sales.length);
+  $('stockCount').textContent=String(products.reduce((a,p)=>a+p.stock,0));
+  $('collected').textContent=money(collected);
+  $('productRows').innerHTML=products.map(p=>'<tr><td>'+p.name+'</td><td>'+p.stock+'</td><td>'+money(p.price)+'</td></tr>').join('');
+  $('salesRows').innerHTML=sales.length?sales.slice().reverse().map(s=>'<tr><td>'+s.invoice+'</td><td>'+s.item+'</td><td>'+money(s.total)+'</td><td>'+s.time+'</td></tr>').join(''):'<tr><td colspan="4" class="muted">No demo sales yet</td></tr>';
+ }
+ $('saleBtn').addEventListener('click',function(){
+  const p=products.find(x=>x.stock>0);
+  if(!p){$('status').textContent='No demo stock available. Receive stock first.';return}
+  p.stock--;const sale={invoice:'DEMO-'+sequence++,item:p.name,total:p.price,time:new Date().toLocaleTimeString()};
+  sales.push(sale);$('status').textContent=sale.invoice+' completed. '+p.name+' stock reduced by 1.';render();
+ });
+ $('purchaseBtn').addEventListener('click',function(){const p=products[0];p.stock+=10;$('status').textContent='Sample purchase received: 10 units added to '+p.name+'.';render()});
+ $('paymentBtn').addEventListener('click',function(){if(!sales.length){$('status').textContent='Complete a sample sale first, then collect a payment.';return}collected+=Math.min(500,sales.reduce((a,s)=>a+s.total,0)-collected);$('status').textContent='Sample customer payment recorded in this demo only.';render()});
+ $('resetBtn').addEventListener('click',reset);
+ reset();
+})();
+</script>
+</body>
+</html>
