@@ -7151,8 +7151,8 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  const nav=document.querySelector('nav'),main=document.querySelector('main');if(!nav||!main)return;
  const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const fmt=v=>Number(v||0).toLocaleString('en-PK',{maximumFractionDigits:3});
- const products=()=>Array.isArray(window.products)?window.products:[];
- const branches=()=>Array.isArray(window.branches)?window.branches:[];
+ const products=()=>typeof products!=='undefined'&&Array.isArray(products)?products:[];
+ const branches=()=>typeof branches!=='undefined'&&Array.isArray(branches)?branches:[];
  const branchName=id=>(branches().find(b=>String(b.id)===String(id))||{}).name||'Unknown branch';
  const batches=p=>Array.isArray(p.batches)?p.batches:[];
  const batchQty=b=>Math.max(0,Number(b.remainingQty??b.qty??0)||0);
