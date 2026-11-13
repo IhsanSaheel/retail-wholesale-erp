@@ -6574,5 +6574,57 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
 })();
 </script>
 
+<section id="stockcontrol" class="page hidden">
+ <div class="sales-hero"><div><div class="sales-eyebrow">ETIHAD TRADERS · INVENTORY CONTROL</div><h2>Stock adjustments & physical counts</h2><p>Record verified stock corrections with a reason and a traceable history.</p></div><div class="sales-live"><span></span> Inventory control</div></div>
+ <div class="panel"><h3>Stock adjustment</h3><div class="grid">
+  <div><label>Branch</label><select id="etStockBranch"></select></div><div><label>Product</label><select id="etStockProduct"></select></div>
+  <div><label>Adjustment quantity (+ / −)</label><input id="etStockDelta" type="number" step="0.01" placeholder="e.g. 5 or -2"></div>
+  <div><label>Reason</label><select id="etStockReason"><option value="">Select reason</option><option>Damaged / expired</option><option>Found stock</option><option>Loss / shortage</option><option>Data correction</option><option>Other</option></select></div>
+  <div><label>Note</label><input id="etStockNote" maxlength="240" placeholder="Details / reference"></div>
+ </div><button class="btn green" id="etStockApply">Apply stock adjustment</button></div>
+ <div class="panel"><h3>Physical stock count</h3><p class="muted">Enter the quantity physically counted. The system previews the difference before you confirm.</p><div class="grid">
+  <div><label>Branch</label><select id="etCountBranch"></select></div><div><label>Product</label><select id="etCountProduct"></select></div>
+  <div><label>System quantity</label><input id="etCountSystem" readonly></div><div><label>Physically counted quantity</label><input id="etCountActual" type="number" min="0" step="0.01" placeholder="Counted quantity"></div>
+  <div><label>Difference</label><input id="etCountDifference" readonly></div><div><label>Count note</label><input id="etCountNote" maxlength="240" placeholder="Count sheet / counted by"></div>
+ </div><button class="btn" id="etCountPreview">Preview count difference</button><button class="btn green" id="etCountApply">Confirm physical count</button><p id="etCountStatus" class="muted" role="status"></p></div>
+ <div class="panel"><h3>Stock movement history</h3><div class="grid"><div><label>Filter branch</label><select id="etStockHistoryBranch"><option value="">All branches</option></select></div><div><label>Search product / reason</label><input id="etStockHistorySearch" placeholder="Search history"></div></div><div class="table-wrap"><table><thead><tr><th>Date & time</th><th>Product</th><th>Branch</th><th>Type</th><th>Change</th><th>Before</th><th>After</th><th>Reason / note</th></tr></thead><tbody id="etStockHistory"></tbody></table></div></div>
+ <p class="muted">Stock adjustment and count history is saved on this device as a separate audit log. These entries do not edit sales, purchases, transfers or supplier balances.</p>
+</section>
+<script id="etihad-stock-control-v1">
+(function(){
+ 'use strict';
+ if(window.__etihadStockControlV1)return;window.__etihadStockControlV1=true;
+ const $=id=>document.getElementById(id),KEY='etihad_stock_adjustment_log_v1';
+ const escv=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const fmt=v=>Number(v||0).toLocaleString('en-PK',{maximumFractionDigits:2});
+ let log=[];try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(v))log=v;}catch(_){}
+ const saveLog=()=>localStorage.setItem(KEY,JSON.stringify(log));
+ const nav=document.querySelector('nav'),main=document.querySelector('main'),page=$('stockcontrol');if(!nav||!main||!page)return;
+ const tab=document.createElement('button');tab.type='button';tab.textContent='Stock Control';tab.dataset.tab='stockcontrol';nav.appendChild(tab);
+ tab.addEventListener('click',()=>{nav.querySelectorAll('button').forEach(b=>b.classList.remove('active'));main.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));tab.classList.add('active');page.classList.remove('hidden');refreshProducts();renderHistory();});
+ function fillBranches(id){const el=$(id),old=el.value;el.innerHTML=branches.filter(b=>b.active!==false).map(b=>'<option value="'+escv(b.id)+'">'+escv(b.name)+'</option>').join('')||'<option value="">No active branches</option>';if([...el.options].some(o=>o.value===old))el.value=old;}
+ function fillProduct(branchId,selectId){const el=$(selectId),old=el.value,list=products.filter(p=>String(p.branchId)===String(branchId));el.innerHTML=list.map(p=>'<option value="'+escv(p.id)+'">'+escv(p.name)+' · '+fmt(p.qty)+' in stock'+(p.sku?' · '+escv(p.sku):'')+'</option>').join('')||'<option value="">No products in this branch</option>';if([...el.options].some(o=>o.value===old))el.value=old;}
+ function refreshProducts(){['etStockBranch','etCountBranch'].forEach(fillBranches);fillBranches('etStockHistoryBranch');fillProduct($('etStockBranch').value,'etStockProduct');fillProduct($('etCountBranch').value,'etCountProduct');updateCount();}
+ function productFor(branchId,productId){return products.find(p=>String(p.id)===String(productId)&&String(p.branchId)===String(branchId));}
+ function updateCount(){const p=productFor($('etCountBranch').value,$('etCountProduct').value);$('etCountSystem').value=p?fmt(p.qty):'';const a=$('etCountActual').value;$('etCountDifference').value=p&&a!==''&&Number.isFinite(Number(a))?fmt(Number(a)-Number(p.qty||0)):'';}
+ function applyChange(p,delta,type,reason,note){
+  const before=Number(p.qty||0),after=before+delta;if(!Number.isFinite(after)||after<0)return alert('This adjustment would make stock negative. Please check the quantity.');
+  if(!confirm('Confirm '+type+'?\n\nProduct: '+p.name+'\nCurrent stock: '+fmt(before)+'\nChange: '+(delta>0?'+':'')+fmt(delta)+'\nNew stock: '+fmt(after)))return;
+  p.qty=after;log.unshift({id:typeof id==='function'?id():Date.now().toString(36),date:new Date().toISOString(),productId:p.id,productName:p.name,branchId:p.branchId,branchName:branchName(p.branchId),type,delta,before,after,reason,note,actor:(()=>{try{const u=JSON.parse(localStorage.getItem('etihad_active_user_v1')||'null');return u?.email||u?.role||'User'}catch(_){return 'User'}})()});
+  try{saveLog();saveAll();}catch(e){p.qty=before;log.shift();return alert('Could not save the stock change. No change was retained.');}
+  refreshProducts();renderHistory();if(typeof renderAll==='function')renderAll();$('etCountStatus').textContent='Stock updated and recorded in the stock movement history.';
+ }
+ function renderHistory(){const branch=$('etStockHistoryBranch').value,q=$('etStockHistorySearch').value.trim().toLowerCase();const rows=log.filter(x=>(!branch||String(x.branchId)===String(branch))&&[x.productName,x.reason,x.note,x.type].join(' ').toLowerCase().includes(q));$('etStockHistory').innerHTML=rows.slice(0,300).map(x=>'<tr><td>'+escv(new Date(x.date).toLocaleString())+'</td><td>'+escv(x.productName)+'</td><td>'+escv(x.branchName)+'</td><td>'+escv(x.type)+'</td><td class="'+(x.delta<0?'bad':'good')+'">'+(x.delta>0?'+':'')+fmt(x.delta)+'</td><td>'+fmt(x.before)+'</td><td>'+fmt(x.after)+'</td><td>'+escv(x.reason)+' · '+escv(x.note||'')+'</td></tr>').join('')||'<tr><td colspan="8" class="empty">No stock adjustments or counts recorded yet.</td></tr>';}
+ $('etStockBranch').addEventListener('change',()=>fillProduct($('etStockBranch').value,'etStockProduct'));
+ $('etCountBranch').addEventListener('change',()=>{fillProduct($('etCountBranch').value,'etCountProduct');updateCount();});
+ $('etCountProduct').addEventListener('change',updateCount);$('etCountActual').addEventListener('input',updateCount);
+ $('etStockApply').addEventListener('click',()=>{const p=productFor($('etStockBranch').value,$('etStockProduct').value),delta=Number($('etStockDelta').value),reason=$('etStockReason').value;if(!p)return alert('Select a product.');if(!Number.isFinite(delta)||delta===0)return alert('Enter a non-zero adjustment quantity.');if(!reason)return alert('Select a reason.');applyChange(p,delta,'Manual adjustment',reason,$('etStockNote').value.trim());$('etStockDelta').value='';$('etStockNote').value='';});
+ $('etCountPreview').addEventListener('click',()=>{updateCount();const p=productFor($('etCountBranch').value,$('etCountProduct').value);if(!p||$('etCountActual').value==='')return alert('Select a product and enter the physical count.');$('etCountStatus').textContent='System: '+fmt(p.qty)+' · Counted: '+fmt($('etCountActual').value)+' · Difference: '+fmt(Number($('etCountActual').value)-Number(p.qty||0));});
+ $('etCountApply').addEventListener('click',()=>{const p=productFor($('etCountBranch').value,$('etCountProduct').value),v=$('etCountActual').value;if(!p||v==='')return alert('Select a product and enter the physical count.');const actual=Number(v),before=Number(p.qty||0);if(!Number.isFinite(actual)||actual<0)return alert('Enter a valid non-negative counted quantity.');const delta=actual-before;if(delta===0)return alert('Count matches system stock. No adjustment is needed.');applyChange(p,delta,'Physical stock count','Physical count',$('etCountNote').value.trim());$('etCountActual').value='';$('etCountNote').value='';updateCount();});
+ $('etStockHistoryBranch').addEventListener('change',renderHistory);$('etStockHistorySearch').addEventListener('input',renderHistory);
+ refreshProducts();renderHistory();
+})();
+</script>
+
 </body>
 </html>
