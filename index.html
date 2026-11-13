@@ -4384,6 +4384,9 @@ if ('serviceWorker' in navigator) {
       <button id="etCloudDownload" style="padding:11px;background:#1769aa;color:white;border:0;border-radius:7px;margin:3px">Refresh my permitted company data</button>
       <button id="etCloudUseCompany" style="padding:11px;background:#7c3aed;color:white;border:0;border-radius:7px;margin:3px;display:none">Use company cloud records on this device</button>
       <button id="etCloudSnapshot" style="padding:11px;background:#0f766e;color:white;border:0;border-radius:7px;margin:3px;display:none">Create Cloud Safety Snapshot</button>
+      <button id="etCloudLoadSnapshots" style="padding:11px;background:#475569;color:white;border:0;border-radius:7px;margin:3px;display:none">Load Cloud Snapshots</button>
+      <select id="etCloudSnapshotSelect" aria-label="Choose cloud backup snapshot" style="padding:10px;margin:5px;max-width:100%;display:none"><option value="">Select a saved snapshot</option></select>
+      <button id="etCloudRestoreSnapshot" style="padding:11px;background:#b45309;color:white;border:0;border-radius:7px;margin:3px;display:none">Restore Selected Snapshot</button>
       <button id="etCloudLogout" style="padding:11px;background:#64748b;color:white;border:0;border-radius:7px;margin:3px">Logout</button>
     </div>
     <p id="etCloudStatus" role="status" style="font-size:13px;color:#475569;margin-top:14px">Checking your company account…</p>
@@ -4598,6 +4601,9 @@ if ('serviceWorker' in navigator) {
       $('etCloudUpload').style.display=m.role==='owner'?'inline-block':'none';
       $('etCloudUseCompany').style.display=m.role==='owner'?'inline-block':'none';
       $('etCloudSnapshot').style.display=m.role==='owner'?'inline-block':'none';
+      $('etCloudLoadSnapshots').style.display=m.role==='owner'?'inline-block':'none';
+      $('etCloudSnapshotSelect').style.display=m.role==='owner'?'block':'none';
+      $('etCloudRestoreSnapshot').style.display=m.role==='owner'?'inline-block':'none';
       const previousUser=localStorage.getItem(ACTIVE_USER_KEY);
       const accountChanged=!!previousUser&&previousUser!==user.id;
       if(m.role==='owner'&&!accountChanged){
@@ -4701,6 +4707,106 @@ if ('serviceWorker' in navigator) {
       if(!verified||verified.id!==snapshotId||!verified.records||COLLECTIONS.some(k=>!Array.isArray(verified.records[k])))throw new Error('Snapshot verification failed. Do not proceed with a restore until this is resolved.');
       message('Verified cloud safety snapshot created: '+total+' company records across '+COLLECTIONS.length+' collections. Snapshot ID: '+snapshotId);
     }catch(e){message('Cloud snapshot failed safely: '+(e.message||String(e)));}
+    finally{button.disabled=false;}
+  };
+  async function createVerifiedCloudSnapshot(user){
+    const records=Object.fromEntries(COLLECTIONS.map(k=>[k,[]]));
+    let offset=0,total=0;
+    while(true){
+      const page=await client.from('etihad_records').select('collection,record_id,data').eq('org_id',ORG_ID).range(offset,offset+999);
+      if(page.error)throw page.error;
+      const rows=page.data||[];
+      for(const row of rows){if(records[row.collection])records[row.collection].push(row.data);}
+      total+=rows.filter(row=>Object.prototype.hasOwnProperty.call(records,row.collection)).length;
+      if(rows.length<1000)break;offset+=rows.length;
+    }
+    if(!records.mberp_branches.length)throw new Error('Safety snapshot stopped: no company branches were found.');
+    const snapshotId='snapshot_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+    const snapshot={id:snapshotId,app:'Etihad Traders',backupVersion:1,backupDate:new Date().toISOString(),createdBy:user.id,cloudRecordCount:total,records};
+    const saved=await client.from('etihad_records').upsert({org_id:ORG_ID,collection:'etihad_backup_snapshots',record_id:snapshotId,branch_ids:[],data:snapshot,updated_by:user.id},{onConflict:'org_id,collection,record_id'});
+    if(saved.error)throw saved.error;
+    const check=await client.from('etihad_records').select('record_id,data').eq('org_id',ORG_ID).eq('collection','etihad_backup_snapshots').eq('record_id',snapshotId).single();
+    if(check.error)throw check.error;
+    if(check.data?.data?.id!==snapshotId||COLLECTIONS.some(k=>!Array.isArray(check.data?.data?.records?.[k])))throw new Error('Safety snapshot verification failed.');
+    return {id:snapshotId,total};
+  }
+  $('etCloudSnapshot').onclick=async()=>{
+    const button=$('etCloudSnapshot');button.disabled=true;
+    try{
+      const user=await sessionUser();if(!user)throw new Error('Please log in again.');
+      if((await membership(user)).role!=='owner')throw new Error('Only the company owner can create a full-company cloud snapshot.');
+      message('Reading company cloud records and creating a protected snapshot…');
+      const result=await createVerifiedCloudSnapshot(user);
+      message('Verified cloud safety snapshot created: '+result.total+' records. Snapshot ID: '+result.id);
+    }catch(e){message('Cloud snapshot failed safely: '+(e.message||String(e)));}
+    finally{button.disabled=false;}
+  };
+  $('etCloudLoadSnapshots').onclick=async()=>{
+    const button=$('etCloudLoadSnapshots'),select=$('etCloudSnapshotSelect');button.disabled=true;
+    try{
+      const user=await sessionUser();if(!user||(await membership(user)).role!=='owner')throw new Error('Owner access is required.');
+      message('Loading saved company snapshots…');
+      const result=await client.from('etihad_records').select('record_id,data,updated_at').eq('org_id',ORG_ID).eq('collection','etihad_backup_snapshots').order('updated_at',{ascending:false}).limit(30);
+      if(result.error)throw result.error;
+      select.innerHTML='<option value="">Select a saved snapshot</option>';
+      for(const row of (result.data||[])){
+        const snap=row.data||{};
+        if(snap.app!=='Etihad Traders'||!snap.records||COLLECTIONS.some(k=>!Array.isArray(snap.records[k])))continue;
+        const option=document.createElement('option');option.value=row.record_id;
+        option.textContent=(snap.backupDate?new Date(snap.backupDate).toLocaleString():'Undated')+' — '+(Number(snap.cloudRecordCount)||0)+' records — '+row.record_id;
+        select.appendChild(option);
+      }
+      message(select.options.length>1?(select.options.length-1)+' verified snapshots available. Select one to preview and restore.':'No valid cloud snapshots were found.');
+    }catch(e){message('Could not load snapshots: '+(e.message||String(e)));}
+    finally{button.disabled=false;}
+  };
+  $('etCloudRestoreSnapshot').onclick=async()=>{
+    const button=$('etCloudRestoreSnapshot');button.disabled=true;
+    try{
+      const user=await sessionUser();if(!user||(await membership(user)).role!=='owner')throw new Error('Only the company owner can restore a company snapshot.');
+      const snapshotId=$('etCloudSnapshotSelect').value;if(!snapshotId)throw new Error('Select a snapshot first.');
+      const found=await client.from('etihad_records').select('record_id,data').eq('org_id',ORG_ID).eq('collection','etihad_backup_snapshots').eq('record_id',snapshotId).single();
+      if(found.error)throw found.error;
+      const snapshot=found.data?.data;
+      if(!snapshot||snapshot.app!=='Etihad Traders'||!snapshot.records||COLLECTIONS.some(k=>!Array.isArray(snapshot.records[k])))throw new Error('Snapshot validation failed. No records were changed.');
+      const counts=COLLECTIONS.map(k=>k+': '+snapshot.records[k].length);
+      const total=COLLECTIONS.reduce((n,k)=>n+snapshot.records[k].length,0);
+      const preview='Snapshot date: '+(snapshot.backupDate||'unknown')+'\nTotal records: '+total+'\n\n'+counts.join('\n')+'\n\nRestore will UPSERT these records by ID. Records not included in this snapshot will be kept; newer versions of matching records will be replaced. A fresh cloud safety snapshot will be created first. Continue?';
+      if(!window.confirm(preview))return;
+      message('Creating and verifying a fresh safety snapshot before restore…');
+      const safety=await createVerifiedCloudSnapshot(user);
+      message('Safety snapshot verified. Restoring '+total+' records…');
+      let restored=0;
+      for(const collection of COLLECTIONS){
+        const rows=snapshot.records[collection].map(record=>{
+          const rid=keyFor(record);if(!rid)throw new Error(collection+' contains a record without an ID. Restore stopped.');
+          const branches=Array.isArray(record.branch_ids)?record.branch_ids.map(String).filter(Boolean):(record.branch_id?[String(record.branch_id)]:[]);
+          return {org_id:ORG_ID,collection,record_id:rid,branch_ids:branches,data:record,updated_by:user.id};
+        });
+        for(let i=0;i<rows.length;i+=100){
+          const batch=await client.from('etihad_records').upsert(rows.slice(i,i+100),{onConflict:'org_id,collection,record_id'});
+          if(batch.error)throw new Error('Restore stopped in '+collection+' after '+restored+' records: '+batch.error.message);
+          restored+=Math.min(100,rows.length-i);
+        }
+      }
+      message('Verifying restored cloud records…');
+      for(const collection of COLLECTIONS){
+        const expected=snapshot.records[collection];
+        for(let i=0;i<expected.length;i+=100){
+          const ids=expected.slice(i,i+100).map(keyFor);
+          const check=await client.from('etihad_records').select('record_id,data').eq('org_id',ORG_ID).eq('collection',collection).in('record_id',ids);
+          if(check.error)throw check.error;
+          const actual=new Map((check.data||[]).map(row=>[row.record_id,row.data]));
+          for(const record of expected.slice(i,i+100)){
+            if(!actual.has(keyFor(record))||JSON.stringify(actual.get(keyFor(record)))!==JSON.stringify(record))throw new Error('Verification mismatch in '+collection+' for record '+keyFor(record)+'. Safety snapshot: '+safety.id);
+          }
+        }
+      }
+      message('Cloud restore verified: '+restored+' records restored. Records outside this snapshot were preserved. Safety snapshot: '+safety.id+'. Refreshing permitted data on this device…');
+      try{await mergeCloudRecords();}catch(_){}
+      alert('Cloud snapshot restore completed and verified. Your device will reload.');
+      location.reload();
+    }catch(e){message('Cloud restore stopped safely: '+(e.message||String(e))+'. Existing and restored records have not been bulk-deleted.');}
     finally{button.disabled=false;}
   };
   $('etCloudLogout').onclick=async()=>{
