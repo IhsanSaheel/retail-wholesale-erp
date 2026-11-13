@@ -898,6 +898,8 @@ function saveAll(){
  localStorage.setItem(KEY_PAYMENTS,JSON.stringify(payments));
  localStorage.setItem(KEY_EXPENSES,JSON.stringify(expenses));
  localStorage.setItem(KEY_TRANSFERS,JSON.stringify(transfers));
+ localStorage.setItem('mberp_orders',JSON.stringify(load('mberp_orders',[])));
+ localStorage.setItem('mberp_quotations',JSON.stringify(load('mberp_quotations',[])));
 
  window.dispatchEvent(new Event('etihad-data-saved'));
 }
@@ -4853,6 +4855,90 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
    if(typeof window.renderBusinessReport==='function')window.renderBusinessReport();
   });
  }
+})();
+</script>
+
+
+<script id="etihad-sales-orders-and-quotations-v1">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const KEY_ORDERS='mberp_orders',KEY_QUOTES='mberp_quotations';
+ const read=(key)=>{try{const v=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(v)?v:[]}catch(_){return []}};
+ const write=(key,value)=>{localStorage.setItem(key,JSON.stringify(value));window.dispatchEvent(new Event('etihad-data-saved'));};
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const money=v=>Number(v||0).toLocaleString('en-PK',{maximumFractionDigits:2});
+ const makeId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+ const page=$('sales'),empty=$('etihadSalesEmpty');
+ if(!page||!empty)return;
+ const getBranches=()=>{try{return JSON.parse(localStorage.getItem('mberp_branches')||'[]').filter(x=>x.active!==false)}catch(_){return []}};
+ const getProducts=()=>{try{return JSON.parse(localStorage.getItem('mberp_products')||'[]')}catch(_){return []}};
+ const branchOptions=()=>getBranches().map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');
+ const productOptions=bid=>getProducts().filter(p=>String(p.branchId)===String(bid)).map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+' · PKR '+money(p.price)+' · Stock '+Number(p.qty||0)+'</option>').join('');
+ function shell(title,description,body){
+  empty.innerHTML='<div class="et-workflow-head"><div><h3>'+title+'</h3><p class="muted">'+description+'</p></div><button type="button" class="btn light" data-workflow-back>Back to '+(title==='Open Orders'?'Open orders':'Quotations')+'</button></div>'+body;
+ }
+ function renderList(kind){
+  const orders=kind==='open',key=orders?KEY_ORDERS:KEY_QUOTES,records=read(key);
+  const title=orders?'Open Orders':'Quotations';
+  const rows=records.slice().sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||''))).map(r=>{
+   const lines=(r.items||[]).map(x=>esc(x.name)+' × '+Number(x.qty)).join(', ');
+   return '<tr><td><b>'+esc(r.number)+'</b></td><td>'+esc(r.date||'—')+'</td><td>'+esc(r.customer||'Walk-in Customer')+'<br><small>'+esc(r.phone||'')+'</small></td><td>'+esc(r.branchName||'—')+'</td><td>'+esc(lines||'—')+'</td><td>PKR '+money(r.total)+'</td><td><span class="badge">'+esc(r.status|| (orders?'Open':'Draft'))+'</span></td><td><button type="button" class="btn small light" data-workflow-view="'+esc(r.id)+'">View</button> <button type="button" class="btn small red" data-workflow-delete="'+esc(r.id)+'">Delete</button></td></tr>';
+  }).join('');
+  shell(title,orders?'Saved customer orders. Stock is not deducted until an order is converted into a sale.':'Saved customer quotations. Quotations do not reserve or deduct stock.',
+   '<div class="et-workflow-toolbar"><button type="button" class="btn" data-workflow-create="'+(orders?'order':'quote')+'">＋ New '+(orders?'Order':'Quotation')+'</button><span class="muted">'+records.length+' saved record(s)</span></div><div class="table-wrap"><table><thead><tr><th>Number</th><th>Date</th><th>Customer</th><th>Branch</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+ (rows||'<tr><td colspan="8" class="empty">No '+(orders?'open orders':'quotations')+' saved yet. Select New '+(orders?'Order':'Quotation')+' to create your first record.</td></tr>')+'</tbody></table></div>');
+ }
+ function showForm(kind,record){
+  const orders=kind==='order',key=orders?KEY_ORDERS:KEY_QUOTES;
+  const editing=!!record,branches=getBranches(),bid=record?.branchId||branches[0]?.id||'';
+  const products=getProducts().filter(p=>String(p.branchId)===String(bid));
+  const itemRows=(record?.items||[]).map(x=>({productId:x.productId,name:x.name,qty:Number(x.qty||1),price:Number(x.price||0)}));
+  const rows=itemRows.length?itemRows:[];
+  const numPrefix=orders?'ORD':'QUO';
+  const current=record||{id:makeId(),number:numPrefix+'-'+new Date().getFullYear()+'-'+String(read(key).length+1).padStart(5,'0'),date:new Date().toISOString().slice(0,10),status:orders?'Open':'Draft'};
+  shell( (editing?'Edit ':'New ')+(orders?'Order':'Quotation'),orders?'Create a customer order without reducing available stock.':'Prepare a price quotation without changing stock or accounts.',
+   '<form id="etWorkflowForm" class="et-workflow-form"><div class="grid"><div><label>Branch *</label><select id="etWBranch" required>'+branchOptions()+'</select></div><div><label>Date *</label><input id="etWDate" type="date" required value="'+esc(current.date||new Date().toISOString().slice(0,10))+'"></div><div><label>Customer name</label><input id="etWCustomer" placeholder="Walk-in Customer" value="'+esc(current.customer||'')+'"></div><div><label>Customer phone</label><input id="etWPhone" inputmode="tel" value="'+esc(current.phone||'')+'"></div></div><div class="panel"><h4>Add products</h4><div class="grid"><div><label>Product</label><select id="etWProduct">'+productOptions(bid)+'</select></div><div><label>Quantity</label><input id="etWQty" type="number" min="1" step="1" value="1"></div><div><label>Unit price (PKR)</label><input id="etWPrice" type="number" min="0" step="0.01"></div></div><button type="button" class="btn light" id="etWAdd">Add item</button><div class="table-wrap"><table><thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Subtotal</th><th></th></tr></thead><tbody id="etWItems"></tbody></table></div><p class="total">Total: PKR <b id="etWTotal">0</b></p></div><div><label>Notes</label><textarea id="etWNotes" rows="2" placeholder="Optional notes">'+esc(current.notes||'')+'</textarea></div><div class="et-workflow-actions"><button class="btn" type="submit">Save '+(orders?'Order':'Quotation')+'</button><button class="btn light" type="button" data-workflow-cancel>Cancel</button></div></form>');
+  const form=$('etWorkflowForm'),branch=$('etWBranch'),product=$('etWProduct'),price=$('etWPrice'),qty=$('etWQty'),tbody=$('etWItems');
+  branch.value=bid;
+  let items=rows.slice();
+  function refreshProducts(){const keep=product.value;product.innerHTML=productOptions(branch.value);if([...product.options].some(o=>o.value===keep))product.value=keep;syncPrice();}
+  function syncPrice(){const p=getProducts().find(x=>String(x.id)===String(product.value));if(p)price.value=Number(p.price||0);}
+  function draw(){tbody.innerHTML=items.map((x,i)=>'<tr><td>'+esc(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.price)+'</td><td>'+money(x.qty*x.price)+'</td><td><button type="button" class="btn small red" data-et-remove="'+i+'">Remove</button></td></tr>').join('')||'<tr><td colspan="5" class="empty">No items added.</td></tr>';$('etWTotal').textContent=money(items.reduce((n,x)=>n+x.qty*x.price,0));}
+  branch.addEventListener('change',refreshProducts);product.addEventListener('change',syncPrice);
+  $('etWAdd').addEventListener('click',()=>{const p=getProducts().find(x=>String(x.id)===String(product.value)),q=Number(qty.value),v=Number(price.value);if(!p)return alert('Select a product.');if(!Number.isInteger(q)||q<1)return alert('Enter a whole-number quantity greater than zero.');if(!Number.isFinite(v)||v<0)return alert('Enter a valid unit price.');const old=items.find(x=>String(x.productId)===String(p.id));if(old)old.qty+=q;else items.push({productId:p.id,name:p.name,qty:q,price:v});draw();});
+  tbody.addEventListener('click',e=>{const b=e.target.closest('[data-et-remove]');if(b){items.splice(Number(b.dataset.etRemove),1);draw();}});
+  $('etWorkflowForm').addEventListener('submit',e=>{e.preventDefault();if(!items.length)return alert('Add at least one product.');const b=getBranches().find(x=>String(x.id)===String(branch.value));if(!b)return alert('Select an active branch.');const total=items.reduce((n,x)=>n+x.qty*x.price,0);const saved={...current,branchId:b.id,branchName:b.name,date:$('etWDate').value,customer:$('etWCustomer').value.trim()||'Walk-in Customer',phone:$('etWPhone').value.trim(),items:items.map(x=>({...x})),total,notes:$('etWNotes').value.trim(),updatedAt:new Date().toISOString(),createdAt:current.createdAt||new Date().toISOString(),status:current.status||(orders?'Open':'Draft')};const all=read(key),index=all.findIndex(x=>x.id===saved.id);if(index>=0)all[index]=saved;else all.unshift(saved);write(key,all);renderList(orders?'open':'quotations');alert((orders?'Order':'Quotation')+' '+saved.number+' saved successfully. '+(orders?'No stock has been deducted.':'No stock or account balances have been changed.'));});
+  draw();if(!product.options.length)price.value='';
+ }
+ function renderView(kind,id){
+  const key=kind==='open'?KEY_ORDERS:KEY_QUOTES,record=read(key).find(x=>x.id===id);if(!record)return renderList(kind);
+  const total=(record.items||[]).reduce((n,x)=>n+Number(x.qty||0)*Number(x.price||0),0);
+  shell((kind==='open'?'Order ':'Quotation ')+record.number,'Saved record details',
+   '<div class="grid"><div class="card"><small>Customer</small><h3>'+esc(record.customer)+'</h3><p>'+esc(record.phone||'No phone')+'</p></div><div class="card"><small>Total</small><h3>PKR '+money(total)+'</h3><p>'+esc(record.date||'')+' · '+esc(record.branchName||'')+'</p></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>Subtotal</th></tr></thead><tbody>'+(record.items||[]).map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.price)+'</td><td>'+money(x.qty*x.price)+'</td></tr>').join('')+'</tbody></table></div><p><b>Notes:</b> '+esc(record.notes||'—')+'</p></div><div class="et-workflow-actions"><button class="btn" data-workflow-edit="'+esc(record.id)+'">Edit</button><button class="btn light" data-workflow-back>Back to '+(kind==='open'?'Open orders':'Quotations')+'</button></div>');
+ }
+ function currentKind(){return document.querySelector('[data-sales-view].active')?.dataset.salesView||'records';}
+ function handleAction(e){
+  const t=e.target.closest('button');if(!t)return;
+  if(t.id==='etihadNewOrderButton'||t.id==='etihadNewQuotationButton'){
+   e.preventDefault();e.stopImmediatePropagation();showForm(t.id==='etihadNewOrderButton'?'order':'quote');return;
+  }
+  const kind=currentKind();
+  if(t.matches('[data-workflow-create]')){showForm(t.dataset.workflowCreate==='order'?'order':'quote');return;}
+  if(t.hasAttribute('data-workflow-back')){renderList(kind);return;}
+  if(t.hasAttribute('data-workflow-view')){renderView(kind,t.dataset.workflowView);return;}
+  if(t.hasAttribute('data-workflow-edit')){const key=kind==='open'?KEY_ORDERS:KEY_QUOTES;const rec=read(key).find(x=>x.id===t.dataset.workflowEdit);if(rec)showForm(kind==='open'?'order':'quote',rec);return;}
+  if(t.hasAttribute('data-workflow-delete')){if(!confirm('Delete this saved '+(kind==='open'?'order':'quotation')+'?'))return;const key=kind==='open'?KEY_ORDERS:KEY_QUOTES;write(key,read(key).filter(x=>x.id!==t.dataset.workflowDelete));renderList(kind);return;}
+ }
+ page.addEventListener('click',handleAction,true);
+ page.querySelectorAll('[data-sales-view]').forEach(tab=>tab.addEventListener('click',()=>setTimeout(()=>{if(tab.dataset.salesView==='open'||tab.dataset.salesView==='quotations')renderList(tab.dataset.salesView);},0)));
+ const oldOrder=$('etihadNewOrderButton'),oldQuote=$('etihadNewQuotationButton');
+ if(oldOrder)oldOrder.addEventListener('click',()=>setTimeout(()=>showForm('order'),0),true);
+ if(oldQuote)oldQuote.addEventListener('click',()=>setTimeout(()=>showForm('quote'),0),true);
+ // Route tab rendering to real persisted order and quotation records after the original tab handler runs.
+ const tabs=page.querySelectorAll('[data-sales-view]');
+ tabs.forEach(tab=>tab.addEventListener('click',()=>{if(tab.dataset.salesView==='open'||tab.dataset.salesView==='quotations')setTimeout(()=>renderList(tab.dataset.salesView),0);}));
+ window.addEventListener('etihad-data-saved',()=>{if(['open','quotations'].includes(currentKind()))renderList(currentKind());});
+ const style=document.createElement('style');style.textContent='#sales .et-workflow-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}#sales .et-workflow-head h3{margin:0 0 5px}#sales .et-workflow-toolbar,#sales .et-workflow-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}#sales .et-workflow-form>.panel{margin:14px 0}#sales .et-workflow-form h4{margin:0 0 12px}#sales .et-workflow-form .total{font-weight:800;text-align:right}#sales .et-workflow-form textarea{width:100%;box-sizing:border-box}#sales .badge{display:inline-block;padding:4px 8px;border-radius:20px;background:#edf2f7;color:#334155;font-size:11px}';document.head.appendChild(style);
 })();
 </script>
 
