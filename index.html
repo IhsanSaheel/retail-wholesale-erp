@@ -6555,5 +6555,24 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
 })();
 </script>
 
+<script id="etihad-pos-payment-method-v1">
+(function(){
+ 'use strict';
+ if(window.__etihadPosMethodV1)return;window.__etihadPosMethodV1=true;
+ const paid=$('salePaid');if(!paid)return;
+ const field=document.createElement('div');field.innerHTML='<label for="etPosPaymentMethod">Payment method for amount received</label><select id="etPosPaymentMethod"><option value="Cash">Cash</option><option value="Bank Transfer">Bank Transfer</option><option value="Card">Card</option><option value="Cheque">Cheque</option><option value="Mobile Wallet">Mobile Wallet</option><option value="Other">Other</option></select>';
+ paid.parentElement.parentElement.insertBefore(field,paid.parentElement);
+ const original=window.completeSale;
+ if(typeof original!=='function')return;
+ window.completeSale=function(){
+  const before=new Set(sales.map(s=>s.id)),method=$('etPosPaymentMethod').value||'Cash';
+  const result=original.apply(this,arguments);
+  const created=sales.find(s=>!before.has(s.id));
+  if(created){created.paymentMethod=method;saveAll();}
+  return result;
+ };
+})();
+</script>
+
 </body>
 </html>
