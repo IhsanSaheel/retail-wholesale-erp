@@ -2525,10 +2525,12 @@ renderAll();
    const label=esc(entry.recordLabel||entry.snapshot?.name||entry.snapshot?.number||'Record');
    const type=esc(String(entry.collection||'').replace(/^mberp_/,'').replace(/_/g,' '));
    const date=entry.deletedAt?new Date(entry.deletedAt).toLocaleString():'—';
-   const status=entry.restoredAt?'Restored '+new Date(entry.restoredAt).toLocaleString():(canRestore?'<button class="btn" data-audit-restore="'+esc(entry.auditId)+'">Restore</button>':'<span class="muted">View/export only</span>');
+   const status=entry.restoredAt?'Restored '+new Date(entry.restoredAt).toLocaleString():(canRestore?'<button type="button" class="btn" data-audit-restore="'+esc(entry.auditId)+'">Restore</button>':'<span class="muted">View/export only</span>');
    return '<tr><td>'+label+'</td><td>'+type+'</td><td>'+esc(date)+'</td><td>'+esc(entry.actor||'Unknown')+'</td><td>'+status+'</td></tr>';
   }).join('')+'</tbody></table>';
-  host.querySelectorAll('[data-audit-restore]').forEach(button=>button.addEventListener('click',()=>{
+  host.querySelectorAll('[data-audit-restore]').forEach(button=>button.addEventListener('click',event=>{
+   event.preventDefault();
+   event.stopPropagation();
    const auditId=button.getAttribute('data-audit-restore');let latest=[];try{latest=JSON.parse(localStorage.getItem('etihad_deletion_audit_v1')||'[]');}catch(_){}
    const entry=Array.isArray(latest)?latest.find(x=>x.auditId===auditId):null;
    if(!entry||entry.restoredAt||!allowed.includes(entry.collection)||!entry.snapshot||typeof entry.snapshot!=='object'){alert('This recovery copy is unavailable or cannot be restored.');return;}
