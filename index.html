@@ -2481,7 +2481,7 @@ renderAll();
   <div class="panel">
    <h3>Deletion Audit & Recovery Copies</h3>
    <p class="muted">Private copies of supported deleted records and sales reopened for editing are retained on this device. Export this log regularly. It does not yet synchronize to the company cloud.</p>
-   <button class="btn" id="exportDeletionAudit">Export Deletion Audit</button> <button class="btn" id="testDeletionAudit">Run Safe Audit Test</button><p id="deletionAuditCount" class="muted"></p><p id="deletionAuditTestStatus" class="muted" role="status"></p>
+   <button class="btn" id="exportDeletionAudit">Export Deletion Audit</button> <button class="btn" id="testDeletionAudit">Run Safe Audit Test</button><p id="deletionAuditCount" class="muted"></p><p id="deletionAuditTestStatus" class="muted" role="status"></p><div class="panel" style="margin-top:14px"><h4>Deletion History</h4><p class="muted">Review saved deletion records. Restore is available only for supported records that are not already present on this device.</p><div id="deletionHistoryList" class="table-wrap"></div></div>
   </div>
   <div class="panel">
    <h3>Important Information</h3>
@@ -2511,6 +2511,47 @@ renderAll();
  document.getElementById('exportDeletionAudit').onclick=function(){let entries=[];try{entries=JSON.parse(localStorage.getItem('etihad_deletion_audit_v1')||'[]');}catch(_){}document.getElementById('deletionAuditCount').textContent=entries.length+' retained audit entr'+(entries.length===1?'y':'ies')+' (maximum 250).';downloadFile({app:'Etihad Traders',auditVersion:1,exportedAt:new Date().toISOString(),entries},'Etihad-Traders-Deletion-Audit-'+new Date().toISOString().slice(0,10)+'.json');};
 
  document.getElementById('testDeletionAudit').onclick=function(){const status=document.getElementById('deletionAuditTestStatus');const key='etihad_deletion_audit_v1';const before=localStorage.getItem(key);const sample={id:'SAFE-TEST-'+Date.now(),name:'Temporary audit test (no business record)'};if(!recordDeletion('test_records',sample,'TEST ONLY — no business record deleted')){status.textContent='Test failed: this device could not save an audit copy. No business record was changed.';return;}try{const entries=JSON.parse(localStorage.getItem(key)||'[]');const testEntry=entries.find(x=>x.recordId===sample.id);if(!testEntry||!testEntry.snapshot||testEntry.snapshot.name!==sample.name)throw new Error('Test entry could not be verified');const remaining=entries.filter(x=>x.recordId!==sample.id);localStorage.setItem(key,JSON.stringify(remaining));status.textContent='PASS: audit copy was saved and verified, then the temporary test entry was removed. No real business record was deleted or changed.';const count=remaining.length;document.getElementById('deletionAuditCount').textContent=count+' retained audit entr'+(count===1?'y':'ies')+' (maximum 250).';}catch(error){try{if(before===null)localStorage.removeItem(key);else localStorage.setItem(key,before);}catch(_){}status.textContent='Test could not be fully completed. Your business records were not changed. Please export the audit log before further testing.';console.warn('Safe deletion audit test:',error);}};  const initialAudit=(()=>{try{return JSON.parse(localStorage.getItem('etihad_deletion_audit_v1')||'[]');}catch(_){return [];}})();document.getElementById('deletionAuditCount').textContent=initialAudit.length+' retained audit entr'+(initialAudit.length===1?'y':'ies')+' (maximum 250).';
+
+ 
+ function renderDeletionHistory(){
+  const host=document.getElementById('deletionHistoryList');if(!host)return;
+  let entries=[];try{entries=JSON.parse(localStorage.getItem('etihad_deletion_audit_v1')||'[]');}catch(_){}
+  if(!Array.isArray(entries))entries=[];
+  const realEntries=entries.filter(x=>x&&x.action==='deleted');
+  const allowed=['mberp_branches','mberp_products','mberp_expenses','mberp_orders','mberp_quotations'];
+  if(!realEntries.length){host.innerHTML='<p class="muted">No deleted records have been recorded yet. The safe audit test does not remain in history.</p>';return;}
+  host.innerHTML='<table><thead><tr><th>Record</th><th>Type</th><th>Deleted</th><th>User</th><th>Status / Action</th></tr></thead><tbody>'+realEntries.map(entry=>{
+   const canRestore=allowed.includes(entry.collection)&&entry.snapshot&&typeof entry.snapshot==='object'&&!entry.restoredAt;
+   const label=esc(entry.recordLabel||entry.snapshot?.name||entry.snapshot?.number||'Record');
+   const type=esc(String(entry.collection||'').replace(/^mberp_/,'').replace(/_/g,' '));
+   const date=entry.deletedAt?new Date(entry.deletedAt).toLocaleString():'—';
+   const status=entry.restoredAt?'Restored '+new Date(entry.restoredAt).toLocaleString():(canRestore?'<button class="btn" data-audit-restore="'+esc(entry.auditId)+'">Restore</button>':'<span class="muted">View/export only</span>');
+   return '<tr><td>'+label+'</td><td>'+type+'</td><td>'+esc(date)+'</td><td>'+esc(entry.actor||'Unknown')+'</td><td>'+status+'</td></tr>';
+  }).join('')+'</tbody></table>';
+  host.querySelectorAll('[data-audit-restore]').forEach(button=>button.addEventListener('click',()=>{
+   const auditId=button.getAttribute('data-audit-restore');let latest=[];try{latest=JSON.parse(localStorage.getItem('etihad_deletion_audit_v1')||'[]');}catch(_){}
+   const entry=Array.isArray(latest)?latest.find(x=>x.auditId===auditId):null;
+   if(!entry||entry.restoredAt||!allowed.includes(entry.collection)||!entry.snapshot||typeof entry.snapshot!=='object'){alert('This recovery copy is unavailable or cannot be restored.');return;}
+   const collection=entry.collection,record=entry.snapshot;
+   if(!record.id){alert('This record has no original ID. It cannot be safely restored automatically.');return;}
+   const current=(()=>{try{const v=JSON.parse(localStorage.getItem(collection)||'[]');return Array.isArray(v)?v:[];}catch(_){return null;}})();
+   if(!current){alert('Could not read the current records. Nothing was changed.');return;}
+   if(current.some(x=>String(x.id)===String(record.id))){alert('A record with this ID already exists. Nothing was changed.');return;}
+   if(!confirm('Restore "'+(entry.recordLabel||'this record')+'" to '+collection.replace(/^mberp_/,'')+'? This adds the saved copy and does not overwrite existing records.'))return;
+   try{
+    const updated=[record,...current];localStorage.setItem(collection,JSON.stringify(updated));
+    if(collection==='mberp_products'){products=updated;saveAll();}
+    else if(collection==='mberp_branches'){branches=updated;saveAll();}
+    else if(collection==='mberp_expenses'){expenses=updated;saveAll();}
+    else window.dispatchEvent(new Event('etihad-data-saved'));
+    entry.restoredAt=new Date().toISOString();entry.restoreActor=entry.actor||'Signed-in user';
+    localStorage.setItem('etihad_deletion_audit_v1',JSON.stringify(latest));
+    document.getElementById('deletionAuditCount').textContent=latest.length+' retained audit entr'+(latest.length===1?'y':'ies')+' (maximum 250).';
+    renderDeletionHistory();alert('Record restored on this device. Please review it in its original module.');
+   }catch(error){alert('Restore failed: '+error.message+'. Please check your backup before trying again.');}
+  }));
+ }
+ renderDeletionHistory();
 
  function collectBackup(){
   const records={};
