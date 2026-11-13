@@ -53,5 +53,47 @@ if (manifest && (!manifest.start_url || !manifest.scope || !Array.isArray(manife
   fail('manifest is missing start_url, scope, or icons');
 } else if (manifest) pass('PWA manifest includes start URL, scope, and icons');
 
+
+const restoreStart = html.indexOf("host.querySelectorAll('[data-audit-restore]')");
+const restoreEnd = html.indexOf("\n }\n renderDeletionHistory();", restoreStart);
+const restoreCode = restoreStart >= 0 && restoreEnd > restoreStart ? html.slice(restoreStart, restoreEnd) : '';
+if (!restoreCode) fail('deletion-history restore handler could not be located');
+else {
+  const restoreChecks = [
+    ['duplicate ID protection', /current\\.find\\(item=>String\\(item\\?\\.id\\)===String\\(record\\.id\\)\\)/.test(restoreCode)],
+    ['no overwrite of existing records', /No duplicate was created and no existing record was overwritten/.test(restoreCode)],
+    ['confirmation before restore', /if\\(!confirm\\(/.test(restoreCode)],
+    ['restore audit marked only after storage write', restoreCode.indexOf("localStorage.setItem(collection,JSON.stringify(updated))") < restoreCode.indexOf("entry.restoredAt=new Date().toISOString()")],
+    ['restore does not invoke branch deletion', !/deleteBranch\\s*\\(/.test(restoreCode)]
+  ];
+  for (const [name, ok] of restoreChecks) ok ? pass('recovery safeguard: ' + name) : fail('missing recovery safeguard: ' + name);
+}
+
+const branchDeleteStart = html.indexOf('function deleteBranch(bid)');
+const branchDeleteEnd = html.indexOf('\n}', branchDeleteStart);
+const branchDeleteCode = branchDeleteStart >= 0 && branchDeleteEnd > branchDeleteStart ? html.slice(branchDeleteStart, branchDeleteEnd) : '';
+if (!branchDeleteCode.includes('products.some(p=>p.branchId===bid)') || !branchDeleteCode.includes('transfers.some(t=>t.fromBranchId===bid||t.toBranchId===bid)')) {
+  fail('branch deletion protections for products and transfer history are missing');
+} else pass('branch deletion protects linked products and transfer history');
+
+const backupStart = html.indexOf('document.getElementById(\'restoreBackup\').onclick');
+const backupEnd = html.indexOf('\n };', backupStart);
+const backupCode = backupStart >= 0 && backupEnd > backupStart ? html.slice(backupStart, backupEnd) : '';
+if (!backupCode) fail('backup restore handler could not be located');
+else {
+  const validationAt = backupCode.indexOf('const backwardCompatibleKeys');
+  const safetyAt = backupCode.indexOf('const safety=collectBackup()');
+  const writeAt = backupCode.indexOf('localStorage.setItem(');
+  if (validationAt < 0 || safetyAt < 0 || writeAt < 0 || !(validationAt < safetyAt && safetyAt < writeAt)) {
+    fail('backup restore must validate all collections and create a safety backup before replacing records');
+  } else pass('backup restore validates data and creates a safety backup before replacing records');
+}
+
+const cloudStart = html.indexOf('async function permittedCloudRecords()');
+const cloudEnd = html.indexOf('function applyPermittedRecords', cloudStart);
+const cloudCode = cloudStart >= 0 && cloudEnd > cloudStart ? html.slice(cloudStart, cloudEnd) : '';
+if (!cloudCode || !cloudCode.includes(".eq('org_id',ORG_ID)")) fail('cloud record download is missing its organization filter');
+else pass('cloud record download is restricted to the configured organization');
+
 if (process.exitCode) process.exit(process.exitCode);
 console.log('Etihad Traders source validation completed.');
