@@ -5152,7 +5152,7 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   const key=kind==='open'?KEY_ORDERS:KEY_QUOTES,record=read(key).find(x=>x.id===id);if(!record)return renderList(kind);
   const total=(record.items||[]).reduce((n,x)=>n+Number(x.qty||0)*Number(x.price||0),0);
   shell((kind==='open'?'Order ':'Quotation ')+record.number,'Saved record details',
-   '<div class="grid"><div class="card"><small>Customer</small><h3>'+esc(record.customer)+'</h3><p>'+esc(record.phone||'No phone')+'</p></div><div class="card"><small>Total</small><h3>PKR '+money(total)+'</h3><p>'+esc(record.date||'')+' · '+esc(record.branchName||'')+'</p></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>Subtotal</th></tr></thead><tbody>'+(record.items||[]).map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.price)+'</td><td>'+money(x.qty*x.price)+'</td></tr>').join('')+'</tbody></table></div><p><b>Notes:</b> '+esc(record.notes||'—')+'</p></div><div class="et-workflow-actions"><button class="btn" data-workflow-print="'+esc(record.id)+'">Print / Save PDF</button><button class="btn" data-workflow-edit="'+esc(record.id)+'">Edit</button><button class="btn light" data-workflow-back>Back to '+(kind==='open'?'Open orders':'Quotations')+'</button></div>');
+   '<div class="grid"><div class="card"><small>Customer</small><h3>'+esc(record.customer)+'</h3><p>'+esc(record.phone||'No phone')+'</p></div><div class="card"><small>Total</small><h3>PKR '+money(total)+'</h3><p>'+esc(record.date||'')+' · '+esc(record.branchName||'')+'</p></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>Subtotal</th></tr></thead><tbody>'+(record.items||[]).map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.price)+'</td><td>'+money(x.qty*x.price)+'</td></tr>').join('')+'</tbody></table></div><p><b>Notes:</b> '+esc(record.notes||'—')+'</p></div><div class="et-workflow-actions"><button class="btn" data-workflow-print="'+esc(record.id)+'">Print / Save PDF</button>'+(kind==='open'&&record.status!=='Converted'?'<button class="btn green" data-workflow-convert="'+esc(record.id)+'">Convert to Invoice</button>':'')+'<button class="btn" data-workflow-edit="'+esc(record.id)+'">Edit</button><button class="btn light" data-workflow-back>Back to '+(kind==='open'?'Open orders':'Quotations')+'</button></div>');
  }
  function currentKind(){return document.querySelector('[data-sales-view].active')?.dataset.salesView||'records';}
  function handleAction(e){
@@ -5176,6 +5176,49 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   if(t.matches('[data-workflow-create]')){showForm(t.dataset.workflowCreate==='order'?'order':'quote');return;}
   if(t.hasAttribute('data-workflow-back')){renderList(kind);return;}
   if(t.hasAttribute('data-workflow-view')){renderView(kind,t.dataset.workflowView);return;}
+  if(t.hasAttribute('data-workflow-convert')){
+   if(kind!=='open')return;
+   const orders=read(KEY_ORDERS),order=orders.find(x=>x.id===t.dataset.workflowConvert);
+   if(!order)return alert('Order not found.');
+   if(order.status==='Converted'||order.convertedSaleId)return alert('This order has already been converted to an invoice.');
+   const branch=getBranches().find(b=>String(b.id)===String(order.branchId));
+   if(!branch)return alert('The original branch is no longer active. Review the order before invoicing.');
+   const orderItems=Array.isArray(order.items)?order.items:[];
+   if(!orderItems.length)return alert('This order has no products.');
+   for(const item of orderItems){
+    const p=getProducts().find(x=>String(x.id)===String(item.productId)&&String(x.branchId)===String(order.branchId));
+    if(!p)return alert('Product '+(item.name||'')+' is missing from the order branch. No invoice was created.');
+    if(!Number.isInteger(Number(item.qty))||Number(item.qty)<=0)return alert('Order contains an invalid quantity. No invoice was created.');
+    if(Number(p.qty)<Number(item.qty))return alert('Insufficient stock for '+p.name+'. Available: '+p.qty+'. No invoice was created.');
+   }
+   if(!confirm('Convert '+order.number+' into a sales invoice? This will deduct stock and create a customer balance/payment record.'))return;
+   const beforeCount=sales.length;
+   const previousCart=cart.slice();
+   const previousBranch=$('saleBranch').value;
+   const previousCustomer=$('saleCustomer').value;
+   const previousPhone=$('salePhone').value;
+   const previousPaid=$('salePaid').value;
+   try{
+    $('saleBranch').value=order.branchId;
+    $('saleCustomer').value=order.customer||'Walk-in Customer';
+    $('salePhone').value=order.phone||'';
+    $('salePaid').value='0';
+    cart=orderItems.map(x=>({productId:x.productId,name:x.name,qty:Number(x.qty),price:Number(x.price),cost:Number(getProducts().find(p=>String(p.id)===String(x.productId))?.cost||0)}));
+    completeSale();
+    if(sales.length<=beforeCount)throw new Error('Invoice was not saved. The order remains open.');
+    const invoice=sales[0];
+    order.status='Converted';order.convertedSaleId=invoice.id;order.convertedInvoiceNo=invoice.invoiceNo;order.convertedAt=new Date().toISOString();
+    write(KEY_ORDERS,orders);
+    renderList('open');
+    alert('Order converted successfully to invoice '+invoice.invoiceNo+'.');
+   }catch(error){
+    cart=previousCart;
+    $('saleBranch').value=previousBranch;$('saleCustomer').value=previousCustomer;$('salePhone').value=previousPhone;$('salePaid').value=previousPaid;
+    renderCart();
+    alert('Conversion stopped: '+error.message+' If an invoice was already saved, check Sales records before retrying.');
+   }
+   return;
+  }
   if(t.hasAttribute('data-workflow-edit')){const key=kind==='open'?KEY_ORDERS:KEY_QUOTES;const rec=read(key).find(x=>x.id===t.dataset.workflowEdit);if(rec)showForm(kind==='open'?'order':'quote',rec);return;}
   if(t.hasAttribute('data-workflow-delete')){if(!confirm('Delete this saved '+(kind==='open'?'order':'quotation')+'?'))return;const key=kind==='open'?KEY_ORDERS:KEY_QUOTES,record=read(key).find(x=>x.id===t.dataset.workflowDelete);if(!record)return;if(!recordDeletion(kind==='open'?'mberp_orders':'mberp_quotations',record,'deleted'))return alert('Deletion audit could not be saved. Record was not deleted.');write(key,read(key).filter(x=>x.id!==t.dataset.workflowDelete));renderList(kind);return;}
  }
