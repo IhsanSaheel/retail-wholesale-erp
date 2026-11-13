@@ -5152,7 +5152,36 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   const key=kind==='open'?KEY_ORDERS:KEY_QUOTES,record=read(key).find(x=>x.id===id);if(!record)return renderList(kind);
   const total=(record.items||[]).reduce((n,x)=>n+Number(x.qty||0)*Number(x.price||0),0);
   shell((kind==='open'?'Order ':'Quotation ')+record.number,'Saved record details',
-   '<div class="grid"><div class="card"><small>Customer</small><h3>'+esc(record.customer)+'</h3><p>'+esc(record.phone||'No phone')+'</p></div><div class="card"><small>Total</small><h3>PKR '+money(total)+'</h3><p>'+esc(record.date||'')+' · '+esc(record.branchName||'')+'</p></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>Subtotal</th></tr></thead><tbody>'+(record.items||[]).map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.price)+'</td><td>'+money(x.qty*x.price)+'</td></tr>').join('')+'</tbody></table></div><p><b>Notes:</b> '+esc(record.notes||'—')+'</p></div><div class="et-workflow-actions"><button class="btn" data-workflow-print="'+esc(record.id)+'">Print / Save PDF</button>'+(kind==='open'&&record.status!=='Converted'?'<button class="btn green" data-workflow-convert="'+esc(record.id)+'">Convert to Invoice</button>':'')+'<button class="btn" data-workflow-edit="'+esc(record.id)+'">Edit</button><button class="btn light" data-workflow-back>Back to '+(kind==='open'?'Open orders':'Quotations')+'</button></div>');
+   '<div class="grid"><div class="card"><small>Customer</small><h3>'+esc(record.customer)+'</h3><p>'+esc(record.phone||'No phone')+'</p></div><div class="card"><small>Total</small><h3>PKR '+money(total)+'</h3><p>'+esc(record.date||'')+' · '+esc(record.branchName||'')+'</p></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>Subtotal</th></tr></thead><tbody>'+(record.items||[]).map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+x.qty+'</td><td>'+money(x.price)+'</td><td>'+money(x.qty*x.price)+'</td></tr>').join('')+'</tbody></table></div><p><b>Notes:</b> '+esc(record.notes||'—')+'</p></div><div class="et-workflow-actions"><button class="btn" data-workflow-print="'+esc(record.id)+'">Print / Save PDF</button>'+(kind==='open'&&record.status!=='Converted'?'<button class="btn green" data-workflow-convert="'+esc(record.id)+'">Convert to Invoice</button>':'')+(kind==='quotations'&&record.status!=='Converted to Order'?'<button class="btn green" data-workflow-quote-convert="'+esc(record.id)+'">Convert to Order</button>':'')+'<button class="btn" data-workflow-edit="'+esc(record.id)+'">Edit</button><button class="btn light" data-workflow-back>Back to '+(kind==='open'?'Open orders':'Quotations')+'</button></div>');
+ }
+ function convertQuotationToOrder(quoteId){
+  const quotes=read(KEY_QUOTES),quote=quotes.find(x=>x.id===quoteId);
+  if(!quote)return alert('Quotation not found.');
+  if(quote.status==='Converted to Order'||quote.convertedOrderId)return alert('This quotation has already been converted.');
+  const branch=getBranches().find(b=>String(b.id)===String(quote.branchId));
+  if(!branch)return alert('The quotation branch is no longer active.');
+  const lines=Array.isArray(quote.items)?quote.items:[];
+  if(!lines.length)return alert('This quotation has no products.');
+  for(const line of lines){
+   const p=getProducts().find(x=>String(x.id)===String(line.productId)&&String(x.branchId)===String(quote.branchId));
+   if(!p||!Number.isInteger(Number(line.qty))||Number(line.qty)<=0||!Number.isFinite(Number(line.price))||Number(line.price)<0)return alert('A product, quantity or price is invalid. No order was created.');
+  }
+  const orders=read(KEY_ORDERS),year=new Date().getFullYear();
+  const max=orders.reduce((n,o)=>{const v=String(o.number||'').split('-');return v[0]==='ORD'&&v[1]===String(year)?Math.max(n,Number(v[2])||0):n;},0);
+  const now=new Date().toISOString(),number='ORD-'+year+'-'+String(max+1).padStart(5,'0');
+  if(!confirm('Convert '+quote.number+' into '+number+'? Stock will not be deducted.'))return;
+  const order={id:makeId(),number,date:quote.date||now.slice(0,10),status:'Open',branchId:branch.id,branchName:branch.name,customer:quote.customer||'Walk-in Customer',phone:quote.phone||'',items:lines.map(x=>({productId:x.productId,name:x.name,qty:Number(x.qty),price:Number(x.price)})),total:lines.reduce((n,x)=>n+Number(x.qty)*Number(x.price),0),notes:quote.notes||'',createdAt:now,updatedAt:now,sourceQuotationId:quote.id,sourceQuotationNumber:quote.number};
+  const previousOrders=localStorage.getItem(KEY_ORDERS),previousQuotes=localStorage.getItem(KEY_QUOTES);
+  try{
+   write(KEY_ORDERS,[order,...orders]);
+   quote.status='Converted to Order';quote.convertedOrderId=order.id;quote.convertedOrderNumber=number;quote.convertedAt=now;quote.updatedAt=now;
+   write(KEY_QUOTES,quotes);
+  }catch(error){
+   try{if(previousOrders===null)localStorage.removeItem(KEY_ORDERS);else localStorage.setItem(KEY_ORDERS,previousOrders);if(previousQuotes===null)localStorage.removeItem(KEY_QUOTES);else localStorage.setItem(KEY_QUOTES,previousQuotes);}catch(_){}
+   return alert('Could not save conversion: '+error.message);
+  }
+  renderView('quotations',quote.id);
+  alert('Quotation converted to order '+number+'. Stock and account balances were not changed.');
  }
  function currentKind(){return document.querySelector('[data-sales-view].active')?.dataset.salesView||'records';}
  function handleAction(e){
@@ -5176,6 +5205,7 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   if(t.matches('[data-workflow-create]')){showForm(t.dataset.workflowCreate==='order'?'order':'quote');return;}
   if(t.hasAttribute('data-workflow-back')){renderList(kind);return;}
   if(t.hasAttribute('data-workflow-view')){renderView(kind,t.dataset.workflowView);return;}
+  if(t.hasAttribute('data-workflow-quote-convert')){if(kind==='quotations')convertQuotationToOrder(t.dataset.workflowQuoteConvert);return;}
   if(t.hasAttribute('data-workflow-convert')){
    if(kind!=='open')return;
    const orders=read(KEY_ORDERS),order=orders.find(x=>x.id===t.dataset.workflowConvert);
