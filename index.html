@@ -7326,48 +7326,7 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  render();
 })();
 </script>
-<script id="etihad-code128-labels-v2">
-(function(){
- 'use strict';
- const page=document.getElementById('etihadLabelsExpiry');
- const button=document.getElementById('etLabelPrint');
- if(!page||!button)return;
- const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const money=v=>'PKR '+Number(v||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
- function getProducts(){
-  if(typeof products!=='undefined'&&Array.isArray(products))return products;
-  try{const rows=JSON.parse(localStorage.getItem('mberp_products')||'[]');return Array.isArray(rows)?rows:[]}catch(_){return []}
- }
- function getBranches(){
-  if(typeof branches!=='undefined'&&Array.isArray(branches))return branches;
-  try{const rows=JSON.parse(localStorage.getItem('mberp_branches')||'[]');return Array.isArray(rows)?rows:[]}catch(_){return []}
- }
- button.addEventListener('click',function(event){
-  event.preventDefault();event.stopImmediatePropagation();
-  const selected=[...page.querySelectorAll('[data-label-id]:checked')].map(x=>String(x.dataset.labelId));
-  const items=getProducts().filter(p=>selected.includes(String(p.id)));
-  if(!items.length){alert('Select at least one product.');return;}
-  const branchRows=getBranches();
-  const labels=items.map(function(p){
-   const code=String(p.sku||p.barcode||'').trim();
-   const branch=branchRows.find(b=>String(b.id)===String(p.branchId));
-   return '<article class="label"><b>'+esc(p.name||'Unnamed product')+'</b>'+
-    (code?'<div class="sku">SKU: '+esc(code)+'</div>':'<div class="no-code">SKU / barcode not set</div>')+
-    '<strong>'+money(p.price)+'</strong><small>'+esc(branch&&branch.name||p.branchName||p.branch||'')+'</small>'+
-    '<small>Expiry: '+esc(p.expiryDate||'Not set')+'</small></article>';
-  }).join('');
-  // Open the print window directly inside the tap/click handler so mobile
-  // browsers do not block it after an asynchronous barcode-library download.
-  const w=window.open('','_blank');
-  if(!w){alert('Chrome blocked the print window. Allow pop-ups for this ERP site, then tap Print Labels again.');return;}
-  w.document.open();
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Etihad Traders Product Labels</title><style>'+
-   '*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:8mm;color:#111}.sheet{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5mm}.label{border:1px solid #333;padding:4mm;min-height:32mm;break-inside:avoid;page-break-inside:avoid;text-align:center;overflow-wrap:anywhere}.label b{font-size:12pt;display:block;margin-bottom:2mm}.sku{font-family:monospace;font-size:10pt;letter-spacing:.4px;margin:2mm 0}.label strong{font-size:14pt;display:block}.label small{font-size:9pt;display:block;margin-top:1.5mm}.no-code{font-size:9pt;color:#8b1c1c;margin:2mm 0}.hint{font-size:9pt;color:#555;margin:0 0 5mm}@page{size:A4;margin:8mm}@media print{body{margin:0}.hint{display:none}}'+
-   '</style></head><body><p class="hint">Etihad Traders — '+items.length+' product label(s). Choose your label paper in printer settings.</p><div class="sheet">'+labels+'</div><script>window.addEventListener("load",function(){setTimeout(function(){window.focus();window.print();},300)});<\/script></body></html>');
-  w.document.close();
- },true);
-})();
-</script>
+
 <script id="etihad-batch-lot-control-v1">
 (function(){
  'use strict';
@@ -7897,9 +7856,21 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
  $('etLabelRows').addEventListener('change',e=>{const x=e.target.closest('[data-label-id]');if(!x)return;x.checked?selected.add(x.dataset.labelId):selected.delete(x.dataset.labelId);});
  $('etLabelSelectVisible').addEventListener('click',()=>{page.querySelectorAll('[data-label-id]').forEach(x=>selected.add(x.dataset.labelId));renderLabels();});
  $('etLabelClear').addEventListener('click',()=>{selected.clear();renderLabels();});
- $('etLabelPrint').addEventListener('click',()=>{const list=products().filter(p=>selected.has(String(p.id)));if(!list.length)return alert('Select at least one product.');const labels=list.map(p=>'<article class="label"><b>'+esc(p.name)+'</b><div class="sku">'+esc(p.sku||p.barcode||'NO SKU')+'</div><strong>'+money(p.price)+'</strong><small>'+esc(branchNameOf(p.branchId))+'</small><small>Expiry: '+esc(p.expiryDate||'Not set')+'</small></article>').join('');const w=window.open('','_blank','width=900,height=700');if(!w)return alert('Allow pop-ups to print labels.');w.document.write('<!doctype html><html><head><title>Etihad Traders Product Labels</title><style>body{font-family:Arial,sans-serif;margin:10mm}.sheet{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm}.label{border:1px solid #333;padding:5mm;min-height:28mm;break-inside:avoid}.label b{font-size:13pt}.sku{font-family:monospace;font-size:12pt;letter-spacing:1px;margin:5mm 0}.label strong{font-size:15pt;display:block}.label small{display:block;margin-top:3mm}@media print{body{margin:8mm}.label{border:1px solid #555}}</style></head><body><div class="sheet">'+labels+'</div><script>window.onload=()=>window.print()<\/script></body></html>');w.document.close();});
+ $('etLabelPrint').addEventListener('click',function(event){
+  event.preventDefault();
+  const list=getProducts().filter(p=>selected.has(String(p.id)));
+  if(!list.length){alert('Select at least one product first.');return;}
+  const labels=list.map(p=>'<article class="label"><b>'+esc(p.name||'Unnamed product')+'</b><div class="sku">'+(p.sku||p.barcode?'SKU: '+esc(p.sku||p.barcode):'SKU / barcode not set')+'</div><strong>'+money(p.price)+'</strong><small>'+esc(branchNameOf(p.branchId))+'</small><small>Expiry: '+esc(p.expiryDate||'Not set')+'</small></article>').join('');
+  const w=window.open('','_blank');
+  if(!w){alert('Chrome blocked the print window. Allow pop-ups for this ERP site, then try again.');return;}
+  w.document.open();
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Etihad Traders Product Labels</title><style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:8mm;color:#111}.sheet{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5mm}.label{border:1px solid #333;padding:4mm;min-height:32mm;break-inside:avoid;page-break-inside:avoid;text-align:center;overflow-wrap:anywhere}.label b{font-size:12pt;display:block;margin-bottom:2mm}.sku{font-family:monospace;font-size:10pt;margin:2mm 0}.label strong{font-size:14pt;display:block}.label small{display:block;margin-top:1.5mm}@page{size:A4;margin:8mm}@media print{body{margin:0}}</style></head><body><div class="sheet">'+labels+'</div></body></html>');
+  w.document.close();
+  w.focus();
+  w.setTimeout(function(){w.print();},500);
+ });
  $('etExpirySearch').addEventListener('input',renderExpiry);$('etExpiryFilter').addEventListener('change',renderExpiry);$('etExpiryBranch').addEventListener('change',renderExpiry);
- $('etExpiryRows').addEventListener('click',e=>{const b=e.target.closest('[data-expiry-edit]');if(!b)return;const p=products().find(x=>String(x.id)===b.dataset.expiryEdit);if(!p)return;const v=prompt('Enter expiry date (YYYY-MM-DD). Leave blank to clear:',p.expiryDate||'');if(v===null)return;if(v&&!/^\d{4}-\d{2}-\d{2}$/.test(v))return alert('Use YYYY-MM-DD format.');const before=p.expiryDate||'';p.expiryDate=v;try{if(typeof window.saveAll!=='function')throw new Error('Save function unavailable');window.saveAll();}catch(err){p.expiryDate=before;return alert('Could not save the expiry date: '+err.message);}renderExpiry();});
+ $('etExpiryRows').addEventListener('click',e=>{const b=e.target.closest('[data-expiry-edit]');if(!b)return;const p=getProducts().find(x=>String(x.id)===b.dataset.expiryEdit);if(!p)return;const v=prompt('Enter expiry date (YYYY-MM-DD). Leave blank to clear:',p.expiryDate||'');if(v===null)return;if(v&&!/^\d{4}-\d{2}-\d{2}$/.test(v))return alert('Use YYYY-MM-DD format.');const before=p.expiryDate||'';p.expiryDate=v;try{if(typeof window.saveAll!=='function')throw new Error('Save function unavailable');window.saveAll();}catch(err){p.expiryDate=before;return alert('Could not save the expiry date: '+err.message);}renderExpiry();});
  fillBranches();renderLabels();renderExpiry();
 })();
 </script>
