@@ -7782,11 +7782,10 @@ body.etihad-dark input,body.etihad-dark select,body.etihad-dark textarea{backgro
  document.getElementById('etihadDesktopMoreButton')?.remove();
  const toggle=document.getElementById('etihadMenuToggle'),backdrop=document.getElementById('etihadSidebarBackdrop');
  function closeDrawer(){document.body.classList.remove('et-sidebar-open');toggle?.setAttribute('aria-expanded','false');}
- toggle?.addEventListener('click',function(){
-  const open=document.body.classList.toggle('et-sidebar-open');
-  toggle.setAttribute('aria-expanded',String(open));
- });
- backdrop?.addEventListener('click',closeDrawer);
+ document.addEventListener('click',function(event){
+  const tab=event.target.closest('#etihadMainNav button[data-tab]');
+  if(tab)closeDrawer();
+ },true);
  nav.addEventListener('click',function(event){
   const button=event.target.closest('button[data-tab]');if(!button)return;
   nav.querySelectorAll('button[data-tab]').forEach(item=>item.classList.toggle('active',item===button));
