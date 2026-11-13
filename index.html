@@ -2434,6 +2434,9 @@ renderAll();
  'mberp_supplier_returns',
 'mberp_sales_returns',
 'mberp_customer_credit_limits',
+  'mberp_orders',
+  'mberp_quotations',
+  'mberp_customer_account_credits',
  ];
 
  const nav=document.querySelector('nav');
@@ -2551,8 +2554,11 @@ renderAll();
      throw new Error('This is not a valid My Business ERP backup.');
     }
 
+    const backwardCompatibleKeys=new Set(['mberp_orders','mberp_quotations','mberp_customer_account_credits']);
     keys.forEach(key=>{
-     if(!Array.isArray(backup.records[key])){
+     const hasKey=Object.prototype.hasOwnProperty.call(backup.records,key);
+     if(!hasKey&&backwardCompatibleKeys.has(key))return;
+     if(!hasKey||!Array.isArray(backup.records[key])){
       throw new Error('Backup is missing valid data for '+key);
      }
     });
@@ -2565,6 +2571,8 @@ renderAll();
     );
 
     keys.forEach(key=>{
+     // Older backups predate these collections; preserve any existing local records.
+     if(!Object.prototype.hasOwnProperty.call(backup.records,key))return;
      localStorage.setItem(
       key,
       JSON.stringify(backup.records[key])
@@ -4014,7 +4022,8 @@ if ('serviceWorker' in navigator) {
     'mberp_branches','mberp_suppliers','mberp_customer_credit_limits',
     'mberp_products','mberp_purchases','mberp_sales','mberp_payments',
     'mberp_expenses','mberp_transfers','mberp_supplier_payments',
-    'mberp_supplier_returns','mberp_sales_returns','mberp_orders','mberp_quotations'
+    'mberp_supplier_returns','mberp_sales_returns','mberp_orders','mberp_quotations',
+    'mberp_customer_account_credits'
   ];
   const CACHE_KEY = 'etihad_verified_owner_session_v1';
   const ACTIVE_USER_KEY = 'etihad_active_user_v1';
@@ -4145,9 +4154,9 @@ if ('serviceWorker' in navigator) {
   const WRITE_COLLECTIONS={
     owner:COLLECTIONS,
     manager:COLLECTIONS,
-    cashier:['mberp_sales','mberp_payments','mberp_sales_returns','mberp_orders','mberp_quotations'],
+    cashier:['mberp_sales','mberp_payments','mberp_sales_returns','mberp_orders','mberp_quotations','mberp_customer_account_credits'],
     stockkeeper:['mberp_products','mberp_transfers','mberp_purchases'],
-    accountant:['mberp_payments','mberp_expenses','mberp_purchases','mberp_supplier_payments','mberp_supplier_returns','mberp_sales_returns']
+    accountant:['mberp_payments','mberp_expenses','mberp_purchases','mberp_supplier_payments','mberp_supplier_returns','mberp_sales_returns','mberp_customer_account_credits']
   };
   function enableAutoSync(user,m){
     syncUser=user;syncMembership=m;
@@ -6229,7 +6238,7 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  moveMergedModule('etihadMerged_returns','returns','Sales Returns');
  moveMergedModule('etihadMerged_supplierReturns','supplierReturns','Purchase Returns');
  const secondary=[
-  ['branches','Branches'],
+  ['branches','Branches & Transfers'],
   ['transfers','Stock Transfers'],
   ['employees','Employees & Payroll'],
   ['returns','Sales Returns'],
