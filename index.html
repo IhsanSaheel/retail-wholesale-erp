@@ -4328,7 +4328,23 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script id="etihad-auth-startup-recovery">
+(function(){
+  'use strict';
+  // Never leave the user on a blank screen if the secure-auth library cannot start.
+  window.setTimeout(function(){
+    if(document.body.classList.contains('etihad-auth-ready')||document.getElementById('etihadCloudPanel'))return;
+    if(document.getElementById('etihadStartupRecovery'))return;
+    const panel=document.createElement('div');
+    panel.id='etihadStartupRecovery';
+    panel.style.cssText='position:fixed;inset:12px;z-index:2147483646;display:block;visibility:visible;background:#fff;color:#102a43;padding:22px;border:2px solid #c9a04e;border-radius:14px;box-shadow:0 3px 25px #0004;font-family:Arial;max-width:520px;margin:auto;max-height:calc(100vh - 24px);overflow:auto';
+    panel.innerHTML='<h3 style="margin-top:0">Etihad Traders — Secure startup</h3><p>The secure sign-in service has not started. Your business records remain locked and have not been changed.</p><p>Check your internet connection, then reload Etihad Traders. If this message continues, the authentication service could not be reached.</p><button type="button" id="etihadStartupRetry" style="padding:11px 18px;background:#1769aa;color:white;border:0;border-radius:7px">Reload securely</button>';
+    document.body.appendChild(panel);
+    document.getElementById('etihadStartupRetry').addEventListener('click',function(){window.location.reload();});
+  },15000);
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2'"></script>
   
 <script>
 (function () {
@@ -4350,6 +4366,7 @@ if ('serviceWorker' in navigator) {
   });
   // Share one Supabase client across ERP modules to avoid competing auth/session locks.
   window.etihadSupabaseClient = client;
+  document.getElementById('etihadStartupRecovery')?.remove();
   const panel = document.createElement('div');
   panel.id = 'etihadCloudPanel';
   panel.style.cssText = 'position:fixed;inset:12px;z-index:2147483647;background:#fff;color:#102a43;visibility:visible;display:block;padding:18px;border:2px solid #1769aa;border-radius:14px;box-shadow:0 3px 25px #0004;font-family:Arial;max-width:520px;margin:auto;overflow:auto;max-height:calc(100vh - 24px);';
