@@ -1606,8 +1606,15 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
   originals.forEach(x=>{if(Number(x.p.price||0)!==x.price)throw new Error('A product price changed since preview. Please preview again.');});
   originals.forEach(x=>{const item=preview.find(p=>String(p.id)===String(x.p.id));x.p.price=item.after;});
   const entry={id:Date.now().toString(36),date:new Date().toISOString(),count:preview.length,mode:$('etPriceMode').value,value:Number($('etPriceValue').value),direction:$('etPriceDirection').value,branch:$('etPriceBranch').value,category:$('etPriceCategory').value,changes:preview.map(x=>({productId:x.id,name:x.name,before:x.before,after:x.after}))};
-  try{window.saveAll();history.unshift(entry);localStorage.setItem(KEY,JSON.stringify(history));}
-  catch(e){originals.forEach(x=>x.p.price=x.price);return alert('Could not save price changes. Previous prices were restored in this session. '+e.message);}
+  const oldHistory=localStorage.getItem(KEY);
+  try{history.unshift(entry);localStorage.setItem(KEY,JSON.stringify(history));window.saveAll();}
+  catch(e){
+   originals.forEach(x=>x.p.price=x.price);
+   try{if(oldHistory===null)localStorage.removeItem(KEY);else localStorage.setItem(KEY,oldHistory);}catch(_){}
+   try{window.saveAll();}catch(_){}
+   history=readLog();
+   return alert('Could not safely save the price adjustment. Previous prices and adjustment history were restored where possible. '+e.message);
+  }
   if(typeof window.renderAll==='function')window.renderAll();
   renderHistory();preview=[];drawPreview();$('etPriceStatus').textContent='Saved '+entry.count+' product price change(s). Existing sales and stock were not modified.';
   alert('Price readjustment saved successfully.');
