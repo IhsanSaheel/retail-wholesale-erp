@@ -4698,8 +4698,10 @@ if ('serviceWorker' in navigator) {
       }
       if(!records.mberp_branches.length)throw new Error('Cloud snapshot stopped: no company branches were found.');
       const snapshotId='snapshot_'+Date.now();
-      const snapshot={id:snapshotId,app:'Etihad Traders',backupVersion:1,backupDate:new Date().toISOString(),createdBy:user.id,cloudRecordCount:total,records};
-      const saved=await client.from('etihad_records').upsert({org_id:ORG_ID,collection:'etihad_backup_snapshots',record_id:snapshotId,branch_ids:[],data:snapshot,updated_by:user.id},{onConflict:'org_id,collection,record_id'});
+      const snapshotBranchId=String(records.mberp_branches[0]?.id||'');
+      if(!snapshotBranchId||!records.mberp_branches.some(b=>String(b?.id||'')===snapshotBranchId))throw new Error('Snapshot stopped: a valid company branch reference could not be confirmed.');
+      const snapshot={id:snapshotId,app:'Etihad Traders',backupVersion:1,backupDate:new Date().toISOString(),createdBy:user.id,branchId:snapshotBranchId,cloudRecordCount:total,records};
+      const saved=await client.from('etihad_records').upsert({org_id:ORG_ID,collection:'etihad_backup_snapshots',record_id:snapshotId,branch_ids:[snapshotBranchId],data:snapshot,updated_by:user.id},{onConflict:'org_id,collection,record_id'});
       if(saved.error)throw saved.error;
       const check=await client.from('etihad_records').select('record_id,data').eq('org_id',ORG_ID).eq('collection','etihad_backup_snapshots').eq('record_id',snapshotId).single();
       if(check.error)throw check.error;
@@ -4722,8 +4724,10 @@ if ('serviceWorker' in navigator) {
     }
     if(!records.mberp_branches.length)throw new Error('Safety snapshot stopped: no company branches were found.');
     const snapshotId='snapshot_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
-    const snapshot={id:snapshotId,app:'Etihad Traders',backupVersion:1,backupDate:new Date().toISOString(),createdBy:user.id,cloudRecordCount:total,records};
-    const saved=await client.from('etihad_records').upsert({org_id:ORG_ID,collection:'etihad_backup_snapshots',record_id:snapshotId,branch_ids:[],data:snapshot,updated_by:user.id},{onConflict:'org_id,collection,record_id'});
+    const snapshotBranchId=String(records.mberp_branches[0]?.id||'');
+    if(!snapshotBranchId||!records.mberp_branches.some(b=>String(b?.id||'')===snapshotBranchId))throw new Error('Safety snapshot stopped: a valid company branch reference could not be confirmed.');
+    const snapshot={id:snapshotId,app:'Etihad Traders',backupVersion:1,backupDate:new Date().toISOString(),createdBy:user.id,branchId:snapshotBranchId,cloudRecordCount:total,records};
+    const saved=await client.from('etihad_records').upsert({org_id:ORG_ID,collection:'etihad_backup_snapshots',record_id:snapshotId,branch_ids:[snapshotBranchId],data:snapshot,updated_by:user.id},{onConflict:'org_id,collection,record_id'});
     if(saved.error)throw saved.error;
     const check=await client.from('etihad_records').select('record_id,data').eq('org_id',ORG_ID).eq('collection','etihad_backup_snapshots').eq('record_id',snapshotId).single();
     if(check.error)throw check.error;
