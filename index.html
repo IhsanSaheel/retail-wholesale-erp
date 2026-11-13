@@ -6443,5 +6443,55 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
 })();
 </script>
 
+<script id="etihad-report-export-upgrade-v1">
+(function(){
+ 'use strict';
+ if(window.__etihadReportExportV1)return;window.__etihadReportExportV1=true;
+ const $=id=>document.getElementById(id);
+ const esc=v=>typeof window.esc==='function'?window.esc(v??''):String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const fmt=v=>Number(v||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
+ function data(){
+  const from=$('reportFrom')?.value||'',to=$('reportTo')?.value||'',branch=$('reportBranch')?.value||'';
+  const ss=sales.filter(s=>(!from||saleDate(s)>=from)&&(!to||saleDate(s)<=to)&&(!branch||s.branchId===branch));
+  const ee=expenses.filter(e=>expenseMatches(e,from,to,branch));
+  return {from,to,branchName:branch?(branches.find(b=>String(b.id)===String(branch))?.name||'Selected branch'):'All branches',ss,ee};
+ }
+ function rows(){
+  const d=data();
+  const saleRows=d.ss.map(s=>({date:s.date||'',type:'Sale',reference:invoiceNo(s),party:s.customerName||'Walk-in Customer',branch:s.branchName||branchName(s.branchId),amount:saleTotal(s),cost:costOfSale(s),received:salePaid(s),balance:saleDue(s)}));
+  const expenseRows=d.ee.map(e=>({date:e.date||'',type:'Expense - '+(e.category||'Other'),reference:e.id||'',party:e.title||'',branch:branchName(e.branchId),amount:Number(e.amount||0),cost:0,received:0,balance:0}));
+  return { ...d, transactions:[...saleRows,...expenseRows].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)) };
+ }
+ function csvCell(v){let s=String(v??'');if(/^[=+@\-\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}
+ function exportCSV(){
+  const d=rows(),rev=d.ss.reduce((n,s)=>n+saleTotal(s),0),cogs=d.ss.reduce((n,s)=>n+costOfSale(s),0),exp=d.ee.reduce((n,e)=>n+Number(e.amount||0),0),received=d.ss.reduce((n,s)=>n+salePaid(s),0),due=d.ss.reduce((n,s)=>n+saleDue(s),0);
+  const lines=[['ETIHAD TRADERS - BUSINESS REPORT'],['From',d.from||'All dates','To',d.to||'All dates','Branch',d.branchName],[],['Metric','Amount (PKR)'],['Sales revenue',rev],['Cost of goods sold',cogs],['Gross profit',rev-cogs],['Operating expenses',exp],['Net profit / loss',rev-cogs-exp],['Customer payments received',received],['Outstanding customer balance',due],[],['Date','Type','Reference','Customer / Description','Branch','Sales / Expense','Cost of goods sold','Received','Outstanding']];
+  d.transactions.forEach(x=>lines.push([x.date,x.type,x.reference,x.party,x.branch,x.amount,x.cost,x.received,x.balance]));
+  const csv='\ufeff'+lines.map(row=>row.map(csvCell).join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='Etihad-Traders-Business-Report-'+(d.from||'all')+'-to-'+(d.to||'all')+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }
+ function printReport(){
+  const d=rows(),rev=d.ss.reduce((n,s)=>n+saleTotal(s),0),cogs=d.ss.reduce((n,s)=>n+costOfSale(s),0),exp=d.ee.reduce((n,e)=>n+Number(e.amount||0),0),received=d.ss.reduce((n,s)=>n+salePaid(s),0),due=d.ss.reduce((n,s)=>n+saleDue(s),0);
+  const tr=d.transactions.map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.type)+'</td><td>'+esc(x.reference)+'</td><td>'+esc(x.party)+'</td><td>'+esc(x.branch)+'</td><td>'+fmt(x.amount)+'</td><td>'+fmt(x.cost)+'</td><td>'+fmt(x.received)+'</td><td>'+fmt(x.balance)+'</td></tr>').join('');
+  const html='<!doctype html><html><head><meta charset="utf-8"><title>Etihad Traders Business Report</title><style>body{font-family:Arial,sans-serif;color:#263445;margin:24px}header{border-bottom:3px solid #bd9347;padding-bottom:12px}h1{margin:0;font-size:22px}.muted{color:#667085}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}.card{border:1px solid #ddd;border-radius:8px;padding:12px}.card b{display:block;font-size:18px;margin-top:6px}table{border-collapse:collapse;width:100%;font-size:10px}th,td{padding:7px;border-bottom:1px solid #ddd;text-align:left}th{background:#f1f3f5}@media print{body{margin:12mm}button{display:none}}</style></head><body><header><h1>ETIHAD TRADERS</h1><b>Business Performance Report</b><p class="muted">'+esc(d.from||'All dates')+' to '+esc(d.to||'All dates')+' · '+esc(d.branchName)+'</p></header><div class="cards"><div class="card">Sales revenue<b>PKR '+fmt(rev)+'</b></div><div class="card">Cost of goods sold<b>PKR '+fmt(cogs)+'</b></div><div class="card">Gross profit<b>PKR '+fmt(rev-cogs)+'</b></div><div class="card">Expenses<b>PKR '+fmt(exp)+'</b></div><div class="card">Net profit / loss<b>PKR '+fmt(rev-cogs-exp)+'</b></div><div class="card">Customer payments received<b>PKR '+fmt(received)+'</b></div><div class="card">Customer balance due<b>PKR '+fmt(due)+'</b></div></div><h3>Transaction details</h3><table><thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Customer / Description</th><th>Branch</th><th>Sales / Expense</th><th>COGS</th><th>Received</th><th>Balance</th></tr></thead><tbody>'+tr+'</tbody></table><p class="muted">Generated '+esc(new Date().toLocaleString())+'. Historical product costs are based on saved sale item costs where available.</p><p><button onclick="window.print()">Print / Save PDF</button></p></body></html>';
+  const w=window.open('','_blank');if(!w)return alert('Please allow pop-ups to print the business report.');w.document.open();w.document.write(html);w.document.close();
+ }
+ const reports=$('reports');if(!reports)return;
+ const panel=document.createElement('div');panel.className='panel';panel.id='etihadReportDetailPanel';
+ panel.innerHTML='<div class="et-report-toolbar"><div><h3>Detailed Business Report</h3><p class="muted">Review sales and expenses for the selected date range and branch, then export or print the report.</p></div><div class="et-report-actions"><button type="button" class="btn light" id="etihadReportCsv">Export CSV / Excel</button><button type="button" class="btn" id="etihadReportPrint">Print / Save PDF</button></div></div><div class="cards et-report-mini" id="etihadReportMini"></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Customer / Description</th><th>Branch</th><th>Sales / Expense</th><th>Cost of goods</th><th>Received</th><th>Balance</th></tr></thead><tbody id="etihadReportRows"></tbody></table></div>';
+ const category=reports.querySelectorAll('.panel')[2];if(category)category.after(panel);else reports.appendChild(panel);
+ function render(){
+  const d=rows(),rev=d.ss.reduce((n,s)=>n+saleTotal(s),0),cogs=d.ss.reduce((n,s)=>n+costOfSale(s),0),exp=d.ee.reduce((n,e)=>n+Number(e.amount||0),0),received=d.ss.reduce((n,s)=>n+salePaid(s),0),due=d.ss.reduce((n,s)=>n+saleDue(s),0);
+  $('etihadReportMini').innerHTML=[['Invoices',d.ss.length],['Expense records',d.ee.length],['Gross margin',rev?((rev-cogs)/rev*100).toFixed(1)+'%':'—'],['Net profit / loss','PKR '+fmt(rev-cogs-exp)]].map(x=>'<div class="card"><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>').join('');
+  $('etihadReportRows').innerHTML=d.transactions.map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.type)+'</td><td>'+esc(x.reference)+'</td><td>'+esc(x.party)+'</td><td>'+esc(x.branch)+'</td><td>'+fmt(x.amount)+'</td><td>'+fmt(x.cost)+'</td><td>'+fmt(x.received)+'</td><td>'+fmt(x.balance)+'</td></tr>').join('')||'<tr><td colspan="9" class="empty">No sales or expenses found for this period.</td></tr>';
+ }
+ $('etihadReportCsv').addEventListener('click',exportCSV);$('etihadReportPrint').addEventListener('click',printReport);
+ const old=window.renderProfitLoss;if(typeof old==='function'&&!window.__etihadReportRenderWrapped){window.__etihadReportRenderWrapped=true;window.renderProfitLoss=function(){const v=old.apply(this,arguments);render();return v;};}
+ const style=document.createElement('style');style.textContent='#etihadReportDetailPanel .et-report-toolbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}#etihadReportDetailPanel .et-report-actions{display:flex;gap:8px;flex-wrap:wrap}#etihadReportDetailPanel .et-report-mini{grid-template-columns:repeat(4,minmax(0,1fr));margin:12px 0}@media(max-width:650px){#etihadReportDetailPanel .et-report-mini{grid-template-columns:repeat(2,minmax(0,1fr))}}';document.head.appendChild(style);
+ render();
+})();
+</script>
+
 </body>
 </html>
