@@ -4782,6 +4782,16 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   salesPage.querySelectorAll('[data-sales-view]').forEach(b=>{const active=b.dataset.salesView==='records';b.classList.toggle('active',active);b.setAttribute('aria-selected',active?'true':'false')});
   renderSalesDashboard();
  }
+ // Intercept the original POS navigation before its legacy click handler.
+ // Sales must always open the records workspace; checkout is opened only by New Sale.
+ if(oldPosNav&&!oldPosNav.dataset.etihadSalesRouteBound){
+  oldPosNav.dataset.etihadSalesRouteBound='1';
+  oldPosNav.addEventListener('click',function(e){
+   e.preventDefault();
+   e.stopImmediatePropagation();
+   showSalesRecords();
+  },true);
+ }
  function openNewSale(){
   document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
   pos.classList.remove('hidden');
