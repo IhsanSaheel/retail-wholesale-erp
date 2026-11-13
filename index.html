@@ -7028,5 +7028,68 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
 })();
 </script>
+<script id="etihad-unified-stock-ledger-v1">
+(function(){
+ if(window.__etihadUnifiedStockLedgerV1)return;
+ window.__etihadUnifiedStockLedgerV1=true;
+ const nav=document.querySelector('nav'),main=document.querySelector('main');
+ if(!nav||!main)return;
+ const $=id=>document.getElementById(id);
+ const safe=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const number=v=>Number(v||0);
+ const fmt=v=>number(v).toLocaleString('en-PK',{maximumFractionDigits:3});
+ const read=key=>{try{const x=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(x)?x:[];}catch(e){return [];}};
+ const branchList=Array.isArray(branches)?branches:[];
+ const branchName=id=>{const b=branchList.find(x=>String(x.id)===String(id));return b?b.name:'Unknown branch';};
+ const keyFor=(name,sku)=>{const k=String(sku||'').trim().toLowerCase();return k?'sku:'+k:'name:'+String(name||'').trim().toLowerCase();};
+ const data=[];
+ function add(date,type,ref,name,sku,branchId,branch,qty,party,note){
+  qty=number(qty);if(!qty)return;
+  data.push({date:date||'',type,ref:ref||'',name:name||'Product',sku:sku||'',branchId:branchId||'',branch:branch||branchName(branchId),qty,party:party||'',note:note||'',key:keyFor(name,sku)});
+ }
+ (Array.isArray(sales)?sales:[]).forEach(function(s){
+  (s.items||[]).forEach(function(i){add(s.date||s.createdAt,'Sale',s.invoiceNo||s.id,i.name||i.productName,i.sku,s.branchId,s.branchName,-Math.abs(number(i.qty)),s.customerName||'Walk-in Customer','Goods sold');});
+ });
+ (Array.isArray(purchases)?purchases:[]).forEach(function(p){add(p.date||p.createdAt,'Purchase',p.purchaseNo||p.id,p.productName,p.sku,p.branchId,p.branchName,Math.abs(number(p.qty)),p.supplierName,'Goods received');});
+ (Array.isArray(transfers)?transfers:[]).forEach(function(t){
+  const ref=t.transferNo||t.id,note=t.note||'Internal stock transfer',q=Math.abs(number(t.qty));
+  add(t.date||t.createdAt,'Transfer out',ref,t.productName,t.sku,t.fromBranchId,t.fromBranchName,-q,'Branch transfer',note);
+  add(t.date||t.createdAt,'Transfer in',ref,t.productName,t.sku,t.toBranchId,t.toBranchName,q,'Branch transfer',note);
+ });
+ read('mberp_sales_returns').forEach(function(r){add(r.date,'Sales return',r.returnNo||r.id,r.productName,r.sku,r.branchId,branchName(r.branchId),Math.abs(number(r.qty)),r.customerName,r.note||'Returned goods received');});
+ read('mberp_supplier_returns').forEach(function(r){add(r.date,'Purchase return',r.returnNo||r.id,r.productName,r.sku,r.branchId,r.branchName,-Math.abs(number(r.qty)),r.supplierName,r.note||'Goods returned to supplier');});
+ read('etihad_stock_adjustment_log_v1').forEach(function(r){add(r.date,r.type==='Physical stock count'?'Physical count':'Manual adjustment',r.id,r.productName,'',r.branchId,r.branchName,number(r.delta),r.actor,[r.reason,r.note].filter(Boolean).join(' · '));});
+ data.sort(function(a,b){return String(b.date).localeCompare(String(a.date));});
+ const tab=document.createElement('button');tab.type='button';tab.textContent='Stock Ledger';tab.dataset.tab='stockledger';nav.appendChild(tab);
+ const page=document.createElement('section');page.id='stockledger';page.className='page hidden';
+ page.innerHTML='<h3>Unified Stock Movement Ledger</h3><div class="panel"><p class="muted">Read-only movements from sales, purchases, returns, branch transfers and stock adjustments. No business records or stock quantities are changed by this report.</p><div class="grid"><label>Branch<select id="etlBranch"><option value="">All branches</option></select></label><label>Movement type<select id="etlType"><option value="">All movements</option><option>Sale</option><option>Purchase</option><option>Sales return</option><option>Purchase return</option><option>Transfer out</option><option>Transfer in</option><option>Manual adjustment</option><option>Physical count</option></select></label><label>From date<input type="date" id="etlFrom"></label><label>To date<input type="date" id="etlTo"></label><label>Search<input id="etlSearch" placeholder="Product, reference, party or note"></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button class="btn light" type="button" id="etlClear">Clear filters</button><button class="btn green" type="button" id="etlExport">Export filtered CSV</button></div><p class="muted" id="etlCount"></p><div class="cards" id="etlCards"></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Movement</th><th>Reference</th><th>Product</th><th>Branch</th><th>Qty change</th><th>Party / note</th></tr></thead><tbody id="etlRows"></tbody></table></div><p class="muted">This shows movement quantities, not historical running balances. Opening stock is not inferred. Transfers appear as separate outgoing and incoming movements for the two branches.</p></div>';
+ main.appendChild(page);
+ function filtered(){
+  const branch=$('etlBranch').value,type=$('etlType').value,from=$('etlFrom').value,to=$('etlTo').value,q=$('etlSearch').value.trim().toLowerCase();
+  return data.filter(function(r){const d=String(r.date).slice(0,10),hay=[r.name,r.ref,r.branch,r.party,r.note,r.type].join(' ').toLowerCase();return(!branch||String(r.branchId)===branch)&&(!type||r.type===type)&&(!from||d>=from)&&(!to||d<=to)&&(!q||hay.indexOf(q)>=0);});
+ }
+ function render(){
+  const list=filtered(),incoming=list.filter(r=>r.qty>0).reduce((n,r)=>n+r.qty,0),outgoing=list.filter(r=>r.qty<0).reduce((n,r)=>n+Math.abs(r.qty),0),net=incoming-outgoing;
+  $('etlCount').textContent='Showing '+list.length+' of '+data.length+' stock movements';
+  $('etlCards').innerHTML='<div class="card"><small>Movements</small><strong>'+fmt(list.length)+'</strong></div><div class="card"><small>Stock in</small><strong>'+fmt(incoming)+'</strong></div><div class="card"><small>Stock out</small><strong>'+fmt(outgoing)+'</strong></div><div class="card"><small>Net movement</small><strong class="'+(net<0?'bad':'good')+'">'+(net>0?'+':'')+fmt(net)+'</strong></div>';
+  $('etlRows').innerHTML=list.slice(0,1000).map(function(r){return '<tr><td>'+safe(r.date?new Date(r.date).toLocaleString():'—')+'</td><td>'+safe(r.type)+'</td><td>'+safe(r.ref)+'</td><td>'+safe(r.name)+'</td><td>'+safe(r.branch)+'</td><td class="'+(r.qty<0?'bad':'good')+'">'+(r.qty>0?'+':'')+fmt(r.qty)+'</td><td>'+safe(r.party)+(r.note?' · '+safe(r.note):'')+'</td></tr>';}).join('')||'<tr><td colspan="7" class="empty">No movements match these filters.</td></tr>';
+ }
+ function exportCsv(){
+  const list=filtered();if(!list.length)return alert('No stock movements to export.');
+  const table=[['Date','Movement','Reference','Product','SKU','Branch','Quantity change','Party','Note']];
+  list.forEach(function(r){table.push([r.date,r.type,r.ref,r.name,r.sku,r.branch,r.qty,r.party,r.note]);});
+  const csv=table.map(function(row){return row.map(function(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='Etihad-Traders-Unified-Stock-Ledger.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);
+ }
+ branchList.filter(function(b){return b.active!==false;}).forEach(function(b){$('etlBranch').add(new Option(b.name,b.id));});
+ tab.addEventListener('click',function(){nav.querySelectorAll('button').forEach(function(b){b.classList.remove('active');});main.querySelectorAll('.page').forEach(function(p){p.classList.add('hidden');});tab.classList.add('active');page.classList.remove('hidden');render();});
+ ['etlBranch','etlType','etlFrom','etlTo'].forEach(function(id){$(id).addEventListener('change',render);});
+ $('etlSearch').addEventListener('input',render);
+ $('etlClear').addEventListener('click',function(){['etlBranch','etlType','etlFrom','etlTo','etlSearch'].forEach(function(id){$(id).value='';});render();});
+ $('etlExport').addEventListener('click',exportCsv);
+ render();
+})();
+</script>
 </body>
 </html>
