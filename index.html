@@ -7260,20 +7260,20 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  document.getElementById('etihadDesktopMoreMenu')?.remove();
  const buttons=[...nav.querySelectorAll('button[data-tab]')];
  const byTab=new Map();
- buttons.forEach(b=>{if(!byTab.has(b.dataset.tab))byTab.set(b.dataset.tab,b);});
+ // Some merged workspaces retain an old, detached navigation button.
+ // Keep the last registered button: the workspace-rebinding script adds
+ // its working replacement after the legacy button.
+ buttons.forEach(b=>byTab.set(b.dataset.tab,b));
  primary.forEach(([tab,label])=>{
   const b=byTab.get(tab);
   if(b){b.hidden=false;b.removeAttribute('data-etihad-secondary');b.textContent=label;}
  });
- const secondary=[];
- buttons.forEach(b=>{
+ const secondary=[...byTab.values()].filter(b=>!primaryTabs.has(b.dataset.tab)).map(b=>{
   const tab=b.dataset.tab;
-  if(primaryTabs.has(tab))return;
   b.dataset.etihadSecondary='true';
   b.setAttribute('aria-hidden','true');
   b.hidden=true;
-  const label=labelOverrides[tab]||b.textContent.trim()||tab;
-  if(!secondary.some(x=>x.tab===tab))secondary.push({tab,label,source:b});
+  return {tab,label:labelOverrides[tab]||b.textContent.trim()||tab,source:b};
  });
  const more=document.createElement('button');
  more.type='button';more.id='etihadDesktopMoreButton';more.textContent='More ▾';
