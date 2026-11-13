@@ -5119,12 +5119,39 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
  function renderList(kind){
   const orders=kind==='open',key=orders?KEY_ORDERS:KEY_QUOTES,records=read(key);
   const title=orders?'Open Orders':'Quotations';
-  const rows=records.slice().sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||''))).map(r=>{
-   const lines=(r.items||[]).map(x=>esc(x.name)+' × '+Number(x.qty)).join(', ');
-   return '<tr><td><b>'+esc(r.number)+'</b></td><td>'+esc(r.date||'—')+'</td><td>'+esc(r.customer||'Walk-in Customer')+'<br><small>'+esc(r.phone||'')+'</small></td><td>'+esc(r.branchName||'—')+'</td><td>'+esc(lines||'—')+'</td><td>PKR '+money(r.total)+'</td><td><span class="badge">'+esc(r.status|| (orders?'Open':'Draft'))+'</span></td><td><button type="button" class="btn small light" data-workflow-view="'+esc(r.id)+'">View</button> <button type="button" class="btn small red" data-workflow-delete="'+esc(r.id)+'">Delete</button></td></tr>';
-  }).join('');
-  shell(title,orders?'Saved customer orders. Stock is not deducted until an order is converted into a sale.':'Saved customer quotations. Quotations do not reserve or deduct stock.',
-   '<div class="et-workflow-toolbar"><button type="button" class="btn" data-workflow-create="'+(orders?'order':'quote')+'">＋ New '+(orders?'Order':'Quotation')+'</button><span class="muted">'+records.length+' saved record(s)</span></div><div class="table-wrap"><table><thead><tr><th>Number</th><th>Date</th><th>Customer</th><th>Branch</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+ (rows||'<tr><td colspan="8" class="empty">No '+(orders?'open orders':'quotations')+' saved yet. Select New '+(orders?'Order':'Quotation')+' to create your first record.</td></tr>')+'</tbody></table></div>');
+  const statuses=[...new Set(records.map(r=>r.status||(orders?'Open':'Draft')))].sort();
+  const branches=getBranches();
+  const statusOptions=['<option value="all">All statuses</option>',...statuses.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>')].join('');
+  const branchOptionsHtml=['<option value="all">All branches</option>',...branches.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>')].join('');
+  const toolbar='<div class="et-workflow-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin:12px 0"><button type="button" class="btn" data-workflow-create="'+(orders?'order':'quote')+'">＋ New '+(orders?'Order':'Quotation')+'</button><label style="min-width:190px;flex:1">Search<input id="etWFilterSearch" type="search" placeholder="Number, customer, phone, product..." style="width:100%"></label><label>From<input id="etWFilterFrom" type="date"></label><label>To<input id="etWFilterTo" type="date"></label><label>Status<select id="etWFilterStatus">'+statusOptions+'</select></label><label>Branch<select id="etWFilterBranch">'+branchOptionsHtml+'</select></label><button type="button" class="btn light" id="etWFilterClear">Clear</button><button type="button" class="btn light" data-workflow-export>Export CSV</button><span class="muted" id="etWFilterCount">'+records.length+' record(s)</span></div>';
+  shell(title,orders?'Saved customer orders. Stock is not deducted until an order is converted into a sale.':'Saved customer quotations. Quotations do not reserve or deduct stock.',toolbar+'<div class="table-wrap"><table><thead><tr><th>Number</th><th>Date</th><th>Customer</th><th>Branch</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="etWFilterRows"></tbody></table></div>');
+  const search=$('etWFilterSearch'),from=$('etWFilterFrom'),to=$('etWFilterTo'),status=$('etWFilterStatus'),branch=$('etWFilterBranch'),tbody=$('etWFilterRows');
+  function filtered(){
+   const q=search.value.trim().toLowerCase();
+   return records.filter(r=>{
+    const date=String(r.date||'').slice(0,10),st=r.status||(orders?'Open':'Draft');
+    const text=[r.number,r.customer,r.phone,r.branchName,r.notes,...(r.items||[]).map(x=>x.name)].join(' ').toLowerCase();
+    return (!q||text.includes(q))&&(!from.value||date>=from.value)&&(!to.value||date<=to.value)&&(status.value==='all'||st===status.value)&&(branch.value==='all'||String(r.branchId)===String(branch.value));
+   }).sort((a,b)=>String(b.date||b.createdAt||'').localeCompare(String(a.date||a.createdAt||'')));
+  }
+  function draw(){
+   const list=filtered();
+   tbody.innerHTML=list.map(r=>{
+    const lines=(r.items||[]).map(x=>esc(x.name)+' × '+Number(x.qty)).join(', ');
+    return '<tr><td><b>'+esc(r.number)+'</b></td><td>'+esc(r.date||'—')+'</td><td>'+esc(r.customer||'Walk-in Customer')+'<br><small>'+esc(r.phone||'')+'</small></td><td>'+esc(r.branchName||'—')+'</td><td>'+esc(lines||'—')+'</td><td>PKR '+money(r.total)+'</td><td><span class="badge">'+esc(r.status||(orders?'Open':'Draft'))+'</span></td><td><button type="button" class="btn small light" data-workflow-view="'+esc(r.id)+'">View</button> <button type="button" class="btn small red" data-workflow-delete="'+esc(r.id)+'">Delete</button></td></tr>';
+   }).join('')||'<tr><td colspan="8" class="empty">No matching '+(orders?'orders':'quotations')+'. Adjust or clear the filters.</td></tr>';
+   $('etWFilterCount').textContent=list.length+' of '+records.length+' record(s)';
+  }
+  [search,from,to,status,branch].forEach(el=>el.addEventListener('input',draw));
+  $('etWFilterClear').addEventListener('click',()=>{search.value='';from.value='';to.value='';status.value='all';branch.value='all';draw();});
+  const exportButton=empty.querySelector('[data-workflow-export]');
+  exportButton.addEventListener('click',()=>{
+   const list=filtered(),cells=[['Number','Date','Customer','Phone','Branch','Status','Items','Total PKR','Notes'],...list.map(r=>[r.number,r.date,r.customer,r.phone,r.branchName,r.status||(orders?'Open':'Draft'),(r.items||[]).map(x=>x.name+' x '+x.qty).join('; '),r.total,r.notes])];
+   const csv=cells.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+   a.href=url;a.download=(orders?'etihad-sales-orders':'etihad-quotations')+'-'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(url);
+  });
+  draw();
  }
  function showForm(kind,record){
   const orders=kind==='order',key=orders?KEY_ORDERS:KEY_QUOTES;
