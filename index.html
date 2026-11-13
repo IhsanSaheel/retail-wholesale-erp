@@ -1482,6 +1482,7 @@ function printInvoice(sid){
  <b>Customer:</b> ${esc(s.customerName||'Walk-in Customer')}<br>
  <b>Phone:</b> ${esc(s.customerPhone||'-')}
  </p>
+ ${s.note?'<p><b>Sale note:</b> '+esc(s.note)+'</p>':''}
 
  <table>
  <thead>
