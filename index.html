@@ -918,6 +918,8 @@ let cart=[];
 let selectedCustomer=null;
 let selectedInvoice=null;
 
+const DELETION_AUDIT_KEY='etihad_deletion_audit_v1';
+function recordDeletion(collection,record,action){if(!record||typeof record!=='object')return false;try{let entries=[];try{entries=JSON.parse(localStorage.getItem(DELETION_AUDIT_KEY)||'[]');}catch(_){}if(!Array.isArray(entries))entries=[];let actor='Signed-in user';try{const u=JSON.parse(localStorage.getItem('etihad_active_user_v1')||'null');actor=u?.email||u?.user?.email||u?.role||actor;}catch(_){}entries.unshift({auditId:id(),collection,recordId:String(record.id??record.record_id??''),recordLabel:String(record.number||record.invoiceNo||record.name||record.title||record.customer||record.id||'Record'),action:action||'deleted',deletedAt:new Date().toISOString(),actor,snapshot:JSON.parse(JSON.stringify(record))});localStorage.setItem(DELETION_AUDIT_KEY,JSON.stringify(entries.slice(0,250)));return true;}catch(error){console.warn('Deletion audit could not be saved:',error);return false;}}
 function saveAll(){
  localStorage.setItem(KEY_PRODUCTS,JSON.stringify(products));
  localStorage.setItem(KEY_BRANCHES,JSON.stringify(branches));
@@ -1013,7 +1015,7 @@ function deleteBranch(bid){
  if(products.some(p=>p.branchId===bid))return alert('This branch has products. Move or delete them first.');
  if(transfers.some(t=>t.fromBranchId===bid||t.toBranchId===bid))return alert('This branch has stock transfer history. Keep the branch to preserve your records.');
  if(!confirm('Delete this branch?'))return;
- branches=branches.filter(b=>b.id!==bid);saveAll();renderAll();
+ const branch=branches.find(b=>b.id===bid);if(!branch)return;if(!recordDeletion('mberp_branches',branch,'deleted'))return alert('Deletion audit could not be saved. Branch was not deleted.');branches=branches.filter(b=>b.id!==bid);saveAll();renderAll();
 }
 function resetBranchForm(){
  ['branchId','branchName','branchAddress'].forEach(x=>document.getElementById(x).value='');
@@ -1060,7 +1062,7 @@ function editProduct(pid){
 }
 function deleteProduct(pid){
  if(!confirm('Delete this product?'))return;
- products=products.filter(p=>p.id!==pid);saveAll();renderAll();
+ const product=products.find(p=>p.id===pid);if(!product)return;if(!recordDeletion('mberp_products',product,'deleted'))return alert('Deletion audit could not be saved. Product was not deleted.');products=products.filter(p=>p.id!==pid);saveAll();renderAll();
 }
 function resetProductForm(){
  ['productId','pName','pSku','pCategory'].forEach(x=>document.getElementById(x).value='');
@@ -1711,7 +1713,7 @@ function editExpense(eid){
 }
 function deleteExpense(eid){
  if(!confirm('Delete this expense record?'))return;
- expenses=expenses.filter(e=>e.id!==eid);
+ const expense=expenses.find(e=>e.id===eid);if(!expense)return;if(!recordDeletion('mberp_expenses',expense,'deleted'))return alert('Deletion audit could not be saved. Expense was not deleted.');expenses=expenses.filter(e=>e.id!==eid);
  saveAll();renderAll();
 }
 function resetExpenseForm(){
@@ -2477,6 +2479,11 @@ renderAll();
    </p>
   </div>
   <div class="panel">
+   <h3>Deletion Audit & Recovery Copies</h3>
+   <p class="muted">Private copies of supported deleted records and sales reopened for editing are retained on this device. Export this log regularly. It does not yet synchronize to the company cloud.</p>
+   <button class="btn" id="exportDeletionAudit">Export Deletion Audit</button><p id="deletionAuditCount" class="muted"></p>
+  </div>
+  <div class="panel">
    <h3>Important Information</h3>
    <p>• Download backups regularly.</p>
    <p>• Keep a copy outside your phone.</p>
@@ -2500,6 +2507,9 @@ renderAll();
   a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),2000);
  }
+
+ document.getElementById('exportDeletionAudit').onclick=function(){let entries=[];try{entries=JSON.parse(localStorage.getItem('etihad_deletion_audit_v1')||'[]');}catch(_){}document.getElementById('deletionAuditCount').textContent=entries.length+' retained audit entr'+(entries.length===1?'y':'ies')+' (maximum 250).';downloadFile({app:'Etihad Traders',auditVersion:1,exportedAt:new Date().toISOString(),entries},'Etihad-Traders-Deletion-Audit-'+new Date().toISOString().slice(0,10)+'.json');};
+  const initialAudit=(()=>{try{return JSON.parse(localStorage.getItem('etihad_deletion_audit_v1')||'[]');}catch(_){return [];}})();document.getElementById('deletionAuditCount').textContent=initialAudit.length+' retained audit entr'+(initialAudit.length===1?'y':'ies')+' (maximum 250).';
 
  function collectBackup(){
   const records={};
@@ -4963,7 +4973,7 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   if(t.hasAttribute('data-workflow-back')){renderList(kind);return;}
   if(t.hasAttribute('data-workflow-view')){renderView(kind,t.dataset.workflowView);return;}
   if(t.hasAttribute('data-workflow-edit')){const key=kind==='open'?KEY_ORDERS:KEY_QUOTES;const rec=read(key).find(x=>x.id===t.dataset.workflowEdit);if(rec)showForm(kind==='open'?'order':'quote',rec);return;}
-  if(t.hasAttribute('data-workflow-delete')){if(!confirm('Delete this saved '+(kind==='open'?'order':'quotation')+'?'))return;const key=kind==='open'?KEY_ORDERS:KEY_QUOTES;write(key,read(key).filter(x=>x.id!==t.dataset.workflowDelete));renderList(kind);return;}
+  if(t.hasAttribute('data-workflow-delete')){if(!confirm('Delete this saved '+(kind==='open'?'order':'quotation')+'?'))return;const key=kind==='open'?KEY_ORDERS:KEY_QUOTES,record=read(key).find(x=>x.id===t.dataset.workflowDelete);if(!record)return;if(!recordDeletion(kind==='open'?'mberp_orders':'mberp_quotations',record,'deleted'))return alert('Deletion audit could not be saved. Record was not deleted.');write(key,read(key).filter(x=>x.id!==t.dataset.workflowDelete));renderList(kind);return;}
  }
  page.addEventListener('click',handleAction,true);
  page.querySelectorAll('[data-sales-view]').forEach(tab=>tab.addEventListener('click',()=>setTimeout(()=>{if(tab.dataset.salesView==='open'||tab.dataset.salesView==='quotations')renderList(tab.dataset.salesView);},0)));
@@ -5124,7 +5134,7 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   if(payments.some(p=>p.saleId===sid))return alert('This sale has later payments. For accurate accounting, cancel/refund it through the proper return process instead of editing it.');
   if(!confirm('Edit this sale? Its stock will be returned to inventory and the bill will reopen in POS.'))return;
   (sale.items||[]).forEach(item=>{const product=products.find(p=>p.id===item.productId);if(product)product.qty=Number(product.qty||0)+Number(item.qty||0)});
-  sales=sales.filter(x=>x.id!==sid);cart=(sale.items||[]).map(x=>({...x}));
+  if(!recordDeletion('mberp_sales',sale,'reopened for editing'))return alert('Audit copy could not be saved. Sale was not reopened.');sales=sales.filter(x=>x.id!==sid);cart=(sale.items||[]).map(x=>({...x}));
   if($('saleBranch'))$('saleBranch').value=sale.branchId||'';if($('saleCustomer'))$('saleCustomer').value=sale.customerName==='Walk-in Customer'?'':sale.customerName||'';if($('salePhone'))$('salePhone').value=sale.customerPhone||'';if($('salePaid'))$('salePaid').value=sale.paid||0;
   saveAll();renderAll();document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));$('pos')?.classList.remove('hidden');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='sales'));renderCart();alert('Sale reopened in POS. Complete it again to save the corrected invoice.');
  };
