@@ -7326,40 +7326,45 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  render();
 })();
 </script>
-<script id="etihad-code128-labels-v1">
+<script id="etihad-code128-labels-v2">
 (function(){
  'use strict';
- const page=document.getElementById('etihadLabelsExpiry'),button=document.getElementById('etLabelPrint');
+ const page=document.getElementById('etihadLabelsExpiry');
+ const button=document.getElementById('etLabelPrint');
  if(!page||!button)return;
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const money=v=>'PKR '+Number(v||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
+ function getProducts(){
+  if(typeof products!=='undefined'&&Array.isArray(products))return products;
+  try{const rows=JSON.parse(localStorage.getItem('mberp_products')||'[]');return Array.isArray(rows)?rows:[]}catch(_){return []}
+ }
+ function getBranches(){
+  if(typeof branches!=='undefined'&&Array.isArray(branches))return branches;
+  try{const rows=JSON.parse(localStorage.getItem('mberp_branches')||'[]');return Array.isArray(rows)?rows:[]}catch(_){return []}
+ }
  button.addEventListener('click',function(event){
   event.preventDefault();event.stopImmediatePropagation();
   const selected=[...page.querySelectorAll('[data-label-id]:checked')].map(x=>String(x.dataset.labelId));
-  const items=(Array.isArray(window.products)?window.products:[]).filter(p=>selected.includes(String(p.id)));
-  if(!items.length)return alert('Select at least one product.');
-  const branches=Array.isArray(window.branches)?window.branches:[];
+  const items=getProducts().filter(p=>selected.includes(String(p.id)));
+  if(!items.length){alert('Select at least one product.');return;}
+  const branchRows=getBranches();
   const labels=items.map(function(p){
    const code=String(p.sku||p.barcode||'').trim();
-   let branch=branches.find(function(b){return String(b.id)===String(p.branchId);});
-   if(typeof window.branchName==='function')branch={name:window.branchName(p.branchId)};
-   const barcode=code?'<svg class="barcode" data-code="'+esc(code)+'"></svg><div class="sku">'+esc(code)+'</div>':'<div class="no-code">SKU / barcode missing. Add a unique SKU for a scannable label.</div>';
-   return '<article class="label"><b>'+esc(p.name)+'</b>'+barcode+'<strong>'+money(p.price)+'</strong><small>'+esc(branch&&branch.name||'')+'</small></article>';
+   const branch=branchRows.find(b=>String(b.id)===String(p.branchId));
+   return '<article class="label"><b>'+esc(p.name||'Unnamed product')+'</b>'+
+    (code?'<div class="sku">SKU: '+esc(code)+'</div>':'<div class="no-code">SKU / barcode not set</div>')+
+    '<strong>'+money(p.price)+'</strong><small>'+esc(branch&&branch.name||p.branchName||p.branch||'')+'</small>'+
+    '<small>Expiry: '+esc(p.expiryDate||'Not set')+'</small></article>';
   }).join('');
-  const w=window.open('','_blank','width=900,height=700');
-  if(!w)return alert('Allow pop-ups to print labels.');
-  w.document.write('<!doctype html><html><head><title>Etihad Traders Product Barcode Labels</title><style>body{font-family:Arial,sans-serif;margin:10mm}.sheet{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm}.label{border:1px solid #333;padding:5mm;min-height:35mm;break-inside:avoid;text-align:center}.label b{font-size:12pt;display:block}.barcode{width:100%;height:18mm;margin-top:2mm}.sku{font-family:monospace;font-size:9pt;margin:1mm 0}.label strong{font-size:14pt;display:block}.label small{display:block;margin-top:2mm}.no-code{font-size:9pt;color:#9b1c1c;margin:5mm 0}@media print{body{margin:8mm}}</style></head><body><div class="sheet">'+labels+'</div><p id="barcodeStatus">Preparing Code 128 barcodes…</p></body></html>');
+  // Open the print window directly inside the tap/click handler so mobile
+  // browsers do not block it after an asynchronous barcode-library download.
+  const w=window.open('','_blank');
+  if(!w){alert('Chrome blocked the print window. Allow pop-ups for this ERP site, then tap Print Labels again.');return;}
+  w.document.open();
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Etihad Traders Product Labels</title><style>'+
+   '*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:8mm;color:#111}.sheet{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5mm}.label{border:1px solid #333;padding:4mm;min-height:32mm;break-inside:avoid;page-break-inside:avoid;text-align:center;overflow-wrap:anywhere}.label b{font-size:12pt;display:block;margin-bottom:2mm}.sku{font-family:monospace;font-size:10pt;letter-spacing:.4px;margin:2mm 0}.label strong{font-size:14pt;display:block}.label small{font-size:9pt;display:block;margin-top:1.5mm}.no-code{font-size:9pt;color:#8b1c1c;margin:2mm 0}.hint{font-size:9pt;color:#555;margin:0 0 5mm}@page{size:A4;margin:8mm}@media print{body{margin:0}.hint{display:none}}'+
+   '</style></head><body><p class="hint">Etihad Traders — '+items.length+' product label(s). Choose your label paper in printer settings.</p><div class="sheet">'+labels+'</div><script>window.addEventListener("load",function(){setTimeout(function(){window.focus();window.print();},300)});<\/script></body></html>');
   w.document.close();
-  const script=w.document.createElement('script');
-  script.src='https://cdn.jsdelivr.net/npm/jsbarcode@3.12.1/dist/JsBarcode.code128.min.js';
-  script.onload=function(){
-   let failed=0;
-   w.document.querySelectorAll('svg.barcode').forEach(function(el){try{w.JsBarcode(el,el.getAttribute('data-code'),{format:'CODE128',displayValue:false,margin:0,height:48,width:1.5});}catch(error){failed++;el.outerHTML='<div class="no-code">Invalid SKU — barcode not generated.</div>'; }});
-   w.document.getElementById('barcodeStatus').textContent=failed?'Some barcodes could not be generated. Check the affected SKUs.':'Code 128 barcodes ready for scanning.';
-   w.setTimeout(function(){w.print();},400);
-  };
-  script.onerror=function(){w.document.getElementById('barcodeStatus').textContent='Barcode library unavailable. Connect to the internet and try again; no fake barcode was printed.';};
-  w.document.head.appendChild(script);
  },true);
 })();
 </script>
