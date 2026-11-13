@@ -4802,8 +4802,7 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   $('saleCustomer')?.focus();
  }
  $('etihadNewSaleButton')?.addEventListener('click',openNewSale);
- $('etihadNewOrderButton')?.addEventListener('click',()=>alert('Open Orders are not connected yet. No order or stock record has been created.'));
- $('etihadNewQuotationButton')?.addEventListener('click',()=>alert('Quotations are not connected yet. No quotation or stock record has been created.'));
+  // Order and quotation buttons are handled by the saved workflow below; no placeholder alerts.
  $('etihadSalesReturnButton')?.addEventListener('click',()=>{
   const page=$('returns');
   if(!page){alert('The existing Sales Returns screen is unavailable.');return;}
