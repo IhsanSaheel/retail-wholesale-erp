@@ -60,11 +60,11 @@ const restoreCode = restoreStart >= 0 && restoreEnd > restoreStart ? html.slice(
 if (!restoreCode) fail('deletion-history restore handler could not be located');
 else {
   const restoreChecks = [
-    ['duplicate ID protection', /current\\.find\\(item=>String\\(item\\?\\.id\\)===String\\(record\\.id\\)\\)/.test(restoreCode)],
-    ['no overwrite of existing records', /No duplicate was created and no existing record was overwritten/.test(restoreCode)],
-    ['confirmation before restore', /if\\(!confirm\\(/.test(restoreCode)],
+    ['duplicate ID protection', restoreCode.includes('current.find(item=>String(item?.id)===String(record.id))')],
+    ['no overwrite of existing records', restoreCode.includes('No duplicate was created and no existing record was overwritten')],
+    ['confirmation before restore', restoreCode.includes('if(!confirm(')],
     ['restore audit marked only after storage write', restoreCode.indexOf("localStorage.setItem(collection,JSON.stringify(updated))") < restoreCode.indexOf("entry.restoredAt=new Date().toISOString()")],
-    ['restore does not invoke branch deletion', !/deleteBranch\\s*\\(/.test(restoreCode)]
+    ['restore does not invoke branch deletion', !restoreCode.includes('deleteBranch(')]
   ];
   for (const [name, ok] of restoreChecks) ok ? pass('recovery safeguard: ' + name) : fail('missing recovery safeguard: ' + name);
 }
