@@ -6395,5 +6395,53 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
 })();
 </script>
 
+<script id="etihad-supplier-statement-upgrade-v1">
+(function(){
+ 'use strict';
+ if(window.__etihadSupplierStatementV1)return;window.__etihadSupplierStatementV1=true;
+ const $=id=>document.getElementById(id);
+ const safe=v=>typeof esc==='function'?esc(v??''):String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const stamp=v=>{const d=new Date(v||0);return Number.isNaN(d.getTime())?'—':d.toLocaleString();};
+ const moneyText=v=>'PKR '+money(Number(v||0));
+ function supplierEvents(sid){
+  const rows=[];
+  purchases.filter(p=>String(p.supplierId)===String(sid)).forEach(p=>{
+   const total=Number(p.total||0),paid=Math.max(0,Number(p.paid||0));
+   rows.push({date:p.date||p.createdAt,type:'Purchase / goods received',ref:p.purchaseNo||p.id,details:(p.productName||'Purchase')+' · '+Number(p.qty||0)+' units · '+(p.branchName||branchName(p.branchId)),debit:total,credit:0});
+   if(paid>0)rows.push({date:p.date||p.createdAt,type:'Paid at purchase',ref:p.purchaseNo||p.id,details:p.method||'Payment at purchase',debit:0,credit:paid});
+  });
+  supplierPayments.filter(p=>String(p.supplierId)===String(sid)).forEach(p=>rows.push({date:p.date,type:'Payment to supplier',ref:p.receiptNo||'Payment',details:(p.method||'Payment')+(p.note?' · '+p.note:''),debit:0,credit:Number(p.amount||0)}));
+  return rows.sort((a,b)=>new Date(a.date||0)-new Date(b.date||0));
+ }
+ function runningEvents(sid){let balance=0;return supplierEvents(sid).map(e=>{balance+=e.debit-e.credit;return {...e,balance};});}
+ window.renderSupplierLedger=function(){
+  const sid=$('supplierLedger')?.value,due=$('supplierDue'),details=$('supplierLedgerDetails');if(!due||!details)return;
+  if(!sid){due.value='0';details.innerHTML='';return;}
+  const supplier=suppliers.find(s=>String(s.id)===String(sid));if(!supplier){due.value='0';details.innerHTML='<p class="empty">Supplier account not found.</p>';return;}
+  const total=supplierTotal(sid),paid=supplierPaid(sid),outstanding=supplierDue(sid),events=runningEvents(sid);
+  const paymentsFor=supplierPayments.filter(p=>String(p.supplierId)===String(sid));due.value=money(outstanding);
+  const rows=events.slice().reverse().map(e=>'<tr><td>'+safe(stamp(e.date))+'</td><td>'+safe(e.type)+'</td><td>'+safe(e.ref)+'</td><td>'+safe(e.details)+'</td><td class="bad">'+(e.debit?money(e.debit):'—')+'</td><td class="good">'+(e.credit?money(e.credit):'—')+'</td><td class="'+(e.balance>0?'bad':'good')+'">'+money(e.balance)+'</td></tr>').join('');
+  details.innerHTML='<div class="et-supplier-ledger-head"><div><small class="et-supplier-kicker">SUPPLIER ACCOUNT STATEMENT</small><h3>'+safe(supplier.name)+'</h3><p class="muted">'+safe(supplier.phone||'No phone')+' · '+safe(supplier.address||'No address')+'</p></div><button type="button" class="btn light" data-et-supplier-statement>Print / Save PDF Statement</button></div>'+
+   '<div class="et-supplier-summary"><div><small>Total purchases</small><strong>'+moneyText(total)+'</strong></div><div><small>Total paid</small><strong class="good">'+moneyText(paid)+'</strong></div><div><small>Outstanding payable</small><strong class="'+(outstanding>0?'bad':'good')+'">'+moneyText(outstanding)+'</strong></div></div>'+
+   '<h3>Account transactions</h3><p class="muted">Purchases increase the payable balance; payments reduce it. Newest transactions appear first.</p>'+
+   '<div class="table-wrap"><table><thead><tr><th>Date & time</th><th>Transaction</th><th>Reference</th><th>Details</th><th>Debit / purchase</th><th>Credit / paid</th><th>Running balance</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+   '<h3 style="margin-top:20px">Payment receipts</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Receipt</th><th>Method</th><th>Note</th><th>Amount</th></tr></thead><tbody>'+
+   (paymentsFor.slice().sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).map(p=>'<tr><td>'+safe(stamp(p.date))+'</td><td>'+safe(p.receiptNo||'—')+'</td><td>'+safe(p.method||'—')+'</td><td>'+safe(p.note||'—')+'</td><td class="good">'+money(p.amount)+'</td></tr>').join('')||'<tr><td colspan="5" class="empty">No supplier payments recorded.</td></tr>')+
+   '</tbody></table></div>';
+ };
+ window.downloadSupplierStatement=function(){
+  const sid=$('supplierLedger')?.value,s=suppliers.find(x=>String(x.id)===String(sid));if(!s)return alert('Select a supplier first.');
+  const events=runningEvents(sid),total=supplierTotal(sid),paid=supplierPaid(sid),due=supplierDue(sid);
+  const rows=events.map(e=>'<tr><td>'+safe(stamp(e.date))+'</td><td>'+safe(e.type)+'</td><td>'+safe(e.ref)+'</td><td>'+safe(e.details)+'</td><td>'+money(e.debit)+'</td><td>'+money(e.credit)+'</td><td>'+money(e.balance)+'</td></tr>').join('');
+  const logo=localStorage.getItem('etihad_business_logo')||'';
+  const html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Supplier Statement - '+safe(s.name)+'</title><style>body{font-family:Arial,sans-serif;color:#202b39;margin:28px}header{display:flex;gap:14px;align-items:center;border-bottom:3px solid #b58a3a;padding-bottom:14px}header img{width:72px;height:58px;object-fit:contain}h1{font-size:22px;margin:0}small{color:#667085}.summary{display:flex;gap:12px;margin:20px 0}.box{flex:1;border:1px solid #ddd;border-radius:8px;padding:12px}.box b{display:block;font-size:18px;margin-top:7px}table{width:100%;border-collapse:collapse;font-size:10px}th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left;vertical-align:top}th{background:#f2f4f7}.note{margin-top:22px;color:#667085;font-size:11px}@media print{body{margin:12mm}.summary,tr{break-inside:avoid}}</style></head><body><header>'+(logo?'<img src="'+logo+'" alt="Business logo">':'')+'<div><h1>ETIHAD TRADERS</h1><b>Supplier Account Statement</b><br><small>Generated '+safe(stamp(new Date().toISOString()))+'</small></div></header><h2>'+safe(s.name)+'</h2><p>Phone: '+safe(s.phone||'—')+' · Address: '+safe(s.address||'—')+'</p><div class="summary"><div class="box">Total purchases<b>PKR '+money(total)+'</b></div><div class="box">Total paid<b>PKR '+money(paid)+'</b></div><div class="box">Outstanding payable<b>PKR '+money(due)+'</b></div></div><h3>Complete transaction history</h3><table><thead><tr><th>Date & time</th><th>Transaction</th><th>Reference</th><th>Details</th><th>Purchase</th><th>Paid</th><th>Balance</th></tr></thead><tbody>'+rows+'</tbody></table><p class="note">This statement lists purchase invoices, payments made at purchase, later supplier payments and the running payable balance.</p><p><button onclick="window.print()">Print / Save as PDF</button></p></body></html>';
+  const w=window.open('','_blank');if(!w)return alert('Please allow pop-ups to print the supplier statement.');w.document.open();w.document.write(html);w.document.close();
+ };
+ const section=$('supplierLedgerDetails');if(section&&!section.dataset.etSupplierStatement){section.dataset.etSupplierStatement='1';section.addEventListener('click',e=>{if(e.target.closest('[data-et-supplier-statement]'))window.downloadSupplierStatement();});}
+ const style=document.createElement('style');style.textContent='.et-supplier-ledger-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:16px 0}.et-supplier-kicker{font-size:10px;font-weight:850;letter-spacing:1.3px;color:#a17a32}.et-supplier-ledger-head h3{margin:6px 0}.et-supplier-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}.et-supplier-summary>div{padding:15px;border:1px solid var(--line);border-radius:13px;background:var(--surface)}.et-supplier-summary small{display:block;color:var(--muted);font-weight:700}.et-supplier-summary strong{display:block;font-size:19px;margin-top:7px;overflow-wrap:anywhere}@media(max-width:650px){.et-supplier-summary{grid-template-columns:1fr}}';document.head.appendChild(style);
+ if($('supplierLedger')?.value)window.renderSupplierLedger();
+})();
+</script>
+
 </body>
 </html>
