@@ -1225,9 +1225,10 @@ function completeTransfer(){
  // Add stock to matching product in receiving branch.
  // If it does not exist, create it automatically.
  if(destinationProduct){
+  if(typeof window.etihadMoveBatches==='function')window.etihadMoveBatches(source,destinationProduct,qty);
   destinationProduct.qty=Number(destinationProduct.qty||0)+qty;
  }else{
-  products.push({
+  const newDestination={
    id:id(),
    name:source.name,
    sku:source.sku||'',
@@ -1242,8 +1243,11 @@ function completeTransfer(){
    favorite:!!source.favorite,
    cost:Number(source.cost||0),
    price:Number(source.price||0),
-   alert:Number(source.alert??5)
-  });
+   alert:Number(source.alert??5),
+   batches:[]
+  };
+  if(typeof window.etihadMoveBatches==='function')window.etihadMoveBatches(source,newDestination,qty);
+  products.push(newDestination);
  }
 
  transfers.unshift(transfer);
@@ -1338,7 +1342,7 @@ function completeSale(){
  if(!Number.isFinite(paid)||paid<0||paid>total)return alert('Paid amount must be between zero and the bill total.');
  for(const item of cart){const p=products.find(x=>x.id===item.productId);if(!p||Number(p.qty)<item.qty)return alert('Stock changed for '+item.name+'. Check the cart.')}
  const record={id:id(),invoiceNo:nextInvoiceNumber(),date:new Date().toISOString(),branchId:bid,branchName:branchName(bid),customerName:customer,customerPhone:phone,items:cart.map(x=>({...x})),total,paid,balance:total-paid};
- cart.forEach(item=>{const p=products.find(x=>x.id===item.productId);p.qty=Number(p.qty)-item.qty});
+ cart.forEach(item=>{const p=products.find(x=>x.id===item.productId);if(typeof window.etihadConsumeBatches==='function')window.etihadConsumeBatches(p,item.qty);p.qty=Number(p.qty)-item.qty});
  sales.unshift(record);saveAll();cart=[];
  document.getElementById('saleCustomer').value='';
  document.getElementById('salePhone').value='';
@@ -2039,6 +2043,8 @@ supplierSection.innerHTML=`
 <div><label>Supplier</label><select id="purchaseSupplier"></select></div>
 <div><label>Receiving Branch</label><select id="purchaseBranch"></select></div>
 <div><label>Purchase Date</label><input id="purchaseDate" type="date"></div>
+<div><label>Batch / Lot No. (optional)</label><input id="purchaseBatchNo" placeholder="Supplier batch number"></div>
+<div><label>Batch Expiry Date (optional)</label><input id="purchaseExpiryDate" type="date"></div>
 <div><label>Product Name</label><input id="purchaseProduct" placeholder="Product name"></div>
 <div><label>SKU / Barcode</label><input id="purchaseSku" placeholder="Optional SKU"></div>
 <div><label>Category</label><input id="purchaseCategory" placeholder="Category"></div>
@@ -2197,6 +2203,8 @@ function savePurchase(){
  const cost=Number(document.getElementById('purchaseCost').value);
  const paid=Number(document.getElementById('purchasePaid').value);
  const date=document.getElementById('purchaseDate').value;
+ const batchNo=document.getElementById('purchaseBatchNo').value.trim();
+ const expiryDate=document.getElementById('purchaseExpiryDate').value;
  const total=qty*cost;
 
  if(!supplierId)return alert('Select a supplier.');
@@ -2206,6 +2214,8 @@ function savePurchase(){
  if(!Number.isFinite(cost)||cost<0)return alert('Enter a valid purchase cost.');
  if(!Number.isFinite(paid)||paid<0||paid>total)return alert('Paid amount must be between zero and the purchase total.');
  if(!date)return alert('Select purchase date.');
+ if(expiryDate&&!/^\\d{4}-\\d{2}-\\d{2}$/.test(expiryDate))return alert('Enter a valid batch expiry date.');
+ if(expiryDate&&expiryDate<date)return alert('Batch expiry date cannot be earlier than the purchase date.');
 
  const supplier=suppliers.find(s=>s.id===supplierId);
  const branch=branches.find(b=>b.id===branchId);
@@ -2254,9 +2264,13 @@ function savePurchase(){
   date,
   method:document.getElementById('purchaseMethod').value,
   note:document.getElementById('purchaseNote').value.trim(),
-  createdAt:new Date().toISOString()
+  createdAt:new Date().toISOString(),
+  batchNo:batchNo||'',
+  expiryDate:expiryDate||''
  };
 
+ if(!Array.isArray(product.batches))product.batches=[];
+ product.batches.push({id:id(),batchNo:batchNo||purchase.purchaseNo,receivedDate:date,expiryDate:expiryDate||'',receivedQty:qty,remainingQty:qty,source:'Purchase',reference:purchase.purchaseNo,supplierName:supplier.name,createdAt:new Date().toISOString()});
  purchases.unshift(purchase);
  saveAll();
  resetPurchaseForm();
@@ -2272,6 +2286,8 @@ function resetPurchaseForm(){
  document.getElementById('purchaseCost').value=0;
  document.getElementById('purchasePaid').value=0;
  document.getElementById('purchaseDate').value=todayISO();
+ document.getElementById('purchaseBatchNo').value='';
+ document.getElementById('purchaseExpiryDate').value='';
  document.getElementById('purchaseMethod').value='Cash';
  document.getElementById('purchaseNote').value='';
  updatePurchaseTotal();
@@ -7126,6 +7142,36 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
   script.onerror=function(){w.document.getElementById('barcodeStatus').textContent='Barcode library unavailable. Connect to the internet and try again; no fake barcode was printed.';};
   w.document.head.appendChild(script);
  },true);
+})();
+</script>
+<script id="etihad-batch-lot-control-v1">
+(function(){
+ 'use strict';
+ if(window.__etihadBatchLotControlV1)return;window.__etihadBatchLotControlV1=true;
+ const nav=document.querySelector('nav'),main=document.querySelector('main');if(!nav||!main)return;
+ const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const fmt=v=>Number(v||0).toLocaleString('en-PK',{maximumFractionDigits:3});
+ const products=()=>Array.isArray(window.products)?window.products:[];
+ const branches=()=>Array.isArray(window.branches)?window.branches:[];
+ const branchName=id=>(branches().find(b=>String(b.id)===String(id))||{}).name||'Unknown branch';
+ const batches=p=>Array.isArray(p.batches)?p.batches:[];
+ const batchQty=b=>Math.max(0,Number(b.remainingQty??b.qty??0)||0);
+ const status=date=>{if(!date)return 'No expiry';const d=new Date(date+'T00:00:00'),t=new Date();t.setHours(0,0,0,0);const days=Math.ceil((d-t)/86400000);return days<0?'Expired':days<=30?'Expiring soon':'Good';};
+ const page=document.createElement('section');page.id='etihadBatchLots';page.className='page hidden';
+ page.innerHTML='<h3>Batch / Lot & Expiry Management</h3><div class="panel"><p class="muted">Each purchase creates a stock batch. Sales consume dated batches using earliest-expiry-first (FEFO). Transfers carry batch quantities to the receiving branch. Existing stock remains available as unallocated legacy stock until you assign it to a batch below.</p><div class="grid"><label>Search product / batch<input id="etBatchSearch" placeholder="Product, SKU or batch number"></label><label>Branch<select id="etBatchBranch"><option value="">All branches</option></select></label><label>Expiry status<select id="etBatchStatus"><option value="">All statuses</option><option>Expired</option><option>Expiring soon</option><option>Good</option><option>No expiry</option></select></label></div><div class="cards" id="etBatchCards"></div><div class="table-wrap"><table><thead><tr><th>Product</th><th>Branch</th><th>Batch / Lot</th><th>Received</th><th>Expiry</th><th>Remaining</th><th>Status</th></tr></thead><tbody id="etBatchRows"></tbody></table></div></div><div class="panel"><h3>Allocate existing stock to a batch</h3><p class="muted">This does not add stock. It assigns some currently unallocated stock to a batch record. The total product quantity stays unchanged.</p><div class="grid"><label>Product<select id="etBatchProduct"></select></label><label>Batch / Lot number<input id="etBatchNo" placeholder="Enter batch number"></label><label>Received date<input id="etBatchReceived" type="date"></label><label>Expiry date<input id="etBatchExpiry" type="date"></label><label>Quantity to allocate<input id="etBatchQty" type="number" min="0.001" step="any"></label></div><p id="etBatchAvailable" class="muted"></p><button type="button" class="btn green" id="etBatchAdd">Allocate existing stock</button><p id="etBatchMessage" class="muted" aria-live="polite"></p></div>';
+ main.appendChild(page);
+ const tab=document.createElement('button');tab.type='button';tab.textContent='Batch & Expiry';tab.dataset.tab='etihadBatchLots';nav.appendChild(tab);
+ function fillOptions(){const old=$('etBatchBranch').value;$('etBatchBranch').innerHTML='<option value="">All branches</option>'+branches().filter(b=>b.active!==false).map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');$('etBatchBranch').value=old;$('etBatchProduct').innerHTML=products().map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+' · '+esc(branchName(p.branchId))+'</option>').join('');updateAvailable();}
+ function unallocated(p){return Math.max(0,Number(p.qty||0)-batches(p).reduce((n,b)=>n+batchQty(b),0));}
+ function updateAvailable(){const p=products().find(x=>String(x.id)===$('etBatchProduct').value);$('etBatchAvailable').textContent=p?'Unallocated stock available: '+fmt(unallocated(p))+' '+(p.unit||'units'):'No product selected';$('etBatchQty').max=p?String(unallocated(p)):'';}
+ function filtered(){const q=$('etBatchSearch').value.trim().toLowerCase(),bid=$('etBatchBranch').value,st=$('etBatchStatus').value;return products().filter(p=>(!bid||String(p.branchId)===bid)&&[p.name,p.sku,p.category].join(' ').toLowerCase().includes(q)).flatMap(p=>batches(p).map(b=>({p,b}))).filter(x=>{const state=status(x.b.expiryDate);return(!st||state===st)&&(!q||[x.p.name,x.p.sku,x.b.batchNo,x.b.reference,x.b.supplierName].join(' ').toLowerCase().includes(q));}).sort((a,b)=>String(a.b.expiryDate||'9999').localeCompare(String(b.b.expiryDate||'9999')));}
+ function render(){const list=filtered(),all=products().flatMap(p=>batches(p).map(b=>({p,b}))),expired=all.filter(x=>status(x.b.expiryDate)==='Expired'&&batchQty(x.b)>0).length,soon=all.filter(x=>status(x.b.expiryDate)==='Expiring soon'&&batchQty(x.b)>0).length;$('etBatchCards').innerHTML='<div class="card"><small>Total batches</small><strong>'+fmt(all.length)+'</strong></div><div class="card"><small>Units in batches</small><strong>'+fmt(all.reduce((n,x)=>n+batchQty(x.b),0))+'</strong></div><div class="card"><small>Expired batches with stock</small><strong class="bad">'+fmt(expired)+'</strong></div><div class="card"><small>Expiring within 30 days</small><strong class="bad">'+fmt(soon)+'</strong></div>';$('etBatchRows').innerHTML=list.map(x=>'<tr><td>'+esc(x.p.name)+'<br><small class="muted">'+esc(x.p.sku||'')+'</small></td><td>'+esc(branchName(x.p.branchId))+'</td><td>'+esc(x.b.batchNo||'—')+'</td><td>'+esc(x.b.receivedDate||'—')+'</td><td>'+esc(x.b.expiryDate||'—')+'</td><td>'+fmt(batchQty(x.b))+'</td><td class="'+(status(x.b.expiryDate)==='Expired'?'bad':status(x.b.expiryDate)==='Expiring soon'?'bad':'good')+'">'+esc(status(x.b.expiryDate))+'</td></tr>').join('')||'<tr><td colspan="7" class="empty">No batches match these filters.</td></tr>';updateAvailable();}
+ function save(){const p=products().find(x=>String(x.id)===$('etBatchProduct').value),batchNo=$('etBatchNo').value.trim(),receivedDate=$('etBatchReceived').value,expiryDate=$('etBatchExpiry').value,qty=Number($('etBatchQty').value);if(!p)return alert('Select a product.');if(!batchNo)return alert('Enter a batch / lot number.');if(!receivedDate||!expiryDate)return alert('Enter both received and expiry dates.');if(expiryDate<receivedDate)return alert('Expiry date cannot be earlier than received date.');if(!Number.isFinite(qty)||qty<=0||qty>unallocated(p)+1e-9)return alert('Quantity must be greater than zero and no more than the unallocated stock.');if(String(p.unit||'piece').toLowerCase()==='piece'&&!Number.isInteger(qty))return alert('Piece products require whole-number quantities.');if(batches(p).some(b=>String(b.batchNo).toLowerCase()===batchNo.toLowerCase()))return alert('This batch number already exists for the selected product.');if(!confirm('Allocate '+fmt(qty)+' existing units to batch '+batchNo+'? Total stock will not change.'))return;if(!Array.isArray(p.batches))p.batches=[];p.batches.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),batchNo,receivedDate,expiryDate,receivedQty:qty,remainingQty:qty,source:'Existing stock allocation',reference:'Opening allocation',createdAt:new Date().toISOString()});try{if(typeof window.saveAll!=='function')throw new Error('ERP save function unavailable');window.saveAll();$('etBatchMessage').textContent='Batch allocated and saved. Product stock total was not changed.';$('etBatchNo').value='';$('etBatchQty').value='';render();}catch(e){p.batches.pop();alert('Could not save the batch: '+e.message);}}
+ tab.addEventListener('click',function(){nav.querySelectorAll('button').forEach(b=>b.classList.remove('active'));main.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));tab.classList.add('active');page.classList.remove('hidden');fillOptions();render();});
+ ['etBatchSearch','etBatchBranch','etBatchStatus'].forEach(id=>$(id).addEventListener(id==='etBatchSearch'?'input':'change',render));$('etBatchProduct').addEventListener('change',updateAvailable);$('etBatchAdd').addEventListener('click',save);
+ window.etihadConsumeBatches=function(product,qty){if(!product||!Array.isArray(product.batches))return;let remaining=Number(qty)||0;const eligible=product.batches.filter(b=>batchQty(b)>0).sort((a,b)=>String(a.expiryDate||'9999').localeCompare(String(b.expiryDate||'9999'))||String(a.receivedDate||'').localeCompare(String(b.receivedDate||'')));for(const b of eligible){if(remaining<=0)break;const take=Math.min(batchQty(b),remaining);b.remainingQty=batchQty(b)-take;remaining-=take;}};
+ window.etihadMoveBatches=function(source,destination,qty){if(!source||!Array.isArray(source.batches))return;if(!Array.isArray(destination.batches))destination.batches=[];let remaining=Number(qty)||0;const eligible=source.batches.filter(b=>batchQty(b)>0).sort((a,b)=>String(a.expiryDate||'9999').localeCompare(String(b.expiryDate||'9999')));for(const b of eligible){if(remaining<=0)break;const take=Math.min(batchQty(b),remaining);b.remainingQty=batchQty(b)-take;const copy={...b,id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),receivedQty:take,remainingQty:take,source:'Branch transfer',reference:'Branch transfer',transferredFrom:source.branchId};destination.batches.push(copy);remaining-=take;}};
+ fillOptions();render();
 })();
 </script>
 </body>
