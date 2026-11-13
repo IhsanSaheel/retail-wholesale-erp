@@ -1381,7 +1381,7 @@ function completeSale(){
  const total=cartAmount(),paid=Number(document.getElementById('salePaid').value||0);
  if(!Number.isFinite(paid)||paid<0||paid>total)return alert('Paid amount must be between zero and the bill total.');
  for(const item of cart){const p=products.find(x=>x.id===item.productId);if(!p||Number(p.qty)<item.qty)return alert('Stock changed for '+item.name+'. Check the cart.');if(typeof window.etihadCanSellBatchQty==='function'&&!window.etihadCanSellBatchQty(p,item.qty))return alert('Not enough non-expired or unallocated stock for '+item.name+'. Review its batches before completing this sale.');}
- const record={id:id(),invoiceNo:nextInvoiceNumber(),date:new Date().toISOString(),branchId:bid,branchName:branchName(bid),customerName:customer,customerPhone:phone,items:cart.map(x=>({...x})),total,paid,balance:total-paid};
+ const record={id:id(),invoiceNo:nextInvoiceNumber(),date:new Date().toISOString(),branchId:bid,branchName:branchName(bid),customerName:customer,customerPhone:phone,note:String(document.getElementById('etihadSaleNote')?.value||'').trim(),items:cart.map(x=>({...x})),total,paid,balance:total-paid};
  cart.forEach(item=>{const p=products.find(x=>x.id===item.productId);if(typeof window.etihadConsumeBatches==='function')window.etihadConsumeBatches(p,item.qty);p.qty=Number(p.qty)-item.qty});
  sales.unshift(record);saveAll();cart=[];
  document.getElementById('saleCustomer').value='';
