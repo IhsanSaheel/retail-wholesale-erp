@@ -7671,5 +7671,113 @@ body.etihad-dark input,body.etihad-dark select,body.etihad-dark textarea{backgro
 })();
 </script>
 
+
+<style id="etihad-stock-workspace-polish-v1">
+/* Inventory workspace: dense, readable and action-oriented */
+#stockcontrol .sales-hero{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:23px 25px!important;margin-bottom:16px!important;background:linear-gradient(115deg,#142d46 0%,#244b6b 72%,#41536a 100%)!important;color:#fff!important;border:1px solid #254b6c!important;box-shadow:0 9px 24px #122b441a!important}
+#stockcontrol .sales-hero h2{margin:5px 0 7px!important;color:#fff!important;font-size:24px!important;font-weight:800!important;letter-spacing:-.04em!important}
+#stockcontrol .sales-hero p{margin:0!important;color:#d3e0eb!important;font-size:12px!important}
+#stockcontrol .sales-eyebrow{color:#e0c17c!important;font-size:9px!important;font-weight:850!important;letter-spacing:1.35px!important}
+#stockcontrol .sales-live{flex:0 0 auto;padding:8px 11px!important;border:1px solid #ffffff30!important;border-radius:20px!important;background:#ffffff12!important;color:#f1e2bd!important;font-size:10px!important;font-weight:750!important}
+#stockcontrol .et-stock-overview{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important;margin:0 0 15px!important}
+#stockcontrol .et-stock-kpi{position:relative;min-width:0;padding:15px 16px!important;border:1px solid #e1e8ef!important;border-radius:12px!important;background:#fff!important;box-shadow:0 3px 14px #142b4309!important;overflow:hidden}
+#stockcontrol .et-stock-kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#477ba5}
+#stockcontrol .et-stock-kpi[data-tone="warning"]:before{background:#d39b3c}
+#stockcontrol .et-stock-kpi[data-tone="danger"]:before{background:#c45b5b}
+#stockcontrol .et-stock-kpi small{display:block;color:#718196!important;font-size:10px!important;font-weight:800!important;letter-spacing:.055em!important;text-transform:uppercase!important}
+#stockcontrol .et-stock-kpi strong{display:block;margin:6px 0 2px!important;color:#1b3d5a!important;font-size:23px!important;font-weight:850!important;letter-spacing:-.04em!important;line-height:1.15!important}
+#stockcontrol .et-stock-kpi span{color:#8a98a8!important;font-size:10px!important}
+#stockcontrol .et-stock-subnav{position:sticky;top:82px;z-index:5;display:flex;gap:6px;flex-wrap:wrap;margin:0 0 15px;padding:8px;border:1px solid #e1e8ef;border-radius:11px;background:#ffffffed;backdrop-filter:blur(10px)}
+#stockcontrol .et-stock-subnav button{min-height:34px;padding:7px 12px;border:1px solid transparent;border-radius:7px;background:transparent;color:#526b83;font-size:11px;font-weight:750}
+#stockcontrol .et-stock-subnav button:hover,#stockcontrol .et-stock-subnav button:focus-visible{background:#edf3f8;border-color:#dce6ef;color:#1f5c91}
+#stockcontrol .panel{scroll-margin-top:142px!important;padding:19px!important}
+#stockcontrol .panel>h3{display:flex;align-items:center;gap:9px;margin:0 0 14px!important;padding-bottom:11px;border-bottom:1px solid #edf1f5;color:#203f5b!important;font-size:15px!important}
+#stockcontrol .panel>h3:before{content:"";display:inline-block;width:4px;height:17px;border-radius:3px;background:#c6a35f}
+#stockcontrol .panel>.grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr))!important;gap:13px!important;margin:10px 0 14px!important}
+#stockcontrol .panel input[readonly]{background:#f0f4f8!important;color:#405a73!important;font-weight:750!important}
+#stockcontrol #etCountDifference{font-weight:850!important}
+#stockcontrol #etCountStatus{display:block;min-height:20px;margin:10px 0 0!important;padding:8px 10px;border-radius:7px;background:#f4f7fa;color:#526b83!important}
+#stockcontrol #etStockHistoryCount{display:inline-block;margin:9px 0 8px 10px!important;padding:5px 9px;border-radius:20px;background:#edf3f8;color:#45647f!important;font-size:10px!important;font-weight:800!important}
+#stockcontrol #etStockHistoryExport{margin:7px 0 10px!important}
+#stockcontrol .table-wrap{margin-top:9px!important}
+#stockcontrol table{min-width:780px!important}
+#stockcontrol th{font-size:9px!important;letter-spacing:.07em!important}
+#stockcontrol td{font-size:11px!important}
+#stockcontrol #etStockHistory td:nth-child(5){font-weight:850!important;white-space:nowrap}
+#stockcontrol .et-stock-help{display:flex;gap:10px;align-items:flex-start;margin:13px 0 0;padding:11px 13px;border:1px solid #e6edf3;border-radius:9px;background:#f7f9fb;color:#6b7e91;font-size:10px;line-height:1.55}
+#stockcontrol .et-stock-help strong{color:#405a73}
+#transfers .panel,#products .panel,#cashregister .panel,#reports .panel{border-radius:13px!important}
+#transfers>.page-title,#products>.page-title{margin-bottom:18px}
+#transfers .panel>.grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,205px),1fr))!important}
+#transfers #transferCards{margin:14px 0!important}
+#transfers #transfersTable td,#products #productsTable td{white-space:nowrap}
+#products #etihadBulkImportPanel{border-style:dashed!important;background:#fbfcfe!important}
+#cashregister .et-cash-actions{display:flex;gap:8px;flex-wrap:wrap}
+#cashregister #etCashCards .card{min-width:0}
+@media(max-width:900px){#stockcontrol .et-stock-overview{grid-template-columns:repeat(2,minmax(0,1fr))!important}#stockcontrol .et-stock-subnav{top:70px}}
+@media(max-width:600px){
+ #stockcontrol .sales-hero{align-items:flex-start;flex-direction:column;padding:18px!important}
+ #stockcontrol .sales-hero h2{font-size:20px!important}
+ #stockcontrol .et-stock-overview{gap:8px!important}
+ #stockcontrol .et-stock-kpi{padding:12px!important}
+ #stockcontrol .et-stock-kpi strong{font-size:20px!important}
+ #stockcontrol .et-stock-subnav{position:static;gap:4px;padding:6px}
+ #stockcontrol .et-stock-subnav button{flex:1 1 auto;padding:7px 9px}
+ #stockcontrol .panel{padding:13px!important}
+ #stockcontrol .panel>.grid{grid-template-columns:1fr!important}
+ #stockcontrol #etCountPreview,#stockcontrol #etCountApply,#stockcontrol #etStockApply{width:100%!important;margin:4px 0!important}
+}
+body.etihad-dark #stockcontrol .et-stock-kpi,body.etihad-dark #stockcontrol .et-stock-subnav{background:#172536!important;border-color:var(--line)!important}
+body.etihad-dark #stockcontrol .et-stock-kpi strong{color:#e4edf6!important}
+body.etihad-dark #stockcontrol .et-stock-subnav button{color:#cfdae7!important}
+body.etihad-dark #stockcontrol .et-stock-help,body.etihad-dark #stockcontrol #etCountStatus{background:#1a293a!important;border-color:var(--line)!important;color:#bdcad8!important}
+</style>
+<script id="etihad-stock-workspace-polish-v1">
+(function(){
+ 'use strict';
+ if(window.__etihadStockWorkspacePolishV1)return;
+ window.__etihadStockWorkspacePolishV1=true;
+ const page=document.getElementById('stockcontrol');if(!page)return;
+ const hero=page.querySelector('.sales-hero'),panels=[...page.querySelectorAll(':scope > .panel')];
+ if(!hero||panels.length<3)return;
+ const metric=document.createElement('div');metric.className='et-stock-overview';metric.id='etStockOverview';
+ metric.setAttribute('aria-label','Current stock overview');
+ hero.insertAdjacentElement('afterend',metric);
+ const names=['Adjustment','Physical count','Movement history'];
+ const ids=['etStockAdjustmentPanel','etPhysicalCountPanel','etStockHistoryPanel'];
+ panels.forEach((p,i)=>{p.id=ids[i];});
+ const sub=document.createElement('nav');sub.className='et-stock-subnav';sub.setAttribute('aria-label','Stock control sections');
+ [['etStockAdjustmentPanel','＋ Adjust stock'],['etPhysicalCountPanel','▤ Physical count'],['etStockHistoryPanel','≋ Movement history']].forEach(([target,label])=>{
+  const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>document.getElementById(target)?.scrollIntoView({behavior:'smooth',block:'start'}));sub.appendChild(b);
+ });
+ metric.insertAdjacentElement('afterend',sub);
+ const help=document.createElement('div');help.className='et-stock-help';help.innerHTML='<span aria-hidden="true">ⓘ</span><span><strong>Stock accuracy tip</strong><br>Choose the correct branch before changing quantities. Use physical count for verified shelf counts and manual adjustment for documented corrections. Review the movement history after saving.</span>';
+ panels[1].appendChild(help);
+ function draw(){
+  const list=Array.isArray(window.products)?window.products:[];
+  const activeBranches=Array.isArray(window.branches)?window.branches.filter(b=>b.active!==false):[];
+  const threshold=p=>Math.max(0,Number(p.alert??p.lowStockAlert??5)||0);
+  const qty=p=>Number(p.qty||0);
+  const low=list.filter(p=>qty(p)>0&&qty(p)<=threshold(p)).length;
+  const out=list.filter(p=>qty(p)<=0).length;
+  const units=list.reduce((n,p)=>n+qty(p),0);
+  const value=list.reduce((n,p)=>n+qty(p)*Number(p.cost||0),0);
+  const fmt=n=>Number(n||0).toLocaleString('en-PK',{maximumFractionDigits:2});
+  metric.innerHTML=[
+   ['PRODUCTS',fmt(list.length),'Products across all branches','normal'],
+   ['TOTAL UNITS',fmt(units),'Current recorded quantity','normal'],
+   ['LOW STOCK',fmt(low),'At or below alert level','warning'],
+   ['OUT OF STOCK',fmt(out),'Products with zero quantity','danger']
+  ].map(([label,val,note,tone])=>'<div class="et-stock-kpi" data-tone="'+tone+'"><small>'+label+'</small><strong>'+val+'</strong><span>'+note+'</span></div>').join('');
+  metric.setAttribute('aria-label','Stock overview: '+list.length+' products, '+fmt(units)+' units, '+low+' low stock, '+out+' out of stock. Inventory cost value PKR '+fmt(value)+'.');
+ }
+ const originalClick=()=>draw();
+ document.querySelector('#etihadMainNav button[data-tab="stockcontrol"]')?.addEventListener('click',originalClick);
+ ['etStockApply','etCountApply'].forEach(id=>document.getElementById(id)?.addEventListener('click',()=>draw()));
+ document.getElementById('etStockBranch')?.addEventListener('change',draw);
+ draw();
+})();
+</script>
+
 </body>
 </html>
