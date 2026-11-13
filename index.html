@@ -6941,9 +6941,19 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
   if(String(p.unit||'piece').toLowerCase()==='piece'&&(!Number.isInteger(delta)||!Number.isInteger(after)))return alert('Piece products require whole-number stock quantities.');
   if(!confirm('Confirm '+type+'?\n\nProduct: '+p.name+'\nCurrent stock: '+fmt(before)+'\nChange: '+(delta>0?'+':'')+fmt(delta)+'\nNew stock: '+fmt(after)))return;
   const previousLog=localStorage.getItem(KEY);
-  if(delta<0&&typeof window.etihadReduceBatchQty==='function')window.etihadReduceBatchQty(p,-delta);
-  p.qty=after;log.unshift({id:typeof id==='function'?id():Date.now().toString(36),date:new Date().toISOString(),productId:p.id,productName:p.name,branchId:p.branchId,branchName:branchName(p.branchId),type,delta,before,after,reason,note,actor:(()=>{try{const u=JSON.parse(localStorage.getItem('etihad_active_user_v1')||'null');return u?.email||u?.role||'User'}catch(_){return 'User'}})()});
-  try{saveAll();saveLog();}catch(e){p.qty=before;log.shift();try{if(previousLog===null)localStorage.removeItem(KEY);else localStorage.setItem(KEY,previousLog);}catch(_){}return alert('Could not save the stock change. Previous quantity and audit history were restored where possible.');}
+  const previousBatches=Array.isArray(p.batches)?p.batches.map(b=>({...b})):null;
+  const entry={id:typeof id==='function'?id():Date.now().toString(36),date:new Date().toISOString(),productId:p.id,productName:p.name,branchId:p.branchId,branchName:branchName(p.branchId),type,delta,before,after,reason,note,actor:(()=>{try{const u=JSON.parse(localStorage.getItem('etihad_active_user_v1')||'null');return u?.email||u?.role||'User'}catch(_){return 'User'}})()};
+  try{
+   if(delta<0&&typeof window.etihadReduceBatchQty==='function')window.etihadReduceBatchQty(p,-delta);
+   p.qty=after;log.unshift(entry);
+   saveAll();saveLog();
+  }catch(e){
+   p.qty=before;
+   if(previousBatches!==null)p.batches=previousBatches;
+   const failedEntryIndex=log.indexOf(entry);if(failedEntryIndex>=0)log.splice(failedEntryIndex,1);
+   try{if(previousLog===null)localStorage.removeItem(KEY);else localStorage.setItem(KEY,previousLog);saveAll();}catch(_){}
+   return alert('Could not save the stock change. Product quantity, batch quantities and audit history were restored where possible.');
+  }
   refreshProducts();renderHistory();if(typeof renderAll==='function')renderAll();$('etCountStatus').textContent='Stock updated and recorded in the stock movement history.';
  }
  function filteredHistory(){const branch=$('etStockHistoryBranch').value,q=$('etStockHistorySearch').value.trim().toLowerCase(),from=$('etStockHistoryFrom').value,to=$('etStockHistoryTo').value,type=$('etStockHistoryType').value;return log.filter(x=>{const date=String(x.date||'').slice(0,10);return (!branch||String(x.branchId)===String(branch))&&(!from||date>=from)&&(!to||date<=to)&&(!type||x.type===type)&&[x.productName,x.reason,x.note,x.type,x.actor].join(' ').toLowerCase().includes(q);}).sort((a,b)=>String(b.date).localeCompare(String(a.date)));}
