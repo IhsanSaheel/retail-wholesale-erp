@@ -2536,7 +2536,14 @@ renderAll();
    if(!record.id){alert('This record has no original ID. It cannot be safely restored automatically.');return;}
    const current=(()=>{try{const v=JSON.parse(localStorage.getItem(collection)||'[]');return Array.isArray(v)?v:[];}catch(_){return null;}})();
    if(!current){alert('Could not read the current records. Nothing was changed.');return;}
-   if(current.some(x=>String(x.id)===String(record.id))){alert('A record with this ID already exists. Nothing was changed.');return;}
+   const existing=current.find(x=>String(x.id)===String(record.id));
+   if(existing){
+    const same=JSON.stringify(existing)===JSON.stringify(record);
+    const details=same?'The saved recovery copy matches the product already in Inventory.':'A product with this ID is already in Inventory, but its current details differ from the saved recovery copy.';
+    alert(details+'\n\nNo duplicate was created and no existing product was overwritten. Please review the product in Inventory. The recovery copy remains in Deletion History.');
+    if(collection==='mberp_products'&&typeof showTab==='function')showTab('products');
+    return;
+   }
    if(!confirm('Restore "'+(entry.recordLabel||'this record')+'" to '+collection.replace(/^mberp_/,'')+'? This adds the saved copy and does not overwrite existing records.'))return;
    try{
     const updated=[record,...current];localStorage.setItem(collection,JSON.stringify(updated));
