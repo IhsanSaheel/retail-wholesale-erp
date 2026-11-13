@@ -7211,5 +7211,139 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  fillOptions();render();
 })();
 </script>
+
+<style id="etihad-final-navigation-consolidation-style-v2">
+#etihadMainNav{display:flex;align-items:center;gap:7px;flex-wrap:wrap;overflow:visible}
+#etihadMainNav button[data-etihad-secondary="true"]{display:none!important}
+#etihadDesktopMoreButton{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:10px 16px;border:1px solid var(--line,#dce3ec);border-radius:10px;background:var(--surface,#fff);color:var(--ink,#26384d);font-weight:800;cursor:pointer}
+#etihadDesktopMoreButton.active,#etihadDesktopMoreButton[aria-expanded="true"]{background:var(--primary,#1769aa);color:#fff}
+#etihadDesktopMoreMenu{position:fixed;z-index:2147483000;display:none;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;min-width:min(440px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:min(70vh,620px);overflow:auto;padding:14px;border:1px solid var(--line,#dce3ec);border-radius:14px;background:var(--surface,#fff);box-shadow:0 16px 42px rgba(15,23,42,.2)}
+#etihadDesktopMoreMenu.open{display:grid}
+#etihadDesktopMoreMenu .et-more-group{display:grid;align-content:start;gap:5px}
+#etihadDesktopMoreMenu .et-more-heading{padding:5px 9px;color:var(--muted,#64748b);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+#etihadDesktopMoreMenu button{width:100%;min-height:39px;padding:9px 11px;border:0;border-radius:8px;background:transparent;color:var(--ink,#26384d);text-align:left;font:inherit;font-weight:700;cursor:pointer}
+#etihadDesktopMoreMenu button:hover,#etihadDesktopMoreMenu button:focus-visible,#etihadDesktopMoreMenu button.active{background:var(--bg,#f3f6fa)}
+@media(max-width:760px){#etihadDesktopMoreButton,#etihadDesktopMoreMenu{display:none!important}}
+</style>
+<script id="etihad-final-navigation-consolidation-v2">
+(function(){
+ 'use strict';
+ const nav=document.getElementById('etihadMainNav')||document.querySelector('nav');
+ if(!nav||window.__etihadFinalNavigationV2)return;
+ window.__etihadFinalNavigationV2=true;
+ const primary=[
+  ['dashboard','Dashboard'],
+  ['sales','Sales'],
+  ['customers','Customers'],
+  ['suppliers','Suppliers & Purchases'],
+  ['products','Inventory'],
+  ['expenses','Expenses'],
+  ['reports','Reports'],
+  ['backup','Settings & Backup']
+ ];
+ const primaryTabs=new Set(primary.map(x=>x[0]));
+ const labelOverrides={
+  branches:'Branches & Transfers',transfers:'Stock Transfers',
+  cashregister:'Cash Register',stockcontrol:'Stock Adjustments',
+  stockledger:'Stock Ledger',etihadBatchLots:'Batch & Expiry',
+  etihadPriceAdjustment:'Price Readjustment',etihadLabelsExpiry:'Labels & Expiry',
+  employees:'Employees & Payroll',returns:'Sales Returns',
+  supplierReturns:'Purchase Returns'
+ };
+ const groups=[
+  {title:'Inventory & Branches',tabs:['branches','transfers','stockcontrol','stockledger','etihadBatchLots','etihadLabelsExpiry','etihadPriceAdjustment']},
+  {title:'Sales & Accounts',tabs:['cashregister','returns','supplierReturns']},
+  {title:'People & Administration',tabs:['employees']}
+ ];
+ nav.querySelector('.etihad-theme-tools')?.remove();
+ nav.querySelector('#etihadDesktopMoreButton')?.remove();
+ document.getElementById('etihadDesktopMoreMenu')?.remove();
+ const buttons=[...nav.querySelectorAll('button[data-tab]')];
+ const byTab=new Map();
+ buttons.forEach(b=>{if(!byTab.has(b.dataset.tab))byTab.set(b.dataset.tab,b);});
+ primary.forEach(([tab,label])=>{
+  const b=byTab.get(tab);
+  if(b){b.hidden=false;b.removeAttribute('data-etihad-secondary');b.textContent=label;}
+ });
+ const secondary=[];
+ buttons.forEach(b=>{
+  const tab=b.dataset.tab;
+  if(primaryTabs.has(tab))return;
+  b.dataset.etihadSecondary='true';
+  b.setAttribute('aria-hidden','true');
+  b.hidden=true;
+  const label=labelOverrides[tab]||b.textContent.trim()||tab;
+  if(!secondary.some(x=>x.tab===tab))secondary.push({tab,label,source:b});
+ });
+ const more=document.createElement('button');
+ more.type='button';more.id='etihadDesktopMoreButton';more.textContent='More ▾';
+ more.setAttribute('aria-haspopup','menu');more.setAttribute('aria-expanded','false');
+ nav.appendChild(more);
+ const menu=document.createElement('div');
+ menu.id='etihadDesktopMoreMenu';menu.setAttribute('role','menu');menu.setAttribute('aria-label','More business options');
+ groups.forEach(group=>{
+  const items=secondary.filter(x=>group.tabs.includes(x.tab));
+  if(!items.length)return;
+  const wrap=document.createElement('div');wrap.className='et-more-group';
+  const heading=document.createElement('div');heading.className='et-more-heading';heading.textContent=group.title;wrap.appendChild(heading);
+  items.forEach(item=>{
+   const b=document.createElement('button');b.type='button';b.textContent=item.label;b.setAttribute('role','menuitem');b.dataset.menuTab=item.tab;
+   b.addEventListener('click',()=>{item.source.click();closeMenu();});
+   wrap.appendChild(b);
+  });
+  menu.appendChild(wrap);
+ });
+ const ungrouped=secondary.filter(x=>!groups.some(g=>g.tabs.includes(x.tab)));
+ if(ungrouped.length){
+  const wrap=document.createElement('div');wrap.className='et-more-group';
+  const heading=document.createElement('div');heading.className='et-more-heading';heading.textContent='Other tools';wrap.appendChild(heading);
+  ungrouped.forEach(item=>{const b=document.createElement('button');b.type='button';b.textContent=item.label;b.setAttribute('role','menuitem');b.dataset.menuTab=item.tab;b.addEventListener('click',()=>{item.source.click();closeMenu();});wrap.appendChild(b);});
+  menu.appendChild(wrap);
+ }
+ document.body.appendChild(menu);
+ function closeMenu(){menu.classList.remove('open');more.setAttribute('aria-expanded','false');}
+ function positionMenu(){
+  const r=more.getBoundingClientRect();menu.style.top=Math.max(10,Math.min(window.innerHeight-menu.offsetHeight-10,r.bottom+7))+'px';
+  menu.style.right=Math.max(10,window.innerWidth-r.right)+'px';
+ }
+ more.addEventListener('click',()=>{
+  const open=!menu.classList.contains('open');
+  if(open){menu.classList.add('open');positionMenu();}else menu.classList.remove('open');
+  more.setAttribute('aria-expanded',String(open));
+ });
+ secondary.forEach(item=>item.source.addEventListener('click',()=>{
+  more.classList.add('active');
+  menu.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.menuTab===item.tab));
+  closeMenu();
+ }));
+ nav.addEventListener('click',e=>{
+  const b=e.target.closest('button[data-tab]');if(!b)return;
+  if(primaryTabs.has(b.dataset.tab)){more.classList.remove('active');menu.querySelectorAll('button').forEach(x=>x.classList.remove('active'));}
+ });
+ document.addEventListener('click',e=>{if(!menu.contains(e.target)&&!more.contains(e.target))closeMenu();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
+ window.addEventListener('resize',()=>{if(menu.classList.contains('open'))positionMenu();});
+ // Rebuild the mobile More sheet after every module has registered its destination.
+ function syncMobile(){
+  const bar=document.getElementById('etihadMobileBar'),sheet=document.getElementById('etihadMobileMore');
+  if(!bar||!sheet)return;
+  const grid=sheet.querySelector('.et-more-grid');if(!grid)return;
+  grid.innerHTML='';
+  const headings={'branches':'Inventory & Branches','transfers':'Inventory & Branches','stockcontrol':'Inventory & Branches','stockledger':'Inventory & Branches','etihadBatchLots':'Inventory & Branches','etihadLabelsExpiry':'Inventory & Branches','etihadPriceAdjustment':'Inventory & Branches','cashregister':'Sales & Accounts','returns':'Sales & Accounts','supplierReturns':'Sales & Accounts','employees':'People & Administration'};
+  let current='';
+  secondary.forEach(item=>{
+   const group=headings[item.tab]||'Other tools';
+   if(group!==current){const h=document.createElement('div');h.className='et-more-heading';h.textContent=group;grid.appendChild(h);current=group;}
+   const b=document.createElement('button');b.type='button';b.textContent=item.label;
+   b.addEventListener('click',()=>{item.source.click();sheet.classList.remove('open');bar.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===bar.querySelector('button:last-child')));});
+   grid.appendChild(b);
+  });
+  const settings=document.createElement('button');settings.type='button';settings.textContent='Appearance & themes';
+  settings.addEventListener('click',()=>{byTab.get('backup')?.click();sheet.classList.remove('open');setTimeout(()=>document.getElementById('etihadAppearanceSettings')?.scrollIntoView({behavior:'smooth',block:'start'}),100);});
+  grid.appendChild(settings);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',syncMobile,{once:true});else syncMobile();
+})();
+</script>
 </body>
 </html>
