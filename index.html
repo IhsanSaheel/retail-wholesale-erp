@@ -1466,7 +1466,31 @@ function printInvoice(sid){
  .final{font-weight:bold;border-top:2px solid #222}
  .due{font-weight:bold;border-top:2px solid #222}
  button{padding:10px;background:#1769aa;color:white;border:0}
- @media print{button{display:none}}
+ @media screen and (max-width:560px){
+ body{width:auto;max-width:100%;margin:0;padding:12px 10px 20px;font-size:13px;overflow-wrap:anywhere}
+ .invoice-head{align-items:flex-start;gap:10px;padding-bottom:12px;margin-bottom:12px}
+ .invoice-head img,.invoice-head>div:first-child{width:58px!important;height:58px!important;min-width:58px;flex:0 0 58px}
+ .invoice-brand-name{font-size:18px;letter-spacing:.2px;line-height:1.2}
+ .invoice-tagline{font-size:8px;letter-spacing:1px;line-height:1.3}
+ .invoice-head>div:last-child{min-width:0;overflow-wrap:anywhere}
+ p{line-height:1.55;margin:10px 0}
+ table{width:100%;table-layout:fixed;margin:12px 0;font-size:11px}
+ th,td{padding:6px 4px;font-size:10px;overflow-wrap:anywhere;word-break:break-word}
+ th:nth-child(1),td:nth-child(1){width:38%}
+ th:nth-child(2),td:nth-child(2){width:19%}
+ th:nth-child(3),td:nth-child(3){width:16%}
+ th:nth-child(4),td:nth-child(4){width:27%}
+ .totals{width:100%;max-width:100%;font-size:12px}
+ .totals div{padding:6px 3px;gap:12px}
+ center button{width:100%;min-height:44px;border-radius:8px;font-size:15px}
+}
+@media print{
+ body{max-width:none;margin:0;padding:8mm;font-size:10pt}
+ .invoice-head{break-inside:avoid}
+ table{width:100%;table-layout:fixed}
+ th,td{overflow-wrap:anywhere}
+ button{display:none!important}
+}
  </style>
  </head>
  <body>
@@ -7870,5 +7894,59 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
  $('etLabelClear').addEventListener('click',()=>{selected.clear();renderLabels();});
  $('etLabelPrint').addEventListener('click',()=>{const list=products().filter(p=>selected.has(String(p.id)));if(!list.length)return alert('Select at least one product.');const labels=list.map(p=>'<article class="label"><b>'+esc(p.name)+'</b><div class="sku">'+esc(p.sku||p.barcode||'NO SKU')+'</div><strong>'+money(p.price)+'</strong><small>'+esc(branchNameOf(p.branchId))+'</small></article>').join('');const w=window.open('','_blank','width=900,height=700');if(!w)return alert('Allow pop-ups to print labels.');w.document.write('<!doctype html><html><head><title>Etihad Traders Product Labels</title><style>body{font-family:Arial,sans-serif;margin:10mm}.sheet{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm}.label{border:1px solid #333;padding:5mm;min-height:28mm;break-inside:avoid}.label b{font-size:13pt}.sku{font-family:monospace;font-size:12pt;letter-spacing:1px;margin:5mm 0}.label strong{font-size:15pt;display:block}.label small{display:block;margin-top:3mm}@media print{body{margin:8mm}.label{border:1px solid #555}}</style></head><body><div class="sheet">'+labels+'</div><script>window.onload=()=>window.print()</script>
 
+
+<style id="etihad-phone-first-layout-v1">
+@media(max-width:760px){
+ html,body{width:100%;max-width:100%;overflow-x:hidden}
+ body{padding-bottom:calc(78px + env(safe-area-inset-bottom))!important}
+ body>nav#etihadMainNav{display:none!important}
+ header{min-height:60px!important;padding:9px 10px 9px 58px!important;gap:7px!important;flex-wrap:nowrap!important}
+ header h2{font-size:16px!important;line-height:1.2!important}
+ header small{font-size:9px!important}
+ #etihadHeaderLogo{width:48px!important;height:38px!important;min-width:48px!important;max-width:48px!important;flex-basis:48px!important}
+ header>div:nth-child(2){gap:4px!important;flex-wrap:nowrap!important}
+ header>div:nth-child(2) button,header>div:nth-child(2) a{min-height:36px!important;padding:7px 8px!important;font-size:10px!important}
+ #today{font-size:9px!important;white-space:nowrap}
+ main{width:100%!important;max-width:none!important;margin:0!important;padding:12px 9px 24px!important}
+ main>.page{width:100%!important;min-width:0!important}
+ main>.page>h3{font-size:20px!important;line-height:1.25!important;margin:2px 0 13px!important}
+ .cards{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+ .card,.panel{min-width:0!important;padding:11px!important;margin-bottom:9px!important;border-radius:12px!important}
+ .card strong{font-size:17px!important;overflow-wrap:anywhere}
+ .grid{grid-template-columns:minmax(0,1fr)!important;gap:9px!important}
+ label{font-size:12px!important;line-height:1.35}
+ input,select,textarea{width:100%!important;max-width:100%!important;min-width:0!important;min-height:45px!important;font-size:16px!important;padding:10px 11px!important}
+ button,.btn{min-height:42px}
+ .table-wrap{width:100%!important;max-width:100%!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch!important}
+ .table-wrap table{min-width:620px}
+ #pos{width:100%!important;max-width:100%!important}
+ #pos>.panel:first-of-type{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:9px!important}
+ #pos>.panel:first-of-type .grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important}
+ #pos>.panel:nth-of-type(2){display:block!important}
+ #pos .pos-pro-layout{display:flex!important;flex-direction:column!important;gap:10px!important}
+ #pos .pos-pro-main,#pos .pos-pro-side{width:100%!important;min-width:0!important;max-height:none!important;position:static!important}
+ #pos .pos-product-grid,#etihadQuickProducts{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+ #etihadSaleSettlement{padding:11px!important;gap:9px!important}
+ #etihadSaleSettlement .et-settle-amounts{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #etihadSaleSettlement .et-settle-amounts>div{min-width:0;padding:9px!important}
+ #etihadSaleSettlement strong{font-size:15px!important;overflow-wrap:anywhere}
+ #etihadSaleNote{min-height:82px!important}
+ .et-sales-tabs{max-width:100%;overflow-x:auto!important;flex-wrap:nowrap!important}
+ .et-sales-tabs button{flex:0 0 auto!important;white-space:nowrap!important}
+ .et-workflow-actions,.et-sales-action-buttons{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+ .et-workflow-actions button,.et-sales-action-buttons button{width:100%!important;margin:0!important}
+ #etihadMobileBar{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important}
+ #etihadNetworkStatus{bottom:calc(84px + env(safe-area-inset-bottom))!important;max-width:calc(100vw - 24px)!important}
+}
+@media(max-width:380px){
+ header{padding-left:54px!important}
+ header h2{font-size:14px!important}
+ header small{display:none!important}
+ main{padding-left:7px!important;padding-right:7px!important}
+ .cards{gap:6px!important}
+ .card,.panel{padding:9px!important}
+ #etihadMobileBar button{font-size:8px!important}
+}
+</style>
 </body>
 </html>
