@@ -7099,8 +7099,9 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  const $=id=>document.getElementById(id),fmt=n=>Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}),safe=v=>esc(v??'');
  const nav=document.querySelector('nav'),main=document.querySelector('main'),page=$('cashregister');
  if(!nav||!main||!page)return;
- const tab=document.createElement('button');tab.type='button';tab.textContent='Cash Register';tab.dataset.tab='cashregister';nav.appendChild(tab);
- tab.addEventListener('click',()=>{nav.querySelectorAll('button').forEach(b=>b.classList.remove('active'));main.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));tab.classList.add('active');page.classList.remove('hidden');render();});
+ const tab=nav.querySelector('button[data-tab="cashregister"]');
+  if(!tab)return;
+  tab.addEventListener('click',render);
  $('etCashDate').value=todayISO();
  $('etCashBranch').innerHTML='<option value="">All branches</option>'+branches.map(b=>'<option value="'+safe(b.id)+'">'+safe(b.name)+'</option>').join('');
  const cashMethod=m=>String(m||'').trim().toLowerCase()==='cash';
@@ -7185,8 +7186,9 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  let log=[];try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(v))log=v;}catch(_){}
  const saveLog=()=>localStorage.setItem(KEY,JSON.stringify(log));
  const nav=document.querySelector('nav'),main=document.querySelector('main'),page=$('stockcontrol');if(!nav||!main||!page)return;
- const tab=document.createElement('button');tab.type='button';tab.textContent='Stock Control';tab.dataset.tab='stockcontrol';nav.appendChild(tab);
- tab.addEventListener('click',()=>{nav.querySelectorAll('button').forEach(b=>b.classList.remove('active'));main.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));tab.classList.add('active');page.classList.remove('hidden');refreshProducts();renderHistory();});
+ const tab=nav.querySelector('button[data-tab="stockcontrol"]');
+  if(!tab)return;
+  tab.addEventListener('click',()=>{refreshProducts();renderHistory();});
  function fillBranches(id){const el=$(id),old=el.value;el.innerHTML=branches.filter(b=>b.active!==false).map(b=>'<option value="'+escv(b.id)+'">'+escv(b.name)+'</option>').join('')||'<option value="">No active branches</option>';if([...el.options].some(o=>o.value===old))el.value=old;}
  function fillProduct(branchId,selectId){const el=$(selectId),old=el.value,list=products.filter(p=>String(p.branchId)===String(branchId));el.innerHTML=list.map(p=>'<option value="'+escv(p.id)+'">'+escv(p.name)+' · '+fmt(p.qty)+' in stock'+(p.sku?' · '+escv(p.sku):'')+'</option>').join('')||'<option value="">No products in this branch</option>';if([...el.options].some(o=>o.value===old))el.value=old;}
  function refreshProducts(){['etStockBranch','etCountBranch'].forEach(fillBranches);fillBranches('etStockHistoryBranch');fillProduct($('etStockBranch').value,'etStockProduct');fillProduct($('etCountBranch').value,'etCountProduct');updateCount();}
