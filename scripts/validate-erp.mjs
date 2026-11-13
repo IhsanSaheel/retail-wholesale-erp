@@ -20,10 +20,10 @@ try {
 if (html.includes('</script>>')) fail('index.html contains a malformed script closing tag');
 else pass('no malformed script closing tag');
 
-const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi)];
+const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)];
 let checked = 0;
 for (const [index, match] of scripts.entries()) {
-  if (/\\bsrc\\s*=/.test(match[1])) continue;
+  if (/\bsrc\s*=/.test(match[1])) continue;
   try {
     new vm.Script(match[2], { filename: 'index.html:inline-script-' + (index + 1) });
     checked++;
@@ -34,11 +34,11 @@ for (const [index, match] of scripts.entries()) {
 if (checked < 20) fail('unexpectedly few inline scripts were checked (' + checked + ')');
 else pass(checked + ' inline JavaScript blocks parse successfully');
 
-const cache = worker.match(/CACHE_NAME\\s*=\\s*['"]([^'"]+)['"]/);
+const cache = worker.match(/CACHE_NAME\s*=\s*['"]([^'"]+)['"]/);
 if (!cache) fail('service worker cache name is missing');
 else pass('service worker cache is versioned: ' + cache[1]);
 
-const files = [...worker.matchAll(/\\$\\{APP_PREFIX\\}([^'`]+)|APP_PREFIX\\s*,/g)]
+const files = [...worker.matchAll(/\$\{APP_PREFIX\}([^'`]+)|APP_PREFIX\s*,/g)]
   .map(match => match[1])
   .filter(Boolean);
 for (const file of files) {
