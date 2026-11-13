@@ -3956,18 +3956,11 @@ renderAll();
    note:note
   };
 
-  if(typeof window.etihadDeductSupplierReturnBatches==='function'&&!window.etihadDeductSupplierReturnBatches(stock,qty,p))return alert('Batch quantities could not be matched. No stock was changed.');
   const oldStock=Number(stock.qty||0);
-  stock.qty=oldStock-qty;
-  records.unshift(record);
-
-  try{
-   saveAll();
-   saveReturns(records);
-  }catch(e){
-   stock.qty=oldStock;
-   return alert('Could not save return: '+e.message);
-  }
+  const oldBatches=Array.isArray(stock.batches)?stock.batches.map(b=>({...b})):null;
+  if(typeof window.etihadDeductSupplierReturnBatches==='function'&&!window.etihadDeductSupplierReturnBatches(stock,qty,p))return alert('Batch quantities could not be matched. No stock was changed.');
+  stock.qty=oldStock-qty;records.unshift(record);
+  try{saveAll();saveReturns(records);}catch(e){stock.qty=oldStock;if(oldBatches)stock.batches=oldBatches;return alert('Could not save return: '+e.message);}
 
   qtyInput.value=1;
   document.getElementById('srNote').value='';
@@ -14333,14 +14326,16 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  };
  window.etihadDeductSupplierReturnBatches=function(product,qty,purchase){
   if(!product||!Array.isArray(product.batches))return true;
-  let remaining=Number(qty)||0;
-  const exact=product.batches.find(b=>String(b.reference||'')===String(purchase.purchaseNo||purchase.id)&&batchQty(b)>=remaining);
-  if(exact){exact.remainingQty=batchQty(exact)-remaining;return true;}
+  const requested=Number(qty)||0;if(!Number.isFinite(requested)||requested<=0)return false;
+  const exact=product.batches.find(b=>String(b.reference||'')===String(purchase.purchaseNo||purchase.id)&&batchQty(b)>=requested);
+  if(exact){exact.remainingQty=batchQty(exact)-requested;return true;}
   const candidates=product.batches.filter(b=>batchQty(b)>0).sort((x,y)=>String(x.expiryDate||'9999').localeCompare(String(y.expiryDate||'9999')));
-  const unallocated=Math.max(0,Number(product.qty||0)-candidates.reduce((n,b)=>n+batchQty(b),0));
-  const legacyTake=Math.min(unallocated,remaining);remaining-=legacyTake;
-  for(const batch of candidates){if(remaining<=0)break;const take=Math.min(batchQty(batch),remaining);batch.remainingQty=batchQty(batch)-take;remaining-=take;}
+  const allocated=candidates.reduce((n,b)=>n+batchQty(b),0),unallocated=Math.max(0,Number(product.qty||0)-allocated);
+  if(unallocated+allocated+1e-9<requested)return false;
+  let remaining=Math.max(0,requested-unallocated);
+  for(const batch of candidates){if(remaining<=1e-9)break;const take=Math.min(batchQty(batch),remaining);batch.remainingQty=batchQty(batch)-take;remaining-=take;}
   return remaining<=1e-9;
+
  };
  fillOptions();render();
 })();
