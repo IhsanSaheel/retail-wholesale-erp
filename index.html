@@ -2533,31 +2533,41 @@ renderAll();
    const entry=Array.isArray(latest)?latest.find(x=>x.auditId===auditId):null;
    if(!entry||entry.restoredAt||!allowed.includes(entry.collection)||!entry.snapshot||typeof entry.snapshot!=='object'){alert('This recovery copy is unavailable or cannot be restored.');return;}
    const collection=entry.collection,record=entry.snapshot;
-   if(!record.id){alert('This record has no original ID. It cannot be safely restored automatically.');return;}
-   const current=(()=>{try{const v=JSON.parse(localStorage.getItem(collection)||'[]');return Array.isArray(v)?v:[];}catch(_){return null;}})();
-   if(!current){alert('Could not read the current records. Nothing was changed.');return;}
-   const existing=current.find(x=>String(x.id)===String(record.id));
+   const restoreTypes={
+    mberp_products:{label:'product',place:'Inventory',tab:'products',state:'products'},
+    mberp_branches:{label:'branch',place:'Branch Management',tab:'branches',state:'branches'},
+    mberp_expenses:{label:'expense',place:'Expenses',tab:'expenses',state:'expenses'},
+    mberp_orders:{label:'sales order',place:'Sales Orders'},
+    mberp_quotations:{label:'quotation',place:'Quotations'}
+   };
+   const config=restoreTypes[collection];
+   if(!config){alert('This record type is not supported for automatic restore. Nothing was changed.');return;}
+   if(!record.id){alert('This '+config.label+' has no original ID. It cannot be safely restored automatically.');return;}
+   const current=(()=>{try{const value=JSON.parse(localStorage.getItem(collection)||'[]');return Array.isArray(value)?value:null;}catch(_){return null;}})();
+   if(!current){alert('Could not read the saved '+config.label+' records. Nothing was changed.');return;}
+   const existing=current.find(item=>String(item?.id)===String(record.id));
    if(existing){
     const same=JSON.stringify(existing)===JSON.stringify(record);
-    const typeName=collection==='mberp_products'?'product':collection==='mberp_branches'?'branch':collection==='mberp_expenses'?'expense':collection==='mberp_orders'?'sales order':collection==='mberp_quotations'?'quotation':'record';
-    const locationName=collection==='mberp_products'?'Inventory':collection==='mberp_branches'?'Branch Management':collection==='mberp_expenses'?'Expenses':collection==='mberp_orders'?'Sales Orders':collection==='mberp_quotations'?'Quotations':'its original module';
-    const details=same?'The saved recovery copy matches the '+typeName+' already saved.':'A '+typeName+' with this ID already exists, but its current details differ from the saved recovery copy.';
-    alert(details+'\n\nNo duplicate was created and no existing record was overwritten. Please review the record in '+locationName+'. The recovery copy remains in Deletion History.');
-    const tabName=collection==='mberp_products'?'products':collection==='mberp_branches'?'branches':collection==='mberp_expenses'?'expenses':null;
-    if(tabName&&typeof showTab==='function')showTab(tabName);
+    const detail=same?'The saved recovery copy matches the '+config.label+' already saved.':'A '+config.label+' with this ID already exists, but its current details differ from the saved recovery copy.';
+    alert(detail+'\\n\\nNo duplicate was created and no existing record was overwritten. Please review it in '+config.place+'. The recovery copy remains in Deletion History.');
+    if(config.tab&&typeof showTab==='function')showTab(config.tab);
     return;
    }
-   if(!confirm('Restore "'+(entry.recordLabel||'this record')+'" to '+collection.replace(/^mberp_/,'')+'? This adds the saved copy and does not overwrite existing records.'))return;
+   if(!confirm('Restore "'+(entry.recordLabel||'this '+config.label)+'" to '+config.place+'? This adds the saved copy and does not overwrite existing records.'))return;
    try{
-    const updated=[record,...current];localStorage.setItem(collection,JSON.stringify(updated));
-    if(collection==='mberp_products'){products=updated;saveAll();}
-    else if(collection==='mberp_branches'){branches=updated;saveAll();}
-    else if(collection==='mberp_expenses'){expenses=updated;saveAll();}
+    const updated=[record,...current];
+    localStorage.setItem(collection,JSON.stringify(updated));
+    if(config.state==='products'){products=updated;saveAll();}
+    else if(config.state==='branches'){branches=updated;saveAll();}
+    else if(config.state==='expenses'){expenses=updated;saveAll();}
     else window.dispatchEvent(new Event('etihad-data-saved'));
-    entry.restoredAt=new Date().toISOString();entry.restoreActor=entry.actor||'Signed-in user';
+    entry.restoredAt=new Date().toISOString();
+    entry.restoreActor=entry.actor||'Signed-in user';
     localStorage.setItem('etihad_deletion_audit_v1',JSON.stringify(latest));
     document.getElementById('deletionAuditCount').textContent=latest.length+' retained audit entr'+(latest.length===1?'y':'ies')+' (maximum 250).';
-    renderDeletionHistory();alert('Record restored on this device. Please review it in its original module.');
+    renderDeletionHistory();
+    if(config.tab&&typeof showTab==='function')showTab(config.tab);
+    alert('The '+config.label+' was restored on this device. Please review it in '+config.place+'.');
    }catch(error){alert('Restore failed: '+error.message+'. Please check your backup before trying again.');}
   }));
  }
