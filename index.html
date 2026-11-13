@@ -1605,7 +1605,6 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
 
 
 
-<script id="etihad-bulk-price-adjustment-v1">
 (function(){
  'use strict';
  if(window.__etihadBulkPriceAdjustmentV1)return;window.__etihadBulkPriceAdjustmentV1=true;
@@ -1698,103 +1697,7 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
  $('etLabelRows').addEventListener('change',e=>{const x=e.target.closest('[data-label-id]');if(!x)return;x.checked?selected.add(x.dataset.labelId):selected.delete(x.dataset.labelId);});
  $('etLabelSelectVisible').addEventListener('click',()=>{page.querySelectorAll('[data-label-id]').forEach(x=>selected.add(x.dataset.labelId));renderLabels();});
  $('etLabelClear').addEventListener('click',()=>{selected.clear();renderLabels();});
- $('etLabelPrint').addEventListener('click',()=>{const list=products().filter(p=>selected.has(String(p.id)));if(!list.length)return alert('Select at least one product.');const labels=list.map(p=>'<article class="label"><b>'+esc(p.name)+'</b><div class="sku">'+esc(p.sku||p.barcode||'NO SKU')+'</div><strong>'+money(p.price)+'</strong><small>'+esc(branchNameOf(p.branchId))+'</small></article>').join('');const w=window.open('','_blank','width=900,height=700');if(!w)return alert('Allow pop-ups to print labels.');w.document.write('<!doctype html><html><head><title>Etihad Traders Product Labels</title><style>body{font-family:Arial,sans-serif;margin:10mm}.sheet{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm}.label{border:1px solid #333;padding:5mm;min-height:28mm;break-inside:avoid}.label b{font-size:13pt}.sku{font-family:monospace;font-size:12pt;letter-spacing:1px;margin:5mm 0}.label strong{font-size:15pt;display:block}.label small{display:block;margin-top:3mm}@media print{body{margin:8mm}.label{border:1px solid #555}}</style></head><body><div class="sheet">'+labels+'</div><script>window.onload=()=>window.print()<\/script>
-<script id="etihad-pos-sale-note-account-options-v1">
-(function(){
- 'use strict';
- const $=id=>document.getElementById(id);
- const pos=$('pos'),host=$('etihadPosPaymentHost');
- if(!pos||!host||window.__etihadSaleAccountOptionsV1)return;
- window.__etihadSaleAccountOptionsV1=true;
- const css=document.createElement('style');
- css.textContent=`
- #etihadSaleSettlement{border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0;background:var(--surface);display:grid;gap:10px}
- #etihadSaleSettlement .et-settle-title{font-weight:800;font-size:14px}
- #etihadSaleSettlement .et-settle-amounts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
- #etihadSaleSettlement .et-settle-amounts>div{background:var(--bg);border-radius:9px;padding:10px}
- #etihadSaleSettlement small{display:block;color:var(--muted);font-size:11px}
- #etihadSaleSettlement strong{font-size:17px}
- #etihadSaleSettlement label{display:flex;align-items:flex-start;gap:8px;font-size:12px;line-height:1.45}
- #etihadSaleSettlement input[type=checkbox]{width:auto;min-width:16px;margin:2px 0 0}
- #etihadSaleNote{width:100%;min-height:64px;box-sizing:border-box;resize:vertical}
- @media(max-width:560px){#etihadSaleSettlement .et-settle-amounts{grid-template-columns:1fr 1fr}}
- `;
- document.head.appendChild(css);
- const box=document.createElement('section');box.id='etihadSaleSettlement';
- box.innerHTML=`
-  <div class="et-settle-title">Payment summary & customer account</div>
-  <div class="et-settle-amounts">
-   <div><small>Bill total</small><strong id="etSaleBillTotal">PKR 0</strong></div>
-   <div><small>Remaining due</small><strong id="etSaleDuePreview">PKR 0</strong></div>
-  </div>
-  <label><input type="checkbox" id="etSaleAddDue"> <span><b>Add remaining due to customer account</b><br><small>Allow this sale to be saved as a customer credit balance.</small></span></label>
-  <label><input type="checkbox" id="etSaleAddExtra"> <span><b>Add extra payment to customer account</b><br><small>Any amount received above the bill total becomes customer advance.</small></span></label>
-  <div><label for="etihadSaleNote"><b>Sale note</b></label><textarea id="etihadSaleNote" placeholder="Add delivery details, customer instructions or a note for this invoice…"></textarea></div>
-  <small id="etSaleSettlementHint" aria-live="polite">Select a customer before saving a sale with an outstanding balance or advance.</small>
- `;
- const payFields=[...host.children];
- const after=payFields[payFields.length-1];
- if(after)after.after(box);else host.appendChild(box);
- const money=n=>'PKR '+Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
- function amountTotal(){try{return Number(typeof window.cartAmount==='function'?window.cartAmount():0)||0}catch(_){return 0}}
- function customer(){return String($('saleCustomer')?.value||'').trim()}
- function refresh(){
-  const total=amountTotal(),received=Math.max(0,Number($('salePaid')?.value||0)||0),due=Math.max(0,total-Math.min(received,total)),extra=Math.max(0,received-total);
-  $('etSaleBillTotal').textContent=money(total);
-  $('etSaleDuePreview').textContent=money(due);
-  $('etSaleDuePreview').style.color=due>0?'var(--danger,#b42318)':'var(--success,#16803c)';
-  $('etSaleAddDue').disabled=due<=0;
-  $('etSaleAddExtra').disabled=extra<=0;
-  const c=customer();
-  $('etSaleSettlementHint').textContent=(due>0||extra>0)&&!c?'Select a named customer to use customer account/advance.':due>0&&!$('etSaleAddDue').checked?'Tick “Add remaining due” to save this as a credit sale.':extra>0&&!$('etSaleAddExtra').checked?'Tick “Add extra payment” to store the excess as customer advance.':'Payment summary is ready.';
- }
- ['salePaid','saleCustomer','salePhone'].forEach(id=>$(id)?.addEventListener('input',refresh));
- $('etSaleAddDue').addEventListener('change',refresh);
- $('etSaleAddExtra').addEventListener('change',refresh);
- const oldRender=window.renderCart;
- if(typeof oldRender==='function'&&!window.__etihadSaleSettlementRenderWrapped){
-  window.__etihadSaleSettlementRenderWrapped=true;
-  window.renderCart=function(){const r=oldRender.apply(this,arguments);refresh();return r};
- }
- const original=window.completeSale;
- if(typeof original!=='function')return;
- window.completeSale=function(){
-  const total=amountTotal(),raw=Number($('salePaid')?.value||0),received=Number.isFinite(raw)?raw:0;
-  const due=Math.max(0,total-received),extra=Math.max(0,received-total),name=customer(),phone=String($('salePhone')?.value||'').trim();
-  if(due>0&&!$('etSaleAddDue').checked){alert('Please tick “Add remaining due to customer account” to save this unpaid balance.');return;}
-  if(extra>0&&!$('etSaleAddExtra').checked){alert('The amount received is above the bill total. Tick “Add extra payment to customer account” to save the excess as customer advance.');return;}
-  if((due>0||extra>0)&&!name){alert('Select or add a customer before assigning a due amount or extra payment to their account.');$('etihadPosCustomerDetails')?.setAttribute('open','');$('etihadNewCustomerFields').hidden=false;$('saleCustomer')?.focus();return;}
-  if(!Number.isFinite(received)||received<0){alert('Enter a valid received amount.');return;}
-  const note=String($('etihadSaleNote').value||'').trim();
-  const oldValue=$('salePaid').value;
-  // The legacy invoice engine accepts a maximum of the invoice total. Save that
-  // valid amount first, then place any explicitly authorised excess in advance.
-  $('salePaid').value=String(Math.min(received,total));
-  const before=Array.isArray(sales)?sales.length:0;
-  let result;
-  try{result=original.apply(this,arguments)}catch(error){$('salePaid').value=oldValue;throw error}
-  const saved=Array.isArray(sales)&&sales.length>before?sales[0]:null;
-  if(!saved){$('salePaid').value=oldValue;return result}
-  if(note)saved.note=note;
-  if(extra>0){
-   const key=phone?'phone:'+phone:'name:'+name.toLowerCase();
-   const creditKey='mberp_customer_account_credits';
-   let entries=[];try{const parsed=JSON.parse(localStorage.getItem(creditKey)||'[]');if(Array.isArray(parsed))entries=parsed}catch(_){}
-   entries.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),customerKey:key,customerName:name,customerPhone:phone,date:new Date().toISOString(),amount:extra,remaining:extra,method:'Cash',note:'Extra amount received on invoice '+String(saved.invoiceNo||saved.id),receiptNo:String(saved.invoiceNo||saved.id)});
-   localStorage.setItem(creditKey,JSON.stringify(entries));
-  }
-  if(typeof window.saveAll==='function')window.saveAll();
-  $('etihadSaleNote').value='';
-  $('etSaleAddDue').checked=false;$('etSaleAddExtra').checked=false;
-  refresh();
-  return result;
- };
- refresh();
- document.addEventListener('input',e=>{if(e.target?.id==='cartTotal')refresh()});
-})();
-<\/script>
-
-</body></html>');w.document.close();});
+ $('etLabelPrint').addEventListener('click',()=>{const list=products().filter(p=>selected.has(String(p.id)));if(!list.length)return alert('Select at least one product.');const labels=list.map(p=>'<article class="label"><b>'+esc(p.name)+'</b><div class="sku">'+esc(p.sku||p.barcode||'NO SKU')+'</div><strong>'+money(p.price)+'</strong><small>'+esc(branchNameOf(p.branchId))+'</small></article>').join('');const w=window.open('','_blank','width=900,height=700');if(!w)return alert('Allow pop-ups to print labels.');w.document.write('<!doctype html><html><head><title>Etihad Traders Product Labels</title><style>body{font-family:Arial,sans-serif;margin:10mm}.sheet{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm}.label{border:1px solid #333;padding:5mm;min-height:28mm;break-inside:avoid}.label b{font-size:13pt}.sku{font-family:monospace;font-size:12pt;letter-spacing:1px;margin:5mm 0}.label strong{font-size:15pt;display:block}.label small{display:block;margin-top:3mm}@media print{body{margin:8mm}.label{border:1px solid #555}}</style></head><body><div class="sheet">'+labels+'</div><script>window.onload=()=>window.print()<\/script></body></html>');w.document.close();});
  $('etExpirySearch').addEventListener('input',renderExpiry);$('etExpiryFilter').addEventListener('change',renderExpiry);$('etExpiryBranch').addEventListener('change',renderExpiry);
  $('etExpiryRows').addEventListener('click',e=>{const b=e.target.closest('[data-expiry-edit]');if(!b)return;const p=products().find(x=>String(x.id)===b.dataset.expiryEdit);if(!p)return;const v=prompt('Enter expiry date (YYYY-MM-DD). Leave blank to clear:',p.expiryDate||'');if(v===null)return;if(v&&!/^\d{4}-\d{2}-\d{2}$/.test(v))return alert('Use YYYY-MM-DD format.');const before=p.expiryDate||'';p.expiryDate=v;try{if(typeof window.saveAll!=='function')throw new Error('Save function unavailable');window.saveAll();}catch(err){p.expiryDate=before;return alert('Could not save the expiry date: '+err.message);}renderExpiry();});
  fillBranches();renderLabels();renderExpiry();
@@ -2959,6 +2862,102 @@ renderAll();
  });
 })();
 </script>
+
+<script id="etihad-pos-sale-note-account-options-v1">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const pos=$('pos'),host=$('etihadPosPaymentHost');
+ if(!pos||!host||window.__etihadSaleAccountOptionsV1)return;
+ window.__etihadSaleAccountOptionsV1=true;
+ const css=document.createElement('style');
+ css.textContent=`
+ #etihadSaleSettlement{border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0;background:var(--surface);display:grid;gap:10px}
+ #etihadSaleSettlement .et-settle-title{font-weight:800;font-size:14px}
+ #etihadSaleSettlement .et-settle-amounts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ #etihadSaleSettlement .et-settle-amounts>div{background:var(--bg);border-radius:9px;padding:10px}
+ #etihadSaleSettlement small{display:block;color:var(--muted);font-size:11px}
+ #etihadSaleSettlement strong{font-size:17px}
+ #etihadSaleSettlement label{display:flex;align-items:flex-start;gap:8px;font-size:12px;line-height:1.45}
+ #etihadSaleSettlement input[type=checkbox]{width:auto;min-width:16px;margin:2px 0 0}
+ #etihadSaleNote{width:100%;min-height:64px;box-sizing:border-box;resize:vertical}
+ @media(max-width:560px){#etihadSaleSettlement .et-settle-amounts{grid-template-columns:1fr 1fr}}
+ `;
+ document.head.appendChild(css);
+ const box=document.createElement('section');box.id='etihadSaleSettlement';
+ box.innerHTML=`
+  <div class="et-settle-title">Payment summary & customer account</div>
+  <div class="et-settle-amounts">
+   <div><small>Bill total</small><strong id="etSaleBillTotal">PKR 0</strong></div>
+   <div><small>Remaining due</small><strong id="etSaleDuePreview">PKR 0</strong></div>
+  </div>
+  <label><input type="checkbox" id="etSaleAddDue"> <span><b>Add remaining due to customer account</b><br><small>Allow this sale to be saved as a customer credit balance.</small></span></label>
+  <label><input type="checkbox" id="etSaleAddExtra"> <span><b>Add extra payment to customer account</b><br><small>Any amount received above the bill total becomes customer advance.</small></span></label>
+  <div><label for="etihadSaleNote"><b>Sale note</b></label><textarea id="etihadSaleNote" placeholder="Add delivery details, customer instructions or a note for this invoice…"></textarea></div>
+  <small id="etSaleSettlementHint" aria-live="polite">Select a customer before saving a sale with an outstanding balance or advance.</small>
+ `;
+ const payFields=[...host.children];
+ const after=payFields[payFields.length-1];
+ if(after)after.after(box);else host.appendChild(box);
+ const money=n=>'PKR '+Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
+ function amountTotal(){try{return Number(typeof window.cartAmount==='function'?window.cartAmount():0)||0}catch(_){return 0}}
+ function customer(){return String($('saleCustomer')?.value||'').trim()}
+ function refresh(){
+  const total=amountTotal(),received=Math.max(0,Number($('salePaid')?.value||0)||0),due=Math.max(0,total-Math.min(received,total)),extra=Math.max(0,received-total);
+  $('etSaleBillTotal').textContent=money(total);
+  $('etSaleDuePreview').textContent=money(due);
+  $('etSaleDuePreview').style.color=due>0?'var(--danger,#b42318)':'var(--success,#16803c)';
+  $('etSaleAddDue').disabled=due<=0;
+  $('etSaleAddExtra').disabled=extra<=0;
+  const c=customer();
+  $('etSaleSettlementHint').textContent=(due>0||extra>0)&&!c?'Select a named customer to use customer account/advance.':due>0&&!$('etSaleAddDue').checked?'Tick “Add remaining due” to save this as a credit sale.':extra>0&&!$('etSaleAddExtra').checked?'Tick “Add extra payment” to store the excess as customer advance.':'Payment summary is ready.';
+ }
+ ['salePaid','saleCustomer','salePhone'].forEach(id=>$(id)?.addEventListener('input',refresh));
+ $('etSaleAddDue').addEventListener('change',refresh);
+ $('etSaleAddExtra').addEventListener('change',refresh);
+ const oldRender=window.renderCart;
+ if(typeof oldRender==='function'&&!window.__etihadSaleSettlementRenderWrapped){
+  window.__etihadSaleSettlementRenderWrapped=true;
+  window.renderCart=function(){const r=oldRender.apply(this,arguments);refresh();return r};
+ }
+ const original=window.completeSale;
+ if(typeof original!=='function')return;
+ window.completeSale=function(){
+  const total=amountTotal(),raw=Number($('salePaid')?.value||0),received=Number.isFinite(raw)?raw:0;
+  const due=Math.max(0,total-received),extra=Math.max(0,received-total),name=customer(),phone=String($('salePhone')?.value||'').trim();
+  if(due>0&&!$('etSaleAddDue').checked){alert('Please tick “Add remaining due to customer account” to save this unpaid balance.');return;}
+  if(extra>0&&!$('etSaleAddExtra').checked){alert('The amount received is above the bill total. Tick “Add extra payment to customer account” to save the excess as customer advance.');return;}
+  if((due>0||extra>0)&&!name){alert('Select or add a customer before assigning a due amount or extra payment to their account.');$('etihadPosCustomerDetails')?.setAttribute('open','');$('etihadNewCustomerFields').hidden=false;$('saleCustomer')?.focus();return;}
+  if(!Number.isFinite(received)||received<0){alert('Enter a valid received amount.');return;}
+  const note=String($('etihadSaleNote').value||'').trim();
+  const oldValue=$('salePaid').value;
+  // The legacy invoice engine accepts a maximum of the invoice total. Save that
+  // valid amount first, then place any explicitly authorised excess in advance.
+  $('salePaid').value=String(Math.min(received,total));
+  const before=Array.isArray(sales)?sales.length:0;
+  let result;
+  try{result=original.apply(this,arguments)}catch(error){$('salePaid').value=oldValue;throw error}
+  const saved=Array.isArray(sales)&&sales.length>before?sales[0]:null;
+  if(!saved){$('salePaid').value=oldValue;return result}
+  if(note)saved.note=note;
+  if(extra>0){
+   const key=phone?'phone:'+phone:'name:'+name.toLowerCase();
+   const creditKey='mberp_customer_account_credits';
+   let entries=[];try{const parsed=JSON.parse(localStorage.getItem(creditKey)||'[]');if(Array.isArray(parsed))entries=parsed}catch(_){}
+   entries.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),customerKey:key,customerName:name,customerPhone:phone,date:new Date().toISOString(),amount:extra,remaining:extra,method:'Cash',note:'Extra amount received on invoice '+String(saved.invoiceNo||saved.id),receiptNo:String(saved.invoiceNo||saved.id)});
+   localStorage.setItem(creditKey,JSON.stringify(entries));
+  }
+  if(typeof window.saveAll==='function')window.saveAll();
+  $('etihadSaleNote').value='';
+  $('etSaleAddDue').checked=false;$('etSaleAddExtra').checked=false;
+  refresh();
+  return result;
+ };
+ refresh();
+ document.addEventListener('input',e=>{if(e.target?.id==='cartTotal')refresh()});
+})();
+</script>
+
 
 <script>
 (function(){
