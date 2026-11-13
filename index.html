@@ -2562,7 +2562,7 @@ renderAll();
     else if(config.state==='expenses'){expenses=updated;saveAll();}
     else window.dispatchEvent(new Event('etihad-data-saved'));
     entry.restoredAt=new Date().toISOString();
-    entry.restoreActor=entry.actor||'Signed-in user';
+    let restoreActor='Signed-in user';try{const active=JSON.parse(localStorage.getItem('etihad_active_user_v1')||'null');restoreActor=active?.email||active?.user?.email||active?.role||restoreActor;}catch(_){}entry.restoreActor=restoreActor;
     localStorage.setItem('etihad_deletion_audit_v1',JSON.stringify(latest));
     document.getElementById('deletionAuditCount').textContent=latest.length+' retained audit entr'+(latest.length===1?'y':'ies')+' (maximum 250).';
     renderDeletionHistory();
@@ -2579,7 +2579,7 @@ renderAll();
    records[key]=JSON.parse(localStorage.getItem(key)||'[]');
   });
   return {
-   app:'My Business ERP',
+   app:'Etihad Traders',
    backupVersion:1,
    backupDate:new Date().toISOString(),
    records:records
@@ -2591,7 +2591,7 @@ renderAll();
    const backup=collectBackup();
    downloadFile(
     backup,
-    'My-Business-ERP-Backup-'+new Date().toISOString().slice(0,10)+'.json'
+    'Etihad-Traders-Backup-'+new Date().toISOString().slice(0,10)+'.json'
    );
    alert('Your full ERP backup has been downloaded successfully.');
   }catch(error){
@@ -2619,7 +2619,7 @@ renderAll();
     const backup=JSON.parse(reader.result);
 
     if(
-     backup.app!=='My Business ERP'||
+     (backup.app!=='Etihad Traders'&&backup.app!=='My Business ERP')||
      !backup.records||
      typeof backup.records!=='object'
     ){
@@ -2639,7 +2639,7 @@ renderAll();
 
     downloadFile(
      safety,
-     'My-Business-ERP-Safety-Backup-'+new Date().toISOString().slice(0,10)+'.json'
+     'Etihad-Traders-Safety-Backup-'+new Date().toISOString().slice(0,10)+'.json'
     );
 
     keys.forEach(key=>{
@@ -4173,6 +4173,7 @@ if ('serviceWorker' in navigator) {
     let conflicts={};try{conflicts=JSON.parse(localStorage.getItem(CONFLICT_KEY)||'{}')||{};}catch(_){conflicts={};}
     let changed=false, imported=0, updated=0, conflictCount=0;
     for(const collection of COLLECTIONS){
+      let collectionChanged=false;
       const local=readLocal(collection), byId=new Map(local.map((r,i)=>[keyFor(r),i]));
       for(const remote of (result.grouped[collection]||[])){
         const rid=keyFor(remote);if(!rid)continue;
@@ -4180,7 +4181,7 @@ if ('serviceWorker' in navigator) {
         if(!byId.has(rid)){
           local.push(remote);byId.set(rid,local.length-1);
           fingerprints[cacheKey]=remoteJson;delete conflicts[cacheKey];
-          changed=true;imported++;continue;
+          changed=true;collectionChanged=true;imported++;continue;
         }
         const index=byId.get(rid), localJson=syncJson(local[index]), baseline=fingerprints[cacheKey];
         if(localJson===remoteJson){
@@ -4188,7 +4189,7 @@ if ('serviceWorker' in navigator) {
         }
         if(baseline && localJson===baseline){
           local[index]=remote;fingerprints[cacheKey]=remoteJson;delete conflicts[cacheKey];
-          changed=true;updated++;continue;
+          changed=true;collectionChanged=true;updated++;continue;
         }
         if(baseline && remoteJson===baseline){
           delete conflicts[cacheKey];continue;
@@ -4196,7 +4197,7 @@ if ('serviceWorker' in navigator) {
         conflicts[cacheKey]={collection,record_id:rid,detected_at:new Date().toISOString()};
         conflictCount++;
       }
-      if(changed) localStorage.setItem(collection,syncJson(local));
+      if(collectionChanged) localStorage.setItem(collection,syncJson(local));
     }
     localStorage.setItem(SYNC_CACHE_KEY,syncJson(fingerprints));
     localStorage.setItem(CONFLICT_KEY,syncJson(conflicts));
