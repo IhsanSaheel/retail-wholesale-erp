@@ -3575,7 +3575,10 @@ renderAll();
        <th>Product</th>
        <th>Qty</th>
        <th>Credit</th>
+       <th>Refund Received</th>
+       <th>Credit Remaining</th>
        <th>Note</th>
+       <th>Action</th>
       </tr>
      </thead>
      <tbody id="srTable"></tbody>
@@ -3649,38 +3652,59 @@ renderAll();
   const total=records.reduce((n,r)=>n+Number(r.amount||0),0);
   const received=records.reduce((n,r)=>n+Number(r.refundReceived||0),0);
 
+  const outstanding=records.reduce((n,r)=>n+Math.max(0,Number(r.amount||0)-Number(r.refundReceived||0)),0);
+
   document.getElementById('srCards').innerHTML=`
-   <div class="card">
-    <small>Total Returns</small>
-    <strong>${records.length}</strong>
-   </div>
-   <div class="card">
-    <small>Total Supplier Credit</small>
-    <strong>PKR ${money(total)}</strong>
-   </div>
-   <div class="card">
-    <small>Refunds Received</small>
-    <strong>PKR ${money(received)}</strong>
-   </div>
+   <div class="card"><small>Total Returns</small><strong>${records.length}</strong></div>
+   <div class="card"><small>Total Supplier Credit</small><strong>PKR ${money(total)}</strong></div>
+   <div class="card"><small>Refunds Received</small><strong>PKR ${money(received)}</strong></div>
+   <div class="card"><small>Credit Still Outstanding</small><strong>PKR ${money(outstanding)}</strong></div>
   `;
 
   document.getElementById('srTable').innerHTML=
-   records.map(r=>`
+   records.map(r=>{
+    const remaining=Math.max(0,Number(r.amount||0)-Number(r.refundReceived||0));
+    return `
     <tr>
-     <td>${safe(r.date)}</td>
-     <td>${safe(r.returnNo)}</td>
-     <td>${safe(r.purchaseNo)}</td>
-     <td>${safe(r.supplierName)}</td>
-     <td>${safe(r.productName)}</td>
-     <td>${r.qty}</td>
+     <td>${safe(r.date)}</td><td>${safe(r.returnNo)}</td>
+     <td>${safe(r.purchaseNo)}</td><td>${safe(r.supplierName)}</td>
+     <td>${safe(r.productName)}</td><td>${r.qty}</td>
      <td>PKR ${money(r.amount)}</td>
+     <td>PKR ${money(r.refundReceived||0)}</td>
+     <td>PKR ${money(remaining)}</td>
      <td>${safe(r.note||'-')}</td>
-    </tr>
-   `).join('')||
-   '<tr><td colspan="8" class="empty">No purchase returns recorded.</td></tr>';
+     <td><button type="button" class="btn" data-sr-refund="${safe(r.id)}" ${remaining<=0?'disabled':''}>Record Refund</button></td>
+    </tr>`;
+   }).join('')||
+   '<tr><td colspan="11" class="empty">No purchase returns recorded.</td></tr>';
  }
 
  window.etihadRenderSupplierReturns=renderSupplierReturns;
+
+ document.getElementById('srTable').addEventListener('click',function(event){
+  const button=event.target.closest('[data-sr-refund]');
+  if(!button)return;
+  const record=getReturns().find(r=>r.id===button.dataset.srRefund);
+  if(!record)return alert('Return record not found.');
+  const remaining=Math.max(0,Number(record.amount||0)-Number(record.refundReceived||0));
+  if(remaining<=0)return alert('This supplier credit has already been fully refunded.');
+  const entered=prompt('Enter refund received from supplier (maximum PKR '+money(remaining)+'):',remaining.toFixed(2));
+  if(entered===null)return;
+  const amount=Number(entered);
+  if(!Number.isFinite(amount)||amount<=0||amount>remaining+0.000001)
+   return alert('Enter a valid refund amount not exceeding PKR '+money(remaining)+'.');
+  const records=getReturns();
+  const target=records.find(r=>r.id===record.id);
+  target.refundReceived=Number((Number(target.refundReceived||0)+amount).toFixed(2));
+  try{saveReturns(records);}
+  catch(error){
+   target.refundReceived=Number((Number(target.refundReceived||0)-amount).toFixed(2));
+   return alert('Could not save refund: '+error.message);
+  }
+  renderSupplierReturns();
+  alert('Refund received recorded: PKR '+money(amount)+'.');
+ });
+
  purchaseSelect.addEventListener('change',updateReturnInfo);
  qtyInput.addEventListener('input',updateReturnInfo);
 
