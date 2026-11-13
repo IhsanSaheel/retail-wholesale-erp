@@ -2539,9 +2539,12 @@ renderAll();
    const existing=current.find(x=>String(x.id)===String(record.id));
    if(existing){
     const same=JSON.stringify(existing)===JSON.stringify(record);
-    const details=same?'The saved recovery copy matches the product already in Inventory.':'A product with this ID is already in Inventory, but its current details differ from the saved recovery copy.';
-    alert(details+'\n\nNo duplicate was created and no existing product was overwritten. Please review the product in Inventory. The recovery copy remains in Deletion History.');
-    if(collection==='mberp_products'&&typeof showTab==='function')showTab('products');
+    const typeName=collection==='mberp_products'?'product':collection==='mberp_branches'?'branch':collection==='mberp_expenses'?'expense':collection==='mberp_orders'?'sales order':collection==='mberp_quotations'?'quotation':'record';
+    const locationName=collection==='mberp_products'?'Inventory':collection==='mberp_branches'?'Branch Management':collection==='mberp_expenses'?'Expenses':collection==='mberp_orders'?'Sales Orders':collection==='mberp_quotations'?'Quotations':'its original module';
+    const details=same?'The saved recovery copy matches the '+typeName+' already saved.':'A '+typeName+' with this ID already exists, but its current details differ from the saved recovery copy.';
+    alert(details+'\n\nNo duplicate was created and no existing record was overwritten. Please review the record in '+locationName+'. The recovery copy remains in Deletion History.');
+    const tabName=collection==='mberp_products'?'products':collection==='mberp_branches'?'branches':collection==='mberp_expenses'?'expenses':null;
+    if(tabName&&typeof showTab==='function')showTab(tabName);
     return;
    }
    if(!confirm('Restore "'+(entry.recordLabel||'this record')+'" to '+collection.replace(/^mberp_/,'')+'? This adds the saved copy and does not overwrite existing records.'))return;
