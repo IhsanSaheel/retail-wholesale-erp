@@ -4713,7 +4713,7 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
  if(!salesPage){
   salesPage=document.createElement('section');
   salesPage.id='sales';salesPage.className='page hidden';
-  salesPage.innerHTML='<h3>Sales Records</h3><div class="panel et-sales-actions"><div><b>Sales workspace</b><div class="muted">Completed sales, orders, quotations and returns</div></div><div class="et-sales-action-buttons"><button type="button" class="btn" id="etihadNewSaleButton">New Sale - F3</button><button type="button" class="btn light" id="etihadNewOrderButton">New Order - F4</button><button type="button" class="btn light" id="etihadNewQuotationButton">New Quotation - F5</button><button type="button" class="btn light" id="etihadSalesReturnButton">Return</button></div></div><div class="et-sales-tabs" role="tablist" aria-label="Sales views"><button type="button" class="active" data-sales-view="records" role="tab" aria-selected="true">Records</button><button type="button" data-sales-view="open" role="tab" aria-selected="false">Open orders</button><button type="button" data-sales-view="online" role="tab" aria-selected="false">Online Orders</button><button type="button" data-sales-view="quotations" role="tab" aria-selected="false">Quotations</button></div><div class="panel et-sales-filters" id="etihadSalesFilters"><label for="etihadSalesSearch">Search sales records</label><input id="etihadSalesSearch" type="search" placeholder="Invoice, customer, phone or product"><label for="etihadSalesSort">Sort</label><select id="etihadSalesSort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="highest">Highest total</option><option value="lowest">Lowest total</option></select></div><div class="panel" id="etihadSalesEmpty" hidden></div>';
+  salesPage.innerHTML='<h3>Sales Records</h3><div class="panel et-sales-actions"><div><b>Sales workspace</b><div class="muted">Completed sales, orders, quotations and returns</div></div><div class="et-sales-action-buttons"><button type="button" class="btn" id="etihadNewSaleButton">New Sale - F3</button><button type="button" class="btn light" id="etihadNewOrderButton">New Order - F4</button><button type="button" class="btn light" id="etihadNewQuotationButton">New Quotation - F5</button><button type="button" class="btn light" id="etihadSalesReturnButton">Return</button></div></div><div class="et-sales-tabs" role="tablist" aria-label="Sales views"><button type="button" class="active" data-sales-view="records" role="tab" aria-selected="true">Records</button><button type="button" data-sales-view="open" role="tab" aria-selected="false">Open orders</button><button type="button" data-sales-view="quotations" role="tab" aria-selected="false">Quotations</button></div><div class="panel et-sales-filters" id="etihadSalesFilters"><label for="etihadSalesSearch">Search sales records</label><input id="etihadSalesSearch" type="search" placeholder="Invoice, customer, phone or product"><label for="etihadSalesSort">Sort</label><select id="etihadSalesSort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="highest">Highest total</option><option value="lowest">Lowest total</option></select></div><div class="panel" id="etihadSalesEmpty" hidden></div>';
   const tablePanel=[...pos.querySelectorAll('.panel')].find(p=>p.querySelector('#salesTable'));
   if(tablePanel){
    const heading=tablePanel.querySelector('h3');if(heading)heading.textContent='Sales Records';
@@ -4756,7 +4756,7 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   if(currentView!=='records'){
    if(tablePanel)tablePanel.hidden=true;
    if(filters)filters.hidden=true;
-   if(empty){empty.hidden=false;const label={open:'Open orders',online:'Online Orders',quotations:'Quotations'}[currentView];empty.innerHTML='<h3>'+label+'</h3><p class="muted">There are no '+label.toLowerCase()+' records available in this version. No placeholder records have been created.</p>';}
+   if(empty){empty.hidden=false;const label={open:'Open orders',quotations:'Quotations'}[currentView]||'Sales';empty.innerHTML='<h3>'+label+'</h3><p class="muted">There are no '+label.toLowerCase()+' records available in this version. No placeholder records have been created.</p>';}
    return;
   }
   if(tablePanel)tablePanel.hidden=false;
@@ -5768,96 +5768,7 @@ body.etihad-blackgold .panel,body.etihad-blackgold .card,body.etihad-blackgold #
 #employees .hr-record-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 12px;border-bottom:1px solid var(--line);padding-bottom:10px}#employees .hr-record-tabs button{border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);padding:9px 13px;font-weight:750}#employees .hr-record-tabs button.active{background:linear-gradient(135deg,#172b45,#344d69);color:#fff;border-color:#344d69}body.etihad-blackgold #employees .hr-record-tabs button.active{background:linear-gradient(135deg,#171512,#765b2b);border-color:#b58a3a;color:#f8e7bd}body.etihad-emerald #employees .hr-record-tabs button.active{background:#176b50;border-color:#176b50;color:#fff}#employees .hr-record-pane[hidden]{display:none!important}#employees .hr-record-pane h5{margin:10px 0 12px}#employees .hr-record-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;padding:14px;margin:0 0 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}#employees .hr-record-form label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted)}#employees .hr-record-form input,#employees .hr-record-form select,#employees .hr-record-form textarea{box-sizing:border-box;width:100%;min-width:0;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);font:inherit}#employees .hr-record-form .wide{grid-column:1/-1}#employees .hr-record-form button{justify-self:start}#employees .hr-record-form .hr-status{align-self:center;font-size:12px;color:var(--muted)}#employees .hr-record-pane .table-wrap{margin-top:10px}#employees .hr-record-pane td button{margin:2px;padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font-weight:700;cursor:pointer}@media(max-width:600px){#employees .hr-record-form{grid-template-columns:1fr}#employees .hr-record-form .wide{grid-column:auto}}
 </style>
 
-<style id="etihad-professional-navigation-style">
-:root{--etihad-gold:#b58a3a;--etihad-gold-soft:#f5ecd9}
-.etihad-module-tabs{display:flex;gap:8px;overflow-x:auto;padding:8px 2px 14px;margin:0 0 12px;scrollbar-width:thin}
-.etihad-module-tabs button{flex:0 0 auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:10px 15px;font-size:13px;font-weight:750;cursor:pointer;transition:.18s}
-.etihad-module-tabs button[aria-selected="true"]{background:linear-gradient(135deg,#172b45,#344d69);border-color:#344d69;color:#fff;box-shadow:0 5px 14px #172b4520}
-body.etihad-blackgold .etihad-module-tabs button[aria-selected="true"]{background:linear-gradient(135deg,#171512,#765b2b);border-color:#b58a3a;color:#f8e7bd}
-body.etihad-emerald .etihad-module-tabs button[aria-selected="true"]{background:#176b50;border-color:#176b50;color:white}
-.etihad-module-tab-panel[hidden]{display:none!important}
-.etihad-settings-tabs{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:6px}
-.etihad-setting-subtabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 16px}
-.etihad-setting-subtabs button{border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);padding:9px 13px;font-weight:750}
-.etihad-setting-subtabs button[aria-selected="true"]{background:var(--gold,var(--etihad-gold));border-color:var(--etihad-gold);color:#17130b}
-#etihadCompanyProfile .etihad-company-grid{display:block}
-#etihadCompanyProfile .etihad-setting-subpane{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
-#etihadCompanyProfile .etihad-setting-subpane[hidden]{display:none!important}
-#etihadCompanyProfile .etihad-setting-subpane .wide{grid-column:1/-1}
-#etihadCompanyProfile .etihad-setting-subpane .etihad-ceo-photo{grid-column:1/-1}
-.etihad-settings-shortcut{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
-.etihad-settings-shortcut p{margin:5px 0;color:var(--muted)}
-.slip-contact{font-size:9px;line-height:1.5;color:#667085;margin-top:5px;max-width:420px}
-@media(max-width:600px){.etihad-module-tabs button{padding:9px 12px;font-size:12px}#etihadCompanyProfile .etihad-setting-subpane{grid-template-columns:1fr}#etihadCompanyProfile .etihad-setting-subpane .wide{grid-column:auto}}
-</style>
-<script id="etihad-complete-section-tabs">
-(function(){
- 'use strict';
- const $=id=>document.getElementById(id);
- const labels={dashboard:'Overview',products:'Products & Inventory',branches:'Branches',transfers:'Stock Transfer',pos:'Sales & POS',customers:'Customers & Ledger',expenses:'Expenses',reports:'Reports',suppliers:'Suppliers & Purchases',employees:'Employee & Payroll',backup:'Settings'};
- function makeTabs(page,settingsMode){
-  if(!page)return;
-  let nav=page.querySelector(':scope > .etihad-module-tabs');
-  let panels=page.__etihadTabbedPanels||[];
-  const candidates=[...page.children].filter(el=>el.classList?.contains('panel') || (settingsMode&&['etihadAppearanceSettings','etihadCompanyProfile'].includes(el.id)));
-  if(candidates.length<2 && !settingsMode)return;
-  if(settingsMode && candidates.length<2)return;
-  if(!nav){
-   nav=document.createElement('div');nav.className='etihad-module-tabs'+(settingsMode?' etihad-settings-tabs':'');nav.setAttribute('role','tablist');nav.setAttribute('aria-label',settingsMode?'Settings categories':'Section categories');
-   const heading=page.querySelector(':scope > h3');if(heading)heading.insertAdjacentElement('afterend',nav);else page.insertBefore(nav,page.firstChild);
-  }
-  function select(i){panels.forEach((p,n)=>{p.hidden=n!==i;nav.children[n]?.setAttribute('aria-selected',String(n===i));});page.dataset.etihadActiveTab=String(i);}
-  candidates.forEach(panel=>{
-   if(panels.includes(panel))return;
-   const h=panel.querySelector('h3,h2,h4');let label=(h?.textContent||'').trim().replace(/\s+/g,' ');
-   if(panel.id==='etihadAppearanceSettings')label='Themes & Logo';
-   if(panel.id==='etihadCompanyProfile')label='Company Profile';
-   if(panel.id==='etihadBranchSettingsShortcut')label='Branches';
-   if(!label)label='Section '+(panels.length+1);
-   panel.classList.add('etihad-module-tab-panel');panels.push(panel);
-   const index=panels.length-1,b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('role','tab');b.setAttribute('aria-selected','false');b.addEventListener('click',()=>select(index));nav.appendChild(b);
-  });
-  page.__etihadTabbedPanels=panels;page.dataset.etihadTabs='1';
-  if(panels.length){const active=Math.min(Number(page.dataset.etihadActiveTab||0),panels.length-1);select(active);}
- }
- function splitCompanyProfile(){
-  const panel=$('etihadCompanyProfile');if(!panel||panel.dataset.splitAbout==='1')return;
-  const grid=panel.querySelector('.etihad-company-grid');if(!grid)return;
-  const all=[...grid.children];
-  const aboutIds=new Set(['ecpCEO','ecpTitle','ecpCEPhone','ecpCEEmail','ecpCEPhoto']);
-  const company=document.createElement('div');company.className='etihad-setting-subpane';company.dataset.subpane='profile';
-  const about=document.createElement('div');about.className='etihad-setting-subpane';about.dataset.subpane='about';about.hidden=true;
-  all.forEach(el=>{const input=el.querySelector('input,textarea');const id=input?.id||el.querySelector('[id]')?.id;if(aboutIds.has(id))about.appendChild(el);else company.appendChild(el);});
-  grid.replaceChildren(company,about);
-  const tabs=document.createElement('div');tabs.className='etihad-setting-subtabs';tabs.setAttribute('role','tablist');
-  const a=document.createElement('button');a.type='button';a.textContent='Company Profile';a.setAttribute('aria-selected','true');
-  const b=document.createElement('button');b.type='button';b.textContent='About Company';b.setAttribute('aria-selected','false');
-  function choose(which){company.hidden=which!=='profile';about.hidden=which!=='about';a.setAttribute('aria-selected',String(which==='profile'));b.setAttribute('aria-selected',String(which==='about'));}
-  a.addEventListener('click',()=>choose('profile'));b.addEventListener('click',()=>choose('about'));tabs.append(a,b);grid.before(tabs);
-  const desc=panel.querySelector('p.muted');if(desc)desc.textContent='Company contact information is used on invoices and payslips. CEO / Owner information is kept separately under About Company and is not printed on invoices or payslips.';
-  panel.dataset.splitAbout='1';
- }
- function addBranchSettingsShortcut(){
-  const settings=$('backup');if(!settings||$('etihadBranchSettingsShortcut'))return;
-  const p=document.createElement('div');p.className='panel';p.id='etihadBranchSettingsShortcut';p.innerHTML='<h3>Branch Management</h3><div class="etihad-settings-shortcut"><div><strong>Manage business locations</strong><p>Add branches, update addresses and manage branch records.</p></div><button type="button" class="btn light" id="etihadOpenBranches">Open Branch Management</button></div>';
-  settings.appendChild(p);$('etihadOpenBranches').addEventListener('click',()=>{const b=document.querySelector('#etihadMainNav button[data-tab="branches"]')||document.querySelector('nav button[data-tab="branches"]');if(b)b.click();else{document.querySelector('#branches')?.classList.remove('hidden');document.querySelectorAll('.page').forEach(x=>{if(x.id!=='branches')x.classList.add('hidden')});}});
- }
- function run(){
-  // The original app already owns page navigation and its module-specific event handlers.
-  document.querySelectorAll('main > .page').forEach(page=>{
-   if(page.id==='dashboard'||page.id==='employees')return;
-   if(page.id==='backup')return;
-   makeTabs(page,false);
-  });
-  splitCompanyProfile();addBranchSettingsShortcut();
-  const settings=$('backup');if(settings)makeTabs(settings,true);
- }
- run();
- const obs=new MutationObserver(()=>{run();});obs.observe(document.querySelector('main')||document.body,{childList:true,subtree:true});
- setTimeout(()=>{run();},250);setTimeout(()=>{run();},900);setTimeout(()=>{run();},1800);
-})();
-</script>
-
+<!-- Removed auto-generated in-page tabs: module sections now remain in their intended workspace. -->
 <script id="etihad-simple-customer-ledger">
 (function(){
  'use strict';
