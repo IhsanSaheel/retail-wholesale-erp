@@ -3211,6 +3211,7 @@ renderAll();
    '<tr><td colspan="9" class="empty">No returns recorded yet.</td></tr>';
  }
 
+ window.etihadRenderReturns=renderReturns;
  invoice.addEventListener('change',renderReturnProducts);
  product.addEventListener('change',updateAmount);
  qty.addEventListener('input',updateAmount);
@@ -3540,6 +3541,7 @@ renderAll();
    '<tr><td colspan="8" class="empty">No purchase returns recorded.</td></tr>';
  }
 
+ window.etihadRenderSupplierReturns=renderSupplierReturns;
  purchaseSelect.addEventListener('change',updateReturnInfo);
  qtyInput.addEventListener('input',updateReturnInfo);
 
@@ -4805,7 +4807,8 @@ body.etihad-emerald th{background:#eaf6f0;color:#426e5d}body.etihad-emerald td{c
   // Order and quotation buttons are handled by the saved workflow below; no placeholder alerts.
  $('etihadSalesReturnButton')?.addEventListener('click',()=>{
   const page=$('returns');
-  if(!page){alert('The existing Sales Returns screen is unavailable.');return;}
+  if(!page){alert('Sales Returns workspace could not be opened. Please refresh Etihad Traders.');return;}
+  window.etihadRenderReturns?.();
   document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));page.classList.remove('hidden');
   nav.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='sales'));
  });
@@ -6178,10 +6181,30 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  nav.querySelector('.etihad-theme-tools')?.remove();
  // Hide secondary destinations from the crowded top row, but retain their original
  // buttons and event handlers so every existing module keeps its original behavior.
+ const main=document.querySelector('main');
+ function moveMergedModule(wrapperId,pageId,label){
+  const wrapper=document.getElementById(wrapperId);
+  if(!wrapper||!main||document.getElementById(pageId))return null;
+  const page=document.createElement('section');page.id=pageId;page.className='page hidden';
+  page.appendChild(wrapper);main.appendChild(page);
+  const source=document.createElement('button');source.type='button';source.textContent=label;source.dataset.tab=pageId;source.hidden=true;nav.appendChild(source);
+  source.addEventListener('click',()=>{
+   document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+   page.classList.remove('hidden');
+   nav.querySelectorAll('button[data-tab]').forEach(b=>b.classList.toggle('active',b===source));
+   if(pageId==='returns')window.etihadRenderReturns?.();
+   if(pageId==='supplierReturns')window.etihadRenderSupplierReturns?.();
+  });
+  return source;
+ }
+ moveMergedModule('etihadMerged_returns','returns','Sales Returns');
+ moveMergedModule('etihadMerged_supplierReturns','supplierReturns','Purchase Returns');
  const secondary=[
   ['branches','Branches'],
   ['transfers','Stock Transfers'],
-  ['employees','Employees & Payroll']
+  ['employees','Employees & Payroll'],
+  ['returns','Sales Returns'],
+  ['supplierReturns','Purchase Returns']
  ];
  const sources=secondary.map(([tab,label])=>{
   const source=[...nav.querySelectorAll('button[data-tab]')].find(b=>b.dataset.tab===tab);
