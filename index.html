@@ -3985,7 +3985,7 @@ if ('serviceWorker' in navigator) {
     'mberp_branches','mberp_suppliers','mberp_customer_credit_limits',
     'mberp_products','mberp_purchases','mberp_sales','mberp_payments',
     'mberp_expenses','mberp_transfers','mberp_supplier_payments',
-    'mberp_supplier_returns','mberp_sales_returns'
+    'mberp_supplier_returns','mberp_sales_returns','mberp_orders','mberp_quotations'
   ];
   const CACHE_KEY = 'etihad_verified_owner_session_v1';
   const ACTIVE_USER_KEY = 'etihad_active_user_v1';
@@ -4116,7 +4116,7 @@ if ('serviceWorker' in navigator) {
   const WRITE_COLLECTIONS={
     owner:COLLECTIONS,
     manager:COLLECTIONS,
-    cashier:['mberp_sales','mberp_payments','mberp_sales_returns'],
+    cashier:['mberp_sales','mberp_payments','mberp_sales_returns','mberp_orders','mberp_quotations'],
     stockkeeper:['mberp_products','mberp_transfers','mberp_purchases'],
     accountant:['mberp_payments','mberp_expenses','mberp_purchases','mberp_supplier_payments','mberp_supplier_returns','mberp_sales_returns']
   };
