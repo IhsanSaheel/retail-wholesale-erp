@@ -409,92 +409,60 @@ body.etihad-blackgold .panel,body.etihad-blackgold .card{background:var(--surfac
 }
 </style>
 
-<style id="etihad-mobile-app-shell-v1">
-/* Etihad Traders: dedicated phone-first application shell */
-@media screen and (max-width: 700px) {
-  html, body { width:100%; min-width:0; max-width:100%; overflow-x:hidden; }
-  body { font-size:14px; line-height:1.45; padding-bottom:calc(76px + env(safe-area-inset-bottom))!important; }
-  header {
-    position:relative!important; top:auto!important; min-height:64px!important;
-    padding:10px 12px!important; gap:8px!important; flex-wrap:wrap!important;
-    align-items:center!important;
-  }
-  header .etihad-brand { max-width:100%!important; flex:1 1 210px!important; }
-  header #etihadHeaderLogo { width:58px!important; min-width:58px!important; max-width:58px!important; height:40px!important; min-height:40px!important; max-height:40px!important; flex-basis:58px!important; }
-  header .etihad-brand-copy h2 { font-size:16px!important; line-height:1.15!important; }
-  header .etihad-brand-copy small { font-size:9px!important; }
-  header>button, header .btn { min-height:38px!important; padding:8px 10px!important; font-size:11px!important; }
-  nav#etihadMainNav {
-    position:fixed!important; inset:auto 0 0 0!important; top:auto!important;
-    z-index:99990!important; width:100%!important; min-height:62px!important;
-    display:flex!important; flex-flow:row nowrap!important; align-items:center!important;
-    justify-content:flex-start!important; gap:5px!important;
-    padding:7px 7px calc(7px + env(safe-area-inset-bottom))!important;
-    margin:0!important; overflow-x:auto!important; overflow-y:hidden!important;
-    white-space:nowrap!important; background:rgba(255,255,255,.97)!important;
-    border:0!important; border-top:1px solid #dce3ec!important;
-    box-shadow:0 -5px 22px rgba(20,35,55,.12)!important;
-    -webkit-overflow-scrolling:touch; backdrop-filter:blur(18px);
-  }
-  nav#etihadMainNav button {
-    display:inline-flex!important; flex:0 0 auto!important; align-items:center!important;
-    justify-content:center!important; min-width:74px!important; min-height:44px!important;
-    padding:8px 10px!important; margin:0!important; border-radius:11px!important;
-    font-size:10px!important; line-height:1.2!important; white-space:nowrap!important;
-  }
-  main {
-    width:100%!important; max-width:none!important; min-width:0!important;
-    margin:0!important; padding:15px 10px 24px!important; overflow-x:clip!important;
-  }
-  .page { width:100%!important; max-width:100%!important; min-width:0!important; }
-  .page>h3 { font-size:20px!important; line-height:1.25!important; margin:4px 0 14px!important; }
-  h2 { overflow-wrap:anywhere; }
-  .panel,.card {
-    min-width:0!important; max-width:100%!important; padding:13px!important;
-    margin-bottom:11px!important; border-radius:14px!important;
-  }
-  .cards { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:9px!important; }
-  .card { min-height:88px!important; }
-  .card small { font-size:10px!important; line-height:1.3!important; }
-  .card strong { font-size:18px!important; line-height:1.2!important; overflow-wrap:anywhere!important; }
-  .grid { grid-template-columns:minmax(0,1fr)!important; gap:9px!important; }
-  .panel .grid { min-width:0!important; }
-  label { font-size:12px!important; margin-bottom:5px!important; }
-  input,select,textarea {
-    width:100%!important; max-width:100%!important; min-width:0!important;
-    min-height:45px!important; padding:10px 11px!important; font-size:16px!important;
-    border-radius:10px!important;
-  }
-  button,.btn { max-width:100%; min-height:42px; }
-  .btn { padding:10px 12px!important; font-size:12px!important; }
-  .table-wrap {
-    display:block!important; width:100%!important; max-width:100%!important;
-    overflow-x:auto!important; -webkit-overflow-scrolling:touch!important;
-    overscroll-behavior-x:contain; border-radius:11px!important;
-  }
-  .table-wrap table { min-width:620px!important; }
-  .table-wrap th,.table-wrap td { padding:9px 8px!important; font-size:11px!important; white-space:nowrap; }
-  .total { font-size:20px!important; }
-  .empty { padding:20px 10px!important; }
-  footer { padding:15px 10px!important; }
-  #etihadNetworkStatus { bottom:calc(76px + env(safe-area-inset-bottom))!important; right:8px!important; max-width:calc(100vw - 16px)!important; }
-  #etihadCloudPanel { width:calc(100vw - 20px)!important; max-width:calc(100vw - 20px)!important; max-height:85dvh!important; overflow:auto!important; }
-  /* Keep special workspaces inside the phone viewport */
-  #dashboard .cards { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
-  #pos { width:100%!important; max-width:100%!important; padding-left:0!important; padding-right:0!important; }
-  #pos .pos-pro-layout { display:flex!important; flex-direction:column!important; gap:10px!important; }
-  #pos .pos-pro-main,#pos .pos-pro-side { width:100%!important; min-width:0!important; padding:11px!important; }
-  #pos .pos-product-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important; max-height:45dvh!important; overflow:auto!important; }
-  #employees .hr-form-grid,#employees .hr-access-grid,#employees .hr-payroll-layout { grid-template-columns:minmax(0,1fr)!important; }
-  #employees .hr-metrics { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
-  /* Prevent wide custom module layouts from stretching the whole phone */
-  [style*="grid-template-columns"] { min-width:0; }
+<style id="etihad-mobile-app-shell-v2">
+/* Correct selectors for the real Etihad Traders markup: header, nav, main, .page */
+@media screen and (max-width:700px){
+ html,body{width:100%;max-width:100%;min-width:0;overflow-x:hidden}
+ body{font-size:14px;line-height:1.45;padding-bottom:calc(78px + env(safe-area-inset-bottom))!important}
+ header{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;padding:11px 12px!important;min-height:62px}
+ header>div:first-child{flex:1 1 150px!important;min-width:0}
+ header h2{font-size:18px!important;line-height:1.2}
+ header small{font-size:10px!important;display:block}
+ header>div:nth-child(2){gap:6px!important;justify-content:flex-end!important}
+ header a{padding:7px 9px!important;font-size:11px!important}
+ #today{font-size:11px!important}
+ body>nav,nav:not(.tabs):not(.tab-nav){
+  position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;
+  z-index:999990!important;width:100%!important;min-height:64px!important;
+  display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+  align-items:center!important;gap:5px!important;margin:0!important;
+  padding:7px 7px calc(7px + env(safe-area-inset-bottom))!important;
+  overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;
+  background:#fff!important;border-top:1px solid #d9e0e9!important;
+  box-shadow:0 -5px 20px rgba(15,23,42,.13)!important;
+  -webkit-overflow-scrolling:touch
+ }
+ body>nav button,nav:not(.tabs):not(.tab-nav) button{
+  flex:0 0 auto!important;min-width:78px!important;min-height:44px!important;
+  padding:8px 10px!important;margin:0!important;border-radius:10px!important;
+  font-size:10px!important;line-height:1.2!important
+ }
+ main{width:100%!important;max-width:none!important;margin:0!important;padding:13px 10px 22px!important;min-width:0!important}
+ main>.page{width:100%!important;max-width:100%!important;min-width:0!important}
+ main>.page>h3{font-size:20px!important;margin:3px 0 13px!important}
+ .cards{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+ .card,.panel{min-width:0!important;padding:12px!important;border-radius:13px!important;margin-bottom:10px!important}
+ .card strong{font-size:18px!important;overflow-wrap:anywhere}
+ .card small{font-size:10px!important}
+ .grid{grid-template-columns:minmax(0,1fr)!important;gap:9px!important}
+ input,select,textarea{width:100%!important;max-width:100%!important;min-width:0!important;min-height:44px!important;font-size:16px!important;padding:10px!important}
+ button,.btn{min-height:42px}
+ .table-wrap{display:block!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch!important}
+ .table-wrap table{min-width:600px}
+ .table-wrap th,.table-wrap td{padding:8px!important;font-size:11px!important;white-space:nowrap}
+ #pos{width:100%!important;max-width:100%!important;padding-left:0!important;padding-right:0!important}
+ #pos .pos-pro-layout{display:flex!important;flex-direction:column!important;gap:10px!important}
+ #pos .pos-pro-main,#pos .pos-pro-side{width:100%!important;min-width:0!important}
+ #pos .pos-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #employees .hr-form-grid,#employees .hr-access-grid,#employees .hr-payroll-layout{grid-template-columns:minmax(0,1fr)!important}
+ #employees .hr-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #etihadNetworkStatus{bottom:calc(78px + env(safe-area-inset-bottom))!important}
 }
-@media screen and (max-width:380px) {
-  header .etihad-brand-copy small { display:none!important; }
-  nav#etihadMainNav button { min-width:68px!important; padding-inline:8px!important; font-size:9px!important; }
-  main { padding-left:8px!important; padding-right:8px!important; }
-  .panel,.card { padding:11px!important; }
+@media screen and (max-width:380px){
+ header h2{font-size:16px!important}
+ header small{display:none!important}
+ body>nav button,nav:not(.tabs):not(.tab-nav) button{min-width:70px!important;font-size:9px!important;padding-inline:8px!important}
+ main{padding-left:8px!important;padding-right:8px!important}
 }
 </style>
 
