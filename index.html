@@ -445,6 +445,33 @@ body.etihad-dark #dashboard .et-dashboard-welcome,body.etihad-blackgold #dashboa
 
 
 
+
+<style id="etihad-pos-checkout-polish-v1">
+/* POS: bill/customer at left, product finder and shortcuts at right */
+#pos .pos-pro-layout{grid-template-columns:minmax(340px,410px) minmax(0,1fr)!important;grid-template-areas:"bill products"!important;gap:14px!important;align-items:start!important}
+#pos .pos-pro-side{grid-area:bill!important;position:sticky!important;top:88px!important;max-height:calc(100vh - 105px)!important;min-height:0!important;overflow-y:auto!important;border:1px solid var(--line)!important;border-radius:16px!important}
+#pos .pos-pro-main{grid-area:products!important;min-height:0!important}
+#pos .pos-cart-table{max-height:32vh!important;overflow:auto!important}
+#pos #etihadPosProducts{max-height:calc(100vh - 250px);overflow:auto}
+#pos #etihadPosShortcutBar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+#pos #etihadPosShortcutBar button{min-height:48px;min-width:112px;max-width:190px;flex:1 1 125px;text-align:left;padding:9px 11px;border:1px solid #dbe5f1;border-radius:11px;background:#fff;color:#183653}
+#pos #etihadPosShortcutBar button strong{display:block;font-size:12px;line-height:1.3}
+#pos #etihadPosShortcutBar button small{display:block;margin-top:4px;color:#64748b;font-size:10px}
+#pos #etihadShortcutSettings{margin:8px 0 14px;border:1px solid var(--line);border-radius:11px;padding:9px 11px;background:#fbfcfe}
+#pos #etihadShortcutSettings summary,#pos #etihadPosCustomerDetails summary,#pos #etihadPosPayDetails summary{cursor:pointer;font-weight:750;color:#244c7a}
+#pos #etihadShortcutSettings .et-shortcut-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px;max-height:230px;overflow:auto}
+#pos .et-shortcut-options label{display:flex;gap:7px;align-items:center;font-size:11px;margin:0;padding:6px;background:#fff;border-radius:7px}
+#pos .et-shortcut-options input{width:auto;min-height:0;margin:0}
+#pos #etihadCustomerSearch{margin:8px 0;width:100%}
+#pos #etihadPosPayDetails{border:1px solid var(--line);border-radius:11px;padding:10px;margin-top:10px}
+#pos #etihadPosPayDetails[open]{background:#fbfcfe}
+#pos #etihadPosPaymentHost{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+#pos #etihadPosPaymentHost>div{min-width:0}
+#pos #etihadSaleSettlement{margin-top:10px}
+#pos #etihadPosPayButton{width:100%;margin:10px 0 0;min-height:46px}
+@media(max-width:900px){#pos .pos-pro-layout{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"bill" "products"!important}#pos .pos-pro-side{position:static!important;max-height:none!important;order:0}#pos .pos-pro-main{order:1}#pos #etihadPosProducts{max-height:360px}}
+@media(max-width:560px){#pos .pos-pro-layout{display:flex!important;flex-direction:column!important}#pos .pos-pro-side,#pos .pos-pro-main{width:100%!important;margin:0!important}#pos #etihadPosPaymentHost{grid-template-columns:1fr}#pos #etihadPosShortcutBar button{min-width:0;flex-basis:calc(50% - 5px)}}
+</style>
 </head>
 <body>
 <style>
@@ -1554,6 +1581,101 @@ function printInvoice(sid){
  <button onclick="window.print()">Print Invoice</button>
  </center>
 
+
+<script id="etihad-pos-shortcuts-customer-pay-v1">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id),pos=$('pos');
+ if(!pos||window.__etihadPosShortcutsCustomerPayV1)return;
+ window.__etihadPosShortcutsCustomerPayV1=true;
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const money=v=>'PKR '+Number(v||0).toLocaleString('en-PK',{maximumFractionDigits:2});
+ const productList=()=>{try{return Array.isArray(products)?products:[]}catch(_){return []}};
+ const main=pos.querySelector('.pos-pro-main'),side=pos.querySelector('.pos-pro-side');
+ if(!main||!side)return;
+ // Move the bill/customer column before the product workspace in the DOM as well.
+ const layout=pos.querySelector('.pos-pro-layout');if(layout&&side.parentNode===layout)layout.insertBefore(side,main);
+ const search=$('etihadPosSearch'),productGrid=$('etihadPosProducts'),branch=$('saleBranch');
+ const shortcutBar=document.createElement('div');shortcutBar.id='etihadPosShortcutBar';shortcutBar.setAttribute('aria-label','Favourite product shortcuts');
+ const searchLabel=search?.previousElementSibling;
+ if(searchLabel)searchLabel.insertAdjacentElement('afterend',shortcutBar);else main.prepend(shortcutBar);
+ const SETTINGS='etihad_pos_product_shortcuts_v1';
+ const read=()=>{try{const v=JSON.parse(localStorage.getItem(SETTINGS)||'[]');return Array.isArray(v)?v.map(String):[]}catch(_){return []}};
+ let selected=read();
+ const settings=document.createElement('details');settings.id='etihadShortcutSettings';
+ settings.innerHTML='<summary>＋ Choose / manage product shortcuts</summary><input id="etihadShortcutFind" type="search" placeholder="Find a product to add as a shortcut"><div class="et-shortcut-options" id="etihadShortcutOptions"></div>';
+ shortcutBar.insertAdjacentElement('afterend',settings);
+ function renderSettings(){
+  const q=String($('etihadShortcutFind')?.value||'').trim().toLowerCase();
+  const list=productList().filter(p=>!q||[p.name,p.sku,p.barcode,p.category].some(v=>String(v||'').toLowerCase().includes(q))).slice(0,250);
+  $('etihadShortcutOptions').innerHTML=list.map(p=>'<label><input type="checkbox" data-shortcut-id="'+esc(p.id)+'" '+(selected.includes(String(p.id))?'checked':'')+'><span>'+esc(p.name||'Product')+' <small class="muted"> · '+money(p.price)+'</small></span></label>').join('')||'<small class="muted">No products found.</small>';
+ }
+ function renderShortcuts(){
+  const bid=String(branch?.value||'');
+  const all=productList();
+  const chosen=selected.map(id=>all.find(p=>String(p.id)===id&&String(p.branchId)===bid&&Number(p.qty)>0)).filter(Boolean);
+  shortcutBar.innerHTML=chosen.map(p=>'<button type="button" data-shortcut-add="'+esc(p.id)+'"><strong>'+esc(p.name||'Product')+'</strong><small>'+money(p.price)+' · Stock '+Number(p.qty||0)+'</small></button>').join('')||'<small class="muted">Choose your frequently sold products above to create shortcuts.</small>';
+ }
+ settings.addEventListener('toggle',()=>{if(settings.open)renderSettings()});
+ $('etihadShortcutFind').addEventListener('input',renderSettings);
+ settings.addEventListener('change',e=>{
+  const c=e.target.closest('input[data-shortcut-id]');if(!c)return;
+  const id=String(c.dataset.shortcutId);
+  selected=c.checked?[...new Set([...selected,id])]:selected.filter(x=>x!==id);
+  try{localStorage.setItem(SETTINGS,JSON.stringify(selected))}catch(_){}
+  renderShortcuts();
+ });
+ shortcutBar.addEventListener('click',e=>{
+  const b=e.target.closest('[data-shortcut-add]');if(!b)return;
+  const p=productList().find(x=>String(x.id)===b.dataset.shortcutAdd);if(!p)return;
+  if(String(p.branchId)!==String(branch?.value||''))return alert('This product belongs to another branch.');
+  if(Number(p.qty)<=0)return alert('This product is out of stock.');
+  $('saleProduct').value=p.id;$('saleQty').value=1;
+  if(typeof window.addToCart==='function')window.addToCart();
+ });
+ branch?.addEventListener('change',renderShortcuts);
+ const oldRenderAll=window.renderAll;
+ if(typeof oldRenderAll==='function'&&!window.__etihadShortcutRenderWrapped){
+  window.__etihadShortcutRenderWrapped=true;
+  window.renderAll=function(){const r=oldRenderAll.apply(this,arguments);renderShortcuts();return r};
+ }
+ renderShortcuts();
+ // Saved-customer search filters the existing customer selector without replacing its data.
+ const saved=$('savedCustomerSelect'),customerBox=$('etihadSavedCustomerHost');
+ if(saved&&customerBox&&!$('etihadCustomerSearch')){
+  const filter=document.createElement('input');filter.id='etihadCustomerSearch';filter.type='search';filter.placeholder='Search saved customer by name or phone';
+  const label=document.createElement('label');label.textContent='Find saved customer';label.htmlFor=filter.id;
+  customerBox.prepend(filter);customerBox.prepend(label);
+  const original=[...saved.options].map(o=>({value:o.value,text:o.textContent,disabled:o.disabled,selected:o.selected}));
+  filter.addEventListener('input',()=>{
+   const q=filter.value.trim().toLowerCase(),current=saved.value;
+   saved.innerHTML='';
+   original.filter(o=>!q||o.text.toLowerCase().includes(q)).forEach(o=>{const opt=document.createElement('option');opt.value=o.value;opt.textContent=o.text;opt.disabled=o.disabled;saved.appendChild(opt)});
+   if([...saved.options].some(o=>o.value===current))saved.value=current;
+   else if(saved.options.length)saved.selectedIndex=0;
+   saved.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+ }
+ // Put payment controls behind an explicit Pay action and prefill the bill total.
+ const payHost=$('etihadPosPaymentHost'),payDetails=document.createElement('details');
+ payDetails.id='etihadPosPayDetails';
+ payDetails.innerHTML='<summary>Payment options</summary>';
+ if(payHost){payHost.parentNode.insertBefore(payDetails,payHost);payDetails.appendChild(payHost);}
+ const payButton=document.createElement('button');payButton.type='button';payButton.id='etihadPosPayButton';payButton.className='btn green';payButton.textContent='Pay / Complete sale';
+ const actionHost=$('etihadPosActionHost');if(actionHost)actionHost.insertBefore(payButton,actionHost.firstChild);
+ payButton.addEventListener('click',()=>{
+  payDetails.open=true;
+  const total=Number(typeof window.cartAmount==='function'?window.cartAmount():0)||0;
+  const paid=$('salePaid');
+  if(paid&&total>0&&(paid.value===''||Number(paid.value)===0)){paid.value=String(total);paid.dispatchEvent(new Event('input',{bubbles:true}));}
+  $('salePaid')?.focus();
+  payDetails.scrollIntoView({behavior:'smooth',block:'nearest'});
+ });
+ // Keep old Complete Sale button as the final confirmation, but make its role clear.
+ const complete=actionHost?.querySelector('button[onclick="completeSale()"]');
+ if(complete)complete.textContent='Confirm payment & save invoice';
+})();
+</script>
 </body>
 </html>`;
 
@@ -2737,12 +2859,12 @@ renderAll();
  document.head.appendChild(css);
  const box=document.createElement('section');box.id='etihadSaleSettlement';
  box.innerHTML=`
-  <div class="et-settle-title">Payment summary & customer account</div>
+  <div class="et-settle-title">Payment summary & customer account</div>\n  <label for="etSalePaymentMethod"><b>Payment method</b></label><select id="etSalePaymentMethod"><option>Cash</option><option>Bank Transfer</option><option>JazzCash</option><option>EasyPaisa</option><option>Cheque</option><option>Other</option></select>
   <div class="et-settle-amounts">
    <div><small>Bill total</small><strong id="etSaleBillTotal">PKR 0</strong></div>
    <div><small>Remaining due</small><strong id="etSaleDuePreview">PKR 0</strong></div>
   </div>
-  <label><input type="checkbox" id="etSaleAddDue"> <span><b>Add remaining due to customer account</b><br><small>Allow this sale to be saved as a customer credit balance.</small></span></label>
+  <label><input type="checkbox" id="etSaleAddDue" checked disabled> <span><b>Automatically add unpaid balance to customer dues</b><br><small>For named customers; Walk-in sales must be paid in full.</small></span></label>
   <label><input type="checkbox" id="etSaleAddExtra"> <span><b>Add extra payment to customer account</b><br><small>Any amount received above the bill total becomes customer advance.</small></span></label>
   <div><label for="etihadSaleNote"><b>Sale note</b></label><textarea id="etihadSaleNote" placeholder="Add delivery details, customer instructions or a note for this invoice…"></textarea></div>
   <small id="etSaleSettlementHint" aria-live="polite">Select a customer before saving a sale with an outstanding balance or advance.</small>
@@ -2761,7 +2883,7 @@ renderAll();
   $('etSaleAddDue').disabled=due<=0;
   $('etSaleAddExtra').disabled=extra<=0;
   const c=customer();
-  $('etSaleSettlementHint').textContent=(due>0||extra>0)&&!c?'Select a named customer to use customer account/advance.':due>0&&!$('etSaleAddDue').checked?'Tick “Add remaining due” to save this as a credit sale.':extra>0&&!$('etSaleAddExtra').checked?'Tick “Add extra payment” to store the excess as customer advance.':'Payment summary is ready.';
+  $('etSaleSettlementHint').textContent=(due>0||extra>0)&&!c?'Select a named customer to use customer account/advance.':due>0?'Remaining amount will be added to this customer’s dues.':extra>0&&!$('etSaleAddExtra').checked?'Change to return: '+money(extra):extra>0?'Extra amount will remain as customer credit.':'Payment summary is ready.';
  }
  ['salePaid','saleCustomer','salePhone'].forEach(id=>$(id)?.addEventListener('input',refresh));
  $('etSaleAddDue').addEventListener('change',refresh);
@@ -2777,7 +2899,7 @@ renderAll();
   const total=amountTotal(),raw=Number($('salePaid')?.value||0),received=Number.isFinite(raw)?raw:0;
   const due=Math.max(0,total-received),extra=Math.max(0,received-total),name=customer(),phone=String($('salePhone')?.value||'').trim();
   if(due>0&&!$('etSaleAddDue').checked){alert('Please tick “Add remaining due to customer account” to save this unpaid balance.');return;}
-  if(extra>0&&!$('etSaleAddExtra').checked){alert('The amount received is above the bill total. Tick “Add extra payment to customer account” to save the excess as customer advance.');return;}
+  
   if((due>0||extra>0)&&!name){alert('Select or add a customer before assigning a due amount or extra payment to their account.');$('etihadPosCustomerDetails')?.setAttribute('open','');$('etihadNewCustomerFields').hidden=false;$('saleCustomer')?.focus();return;}
   if(!Number.isFinite(received)||received<0){alert('Enter a valid received amount.');return;}
   const note=String($('etihadSaleNote').value||'').trim();
@@ -2790,7 +2912,7 @@ renderAll();
   try{result=original.apply(this,arguments)}catch(error){$('salePaid').value=oldValue;throw error}
   const saved=Array.isArray(sales)&&sales.length>before?sales[0]:null;
   if(!saved){$('salePaid').value=oldValue;return result}
-  if(note)saved.note=note;
+  if(note)saved.note=note;\n  saved.paymentMethod=String($('etSalePaymentMethod')?.value||'Cash');
   if(extra>0){
    const key=phone?'phone:'+phone:'name:'+name.toLowerCase();
    const creditKey='mberp_customer_account_credits';
