@@ -102,9 +102,9 @@ const cloudSecurityCode = cloudStartForSecurity >= 0 && cloudEndForSecurity > cl
   ? html.slice(cloudStartForSecurity, cloudEndForSecurity)
   : '';
 const securityChecks = [
-  ['active company membership is required', cloudSecurityCode.includes('!r.data||!r.data.active')],
+  ['active company membership is required', html.includes('!r.data||!r.data.active')],
   ['automatic sync verifies the signed-in user', cloudSecurityCode.includes('user.id!==syncUser.id')],
-  ['initial full-company upload is owner-only', cloudSecurityCode.includes("m.role!=='owner'")],
+  ['initial full-company upload is owner-only', html.includes("if(m.role!=='owner')throw new Error('Only the company owner")],
   ['cloud uploads use the signed-in user as updater', cloudSecurityCode.includes('updated_by:user.id')],
   ['deletion sync limitation is disclosed', cloudSecurityCode.includes('Deletions are not synchronized yet')]
 ];
