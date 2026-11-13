@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'etihad-traders-v40';
+const CACHE_NAME = 'etihad-traders-v41';
 const APP_PREFIX = '/retail-wholesale-erp/';
 
 const APP_FILES = [
