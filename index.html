@@ -6227,9 +6227,6 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
   if(e.key==='Escape'){menu.classList.remove('open');trigger.setAttribute('aria-expanded','false');trigger.focus();}
  });
  window.addEventListener('resize',()=>{if(menu.classList.contains('open'))positionMenu();});
- // Online Orders has no connected marketplace/source integration in this release.
- // Remove this non-functional view rather than exposing a dead tab.
- document.querySelector('#sales [data-sales-view="online"]')?.remove();
 })();
 </script>
 
