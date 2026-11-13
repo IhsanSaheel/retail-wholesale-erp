@@ -190,6 +190,61 @@ body.etihad-blackgold .panel,body.etihad-blackgold .card{background:var(--surfac
 #sales #salesTable tr td{vertical-align:middle}
 #sales #salesTable .btn{white-space:nowrap}
 @media(max-width:650px){#sales .et-sales-actions{align-items:stretch}#sales .et-sales-action-buttons{display:grid;grid-template-columns:1fr 1fr}#sales .et-sales-filters{align-items:stretch}#sales .et-sales-filters label{width:100%}#sales .et-sales-filters input,#sales .et-sales-filters select{width:100%;min-width:0}}
+
+/* Premium navy-and-gold Sales workspace — intentionally scoped to Sales/POS only */
+#sales{max-width:1500px;margin-inline:auto}
+#sales>h3,#pos>h3{font-size:clamp(22px,2.4vw,30px);font-weight:850;letter-spacing:-.035em;color:#14243a;margin:4px 0 18px}
+#sales .et-sales-actions{position:relative;overflow:hidden;padding:22px 24px;border:1px solid #e5d9bd;border-radius:18px;background:radial-gradient(ellipse at 100% 0%,rgba(212,174,91,.18),transparent 48%),linear-gradient(120deg,#101d31,#172b45 70%,#21354d);box-shadow:0 12px 30px rgba(16,29,49,.12);color:#fff}
+#sales .et-sales-actions:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(#f2d48d,#b98b35)}
+#sales .et-sales-actions b{display:block;color:#f4d995;font-size:18px;letter-spacing:.01em}
+#sales .et-sales-actions .muted{color:#c4cfdb;margin-top:5px;font-size:13px}
+#sales .et-sales-action-buttons{gap:9px}
+#sales .et-sales-action-buttons .btn{min-height:42px;padding:10px 15px;border:1px solid rgba(239,211,151,.48);border-radius:11px;background:linear-gradient(135deg,#d8b66d,#f0d99e);color:#172033;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.12);transition:transform .18s ease,filter .18s ease}
+#sales .et-sales-action-buttons .btn.light{background:rgba(255,255,255,.09);color:#f7f2e7;border-color:rgba(255,255,255,.2);box-shadow:none}
+#sales .et-sales-action-buttons .btn:hover{transform:translateY(-1px);filter:brightness(1.06)}
+#sales .et-sales-tabs{gap:8px;padding:8px 2px 12px;margin:12px 0 4px;scrollbar-width:thin}
+#sales .et-sales-tabs button{padding:11px 17px;border-radius:12px;border:1px solid #dce3eb;background:#fff;color:#526176;font-size:13px;font-weight:800;box-shadow:0 2px 7px rgba(20,36,58,.04)}
+#sales .et-sales-tabs button.active{background:linear-gradient(135deg,#172b45,#263f5c);border-color:#b9954d;color:#f4d995;box-shadow:0 5px 14px rgba(20,36,58,.16)}
+#sales .panel{border:1px solid #e1e7ee;border-radius:16px;box-shadow:0 5px 18px rgba(20,36,58,.045);padding:18px}
+#sales .et-sales-filters{display:grid;grid-template-columns:auto minmax(180px,1fr) auto minmax(145px,190px);align-items:center;gap:10px 13px;background:linear-gradient(180deg,#fff,#f9fbfd)}
+#sales .et-sales-filters label{font-size:12px;color:#526176;font-weight:800;letter-spacing:.025em}
+#sales .et-sales-filters input,#sales .et-sales-filters select{min-height:43px;border:1px solid #d9e1ea;border-radius:10px;background:#fff;padding:10px 12px;color:#18283c;outline:none}
+#sales .et-sales-filters input:focus,#sales .et-sales-filters select:focus{border-color:#bd984e;box-shadow:0 0 0 3px rgba(189,152,78,.15)}
+#sales .table-wrap{overflow:auto;border:1px solid #e2e8ef;border-radius:13px}
+#sales #salesTable{min-width:920px;border-collapse:separate;border-spacing:0}
+#sales #salesTable thead th{position:sticky;top:0;background:#172b45;color:#f2d995;font-size:11px;font-weight:800;letter-spacing:.055em;text-transform:uppercase;padding:13px 12px;border:0;white-space:nowrap}
+#sales #salesTable tbody td{padding:13px 12px;border-bottom:1px solid #edf0f4;color:#29394d;font-size:13px}
+#sales #salesTable tbody tr:nth-child(even){background:#fafbfd}
+#sales #salesTable tbody tr:hover{background:#fff8e9}
+#sales #salesTable tbody tr:last-child td{border-bottom:0}
+#sales #salesTable .btn{border-radius:8px}
+#sales #etihadSalesEmpty{background:linear-gradient(145deg,#fff,#f8fafc);text-align:center;padding:30px;border-style:dashed}
+#pos .pos-pro-head{padding:17px 20px;border-radius:16px;background:linear-gradient(120deg,#101d31,#203954);color:#fff;box-shadow:0 9px 24px rgba(16,29,49,.13)}
+#pos .pos-pro-head h2{margin:0;color:#f3d995;font-size:22px}
+#pos .pos-pro-side,#pos .pos-pro-main{border-radius:16px}
+#pos .pos-pro-side{border:1px solid #e3d6b9;background:linear-gradient(160deg,#fff,#fbf8f0);box-shadow:0 8px 24px rgba(20,36,58,.07)}
+#pos .pos-pro-main{background:#fff;border:1px solid #e3e8ee;padding:16px}
+#pos #etihadPosSearch,#pos #etihadPosQty{border-radius:10px;border:1px solid #d8e0e9;min-height:43px}
+#pos #etihadPosProducts button{border-radius:13px;border:1px solid #e1e6ed;box-shadow:0 4px 12px rgba(20,36,58,.05);transition:transform .16s ease,border-color .16s ease}
+#pos #etihadPosProducts button:hover{transform:translateY(-2px);border-color:#c5a45d}
+#pos .pos-pro-side .btn.green,#pos .pos-pro-side button.btn:not(.light){background:linear-gradient(135deg,#b58a3c,#e4c77d);border:1px solid #b58a3c;color:#172033;font-weight:800}
+@media(max-width:760px){
+ #sales .et-sales-actions{padding:18px}
+ #sales .et-sales-action-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #sales .et-sales-action-buttons .btn{width:100%;padding:10px 8px;font-size:12px}
+ #sales .et-sales-filters{grid-template-columns:1fr 1fr}
+ #sales .et-sales-filters label{grid-column:auto;width:auto}
+ #sales .et-sales-filters input,#sales .et-sales-filters select{width:100%;min-width:0}
+ #sales .et-sales-filters label:first-child{grid-column:1/-1}
+ #sales .et-sales-filters input{grid-column:1/-1}
+ #sales .panel{padding:13px}
+}
+@media(max-width:430px){
+ #sales .et-sales-filters{grid-template-columns:1fr}
+ #sales .et-sales-filters label,#sales .et-sales-filters input,#sales .et-sales-filters select{grid-column:1}
+ #sales .et-sales-tabs button{padding:10px 13px}
+}
+@media(prefers-reduced-motion:reduce){#sales .et-sales-action-buttons .btn,#pos #etihadPosProducts button{transition:none}}
 </style>
 </head>
 <body>
