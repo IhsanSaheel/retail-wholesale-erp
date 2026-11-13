@@ -6212,10 +6212,11 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
  }
  trigger.addEventListener('click',()=>{
   const open=!menu.classList.contains('open');
-  if(open){positionMenu();menu.classList.add('open');}
+  if(open){menu.classList.add('open');positionMenu();}
   else menu.classList.remove('open');
   trigger.setAttribute('aria-expanded',String(open));
  });
+ nav.addEventListener('click',e=>{const source=e.target.closest('button[data-tab]');if(source&&source.dataset.etihadSecondary!=='true'){trigger.classList.remove('active');menu.querySelectorAll('button').forEach(b=>b.classList.remove('active'));}},true);
  document.addEventListener('click',e=>{
   if(!menu.contains(e.target)&&!trigger.contains(e.target)){
    menu.classList.remove('open');trigger.setAttribute('aria-expanded','false');
