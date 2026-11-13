@@ -1530,181 +1530,8 @@ function printInvoice(sid){
  <button onclick="window.print()">Print Invoice</button>
  </center>
 
-<style id="etihad-premium-design-system-v8">
-:root{--etihad-gold:#c49a45;--etihad-gold-light:#f0d58e;--etihad-radius:18px;--etihad-card-shadow:0 12px 34px rgba(15,23,42,.065)}
-body{background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
-header{background:linear-gradient(112deg,#101923,#202a36 55%,#3a2d18);border-bottom:1px solid rgba(196,154,69,.35);box-shadow:0 12px 32px rgba(15,23,42,.12);padding:16px clamp(16px,3vw,42px)}
-header .etihad-brand-copy h2{color:#fff;font-size:clamp(18px,2vw,23px);letter-spacing:-.045em}
-header .etihad-brand-copy small{color:#d8c69f}header #today{color:#eadcbf;font-weight:650}
-nav#etihadMainNav{gap:8px;padding:11px clamp(12px,2.5vw,34px);border-bottom:1px solid var(--line);box-shadow:0 8px 22px rgba(15,23,42,.045)}
-nav#etihadMainNav button{padding:11px 15px;border:1px solid transparent;border-radius:12px;font-weight:750}
-main{max-width:1680px;padding:30px clamp(14px,2.8vw,42px) 110px}
-.page>h3{font-size:clamp(22px,2.3vw,29px);letter-spacing:-.055em;margin:5px 0 22px}
-.panel,.card{border-radius:18px;border-color:var(--line);box-shadow:var(--etihad-card-shadow)}.panel{padding:clamp(15px,1.6vw,23px)}.card{padding:19px;min-height:120px}.card strong{font-size:clamp(21px,2vw,27px);font-weight:850}
-.btn,button.btn{border-radius:12px;font-weight:750}.table-wrap{border-radius:14px;border:1px solid var(--line)}th{font-size:10px;letter-spacing:.09em}input,select,textarea{border-radius:12px;min-height:45px}
-.etihad-theme-options{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px!important}
-.etihad-theme-choice{display:flex!important;flex-direction:column;align-items:flex-start;gap:7px;min-height:126px;padding:16px!important;border:1px solid var(--line)!important;border-radius:16px!important;background:var(--surface)!important;color:var(--ink)!important;text-align:left;font-weight:800;box-shadow:0 5px 18px rgba(15,23,42,.045)}
-.etihad-theme-choice span{font-size:11px;font-weight:550;color:var(--muted)}.etihad-theme-choice .etihad-theme-swatch{display:block;width:100%;height:34px;border-radius:9px;margin:0 0 4px}
-.etihad-theme-choice[aria-pressed="true"]{border:2px solid var(--etihad-gold)!important;box-shadow:0 0 0 3px rgba(196,154,69,.15),0 9px 24px rgba(15,23,42,.08)}
-.etihad-theme-choice[aria-pressed="true"]::after{content:"✓ ACTIVE THEME";font-size:9px;letter-spacing:.1em;color:var(--etihad-gold);font-weight:900}
-#etihadSplash{background:radial-gradient(ellipse at 50% 45%,rgba(197,151,58,.22),transparent 42%),linear-gradient(145deg,#050607,#111820 58%,#08090b)}
-#etihadSplash::before{inset:14px;border:1px solid rgba(218,178,91,.3);border-radius:22px}
-#etihadSplash::after{width:min(94vw,540px);height:min(94vw,540px);border-color:rgba(218,178,91,.1)}
-#etihadSplash .et-logo{width:min(82vw,390px);max-height:56vh;margin:0;filter:drop-shadow(0 16px 38px rgba(218,178,91,.2))}
-#etihadSplash h1,#etihadSplash p{display:none!important}
-#etihadSplash .et-loading{position:absolute;bottom:8vh;width:18px;height:18px;margin:0;padding:0;font-size:0;gap:0}
-#etihadSplash .et-loading::before{width:18px;height:18px;border-width:2px;border-color:rgba(218,178,91,.22);border-top-color:#e8c36c}
-#etihadSplash .et-loading:empty{display:block}
-body.etihad-ocean{--bg:#eef5f9;--surface:#fff;--ink:#102b3c;--muted:#607b8b;--line:#d8e6ed;--primary:#0e7490;--shadow:0 12px 32px rgba(8,47,73,.08);background:var(--bg);color:var(--ink)}
-body.etihad-ocean header{background:linear-gradient(120deg,#082f49,#0e7490)}body.etihad-ocean nav#etihadMainNav button{color:#31586b}body.etihad-ocean nav#etihadMainNav button.active{background:#d9edf4;color:#07506a}
-body.etihad-ocean .btn:not(.red):not(.gray){background:linear-gradient(135deg,#0e7490,#155e75)}body.etihad-ocean h3,body.etihad-ocean .page>h3,body.etihad-ocean .card strong{color:#123d55}body.etihad-ocean th{background:#e8f2f6;color:#456779}
-body.etihad-graphite{--bg:#171b22;--surface:#222832;--ink:#edf1f6;--muted:#a2adbb;--line:#343e4b;--primary:#a9b8ca;--shadow:0 12px 32px rgba(0,0,0,.24);background:var(--bg);color:var(--ink)}
-body.etihad-graphite header{background:linear-gradient(120deg,#101318,#303946)}body.etihad-graphite nav#etihadMainNav{background:#202630;border-color:var(--line)}body.etihad-graphite nav#etihadMainNav button{color:#c4ced9}body.etihad-graphite nav#etihadMainNav button.active{background:#3b4655;color:#fff}
-body.etihad-graphite h3,body.etihad-graphite .page>h3,body.etihad-graphite .card strong,body.etihad-graphite .total{color:#edf1f6}body.etihad-graphite .panel,body.etihad-graphite .card{background:var(--surface);border-color:var(--line)}
-body.etihad-graphite input,body.etihad-graphite select,body.etihad-graphite textarea{background:#171d25;color:#edf1f6;border-color:#46515f}body.etihad-graphite th{background:#2c3541;color:#d0d8e2}body.etihad-graphite td{color:#e0e6ed;border-color:#343e4b}
-body.etihad-sand{--bg:#f5f0e7;--surface:#fffdf8;--ink:#382f22;--muted:#82745f;--line:#e8ddca;--primary:#9a7135;--shadow:0 12px 30px rgba(91,66,28,.07);background:var(--bg);color:var(--ink)}
-body.etihad-sand header{background:linear-gradient(120deg,#46351e,#8a6834)}body.etihad-sand nav#etihadMainNav button{color:#6f5a3d}body.etihad-sand nav#etihadMainNav button.active{background:#efe3cd;color:#654719}
-body.etihad-sand h3,body.etihad-sand .page>h3,body.etihad-sand .card strong{color:#594323}body.etihad-sand .panel,body.etihad-sand .card{background:var(--surface);border-color:var(--line)}body.etihad-sand th{background:#f2eadc;color:#786346}body.etihad-sand .btn:not(.red):not(.gray){background:linear-gradient(135deg,#98702f,#bd9148);color:#fff}
-body.etihad-blackgold{--bg:#11100e;--surface:#1b1915;--ink:#f3ead6;--muted:#b6a98d;--line:#403725;--primary:#c49a45;--shadow:0 12px 34px rgba(0,0,0,.28);background:var(--bg);color:var(--ink)}
-body.etihad-blackgold header{background:linear-gradient(115deg,#080808,#201b12 60%,#59431f);border-color:#6f562a}body.etihad-blackgold nav#etihadMainNav{background:#191713;border-color:#403725}body.etihad-blackgold nav#etihadMainNav button{color:#d8c9a8}body.etihad-blackgold nav#etihadMainNav button.active{background:linear-gradient(135deg,#b58a37,#e4c675);color:#17130b}
-body.etihad-blackgold h3,body.etihad-blackgold .page>h3,body.etihad-blackgold .card strong,body.etihad-blackgold .total{color:#f0d58e}body.etihad-blackgold .panel,body.etihad-blackgold .card{background:var(--surface);border-color:var(--line)}
-body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold textarea{background:#12110e;color:#f3ead6;border-color:#594725}body.etihad-blackgold th{background:#28231a;color:#dfc98e}body.etihad-blackgold td{color:#eee5d2;border-color:#403725}body.etihad-blackgold .btn:not(.red):not(.gray){background:linear-gradient(135deg,#a77b2c,#d5b35c);color:#18140b}
-@media(max-width:700px){main{padding:18px 11px 96px}.etihad-theme-options{grid-template-columns:repeat(2,minmax(0,1fr))!important}.etihad-theme-choice{min-height:116px;padding:12px!important}header{padding:13px 12px}}
-@media(max-width:380px){.etihad-theme-options{grid-template-columns:1fr!important}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
-
-/* Refined, tactile theme selector cards */
-.etihad-theme-options{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:16px!important;margin-top:20px}
-.etihad-theme-choice{position:relative!important;isolation:isolate;overflow:hidden;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:9px!important;min-height:158px!important;padding:13px!important;border:1px solid var(--line)!important;border-radius:19px!important;background:var(--surface)!important;color:var(--ink)!important;text-align:left!important;font-size:14px!important;font-weight:800!important;line-height:1.35!important;box-shadow:0 5px 18px rgba(15,23,42,.055)!important;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease!important;cursor:pointer}
-.etihad-theme-choice::before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(145deg,rgba(255,255,255,.07),transparent 62%);pointer-events:none}
-.etihad-theme-choice:hover{transform:translateY(-3px);border-color:var(--etihad-gold)!important;box-shadow:0 12px 28px rgba(15,23,42,.12)!important}
-.etihad-theme-choice:focus-visible{outline:3px solid var(--etihad-gold)!important;outline-offset:3px}
-.etihad-theme-choice .etihad-theme-swatch{position:relative;display:block!important;width:100%!important;height:62px!important;min-height:62px;border-radius:12px!important;margin:0!important;border:1px solid rgba(120,130,145,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.2);overflow:hidden}
-.etihad-theme-choice .etihad-theme-swatch::after{content:"Aa  123  ✓";position:absolute;right:11px;bottom:8px;color:rgba(255,255,255,.9);font-size:11px;font-weight:850;letter-spacing:.05em;text-shadow:0 1px 4px rgba(0,0,0,.28)}
-.etihad-theme-choice[data-etihad-theme="light"] .etihad-theme-swatch{background:linear-gradient(120deg,#fff 0 58%,#e7edf5 58%)!important}
-.etihad-theme-choice[data-etihad-theme="light"] .etihad-theme-swatch::after{color:#475569;text-shadow:none}
-.etihad-theme-choice[data-etihad-theme="dark"] .etihad-theme-swatch{background:linear-gradient(120deg,#111827 0 58%,#334155 58%)!important}
-.etihad-theme-choice[data-etihad-theme="emerald"] .etihad-theme-swatch{background:linear-gradient(120deg,#064e3b,#059669 58%,#a7f3d0)!important}
-.etihad-theme-choice[data-etihad-theme="blackgold"] .etihad-theme-swatch{background:linear-gradient(120deg,#090909 0 55%,#a77b2c 55%,#f0d58e)!important}
-.etihad-theme-choice[data-etihad-theme="ocean"] .etihad-theme-swatch{background:linear-gradient(120deg,#082f49,#0e7490 58%,#bae6fd)!important}
-.etihad-theme-choice[data-etihad-theme="graphite"] .etihad-theme-swatch{background:linear-gradient(120deg,#171b22,#465365 58%,#aab7c8)!important}
-.etihad-theme-choice[data-etihad-theme="sand"] .etihad-theme-swatch{background:linear-gradient(120deg,#f7f0e2,#c5a46d 58%,#76572c)!important}
-.etihad-theme-choice>span{display:block!important;color:var(--muted)!important;font-size:11px!important;font-weight:550!important;line-height:1.45!important}
-.etihad-theme-choice[aria-pressed="true"]{border:2px solid var(--etihad-gold)!important;padding:12px!important;box-shadow:0 0 0 3px rgba(196,154,69,.16),0 12px 28px rgba(15,23,42,.1)!important}
-.etihad-theme-choice[aria-pressed="true"]::after{content:"✓  CURRENT THEME";position:absolute;top:10px;right:10px;padding:5px 8px;border-radius:20px;background:#c49a45;color:#17130b;font-size:9px;font-weight:900;letter-spacing:.06em}
-@media(max-width:700px){.etihad-theme-options{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important}.etihad-theme-choice{min-height:146px!important;padding:10px!important;border-radius:15px!important}.etihad-theme-choice .etihad-theme-swatch{height:52px!important;min-height:52px}.etihad-theme-choice[aria-pressed="true"]{padding:9px!important}}
-@media(max-width:360px){.etihad-theme-options{grid-template-columns:1fr!important}}
-@media(prefers-reduced-motion:reduce){.etihad-theme-choice{transition:none!important}}
-
-</style>
-
-
-
-
-<!-- ETIHAD MOBILE APP NAVIGATION V3 -->
-
-
-
-(function(){
- 'use strict';
- if(window.__etihadBulkPriceAdjustmentV1)return;window.__etihadBulkPriceAdjustmentV1=true;
- const $=id=>document.getElementById(id),KEY='etihad_price_adjustment_history_v1';
- const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const money=v=>'PKR '+Number(v||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
- const readLog=()=>{try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(x)?x:[]}catch(_){return []}};
- let history=readLog();
- const nav=document.querySelector('nav'),main=document.querySelector('main');if(!nav||!main||!Array.isArray(window.products))return;
- const page=document.createElement('section');page.id='etihadPriceAdjustment';page.className='page hidden';
- page.innerHTML='<h3>Price Readjustment</h3><p class="muted">Preview and apply controlled price changes to selected products. Product cost and stock quantities are never changed.</p><div class="panel"><div class="grid"><label>Branch<select id="etPriceBranch"><option value="all">All branches</option></select></label><label>Category<select id="etPriceCategory"><option value="all">All categories</option></select></label><label>Adjustment type<select id="etPriceMode"><option value="percent">Percentage (%)</option><option value="amount">Fixed amount (PKR)</option></select></label><label>Adjustment value<input id="etPriceValue" type="number" step="0.01" min="0" placeholder="e.g. 5"></label><label>Direction<select id="etPriceDirection"><option value="increase">Increase prices</option><option value="decrease">Decrease prices</option></select></label><label>Round to<select id="etPriceRound"><option value="0">No rounding</option><option value="1">Nearest rupee</option><option value="5">Nearest PKR 5</option><option value="10">Nearest PKR 10</option></select></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn" id="etPricePreview">Preview changes</button><button class="btn green" id="etPriceApply" disabled>Apply price changes</button><button class="btn light" id="etPriceReset">Reset</button></div><p id="etPriceStatus" class="muted" role="status">Choose filters and adjustment settings, then preview before applying.</p></div><div class="panel"><h4>Preview</h4><div class="table-wrap"><table><thead><tr><th>Product</th><th>Branch</th><th>Current price</th><th>New price</th><th>Change</th></tr></thead><tbody id="etPricePreviewRows"><tr><td colspan="5" class="empty">No preview yet.</td></tr></tbody></table></div></div><div class="panel"><h4>Price adjustment history</h4><div class="table-wrap"><table><thead><tr><th>Date</th><th>Products</th><th>Rule</th><th>Branch / Category</th><th>Changes</th></tr></thead><tbody id="etPriceHistoryRows"></tbody></table></div></div>';
- main.appendChild(page);
- const tab=document.createElement('button');tab.type='button';tab.dataset.tab='etihadPriceAdjustment';tab.textContent='Price Readjustment';nav.appendChild(tab);
- function show(){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));page.classList.remove('hidden');nav.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===tab));fillFilters();renderHistory();preview=[];$('etPricePreviewRows').innerHTML='<tr><td colspan="5" class="empty">Set options and preview changes.</td></tr>';$('etPriceApply').disabled=true;}
- tab.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();show();},true);
- function fillFilters(){
-  const branches=Array.isArray(window.branches)?window.branches:[];
-  const cats=[...new Set(window.products.map(p=>String(p.category||'').trim()).filter(Boolean))].sort();
-  $('etPriceBranch').innerHTML='<option value="all">All branches</option>'+branches.filter(b=>b.active!==false).map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');
-  $('etPriceCategory').innerHTML='<option value="all">All categories</option>'+cats.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
- }
- let preview=[];
- const roundPrice=(v,step)=>step?Math.round(v/step)*step:Math.round(v*100)/100;
- function calculate(){
-  const value=Number($('etPriceValue').value),mode=$('etPriceMode').value,direction=$('etPriceDirection').value,step=Number($('etPriceRound').value);
-  if(!Number.isFinite(value)||value<=0)throw new Error('Enter an adjustment value greater than zero.');
-  const selected=window.products.filter(p=>( $('etPriceBranch').value==='all'||String(p.branchId)===$('etPriceBranch').value)&&($('etPriceCategory').value==='all'||String(p.category||'')===$('etPriceCategory').value));
-  if(!selected.length)throw new Error('No products match the selected branch and category.');
-  const factor=direction==='increase'?1:-1;
-  return selected.map(p=>{const before=Number(p.price||0);if(!Number.isFinite(before)||before<0)throw new Error('Invalid current price found for '+p.name+'. No changes applied.');const raw=mode==='percent'?before*(1+factor*value/100):before+factor*value;const after=roundPrice(raw,step);if(after<0)throw new Error('This adjustment would make '+p.name+' price negative. Reduce the adjustment.');return {id:p.id,name:p.name,branchId:p.branchId,branchName:(window.branchName?branchName(p.branchId):''),before,after,delta:after-before};});
- }
- function drawPreview(){
-  $('etPricePreviewRows').innerHTML=preview.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.branchName)+'</td><td>'+money(x.before)+'</td><td><b>'+money(x.after)+'</b></td><td class="'+(x.delta>=0?'good':'bad')+'">'+(x.delta>=0?'+':'')+money(x.delta)+'</td></tr>').join('')||'<tr><td colspan="5" class="empty">No products match.</td></tr>';
-  $('etPriceStatus').textContent=preview.length+' product(s) in preview. Review every new price before applying.';
-  $('etPriceApply').disabled=!preview.length;
- }
- $('etPricePreview').addEventListener('click',()=>{try{preview=calculate();drawPreview();}catch(e){preview=[];drawPreview();$('etPriceApply').disabled=true;$('etPriceStatus').textContent=e.message;}});
- $('etPriceApply').addEventListener('click',()=>{
-  if(!preview.length)return;
-  if(!confirm('Apply the displayed new prices to '+preview.length+' products? This changes sale prices only. Stock, cost, sales and existing invoices will not be changed.'))return;
-  const originals=preview.map(x=>({p:window.products.find(p=>String(p.id)===String(x.id)),price:x.before}));
-  if(originals.some(x=>!x.p))return alert('A product changed since preview. Please preview again.');
-  originals.forEach(x=>{if(Number(x.p.price||0)!==x.price)throw new Error('A product price changed since preview. Please preview again.');});
-  originals.forEach(x=>{const item=preview.find(p=>String(p.id)===String(x.p.id));x.p.price=item.after;});
-  const entry={id:Date.now().toString(36),date:new Date().toISOString(),count:preview.length,mode:$('etPriceMode').value,value:Number($('etPriceValue').value),direction:$('etPriceDirection').value,branch:$('etPriceBranch').value,category:$('etPriceCategory').value,changes:preview.map(x=>({productId:x.id,name:x.name,before:x.before,after:x.after}))};
-  const oldHistory=localStorage.getItem(KEY);
-  try{history.unshift(entry);localStorage.setItem(KEY,JSON.stringify(history));window.saveAll();}
-  catch(e){
-   originals.forEach(x=>x.p.price=x.price);
-   try{if(oldHistory===null)localStorage.removeItem(KEY);else localStorage.setItem(KEY,oldHistory);}catch(_){}
-   try{window.saveAll();}catch(_){}
-   history=readLog();
-   return alert('Could not safely save the price adjustment. Previous prices and adjustment history were restored where possible. '+e.message);
-  }
-  if(typeof window.renderAll==='function')window.renderAll();
-  renderHistory();preview=[];drawPreview();$('etPriceStatus').textContent='Saved '+entry.count+' product price change(s). Existing sales and stock were not modified.';
-  alert('Price readjustment saved successfully.');
- });
- $('etPriceReset').addEventListener('click',()=>{ $('etPriceValue').value='';preview=[];drawPreview();$('etPriceStatus').textContent='Preview cleared. No product prices were changed.';});
- function renderHistory(){history=readLog();$('etPriceHistoryRows').innerHTML=history.slice(0,100).map(x=>'<tr><td>'+esc(new Date(x.date).toLocaleString())+'</td><td>'+Number(x.count||0)+'</td><td>'+esc(x.direction)+' '+esc(x.value)+(x.mode==='percent'?'%':' PKR')+'</td><td>'+esc(x.branch==='all'?'All branches':(Array.isArray(window.branches)?window.branches.find(b=>String(b.id)===String(x.branch))?.name||'Branch': 'Branch'))+' / '+esc(x.category)+'</td><td><button class="btn small light" type="button" data-price-history="'+esc(x.id)+'">Details</button></td></tr>').join('')||'<tr><td colspan="5" class="empty">No price adjustments recorded.</td></tr>';}
- $('etPriceHistoryRows').addEventListener('click',e=>{const b=e.target.closest('[data-price-history]');if(!b)return;const x=history.find(v=>String(v.id)===b.dataset.priceHistory);if(x)alert(x.changes.map(c=>c.name+': '+money(c.before)+' → '+money(c.after)).join('\n'));});
- fillFilters();renderHistory();
-})();
-<\/script>
-
-<script id="etihad-product-labels-and-expiry-v1">
-(function(){
- 'use strict';
- if(window.__etihadLabelsExpiryV1)return;window.__etihadLabelsExpiryV1=true;
- const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const fmt=v=>Number(v||0).toLocaleString('en-PK',{maximumFractionDigits:3});
- const money=v=>'PKR '+Number(v||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
- const nav=document.querySelector('nav'),main=document.querySelector('main');if(!nav||!main)return;
- const page=document.createElement('section');page.id='etihadLabelsExpiry';page.className='page hidden';
- page.innerHTML='<h3>Product Labels & Expiry Control</h3><div class="et-sales-tabs"><button type="button" class="active" data-le-view="labels">Product labels</button><button type="button" data-le-view="expiry">Expiry control</button></div><section data-le-pane="labels"><div class="panel"><p class="muted">Select products and print shelf labels with product name, SKU/barcode text, selling price and branch. Existing product records are not changed.</p><div class="grid"><label>Search products<input id="etLabelSearch" placeholder="Name, SKU or category"></label><label>Branch<select id="etLabelBranch"><option value="all">All branches</option></select></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn" id="etLabelSelectVisible">Select visible</button><button class="btn light" id="etLabelClear">Clear selection</button><button class="btn green" id="etLabelPrint">Print selected labels</button></div><div class="table-wrap"><table><thead><tr><th>Select</th><th>Product</th><th>SKU / Barcode</th><th>Branch</th><th>Price</th></tr></thead><tbody id="etLabelRows"></tbody></table></div></div></section><section data-le-pane="expiry" hidden><div class="panel"><p class="muted">Track one expiry date per product. For products with multiple batches or different expiry dates, separate batch/lot tracking is still required.</p><div class="grid"><label>Search<input id="etExpirySearch" placeholder="Product, SKU or category"></label><label>Expiry status<select id="etExpiryFilter"><option value="all">All products</option><option value="expired">Expired</option><option value="soon">Expiring within 30 days</option><option value="later">More than 30 days</option><option value="none">No expiry date</option></select></label><label>Branch<select id="etExpiryBranch"><option value="all">All branches</option></select></label></div><div class="table-wrap"><table><thead><tr><th>Product</th><th>Branch</th><th>Current stock</th><th>Expiry date</th><th>Status</th><th>Action</th></tr></thead><tbody id="etExpiryRows"></tbody></table></div></div></section>';
- main.appendChild(page);
- const tab=document.createElement('button');tab.type='button';tab.dataset.tab='etihadLabelsExpiry';tab.textContent='Labels & Expiry';nav.appendChild(tab);
- let selected=new Set();
- function products(){return Array.isArray(window.products)?window.products:[]}
- function branches(){return Array.isArray(window.branches)?window.branches:[]}
- function branchNameOf(id){return typeof window.branchName==='function'?window.branchName(id):(branches().find(b=>String(b.id)===String(id))?.name||'');}
- function fillBranches(){const html='<option value="all">All branches</option>'+branches().filter(b=>b.active!==false).map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');$('etLabelBranch').innerHTML=html;$('etExpiryBranch').innerHTML=html;}
- function show(){document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));page.classList.remove('hidden');nav.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===tab));fillBranches();renderLabels();renderExpiry();}
- tab.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();show();},true);
- function renderLabels(){const q=$('etLabelSearch').value.trim().toLowerCase(),bid=$('etLabelBranch').value;const list=products().filter(p=>(bid==='all'||String(p.branchId)===bid)&&[p.name,p.sku,p.barcode,p.category].join(' ').toLowerCase().includes(q));$('etLabelRows').innerHTML=list.map(p=>'<tr><td><input type="checkbox" data-label-id="'+esc(p.id)+'" '+(selected.has(String(p.id))?'checked':'')+'></td><td>'+esc(p.name)+'</td><td>'+esc(p.sku||p.barcode||'—')+'</td><td>'+esc(branchNameOf(p.branchId))+'</td><td>'+money(p.price)+'</td></tr>').join('')||'<tr><td colspan="5" class="empty">No products found.</td></tr>';}
- function status(date){if(!date)return 'No expiry date';const d=new Date(date+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);const days=Math.ceil((d-today)/86400000);return days<0?'Expired':days<=30?'Expiring soon':'Not due soon';}
- function renderExpiry(){const q=$('etExpirySearch').value.trim().toLowerCase(),filter=$('etExpiryFilter').value,bid=$('etExpiryBranch').value;const list=products().filter(p=>(bid==='all'||String(p.branchId)===bid)&&[p.name,p.sku,p.category].join(' ').toLowerCase().includes(q)).filter(p=>{const st=status(p.expiryDate);return filter==='all'||(filter==='none'&&!p.expiryDate)||(filter==='expired'&&st==='Expired')||(filter==='soon'&&st==='Expiring soon')||(filter==='later'&&st==='Not due soon');}).sort((a,b)=>String(a.expiryDate||'9999').localeCompare(String(b.expiryDate||'9999')));$('etExpiryRows').innerHTML=list.map(p=>'<tr><td>'+esc(p.name)+'<br><small class="muted">'+esc(p.sku||'')+'</small></td><td>'+esc(branchNameOf(p.branchId))+'</td><td>'+fmt(p.qty)+'</td><td>'+esc(p.expiryDate||'—')+'</td><td class="'+(status(p.expiryDate)==='Expired'?'bad':status(p.expiryDate)==='Expiring soon'?'bad':'good')+'">'+esc(status(p.expiryDate))+'</td><td><button class="btn small light" type="button" data-expiry-edit="'+esc(p.id)+'">Set / Edit date</button></td></tr>').join('')||'<tr><td colspan="6" class="empty">No products match this filter.</td></tr>';}
- page.querySelectorAll('[data-le-view]').forEach(b=>b.addEventListener('click',()=>{page.querySelectorAll('[data-le-view]').forEach(x=>x.classList.toggle('active',x===b));page.querySelectorAll('[data-le-pane]').forEach(x=>x.hidden=x.dataset.lePane!==b.dataset.leView);}));
- $('etLabelSearch').addEventListener('input',renderLabels);$('etLabelBranch').addEventListener('change',renderLabels);
- $('etLabelRows').addEventListener('change',e=>{const x=e.target.closest('[data-label-id]');if(!x)return;x.checked?selected.add(x.dataset.labelId):selected.delete(x.dataset.labelId);});
- $('etLabelSelectVisible').addEventListener('click',()=>{page.querySelectorAll('[data-label-id]').forEach(x=>selected.add(x.dataset.labelId));renderLabels();});
- $('etLabelClear').addEventListener('click',()=>{selected.clear();renderLabels();});
- $('etLabelPrint').addEventListener('click',()=>{const list=products().filter(p=>selected.has(String(p.id)));if(!list.length)return alert('Select at least one product.');const labels=list.map(p=>'<article class="label"><b>'+esc(p.name)+'</b><div class="sku">'+esc(p.sku||p.barcode||'NO SKU')+'</div><strong>'+money(p.price)+'</strong><small>'+esc(branchNameOf(p.branchId))+'</small></article>').join('');const w=window.open('','_blank','width=900,height=700');if(!w)return alert('Allow pop-ups to print labels.');w.document.write('<!doctype html><html><head><title>Etihad Traders Product Labels</title><style>body{font-family:Arial,sans-serif;margin:10mm}.sheet{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm}.label{border:1px solid #333;padding:5mm;min-height:28mm;break-inside:avoid}.label b{font-size:13pt}.sku{font-family:monospace;font-size:12pt;letter-spacing:1px;margin:5mm 0}.label strong{font-size:15pt;display:block}.label small{display:block;margin-top:3mm}@media print{body{margin:8mm}.label{border:1px solid #555}}</style></head><body><div class="sheet">'+labels+'</div><script>window.onload=()=>window.print()<\/script></body></html>');w.document.close();});
- $('etExpirySearch').addEventListener('input',renderExpiry);$('etExpiryFilter').addEventListener('change',renderExpiry);$('etExpiryBranch').addEventListener('change',renderExpiry);
- $('etExpiryRows').addEventListener('click',e=>{const b=e.target.closest('[data-expiry-edit]');if(!b)return;const p=products().find(x=>String(x.id)===b.dataset.expiryEdit);if(!p)return;const v=prompt('Enter expiry date (YYYY-MM-DD). Leave blank to clear:',p.expiryDate||'');if(v===null)return;if(v&&!/^\d{4}-\d{2}-\d{2}$/.test(v))return alert('Use YYYY-MM-DD format.');const before=p.expiryDate||'';p.expiryDate=v;try{if(typeof window.saveAll!=='function')throw new Error('Save function unavailable');window.saveAll();}catch(err){p.expiryDate=before;return alert('Could not save the expiry date: '+err.message);}renderExpiry();});
- fillBranches();renderLabels();renderExpiry();
-})();
-<\/script>
 </body>
- </html>`;
+</html>`;
 
  const win=window.open('','_blank');
  if(!win)return alert('Browser blocked the invoice window. Allow pop-ups and try again.');
@@ -7876,6 +7703,172 @@ body.etihad-dark #stockcontrol .et-stock-help,body.etihad-dark #stockcontrol #et
  draw();
 })();
 </script>
+
+
+
+<style id="etihad-premium-design-system-v8">
+:root{--etihad-gold:#c49a45;--etihad-gold-light:#f0d58e;--etihad-radius:18px;--etihad-card-shadow:0 12px 34px rgba(15,23,42,.065)}
+body{background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:linear-gradient(112deg,#101923,#202a36 55%,#3a2d18);border-bottom:1px solid rgba(196,154,69,.35);box-shadow:0 12px 32px rgba(15,23,42,.12);padding:16px clamp(16px,3vw,42px)}
+header .etihad-brand-copy h2{color:#fff;font-size:clamp(18px,2vw,23px);letter-spacing:-.045em}
+header .etihad-brand-copy small{color:#d8c69f}header #today{color:#eadcbf;font-weight:650}
+nav#etihadMainNav{gap:8px;padding:11px clamp(12px,2.5vw,34px);border-bottom:1px solid var(--line);box-shadow:0 8px 22px rgba(15,23,42,.045)}
+nav#etihadMainNav button{padding:11px 15px;border:1px solid transparent;border-radius:12px;font-weight:750}
+main{max-width:1680px;padding:30px clamp(14px,2.8vw,42px) 110px}
+.page>h3{font-size:clamp(22px,2.3vw,29px);letter-spacing:-.055em;margin:5px 0 22px}
+.panel,.card{border-radius:18px;border-color:var(--line);box-shadow:var(--etihad-card-shadow)}.panel{padding:clamp(15px,1.6vw,23px)}.card{padding:19px;min-height:120px}.card strong{font-size:clamp(21px,2vw,27px);font-weight:850}
+.btn,button.btn{border-radius:12px;font-weight:750}.table-wrap{border-radius:14px;border:1px solid var(--line)}th{font-size:10px;letter-spacing:.09em}input,select,textarea{border-radius:12px;min-height:45px}
+.etihad-theme-options{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px!important}
+.etihad-theme-choice{display:flex!important;flex-direction:column;align-items:flex-start;gap:7px;min-height:126px;padding:16px!important;border:1px solid var(--line)!important;border-radius:16px!important;background:var(--surface)!important;color:var(--ink)!important;text-align:left;font-weight:800;box-shadow:0 5px 18px rgba(15,23,42,.045)}
+.etihad-theme-choice span{font-size:11px;font-weight:550;color:var(--muted)}.etihad-theme-choice .etihad-theme-swatch{display:block;width:100%;height:34px;border-radius:9px;margin:0 0 4px}
+.etihad-theme-choice[aria-pressed="true"]{border:2px solid var(--etihad-gold)!important;box-shadow:0 0 0 3px rgba(196,154,69,.15),0 9px 24px rgba(15,23,42,.08)}
+.etihad-theme-choice[aria-pressed="true"]::after{content:"✓ ACTIVE THEME";font-size:9px;letter-spacing:.1em;color:var(--etihad-gold);font-weight:900}
+#etihadSplash{background:radial-gradient(ellipse at 50% 45%,rgba(197,151,58,.22),transparent 42%),linear-gradient(145deg,#050607,#111820 58%,#08090b)}
+#etihadSplash::before{inset:14px;border:1px solid rgba(218,178,91,.3);border-radius:22px}
+#etihadSplash::after{width:min(94vw,540px);height:min(94vw,540px);border-color:rgba(218,178,91,.1)}
+#etihadSplash .et-logo{width:min(82vw,390px);max-height:56vh;margin:0;filter:drop-shadow(0 16px 38px rgba(218,178,91,.2))}
+#etihadSplash h1,#etihadSplash p{display:none!important}
+#etihadSplash .et-loading{position:absolute;bottom:8vh;width:18px;height:18px;margin:0;padding:0;font-size:0;gap:0}
+#etihadSplash .et-loading::before{width:18px;height:18px;border-width:2px;border-color:rgba(218,178,91,.22);border-top-color:#e8c36c}
+#etihadSplash .et-loading:empty{display:block}
+body.etihad-ocean{--bg:#eef5f9;--surface:#fff;--ink:#102b3c;--muted:#607b8b;--line:#d8e6ed;--primary:#0e7490;--shadow:0 12px 32px rgba(8,47,73,.08);background:var(--bg);color:var(--ink)}
+body.etihad-ocean header{background:linear-gradient(120deg,#082f49,#0e7490)}body.etihad-ocean nav#etihadMainNav button{color:#31586b}body.etihad-ocean nav#etihadMainNav button.active{background:#d9edf4;color:#07506a}
+body.etihad-ocean .btn:not(.red):not(.gray){background:linear-gradient(135deg,#0e7490,#155e75)}body.etihad-ocean h3,body.etihad-ocean .page>h3,body.etihad-ocean .card strong{color:#123d55}body.etihad-ocean th{background:#e8f2f6;color:#456779}
+body.etihad-graphite{--bg:#171b22;--surface:#222832;--ink:#edf1f6;--muted:#a2adbb;--line:#343e4b;--primary:#a9b8ca;--shadow:0 12px 32px rgba(0,0,0,.24);background:var(--bg);color:var(--ink)}
+body.etihad-graphite header{background:linear-gradient(120deg,#101318,#303946)}body.etihad-graphite nav#etihadMainNav{background:#202630;border-color:var(--line)}body.etihad-graphite nav#etihadMainNav button{color:#c4ced9}body.etihad-graphite nav#etihadMainNav button.active{background:#3b4655;color:#fff}
+body.etihad-graphite h3,body.etihad-graphite .page>h3,body.etihad-graphite .card strong,body.etihad-graphite .total{color:#edf1f6}body.etihad-graphite .panel,body.etihad-graphite .card{background:var(--surface);border-color:var(--line)}
+body.etihad-graphite input,body.etihad-graphite select,body.etihad-graphite textarea{background:#171d25;color:#edf1f6;border-color:#46515f}body.etihad-graphite th{background:#2c3541;color:#d0d8e2}body.etihad-graphite td{color:#e0e6ed;border-color:#343e4b}
+body.etihad-sand{--bg:#f5f0e7;--surface:#fffdf8;--ink:#382f22;--muted:#82745f;--line:#e8ddca;--primary:#9a7135;--shadow:0 12px 30px rgba(91,66,28,.07);background:var(--bg);color:var(--ink)}
+body.etihad-sand header{background:linear-gradient(120deg,#46351e,#8a6834)}body.etihad-sand nav#etihadMainNav button{color:#6f5a3d}body.etihad-sand nav#etihadMainNav button.active{background:#efe3cd;color:#654719}
+body.etihad-sand h3,body.etihad-sand .page>h3,body.etihad-sand .card strong{color:#594323}body.etihad-sand .panel,body.etihad-sand .card{background:var(--surface);border-color:var(--line)}body.etihad-sand th{background:#f2eadc;color:#786346}body.etihad-sand .btn:not(.red):not(.gray){background:linear-gradient(135deg,#98702f,#bd9148);color:#fff}
+body.etihad-blackgold{--bg:#11100e;--surface:#1b1915;--ink:#f3ead6;--muted:#b6a98d;--line:#403725;--primary:#c49a45;--shadow:0 12px 34px rgba(0,0,0,.28);background:var(--bg);color:var(--ink)}
+body.etihad-blackgold header{background:linear-gradient(115deg,#080808,#201b12 60%,#59431f);border-color:#6f562a}body.etihad-blackgold nav#etihadMainNav{background:#191713;border-color:#403725}body.etihad-blackgold nav#etihadMainNav button{color:#d8c9a8}body.etihad-blackgold nav#etihadMainNav button.active{background:linear-gradient(135deg,#b58a37,#e4c675);color:#17130b}
+body.etihad-blackgold h3,body.etihad-blackgold .page>h3,body.etihad-blackgold .card strong,body.etihad-blackgold .total{color:#f0d58e}body.etihad-blackgold .panel,body.etihad-blackgold .card{background:var(--surface);border-color:var(--line)}
+body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold textarea{background:#12110e;color:#f3ead6;border-color:#594725}body.etihad-blackgold th{background:#28231a;color:#dfc98e}body.etihad-blackgold td{color:#eee5d2;border-color:#403725}body.etihad-blackgold .btn:not(.red):not(.gray){background:linear-gradient(135deg,#a77b2c,#d5b35c);color:#18140b}
+@media(max-width:700px){main{padding:18px 11px 96px}.etihad-theme-options{grid-template-columns:repeat(2,minmax(0,1fr))!important}.etihad-theme-choice{min-height:116px;padding:12px!important}header{padding:13px 12px}}
+@media(max-width:380px){.etihad-theme-options{grid-template-columns:1fr!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Refined, tactile theme selector cards */
+.etihad-theme-options{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:16px!important;margin-top:20px}
+.etihad-theme-choice{position:relative!important;isolation:isolate;overflow:hidden;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:9px!important;min-height:158px!important;padding:13px!important;border:1px solid var(--line)!important;border-radius:19px!important;background:var(--surface)!important;color:var(--ink)!important;text-align:left!important;font-size:14px!important;font-weight:800!important;line-height:1.35!important;box-shadow:0 5px 18px rgba(15,23,42,.055)!important;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease!important;cursor:pointer}
+.etihad-theme-choice::before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(145deg,rgba(255,255,255,.07),transparent 62%);pointer-events:none}
+.etihad-theme-choice:hover{transform:translateY(-3px);border-color:var(--etihad-gold)!important;box-shadow:0 12px 28px rgba(15,23,42,.12)!important}
+.etihad-theme-choice:focus-visible{outline:3px solid var(--etihad-gold)!important;outline-offset:3px}
+.etihad-theme-choice .etihad-theme-swatch{position:relative;display:block!important;width:100%!important;height:62px!important;min-height:62px;border-radius:12px!important;margin:0!important;border:1px solid rgba(120,130,145,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.2);overflow:hidden}
+.etihad-theme-choice .etihad-theme-swatch::after{content:"Aa  123  ✓";position:absolute;right:11px;bottom:8px;color:rgba(255,255,255,.9);font-size:11px;font-weight:850;letter-spacing:.05em;text-shadow:0 1px 4px rgba(0,0,0,.28)}
+.etihad-theme-choice[data-etihad-theme="light"] .etihad-theme-swatch{background:linear-gradient(120deg,#fff 0 58%,#e7edf5 58%)!important}
+.etihad-theme-choice[data-etihad-theme="light"] .etihad-theme-swatch::after{color:#475569;text-shadow:none}
+.etihad-theme-choice[data-etihad-theme="dark"] .etihad-theme-swatch{background:linear-gradient(120deg,#111827 0 58%,#334155 58%)!important}
+.etihad-theme-choice[data-etihad-theme="emerald"] .etihad-theme-swatch{background:linear-gradient(120deg,#064e3b,#059669 58%,#a7f3d0)!important}
+.etihad-theme-choice[data-etihad-theme="blackgold"] .etihad-theme-swatch{background:linear-gradient(120deg,#090909 0 55%,#a77b2c 55%,#f0d58e)!important}
+.etihad-theme-choice[data-etihad-theme="ocean"] .etihad-theme-swatch{background:linear-gradient(120deg,#082f49,#0e7490 58%,#bae6fd)!important}
+.etihad-theme-choice[data-etihad-theme="graphite"] .etihad-theme-swatch{background:linear-gradient(120deg,#171b22,#465365 58%,#aab7c8)!important}
+.etihad-theme-choice[data-etihad-theme="sand"] .etihad-theme-swatch{background:linear-gradient(120deg,#f7f0e2,#c5a46d 58%,#76572c)!important}
+.etihad-theme-choice>span{display:block!important;color:var(--muted)!important;font-size:11px!important;font-weight:550!important;line-height:1.45!important}
+.etihad-theme-choice[aria-pressed="true"]{border:2px solid var(--etihad-gold)!important;padding:12px!important;box-shadow:0 0 0 3px rgba(196,154,69,.16),0 12px 28px rgba(15,23,42,.1)!important}
+.etihad-theme-choice[aria-pressed="true"]::after{content:"✓  CURRENT THEME";position:absolute;top:10px;right:10px;padding:5px 8px;border-radius:20px;background:#c49a45;color:#17130b;font-size:9px;font-weight:900;letter-spacing:.06em}
+@media(max-width:700px){.etihad-theme-options{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important}.etihad-theme-choice{min-height:146px!important;padding:10px!important;border-radius:15px!important}.etihad-theme-choice .etihad-theme-swatch{height:52px!important;min-height:52px}.etihad-theme-choice[aria-pressed="true"]{padding:9px!important}}
+@media(max-width:360px){.etihad-theme-options{grid-template-columns:1fr!important}}
+@media(prefers-reduced-motion:reduce){.etihad-theme-choice{transition:none!important}}
+
+</style>
+
+<script id="etihad-bulk-price-adjustment-v1">
+(function(){
+ 'use strict';
+ if(window.__etihadBulkPriceAdjustmentV1)return;window.__etihadBulkPriceAdjustmentV1=true;
+ const $=id=>document.getElementById(id),KEY='etihad_price_adjustment_history_v1';
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const money=v=>'PKR '+Number(v||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
+ const readLog=()=>{try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(x)?x:[]}catch(_){return []}};
+ let history=readLog();
+ const nav=document.querySelector('nav'),main=document.querySelector('main');if(!nav||!main||!Array.isArray(window.products))return;
+ const page=document.createElement('section');page.id='etihadPriceAdjustment';page.className='page hidden';
+ page.innerHTML='<h3>Price Readjustment</h3><p class="muted">Preview and apply controlled price changes to selected products. Product cost and stock quantities are never changed.</p><div class="panel"><div class="grid"><label>Branch<select id="etPriceBranch"><option value="all">All branches</option></select></label><label>Category<select id="etPriceCategory"><option value="all">All categories</option></select></label><label>Adjustment type<select id="etPriceMode"><option value="percent">Percentage (%)</option><option value="amount">Fixed amount (PKR)</option></select></label><label>Adjustment value<input id="etPriceValue" type="number" step="0.01" min="0" placeholder="e.g. 5"></label><label>Direction<select id="etPriceDirection"><option value="increase">Increase prices</option><option value="decrease">Decrease prices</option></select></label><label>Round to<select id="etPriceRound"><option value="0">No rounding</option><option value="1">Nearest rupee</option><option value="5">Nearest PKR 5</option><option value="10">Nearest PKR 10</option></select></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn" id="etPricePreview">Preview changes</button><button class="btn green" id="etPriceApply" disabled>Apply price changes</button><button class="btn light" id="etPriceReset">Reset</button></div><p id="etPriceStatus" class="muted" role="status">Choose filters and adjustment settings, then preview before applying.</p></div><div class="panel"><h4>Preview</h4><div class="table-wrap"><table><thead><tr><th>Product</th><th>Branch</th><th>Current price</th><th>New price</th><th>Change</th></tr></thead><tbody id="etPricePreviewRows"><tr><td colspan="5" class="empty">No preview yet.</td></tr></tbody></table></div></div><div class="panel"><h4>Price adjustment history</h4><div class="table-wrap"><table><thead><tr><th>Date</th><th>Products</th><th>Rule</th><th>Branch / Category</th><th>Changes</th></tr></thead><tbody id="etPriceHistoryRows"></tbody></table></div></div>';
+ main.appendChild(page);
+ const tab=document.createElement('button');tab.type='button';tab.dataset.tab='etihadPriceAdjustment';tab.textContent='Price Readjustment';nav.appendChild(tab);
+ function show(){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));page.classList.remove('hidden');nav.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===tab));fillFilters();renderHistory();preview=[];$('etPricePreviewRows').innerHTML='<tr><td colspan="5" class="empty">Set options and preview changes.</td></tr>';$('etPriceApply').disabled=true;}
+ tab.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();show();},true);
+ function fillFilters(){
+  const branches=Array.isArray(window.branches)?window.branches:[];
+  const cats=[...new Set(window.products.map(p=>String(p.category||'').trim()).filter(Boolean))].sort();
+  $('etPriceBranch').innerHTML='<option value="all">All branches</option>'+branches.filter(b=>b.active!==false).map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');
+  $('etPriceCategory').innerHTML='<option value="all">All categories</option>'+cats.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
+ }
+ let preview=[];
+ const roundPrice=(v,step)=>step?Math.round(v/step)*step:Math.round(v*100)/100;
+ function calculate(){
+  const value=Number($('etPriceValue').value),mode=$('etPriceMode').value,direction=$('etPriceDirection').value,step=Number($('etPriceRound').value);
+  if(!Number.isFinite(value)||value<=0)throw new Error('Enter an adjustment value greater than zero.');
+  const selected=window.products.filter(p=>( $('etPriceBranch').value==='all'||String(p.branchId)===$('etPriceBranch').value)&&($('etPriceCategory').value==='all'||String(p.category||'')===$('etPriceCategory').value));
+  if(!selected.length)throw new Error('No products match the selected branch and category.');
+  const factor=direction==='increase'?1:-1;
+  return selected.map(p=>{const before=Number(p.price||0);if(!Number.isFinite(before)||before<0)throw new Error('Invalid current price found for '+p.name+'. No changes applied.');const raw=mode==='percent'?before*(1+factor*value/100):before+factor*value;const after=roundPrice(raw,step);if(after<0)throw new Error('This adjustment would make '+p.name+' price negative. Reduce the adjustment.');return {id:p.id,name:p.name,branchId:p.branchId,branchName:(window.branchName?branchName(p.branchId):''),before,after,delta:after-before};});
+ }
+ function drawPreview(){
+  $('etPricePreviewRows').innerHTML=preview.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+esc(x.branchName)+'</td><td>'+money(x.before)+'</td><td><b>'+money(x.after)+'</b></td><td class="'+(x.delta>=0?'good':'bad')+'">'+(x.delta>=0?'+':'')+money(x.delta)+'</td></tr>').join('')||'<tr><td colspan="5" class="empty">No products match.</td></tr>';
+  $('etPriceStatus').textContent=preview.length+' product(s) in preview. Review every new price before applying.';
+  $('etPriceApply').disabled=!preview.length;
+ }
+ $('etPricePreview').addEventListener('click',()=>{try{preview=calculate();drawPreview();}catch(e){preview=[];drawPreview();$('etPriceApply').disabled=true;$('etPriceStatus').textContent=e.message;}});
+ $('etPriceApply').addEventListener('click',()=>{
+  if(!preview.length)return;
+  if(!confirm('Apply the displayed new prices to '+preview.length+' products? This changes sale prices only. Stock, cost, sales and existing invoices will not be changed.'))return;
+  const originals=preview.map(x=>({p:window.products.find(p=>String(p.id)===String(x.id)),price:x.before}));
+  if(originals.some(x=>!x.p))return alert('A product changed since preview. Please preview again.');
+  originals.forEach(x=>{if(Number(x.p.price||0)!==x.price)throw new Error('A product price changed since preview. Please preview again.');});
+  originals.forEach(x=>{const item=preview.find(p=>String(p.id)===String(x.p.id));x.p.price=item.after;});
+  const entry={id:Date.now().toString(36),date:new Date().toISOString(),count:preview.length,mode:$('etPriceMode').value,value:Number($('etPriceValue').value),direction:$('etPriceDirection').value,branch:$('etPriceBranch').value,category:$('etPriceCategory').value,changes:preview.map(x=>({productId:x.id,name:x.name,before:x.before,after:x.after}))};
+  const oldHistory=localStorage.getItem(KEY);
+  try{history.unshift(entry);localStorage.setItem(KEY,JSON.stringify(history));window.saveAll();}
+  catch(e){
+   originals.forEach(x=>x.p.price=x.price);
+   try{if(oldHistory===null)localStorage.removeItem(KEY);else localStorage.setItem(KEY,oldHistory);}catch(_){}
+   try{window.saveAll();}catch(_){}
+   history=readLog();
+   return alert('Could not safely save the price adjustment. Previous prices and adjustment history were restored where possible. '+e.message);
+  }
+  if(typeof window.renderAll==='function')window.renderAll();
+  renderHistory();preview=[];drawPreview();$('etPriceStatus').textContent='Saved '+entry.count+' product price change(s). Existing sales and stock were not modified.';
+  alert('Price readjustment saved successfully.');
+ });
+ $('etPriceReset').addEventListener('click',()=>{ $('etPriceValue').value='';preview=[];drawPreview();$('etPriceStatus').textContent='Preview cleared. No product prices were changed.';});
+ function renderHistory(){history=readLog();$('etPriceHistoryRows').innerHTML=history.slice(0,100).map(x=>'<tr><td>'+esc(new Date(x.date).toLocaleString())+'</td><td>'+Number(x.count||0)+'</td><td>'+esc(x.direction)+' '+esc(x.value)+(x.mode==='percent'?'%':' PKR')+'</td><td>'+esc(x.branch==='all'?'All branches':(Array.isArray(window.branches)?window.branches.find(b=>String(b.id)===String(x.branch))?.name||'Branch': 'Branch'))+' / '+esc(x.category)+'</td><td><button class="btn small light" type="button" data-price-history="'+esc(x.id)+'">Details</button></td></tr>').join('')||'<tr><td colspan="5" class="empty">No price adjustments recorded.</td></tr>';}
+ $('etPriceHistoryRows').addEventListener('click',e=>{const b=e.target.closest('[data-price-history]');if(!b)return;const x=history.find(v=>String(v.id)===b.dataset.priceHistory);if(x)alert(x.changes.map(c=>c.name+': '+money(c.before)+' → '+money(c.after)).join('\n'));});
+ fillFilters();renderHistory();
+})();
+
+</script>
+
+<script id="etihad-product-labels-and-expiry-v1">
+(function(){
+ 'use strict';
+ if(window.__etihadLabelsExpiryV1)return;window.__etihadLabelsExpiryV1=true;
+ const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const fmt=v=>Number(v||0).toLocaleString('en-PK',{maximumFractionDigits:3});
+ const money=v=>'PKR '+Number(v||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
+ const nav=document.querySelector('nav'),main=document.querySelector('main');if(!nav||!main)return;
+ const page=document.createElement('section');page.id='etihadLabelsExpiry';page.className='page hidden';
+ page.innerHTML='<h3>Product Labels & Expiry Control</h3><div class="et-sales-tabs"><button type="button" class="active" data-le-view="labels">Product labels</button><button type="button" data-le-view="expiry">Expiry control</button></div><section data-le-pane="labels"><div class="panel"><p class="muted">Select products and print shelf labels with product name, SKU/barcode text, selling price and branch. Existing product records are not changed.</p><div class="grid"><label>Search products<input id="etLabelSearch" placeholder="Name, SKU or category"></label><label>Branch<select id="etLabelBranch"><option value="all">All branches</option></select></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn" id="etLabelSelectVisible">Select visible</button><button class="btn light" id="etLabelClear">Clear selection</button><button class="btn green" id="etLabelPrint">Print selected labels</button></div><div class="table-wrap"><table><thead><tr><th>Select</th><th>Product</th><th>SKU / Barcode</th><th>Branch</th><th>Price</th></tr></thead><tbody id="etLabelRows"></tbody></table></div></div></section><section data-le-pane="expiry" hidden><div class="panel"><p class="muted">Track one expiry date per product. For products with multiple batches or different expiry dates, separate batch/lot tracking is still required.</p><div class="grid"><label>Search<input id="etExpirySearch" placeholder="Product, SKU or category"></label><label>Expiry status<select id="etExpiryFilter"><option value="all">All products</option><option value="expired">Expired</option><option value="soon">Expiring within 30 days</option><option value="later">More than 30 days</option><option value="none">No expiry date</option></select></label><label>Branch<select id="etExpiryBranch"><option value="all">All branches</option></select></label></div><div class="table-wrap"><table><thead><tr><th>Product</th><th>Branch</th><th>Current stock</th><th>Expiry date</th><th>Status</th><th>Action</th></tr></thead><tbody id="etExpiryRows"></tbody></table></div></div></section>';
+ main.appendChild(page);
+ const tab=document.createElement('button');tab.type='button';tab.dataset.tab='etihadLabelsExpiry';tab.textContent='Labels & Expiry';nav.appendChild(tab);
+ let selected=new Set();
+ function products(){return Array.isArray(window.products)?window.products:[]}
+ function branches(){return Array.isArray(window.branches)?window.branches:[]}
+ function branchNameOf(id){return typeof window.branchName==='function'?window.branchName(id):(branches().find(b=>String(b.id)===String(id))?.name||'');}
+ function fillBranches(){const html='<option value="all">All branches</option>'+branches().filter(b=>b.active!==false).map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>').join('');$('etLabelBranch').innerHTML=html;$('etExpiryBranch').innerHTML=html;}
+ function show(){document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));page.classList.remove('hidden');nav.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===tab));fillBranches();renderLabels();renderExpiry();}
+ tab.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();show();},true);
+ function renderLabels(){const q=$('etLabelSearch').value.trim().toLowerCase(),bid=$('etLabelBranch').value;const list=products().filter(p=>(bid==='all'||String(p.branchId)===bid)&&[p.name,p.sku,p.barcode,p.category].join(' ').toLowerCase().includes(q));$('etLabelRows').innerHTML=list.map(p=>'<tr><td><input type="checkbox" data-label-id="'+esc(p.id)+'" '+(selected.has(String(p.id))?'checked':'')+'></td><td>'+esc(p.name)+'</td><td>'+esc(p.sku||p.barcode||'—')+'</td><td>'+esc(branchNameOf(p.branchId))+'</td><td>'+money(p.price)+'</td></tr>').join('')||'<tr><td colspan="5" class="empty">No products found.</td></tr>';}
+ function status(date){if(!date)return 'No expiry date';const d=new Date(date+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);const days=Math.ceil((d-today)/86400000);return days<0?'Expired':days<=30?'Expiring soon':'Not due soon';}
+ function renderExpiry(){const q=$('etExpirySearch').value.trim().toLowerCase(),filter=$('etExpiryFilter').value,bid=$('etExpiryBranch').value;const list=products().filter(p=>(bid==='all'||String(p.branchId)===bid)&&[p.name,p.sku,p.category].join(' ').toLowerCase().includes(q)).filter(p=>{const st=status(p.expiryDate);return filter==='all'||(filter==='none'&&!p.expiryDate)||(filter==='expired'&&st==='Expired')||(filter==='soon'&&st==='Expiring soon')||(filter==='later'&&st==='Not due soon');}).sort((a,b)=>String(a.expiryDate||'9999').localeCompare(String(b.expiryDate||'9999')));$('etExpiryRows').innerHTML=list.map(p=>'<tr><td>'+esc(p.name)+'<br><small class="muted">'+esc(p.sku||'')+'</small></td><td>'+esc(branchNameOf(p.branchId))+'</td><td>'+fmt(p.qty)+'</td><td>'+esc(p.expiryDate||'—')+'</td><td class="'+(status(p.expiryDate)==='Expired'?'bad':status(p.expiryDate)==='Expiring soon'?'bad':'good')+'">'+esc(status(p.expiryDate))+'</td><td><button class="btn small light" type="button" data-expiry-edit="'+esc(p.id)+'">Set / Edit date</button></td></tr>').join('')||'<tr><td colspan="6" class="empty">No products match this filter.</td></tr>';}
+ page.querySelectorAll('[data-le-view]').forEach(b=>b.addEventListener('click',()=>{page.querySelectorAll('[data-le-view]').forEach(x=>x.classList.toggle('active',x===b));page.querySelectorAll('[data-le-pane]').forEach(x=>x.hidden=x.dataset.lePane!==b.dataset.leView);}));
+ $('etLabelSearch').addEventListener('input',renderLabels);$('etLabelBranch').addEventListener('change',renderLabels);
+ $('etLabelRows').addEventListener('change',e=>{const x=e.target.closest('[data-label-id]');if(!x)return;x.checked?selected.add(x.dataset.labelId):selected.delete(x.dataset.labelId);});
+ $('etLabelSelectVisible').addEventListener('click',()=>{page.querySelectorAll('[data-label-id]').forEach(x=>selected.add(x.dataset.labelId));renderLabels();});
+ $('etLabelClear').addEventListener('click',()=>{selected.clear();renderLabels();});
+ $('etLabelPrint').addEventListener('click',()=>{const list=products().filter(p=>selected.has(String(p.id)));if(!list.length)return alert('Select at least one product.');const labels=list.map(p=>'<article class="label"><b>'+esc(p.name)+'</b><div class="sku">'+esc(p.sku||p.barcode||'NO SKU')+'</div><strong>'+money(p.price)+'</strong><small>'+esc(branchNameOf(p.branchId))+'</small></article>').join('');const w=window.open('','_blank','width=900,height=700');if(!w)return alert('Allow pop-ups to print labels.');w.document.write('<!doctype html><html><head><title>Etihad Traders Product Labels</title><style>body{font-family:Arial,sans-serif;margin:10mm}.sheet{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm}.label{border:1px solid #333;padding:5mm;min-height:28mm;break-inside:avoid}.label b{font-size:13pt}.sku{font-family:monospace;font-size:12pt;letter-spacing:1px;margin:5mm 0}.label strong{font-size:15pt;display:block}.label small{display:block;margin-top:3mm}@media print{body{margin:8mm}.label{border:1px solid #555}}</style></head><body><div class="sheet">'+labels+'</div><script>window.onload=()=>window.print()</script>
 
 </body>
 </html>
