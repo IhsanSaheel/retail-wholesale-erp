@@ -2626,7 +2626,7 @@ renderAll();
   </div>
   <div class="panel">
    <h3>Deletion Audit & Recovery Copies</h3>
-   <p class="muted">Private copies of supported deleted records and sales reopened for editing are retained on this device. Export this log regularly. It does not yet synchronize to the company cloud.</p>
+   <p class="muted">Private recovery copies of supported deleted records are retained on this device and eligible deletion events are backed up to the company cloud when online sync succeeds. Cloud audit backup never deletes company records. Export this log regularly as an extra recovery copy.</p>
    <button class="btn" id="exportDeletionAudit">Export Deletion Audit</button> <button class="btn" id="testDeletionAudit">Run Safe Audit Test</button><p id="deletionAuditCount" class="muted"></p><p id="deletionAuditTestStatus" class="muted" role="status"></p><div class="panel" style="margin-top:14px"><h4>Deletion History</h4><p class="muted">Review saved deletion records. Restore is available only for supported records that are not already present on this device.</p><div id="deletionHistoryList" class="table-wrap"></div></div>
   </div>
   <div class="panel">
@@ -2671,7 +2671,7 @@ renderAll();
    const label=esc(entry.recordLabel||entry.snapshot?.name||entry.snapshot?.number||'Record');
    const type=esc(String(entry.collection||'').replace(/^mberp_/,'').replace(/_/g,' '));
    const date=entry.deletedAt?new Date(entry.deletedAt).toLocaleString():'—';
-   const status=entry.restoredAt?'Restored '+new Date(entry.restoredAt).toLocaleString():(canRestore?'<button type="button" class="btn" data-audit-restore="'+esc(entry.auditId)+'">Restore</button>':'<span class="muted">View/export only</span>');
+   const cloudStatus=entry.cloudSynced?' · Cloud backed up':' · Device copy only';const status=(entry.restoredAt?'Restored '+new Date(entry.restoredAt).toLocaleString():(canRestore?'<button type="button" class="btn" data-audit-restore="'+esc(entry.auditId)+'">Restore</button>':'<span class="muted">View/export only</span>'))+'<small class="muted">'+cloudStatus+'</small>';
    return '<tr><td>'+label+'</td><td>'+type+'</td><td>'+esc(date)+'</td><td>'+esc(entry.actor||'Unknown')+'</td><td>'+status+'</td></tr>';
   }).join('')+'</tbody></table>';
   host.querySelectorAll('[data-audit-restore]').forEach(button=>button.addEventListener('click',event=>{
