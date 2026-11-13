@@ -177,6 +177,23 @@ body.etihad-blackgold .panel,body.etihad-blackgold .card{background:var(--surfac
 @media(prefers-reduced-motion:reduce){.etihad-theme-choice,.btn,button{transition:none!important}}
 </style>
 
+<style id="etihad-dashboard-experience-v3">
+#dashboard>.et-dashboard-welcome{display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap;padding:23px 25px;margin:0 0 16px;border:1px solid #dfd0aa;border-radius:19px;background:radial-gradient(ellipse at 90% 0%,rgba(225,190,111,.22),transparent 42%),linear-gradient(115deg,#111d2c,#20364d 72%,#4b3a20);color:#fff;box-shadow:0 12px 28px rgba(16,29,49,.11)}
+#dashboard .et-dashboard-welcome-copy{min-width:220px;flex:1}
+#dashboard .et-dashboard-eyebrow{font-size:10px;font-weight:850;letter-spacing:.13em;color:#e5c77f}
+#dashboard .et-dashboard-welcome h4{margin:7px 0 5px;font-size:clamp(19px,2.2vw,25px);letter-spacing:-.035em;color:#fff}
+#dashboard .et-dashboard-welcome p{margin:0;color:#cbd5e1;font-size:13px}
+#dashboard .et-dashboard-shortcuts{display:flex;gap:8px;flex-wrap:wrap}
+#dashboard .et-dashboard-shortcuts button{min-height:39px;padding:9px 13px;border:1px solid rgba(235,211,158,.42);border-radius:10px;background:rgba(255,255,255,.09);color:#fff;font-weight:750;font-size:12px}
+#dashboard .et-dashboard-shortcuts button:first-child{background:linear-gradient(135deg,#d5b36a,#f0d99e);color:#172033;border-color:#e7cc8d}
+#dashboard .et-dashboard-shortcuts button:hover{filter:brightness(1.1);transform:translateY(-1px)}
+#dashboard #dashboardLastSync{font-size:12px!important}
+#dashboard .cards .card{transition:transform .18s,box-shadow .18s}
+#dashboard .cards .card:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(16,42,67,.1)}
+#dashboard>.panel>h3{font-size:15px;letter-spacing:-.01em}
+@media(max-width:600px){#dashboard>.et-dashboard-welcome{padding:18px 16px;gap:15px;border-radius:15px}#dashboard .et-dashboard-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}#dashboard .et-dashboard-shortcuts button{width:100%;padding:10px 7px}#dashboard .et-dashboard-shortcuts button:first-child{grid-column:1/-1}}
+body.etihad-dark #dashboard .et-dashboard-welcome,body.etihad-blackgold #dashboard .et-dashboard-welcome{border-color:#594a2d}
+</style>
 <style id="etihad-sales-records-dashboard-v2">
 #sales .et-sales-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 #sales .et-sales-action-buttons{display:flex;gap:8px;flex-wrap:wrap}
@@ -554,6 +571,16 @@ body.etihad-blackgold .panel,body.etihad-blackgold .card{background:var(--surfac
 
 <section id="dashboard" class="page">
 <h3>Business Dashboard</h3>
+<div class="et-dashboard-welcome">
+  <div class="et-dashboard-welcome-copy"><span class="et-dashboard-eyebrow">ETIHAD TRADERS • BUSINESS OVERVIEW</span><h4>Your business, at a glance</h4><p>Monitor sales, stock, cash flow and daily activity from one place.</p></div>
+  <div class="et-dashboard-shortcuts" aria-label="Dashboard quick navigation">
+    <button type="button" onclick="document.querySelector('#etihadMainNav button[data-tab=\'sales\']')?.click()">＋ New Sale</button>
+    <button type="button" onclick="document.querySelector('#etihadMainNav button[data-tab=\'products\']')?.click()">＋ Inventory</button>
+    <button type="button" onclick="document.querySelector('#etihadMainNav button[data-tab=\'customers\']')?.click()">Customers</button>
+    <button type="button" onclick="document.querySelector('#etihadMainNav button[data-tab=\'expenses\']')?.click()">Expenses</button>
+    <button type="button" onclick="document.querySelector('#etihadMainNav button[data-tab=\'reports\']')?.click()">Reports</button>
+  </div>
+</div>
 
 <div class="panel" style="padding:10px 14px;margin-bottom:12px">
   <p id="dashboardLastSync" style="margin:0;color:#16845b;font-size:13px;font-weight:600">
