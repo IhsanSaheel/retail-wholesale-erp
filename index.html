@@ -6493,5 +6493,67 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
 })();
 </script>
 
+<section id="cashregister" class="page hidden">
+ <div class="sales-hero"><div><div class="sales-eyebrow">ETIHAD TRADERS · CASH MANAGEMENT</div><h2>Cash register & day closing</h2><p>Track recorded cash receipts, cash expenses and the expected drawer balance.</p></div><div class="sales-live"><span></span> Cash office</div></div>
+ <div class="panel"><div class="grid">
+  <div><label>Business date</label><input type="date" id="etCashDate"></div>
+  <div><label>Branch</label><select id="etCashBranch"><option value="">All branches</option></select></div>
+  <div><label>Opening cash in drawer (PKR)</label><input type="number" min="0" step="0.01" id="etCashOpening" value="0"></div>
+ </div><p class="muted">Opening cash is a calculation input only. It is not saved as a transaction or added to your accounts.</p>
+ <div class="et-cash-actions"><button type="button" class="btn" id="etCashRefresh">Refresh register</button><button type="button" class="btn light" id="etCashPrint">Print / Save day closing PDF</button></div></div>
+ <div class="cards" id="etCashCards"></div>
+ <div class="panel"><h3>Cash movement summary</h3><div class="table-wrap"><table><tbody id="etCashSummary"></tbody></table></div></div>
+ <div class="panel"><h3>Cash receipts</h3><div class="table-wrap"><table><thead><tr><th>Time</th><th>Receipt / Invoice</th><th>Customer</th><th>Source</th><th>Amount (PKR)</th></tr></thead><tbody id="etCashReceipts"></tbody></table></div></div>
+ <div class="panel"><h3>Cash expenses</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount (PKR)</th></tr></thead><tbody id="etCashExpenses"></tbody></table></div></div>
+ <p class="muted">Important: historical sales without a saved payment method are shown as unclassified, not assumed to be cash. Non-cash receipts are excluded from the drawer total.</p>
+</section>
+<script id="etihad-cash-register-v1">
+(function(){
+ 'use strict';
+ if(window.__etihadCashRegisterV1)return;window.__etihadCashRegisterV1=true;
+ const $=id=>document.getElementById(id),fmt=n=>Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}),safe=v=>esc(v??'');
+ const nav=document.querySelector('nav'),main=document.querySelector('main'),page=$('cashregister');
+ if(!nav||!main||!page)return;
+ const tab=document.createElement('button');tab.type='button';tab.textContent='Cash Register';tab.dataset.tab='cashregister';nav.appendChild(tab);
+ tab.addEventListener('click',()=>{nav.querySelectorAll('button').forEach(b=>b.classList.remove('active'));main.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));tab.classList.add('active');page.classList.remove('hidden');render();});
+ $('etCashDate').value=todayISO();
+ $('etCashBranch').innerHTML='<option value="">All branches</option>'+branches.map(b=>'<option value="'+safe(b.id)+'">'+safe(b.name)+'</option>').join('');
+ const cashMethod=m=>String(m||'').trim().toLowerCase()==='cash';
+ function render(){
+  const date=$('etCashDate').value||todayISO(),branch=$('etCashBranch').value,opening=Math.max(0,Number($('etCashOpening').value||0));
+  const matchBranch=id=>!branch||String(id)===String(branch),sameDay=v=>String(v||'').slice(0,10)===date;
+  const receiptRows=[];
+  sales.filter(s=>sameDay(s.date)&&matchBranch(s.branchId)).forEach(s=>{
+   const amount=Number(s.paid||0),method=s.paymentMethod||s.method||'';
+   if(amount>0){receiptRows.push({date:s.date,ref:invoiceNo(s),customer:s.customerName||'Walk-in Customer',source:'Sale · '+(method||'Method not recorded'),amount:cashMethod(method)?amount:0,unclassified:!method});}
+  });
+  payments.filter(p=>sameDay(p.date)&&matchBranch(sales.find(s=>String(s.id)===String(p.saleId))?.branchId)).forEach(p=>{
+   const method=p.method||'',sale=sales.find(s=>String(s.id)===String(p.saleId));
+   if(Number(p.amount||0)>0)receiptRows.push({date:p.date,ref:paymentReceipt(p),customer:p.customerName||sale?.customerName||'Customer',source:'Invoice collection · '+(method||'Method not recorded'),amount:cashMethod(method)?Number(p.amount):0,unclassified:!method});
+  });
+  const dayExpenses=expenses.filter(e=>sameDay(e.date)&&matchBranch(e.branchId));
+  const cashIn=receiptRows.reduce((n,r)=>n+r.amount,0),cashExpense=dayExpenses.filter(e=>cashMethod(e.method)).reduce((n,e)=>n+Number(e.amount||0),0);
+  const unclassified=receiptRows.filter(r=>r.unclassified).reduce((n,r)=>n+Number(r.source.includes('Sale')?sales.find(s=>invoiceNo(s)===r.ref)?.paid||0:payments.find(p=>paymentReceipt(p)===r.ref)?.amount||0),0);
+  const nonCash=receiptRows.reduce((n,r)=>n+(r.unclassified?0:(Number(r.source.includes('Sale')?sales.find(s=>invoiceNo(s)===r.ref)?.paid||0:payments.find(p=>paymentReceipt(p)===r.ref)?.amount||0)-r.amount)),0);
+  const cashSales=receiptRows.filter(r=>r.source.startsWith('Sale')).reduce((n,r)=>n+r.amount,0),collections=cashIn-cashSales,expected=opening+cashIn-cashExpense;
+  const totalExpenses=dayExpenses.reduce((n,e)=>n+Number(e.amount||0),0);
+  $('etCashCards').innerHTML=[['Opening cash','PKR '+fmt(opening)],['Cash received','PKR '+fmt(cashIn)],['Cash expenses','PKR '+fmt(cashExpense)],['Expected drawer','PKR '+fmt(expected)]].map(x=>'<div class="card"><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>').join('');
+  $('etCashSummary').innerHTML=[['Opening cash',opening],['Cash received from sales',cashSales],['Cash received from invoice collections',collections],['Total cash received',cashIn],['Cash expenses',-cashExpense],['Expected closing cash',expected],['Non-cash receipts (excluded)',nonCash],['Receipts with no payment method recorded (unclassified)',unclassified],['All expenses (cash and non-cash)',totalExpenses]].map((x,i)=>'<tr><td>'+(i===5?'<b>'+x[0]+'</b>':safe(x[0]))+'</td><td style="text-align:right">'+(i===5?'<b>':'')+'PKR '+fmt(x[1])+(i===5?'</b>':'')+'</td></tr>').join('');
+  $('etCashReceipts').innerHTML=receiptRows.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).map(r=>'<tr><td>'+safe(new Date(r.date).toLocaleTimeString())+'</td><td>'+safe(r.ref)+'</td><td>'+safe(r.customer)+'</td><td>'+safe(r.source)+'</td><td>'+fmt(r.amount)+'</td></tr>').join('')||'<tr><td colspan="5" class="empty">No receipts recorded for this date and branch.</td></tr>';
+  $('etCashExpenses').innerHTML=dayExpenses.map(e=>'<tr><td>'+safe(e.date)+'</td><td>'+safe(e.title)+'</td><td>'+safe(e.category)+'</td><td>'+fmt(e.amount)+'</td></tr>').join('')||'<tr><td colspan="4" class="empty">No expenses recorded for this date and branch.</td></tr>';
+  window.__etihadCashClosing={date,branchName:branch?(branches.find(b=>String(b.id)===String(branch))?.name||'Selected branch'):'All branches',opening,cashIn,cashExpense,expected,cashSales,collections,nonCash,unclassified,totalExpenses};
+ }
+ function print(){
+  render();const d=window.__etihadCashClosing,summary=[['Opening cash',d.opening],['Cash sales',d.cashSales],['Cash invoice collections',d.collections],['Total cash received',d.cashIn],['Cash expenses',-d.cashExpense],['Expected closing cash',d.expected],['Non-cash receipts excluded',d.nonCash],['Unclassified receipts',d.unclassified],['All expenses',d.totalExpenses]];
+  const html='<!doctype html><html><head><meta charset="utf-8"><title>Cash Closing '+safe(d.date)+'</title><style>body{font-family:Arial;margin:25px;color:#263445}h1{margin-bottom:4px;border-bottom:3px solid #b58a3a;padding-bottom:12px}table{border-collapse:collapse;width:100%;margin-top:20px}td{padding:10px;border-bottom:1px solid #ddd}td:last-child{text-align:right}.final{font-weight:bold;font-size:18px}@media print{button{display:none}}</style></head><body><h1>ETIHAD TRADERS</h1><b>Daily Cash Register / Closing Summary</b><p>'+safe(d.date)+' · '+safe(d.branchName)+'</p><table>'+summary.map((x,i)=>'<tr class="'+(i===5?'final':'')+'"><td>'+safe(x[0])+'</td><td>PKR '+fmt(x[1])+'</td></tr>').join('')+'</table><p>Expected closing cash is a calculated amount, not a verified physical cash count. Compare it with the actual drawer before closing.</p><button onclick="window.print()">Print / Save PDF</button></body></html>';
+  const w=window.open('','_blank');if(!w)return alert('Please allow pop-ups to print the closing report.');w.document.open();w.document.write(html);w.document.close();
+ }
+ $('etCashRefresh').addEventListener('click',render);$('etCashPrint').addEventListener('click',print);
+ ['etCashDate','etCashBranch','etCashOpening'].forEach(id=>$(id).addEventListener('change',render));
+ const style=document.createElement('style');style.textContent='#cashregister .et-cash-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}#cashregister .cards{grid-template-columns:repeat(4,minmax(0,1fr))}@media(max-width:700px){#cashregister .cards{grid-template-columns:repeat(2,minmax(0,1fr))}}';document.head.appendChild(style);
+ render();
+})();
+</script>
+
 </body>
 </html>
