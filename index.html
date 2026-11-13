@@ -299,6 +299,115 @@ body.etihad-blackgold .panel,body.etihad-blackgold .card{background:var(--surfac
 @media(max-width:390px){#pos>.sales-hero{display:block}#pos .sales-live{display:inline-block;margin-top:13px}#pos .sales-metrics{gap:7px}#pos .sales-metric{padding:11px}}
 @media(prefers-reduced-motion:reduce){#pos *{scroll-behavior:auto!important;transition:none!important}}
 </style>
+
+<style id="etihad-sales-desktop-mobile-v2">
+/* Desktop Sales: dedicated two-pane checkout workspace */
+@media (min-width: 901px) {
+  #pos .pos-pro {
+    max-width: 1580px;
+    margin: 0 auto;
+    overflow: hidden;
+    border: 1px solid #dbe3eb;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 16px 42px rgba(16,42,67,.09);
+  }
+  #pos .pos-pro-head {
+    min-height: 76px;
+    padding: 17px 24px;
+    background: linear-gradient(112deg,#102a43,#1c4968);
+    border-bottom: 3px solid #c49a45;
+  }
+  #pos .pos-pro-head h2 { color:#fff; font-size:25px; letter-spacing:-.04em; }
+  #pos .pos-pro-head .pos-branch label { color:#e9d49e; }
+  #pos .pos-pro-head .pos-branch select { min-width:210px; background:#fff; }
+  #pos .pos-pro-layout {
+    grid-template-columns:minmax(0,1fr) minmax(370px,430px);
+    align-items:stretch;
+  }
+  #pos .pos-pro-main { padding:22px 24px 28px; background:#fbfcfe; }
+  #pos .pos-pro-side {
+    position:sticky;
+    top:145px;
+    max-height:calc(100vh - 145px);
+    overflow-y:auto;
+    padding:22px;
+    background:#fff;
+    border-left:1px solid #e5eaf0;
+  }
+  #pos .pos-product-grid { max-height:calc(100vh - 270px); min-height:420px; }
+  #pos .pos-pro-side h3 { color:#102a43; }
+  #pos .pos-total-line strong { color:#102a43; }
+}
+/* Tablet: stacked work areas with a roomy product picker */
+@media (min-width: 561px) and (max-width: 900px) {
+  #pos .pos-pro { border:1px solid #dce4ec; border-radius:16px; overflow:hidden; background:#fff; }
+  #pos .pos-pro-head { padding:16px 18px; background:linear-gradient(110deg,#102a43,#1c4968); border-bottom:3px solid #c49a45; }
+  #pos .pos-pro-head h2 { color:#fff; }
+  #pos .pos-pro-layout { grid-template-columns:minmax(0,1fr); }
+  #pos .pos-pro-main { padding:18px; background:#fbfcfe; }
+  #pos .pos-pro-side { padding:18px; background:#fff; }
+  #pos .pos-product-grid { max-height:380px; min-height:260px; }
+}
+/* Mobile: compact touch-first checkout, independent from desktop styling */
+@media (max-width: 560px) {
+  #pos { padding:0 0 14px; }
+  #pos .pos-pro {
+    margin:0 -2px;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+  }
+  #pos .pos-pro-head {
+    min-height:62px;
+    padding:13px 15px;
+    background:linear-gradient(115deg,#102a43,#173e5a);
+    border-bottom:3px solid #c49a45;
+  }
+  #pos .pos-pro-head h2 { color:#fff; font-size:20px; }
+  #pos .pos-pro-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; }
+  #pos .pos-pro-main,#pos .pos-pro-side {
+    min-height:0;
+    padding:13px;
+    border:1px solid #e1e7ee;
+    border-radius:14px;
+    background:#fff;
+    box-shadow:0 4px 15px rgba(16,42,67,.055);
+  }
+  #pos .pos-pro-main { margin:0 10px; }
+  #pos .pos-pro-side { margin:0 10px 12px; border-top:1px solid #e1e7ee; }
+  #pos .pos-pro-head { margin-bottom:12px; }
+  #pos .pos-search-row { grid-template-columns:78px minmax(0,1fr); gap:8px; }
+  #pos .pos-search-row label { display:block; margin-bottom:6px; font-size:11px; font-weight:800; }
+  #pos .pos-qty-box,#pos #etihadPosSearch { min-height:46px; border-radius:10px; }
+  #pos .pos-product-grid { min-height:190px; max-height:38vh; overflow:auto; }
+  #pos .pos-product-grid th { position:sticky; top:0; z-index:1; background:#f4f7fb; }
+  #pos .pos-product-grid td { padding:12px 8px; }
+  #pos .pos-pro-side h3 { font-size:17px; }
+  #pos .pos-cart-table { max-height:34vh; }
+  #pos .pos-cart-table th,#pos .pos-cart-table td { padding:10px 5px; }
+  #pos .pos-customer-box { background:#fbfcfe; border-radius:10px; padding:0 10px; }
+  #pos .pos-payments { grid-template-columns:minmax(0,1fr); }
+  #pos .pos-pro-actions { grid-template-columns:minmax(0,1fr); }
+  #pos .pos-pro-actions button { min-height:48px; font-size:14px; }
+  #pos .pos-total-line { padding-top:14px; }
+  #pos .pos-total-line strong { font-size:25px; color:#102a43; }
+  #pos .sales-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:0 10px 14px; }
+  #pos .sales-metric { padding:11px; border-radius:11px; }
+  #pos .sales-metric strong { font-size:17px; }
+  #pos .sales-records-panel { margin:0 10px; }
+  #pos .sales-search-row { display:grid; grid-template-columns:minmax(0,1fr); gap:7px; }
+  #pos .sales-search-row input { width:100%; min-height:44px; }
+  #pos .sales-records-heading { align-items:flex-start; gap:8px; }
+  #pos .sales-records-panel .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  #pos .sales-records-panel table { min-width:760px; }
+  #pos .sales-records-panel th,#pos .sales-records-panel td { padding:9px 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #pos .pos-pro, #pos .pos-pro button { scroll-behavior:auto; transition:none!important; }
+}
+</style>
 </head>
 <body>
 <style>
