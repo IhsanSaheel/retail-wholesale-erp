@@ -26,7 +26,7 @@ Deno.serve(async(req:Request)=>{
  if(branchError||!branchRows||branchRows.length!==uniqueBranches.length)return reply(400,{error:"One or more selected branches do not belong to this business."});
  const allowedPermissions=["sales","customers","products","purchases","suppliers","payments","expenses","reports","employees","returns","transfers"];
  const cleanPermissions:Record<string,boolean>={};
- if(Array.isArray(permissions)){for(const k of allowedPermissions){if(permissions.includes(k))cleanPermissions[k]=true;}if(permissions.includes("transfers"))cleanPermissions.stock=true;if(permissions.includes("returns"))cleanPermissions.sales_returns=true;if(permissions.includes("customers")){cleanPermissions.customer_balances=true;cleanPermissions.customer_account_credits=true;}}
+ if(Array.isArray(permissions)){for(const k of allowedPermissions){if(permissions.includes(k))cleanPermissions[k]=true;}if(permissions.includes("transfers"))cleanPermissions.stock=true;if(permissions.includes("returns"))cleanPermissions.sales_returns=true;if(permissions.includes("customers")){cleanPermissions.customer_balances=true;cleanPermissions.customer_account_credits=true;}if(permissions.includes("suppliers")){cleanPermissions.supplier_payments=true;cleanPermissions.supplier_returns=true;}}
 
  const normalizedEmail=String(email).trim().toLowerCase();
  const {data:created,error:createError}=await admin.auth.admin.createUser({email:normalizedEmail,password:String(password),email_confirm:true,user_metadata:{full_name:String(full_name).trim()}});
