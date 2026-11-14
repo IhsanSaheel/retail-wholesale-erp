@@ -8319,6 +8319,9 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
     localStorage.setItem(creditKey,JSON.stringify(entries));
    }
    if(typeof window.saveAll==='function')window.saveAll();
+   // Print only after the saved sale contains the actual amount received,
+   // change/advance/tip allocation, and cashier metadata.
+   if(typeof invoicePrinter==='function')invoicePrinter(deferredInvoiceId||saved.id);
    if($('etSaleAddExtra'))$('etSaleAddExtra').checked=false;
    if($('etSaleKeepTip'))$('etSaleKeepTip').checked=false;
    refreshChange();
@@ -8420,9 +8423,21 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
    const before=Array.isArray(sales)?sales.length:0;
    // Pass only the invoice amount through legacy validators; preserve the actual tender separately.
    if(paidField)paidField.value=String(Math.min(received,total));
+   // The legacy sale function prints immediately. Defer that print until
+   // this wrapper has saved the complete tender and settlement breakdown.
+   const invoicePrinter=window.printInvoice;
+   let deferredInvoiceId=null;
+   if(typeof invoicePrinter==='function'){
+    window.printInvoice=function(id){deferredInvoiceId=id;};
+   }
    let result;
    try{result=previous.apply(this,arguments)}
-   catch(error){if(paidField)paidField.value=originalValue;throw error}
+   catch(error){
+    if(paidField)paidField.value=originalValue;
+    if(typeof invoicePrinter==='function')window.printInvoice=invoicePrinter;
+    throw error;
+   }
+   if(typeof invoicePrinter==='function')window.printInvoice=invoicePrinter;
    const saved=Array.isArray(sales)&&sales.length>before?sales[0]:null;
    if(!saved){if(paidField)paidField.value=originalValue;return result}
    const now=new Date().toISOString();
