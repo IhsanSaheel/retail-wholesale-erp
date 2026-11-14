@@ -8280,7 +8280,7 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
     saved.tipPaymentMethod=String($('etSalePaymentMethod')?.value||'Cash');
    }
    if(keepCredit&&extra>0){
-    const key=phone?'phone:'+phone.replace(/\s/g,''):'name:'+customer.toLowerCase();
+    const key=phone?'phone:'+phone.trim():'name:'+customer.toLowerCase();
     const creditKey='mberp_customer_account_credits';
     let entries=[];
     try{const parsed=JSON.parse(localStorage.getItem(creditKey)||'[]');if(Array.isArray(parsed))entries=parsed}catch(_){}
