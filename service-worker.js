@@ -1,6 +1,8 @@
 
-const CACHE_NAME = 'etihad-traders-v91';
-const APP_PREFIX = '/retail-wholesale-erp/';
+const CACHE_NAME = 'etihad-traders-v92';
+// Derive the base path from the registered scope so the same PWA works on
+// GitHub Pages (/retail-wholesale-erp/) and Vercel (/) without path rewrites.
+const APP_PREFIX = new URL('./', self.registration.scope).pathname;
 
 const APP_FILES = [
   APP_PREFIX,
