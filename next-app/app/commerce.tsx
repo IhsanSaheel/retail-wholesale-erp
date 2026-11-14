@@ -45,6 +45,26 @@ export function PurchaseWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Pro
 
 
 
+
+export function TransferWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Props){
+ const db=useMemo(()=>getSupabase(),[]);
+ const branches=rows.filter(r=>r.collection==="mberp_branches").map(r=>r.data).filter(b=>b.active!==false&& (role==="owner"||!branchIds.length||branchIds.includes(String(b.id))));
+ const products=rows.filter(r=>r.collection==="mberp_products").map(r=>r.data).filter(p=>p.active!==false);
+ const transfers=rows.filter(r=>r.collection==="mberp_transfers").map(r=>r.data);
+ const [from,setFrom]=useState(branches[0]?.id||"");const [to,setTo]=useState(branches[1]?.id||"");
+ const [productId,setProductId]=useState("");const [qty,setQty]=useState("1");const [note,setNote]=useState("");
+ const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
+ const sourceProducts=products.filter(p=>String(p.branchId)===String(from));
+ const product=sourceProducts.find(p=>String(p.id)===String(productId));
+ async function save(){
+  if(!from||!to||from===to||!product||num(qty)<=0||num(qty)>num(product.qty)){setMessage("Choose two different branches, a product and a quantity within available stock.");return;}
+  setBusy(true);const {data,error}=await db.rpc("etihad_transfer_stock",{p_org_id:orgId,p_from_branch:String(from),p_to_branch:String(to),p_product_id:String(product.id),p_qty:num(qty),p_note:note});
+  setBusy(false);if(error||!data?.success){setMessage("Transfer not completed; stock remains unchanged: "+(error?.message||"Could not transfer stock."));return;}
+  setMessage("Transfer completed. "+data.stockTransferred+" units moved to "+(branches.find(b=>String(b.id)===String(to))?.name||"destination branch")+".");setQty("1");setNote("");setProductId("");onSaved();
+ }
+ return <div className="directory-workspace"><div className="welcome-row"><div><div className="section-kicker">BRANCH INVENTORY MOVEMENT</div><h1>Stock transfers</h1><p>Move inventory between branches with source and destination stock updated together.</p></div><span className="record-count">{transfers.length} transfers</span></div>{message&&<div className={message.startsWith("Transfer completed")?"pos-success":"notice-error"}>{message}</div>}<div className="panel hr-form"><h3>Create stock transfer</h3><div className="hr-form-grid"><label>From branch<select value={from} onChange={e=>{setFrom(e.target.value);setProductId("");}}>{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label><label>To branch<select value={to} onChange={e=>setTo(e.target.value)}>{branches.filter(b=>String(b.id)!==String(from)).map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label><label>Product<select value={productId} onChange={e=>setProductId(e.target.value)}><option value="">Select source product</option>{sourceProducts.map(p=><option key={p.id} value={p.id}>{p.name} · Available {num(p.qty)}</option>)}</select></label><label>Quantity<input type="number" min="0.001" step="any" max={product?.qty||0} value={qty} onChange={e=>setQty(e.target.value)}/></label><label>Transfer note<input value={note} onChange={e=>setNote(e.target.value)}/></label></div>{product&&<div className="purchase-totals"><span>Source stock <b>{num(product.qty)} {product.unit||"units"}</b></span><span>After transfer <b>{num(product.qty)-num(qty)} {product.unit||"units"}</b></span><span>Destination branch <b>{branches.find(b=>String(b.id)===String(to))?.name||"—"}</b></span></div>}<button className="primary-btn" disabled={busy||!product||!to||from===to||num(qty)<=0||num(qty)>num(product?.qty)} onClick={save}>{busy?"Transferring…":"Confirm stock transfer"}</button></div><div className="panel data-panel"><h3>Transfer register</h3><div className="table-wrap"><table><thead><tr><th>TRANSFER</th><th>DATE</th><th>PRODUCT</th><th>FROM</th><th>TO</th><th>QUANTITY</th><th>NOTE</th></tr></thead><tbody>{[...transfers].sort((a,b)=>String(b.date).localeCompare(String(a.date))).map((t,i)=><tr key={t.id||i}><td><b>{t.transferNo}</b></td><td>{new Date(t.date).toLocaleDateString()}</td><td>{t.productName}</td><td>{t.fromBranchName}</td><td>{t.toBranchName}</td><td>{t.qty}</td><td>{t.note||"—"}</td></tr>)}{!transfers.length&&<tr><td colSpan={7} className="empty-cell">No stock transfers recorded.</td></tr>}</tbody></table></div></div></div>;
+}
+
 export function PaymentWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Props){
  const db=useMemo(()=>getSupabase(),[]);
  const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data).filter(s=>role==="owner"||branchIds.includes(String(s.branchId))).filter(s=>num(s.balance)>0);
