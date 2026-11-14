@@ -7186,7 +7186,7 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
   const receiptRows=[];
   sales.filter(s=>sameDay(s.date)&&matchBranch(s.branchId)).forEach(s=>{
    const tendered=s.cashReceived!==undefined&&s.cashReceived!==null?Number(s.cashReceived||0):Math.max(0,Number(s.paid||0)-Number(s.advanceUsed||0)-Number(s.advanceApplied||0));
-   const amount=Math.max(0,tendered-Number(s.tipAmount||0)-Number(s.changeToCredit||0)),method=s.paymentMethod||s.method||'';
+   const amount=Math.max(0,tendered-Number(s.changeReturned||0)-Number(s.tipAmount||0)-Number(s.changeToCredit||0)),method=s.paymentMethod||s.method||'';
    if(amount>0){receiptRows.push({date:s.date,ref:invoiceNo(s),customer:s.customerName||'Walk-in Customer',source:'Sale · '+(method||'Method not recorded'),amount:cashMethod(method)?amount:0,grossAmount:amount,unclassified:!method});}
   });
   sales.filter(s=>sameDay(s.tipRecordedAt||s.date)&&matchBranch(s.branchId)&&Number(s.tipAmount||0)>0).forEach(s=>{const tip=Number(s.tipAmount||0),method=s.tipPaymentMethod||s.paymentMethod||s.method||'';receiptRows.push({date:s.tipRecordedAt||s.date,ref:invoiceNo(s)+'-TIP',customer:s.customerName||'Walk-in Customer',source:'Staff tip · '+(method||'Method not recorded'),amount:cashMethod(method)?tip:0,grossAmount:tip,unclassified:!method,isTip:true});});
@@ -8339,6 +8339,108 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
  }
  window.renderTipReport();
  refreshChange();
+})();
+</script>
+
+<script id="etihad-final-overpayment-settlement-v1">
+(function(){
+ 'use strict';
+ if(window.__etihadFinalOverpaymentSettlementV1)return;
+ window.__etihadFinalOverpaymentSettlementV1=true;
+ const $=id=>document.getElementById(id);
+ const money=n=>'PKR '+Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
+ function cashierName(){
+  try{const u=JSON.parse(localStorage.getItem('etihad_active_user_v1')||'null')||{};return String(u.name||u.fullName||u.displayName||u.email||u.user?.name||u.user?.email||u.role||'Signed-in user')}
+  catch(_){return 'Signed-in user'}
+ }
+ function refresh(){
+  const total=Math.max(0,Number(typeof window.cartAmount==='function'?window.cartAmount():0)||0);
+  const raw=Number($('salePaid')?.value||0),received=Number.isFinite(raw)?Math.max(0,raw):0;
+  const extra=Math.max(0,received-total),due=Math.max(0,total-received);
+  if($('etSaleBillTotal'))$('etSaleBillTotal').textContent=money(total);
+  if($('etSaleDuePreview'))$('etSaleDuePreview').textContent=money(due);
+  if($('etSaleChangePreview'))$('etSaleChangePreview').textContent=money(extra);
+  const credit=$('etSaleAddExtra'),tip=$('etSaleKeepTip');
+  if(credit)credit.disabled=extra<=0;
+  if(tip)tip.disabled=extra<=0;
+  const hint=$('etSaleSettlementHint');
+  if(hint){
+   hint.textContent=due>0?'Unpaid balance '+money(due)+' will be added to this named customer’s dues.':
+    extra<=0?'Payment matches the bill total.':
+    credit?.checked?'Extra '+money(extra)+' will be saved as customer account credit.':
+    tip?.checked?'Extra '+money(extra)+' will be recorded as staff tip, not business profit.':
+    'Return '+money(extra)+' to the customer as change.';
+  }
+ }
+ ['salePaid','saleCustomer','salePhone','saleDiscountType','saleDiscountValue'].forEach(id=>{
+  $(id)?.addEventListener('input',refresh);$(id)?.addEventListener('change',refresh);
+ });
+ $('etSaleAddExtra')?.addEventListener('change',()=>{if($('etSaleAddExtra').checked&&$('etSaleKeepTip'))$('etSaleKeepTip').checked=false;refresh()});
+ $('etSaleKeepTip')?.addEventListener('change',()=>{if($('etSaleKeepTip').checked&&$('etSaleAddExtra'))$('etSaleAddExtra').checked=false;refresh()});
+ const oldRender=window.renderCart;
+ if(typeof oldRender==='function'&&!window.__etihadFinalSettlementRenderWrapped){
+  window.__etihadFinalSettlementRenderWrapped=true;
+  window.renderCart=function(){const result=oldRender.apply(this,arguments);refresh();return result};
+ }
+ const previous=window.completeSale;
+ if(typeof previous==='function'){
+  window.completeSale=function(){
+   const total=Math.max(0,Number(typeof window.cartAmount==='function'?window.cartAmount():0)||0);
+   const raw=Number($('salePaid')?.value||0);
+   if(!Number.isFinite(raw)||raw<0){alert('Please enter a valid amount received.');return}
+   const received=raw,extra=Math.max(0,received-total),due=Math.max(0,total-received);
+   const name=String($('saleCustomer')?.value||'').trim();
+   const phone=String($('salePhone')?.value||'').trim();
+   const keepCredit=!!$('etSaleAddExtra')?.checked;
+   const keepTip=!!$('etSaleKeepTip')?.checked;
+   if(keepCredit&&keepTip){alert('Choose either customer account or staff tip, not both.');return}
+   if(due>0&&!name){alert('Select or add a named customer before saving an unpaid balance.');$('etihadPosCustomerDetails')?.setAttribute('open','');$('etihadNewCustomerFields').hidden=false;$('saleCustomer')?.focus();return}
+   if(keepCredit&&extra>0&&!name){alert('Select a saved customer before keeping change in their account.');$('etihadPosCustomerDetails')?.setAttribute('open','');$('saleCustomer')?.focus();return}
+   const method=String($('etSalePaymentMethod')?.value||$('etPosPaymentMethod')?.value||'Cash');
+   const paidField=$('salePaid'),originalValue=paidField?.value;
+   const before=Array.isArray(sales)?sales.length:0;
+   // Pass only the invoice amount through legacy validators; preserve the actual tender separately.
+   if(paidField)paidField.value=String(Math.min(received,total));
+   let result;
+   try{result=previous.apply(this,arguments)}
+   catch(error){if(paidField)paidField.value=originalValue;throw error}
+   const saved=Array.isArray(sales)&&sales.length>before?sales[0]:null;
+   if(!saved){if(paidField)paidField.value=originalValue;return result}
+   const now=new Date().toISOString();
+   saved.paid=Math.min(received,total);
+   saved.balance=Math.max(0,total-received);
+   saved.cashReceived=received;
+   saved.changeReturned=extra>0&&!keepCredit&&!keepTip?extra:0;
+   saved.changeToCredit=keepCredit?extra:0;
+   saved.tipAmount=keepTip?extra:0;
+   saved.paymentMethod=method;
+   if(keepTip&&extra>0){
+    saved.tipCashier=cashierName();saved.tipRecordedAt=now;saved.tipPaymentMethod=method;
+   }
+   if(keepCredit&&extra>0){
+    const key=phone?'phone:'+phone:'name:'+name.toLowerCase();
+    const storageKey='mberp_customer_account_credits';
+    let entries=[];
+    try{const v=JSON.parse(localStorage.getItem(storageKey)||'[]');if(Array.isArray(v))entries=v}catch(_){}
+    entries.unshift({
+     id:Date.now().toString(36)+Math.random().toString(36).slice(2,8),
+     customerKey:key,customerName:name,customerPhone:phone,date:now,
+     amount:extra,remaining:extra,method,
+     note:'Extra payment saved from invoice '+String(saved.invoiceNo||saved.id),
+     receiptNo:String(saved.invoiceNo||saved.id)
+    });
+    localStorage.setItem(storageKey,JSON.stringify(entries));
+   }
+   if(typeof window.saveAll==='function')window.saveAll();
+   if($('etSaleAddExtra'))$('etSaleAddExtra').checked=false;
+   if($('etSaleKeepTip'))$('etSaleKeepTip').checked=false;
+   if($('etihadSaleNote'))$('etihadSaleNote').value='';
+   if(typeof window.renderTipReport==='function')window.renderTipReport();
+   refresh();
+   return result;
+  };
+ }
+ refresh();
 })();
 </script>
 </body>
