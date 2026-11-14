@@ -39,7 +39,7 @@ When enabling password reset on a new production domain, add that exact HTTPS do
 
 ## Offline status
 
-The PWA manifest, service worker, and offline fallback page are installed. This currently provides an offline fallback shell and static asset caching; it does **not** yet provide offline POS transactions or an automatic transaction-sync queue. Do not record sales while offline in this preview.
+The PWA manifest, service worker, and offline fallback page are installed. The POS includes a device-local IndexedDB queue for sales created while offline or after a network failure. Pending slips are clearly marked as unconfirmed; sales are synchronised after connectivity returns and use a stable sale ID with database idempotency to prevent a second stock deduction if a response was lost. A failed business validation (for example, insufficient stock at sync time) remains visible for owner/staff review. Offline queue data is tied to the same signed-in user and organisation. Purchases, payments, returns, employee workflows and other modules still require a live connection; full-app offline mode and offline edits to shared inventory are not implemented.
 
 ## Release safety
 
