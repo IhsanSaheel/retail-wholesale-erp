@@ -8454,14 +8454,24 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
     const storageKey='mberp_customer_account_credits';
     let entries=[];
     try{const v=JSON.parse(localStorage.getItem(storageKey)||'[]');if(Array.isArray(v))entries=v}catch(_){}
-    entries.unshift({
-     id:Date.now().toString(36)+Math.random().toString(36).slice(2,8),
-     customerKey:key,customerName:name,customerPhone:phone,date:now,
-     amount:extra,remaining:extra,method,
-     note:'Extra payment saved from invoice '+String(saved.invoiceNo||saved.id),
-     receiptNo:String(saved.invoiceNo||saved.id)
-    });
-    localStorage.setItem(storageKey,JSON.stringify(entries));
+    const creditReceipt=String(saved.invoiceNo||saved.id);
+    // An earlier compatibility wrapper may already have created this advance.
+    // Make the final settlement idempotent so one overpayment creates one credit.
+    const alreadyRecorded=entries.some(entry=>
+     String(entry.receiptNo||'')===creditReceipt&&
+     String(entry.customerKey||'')===key&&
+     Math.abs(Number(entry.amount||0)-extra)<0.005
+    );
+    if(!alreadyRecorded){
+     entries.unshift({
+      id:Date.now().toString(36)+Math.random().toString(36).slice(2,8),
+      customerKey:key,customerName:name,customerPhone:phone,date:now,
+      amount:extra,remaining:extra,method,
+      note:'Extra payment saved from invoice '+creditReceipt,
+      receiptNo:creditReceipt
+     });
+     localStorage.setItem(storageKey,JSON.stringify(entries));
+    }
    }
    if(typeof window.saveAll==='function')window.saveAll();
    // Print only after the saved sale contains the actual amount received,
