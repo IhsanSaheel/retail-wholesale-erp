@@ -1,0 +1,110 @@
+"use client";
+import { useEffect, useMemo, useState } from "react";
+import { getSupabase } from "@/lib/supabase";
+
+type Row = { collection:string; record_id:string; data:Record<string,any> };
+type HRRow = Record<string,any>;
+type Props = { orgId:string; userId:string; role:string; rows:Row[]; onRefresh:()=>void };
+const fmt=(v:any)=>new Intl.NumberFormat("en-PK",{style:"currency",currency:"PKR",maximumFractionDigits:0}).format(Number(v||0));
+const day=()=>new Date().toISOString().slice(0,10);
+const uid=()=>crypto.randomUUID();
+const dateText=(v:any)=>v?new Date(v).toLocaleDateString("en-PK",{day:"2-digit",month:"short",year:"numeric"}):"—";
+
+export function PeopleWorkspace({orgId,userId,role,rows,onRefresh}:Props){
+ const db=useMemo(()=>getSupabase(),[]);
+ const owner=role==="owner";
+ const [tab,setTab]=useState("employees");
+ const [profiles,setProfiles]=useState<HRRow[]>([]);
+ const [attendance,setAttendance]=useState<HRRow[]>([]);
+ const [leaves,setLeaves]=useState<HRRow[]>([]);
+ const [payroll,setPayroll]=useState<HRRow[]>([]);
+ const [documents,setDocuments]=useState<HRRow[]>([]);
+ const [reviews,setReviews]=useState<HRRow[]>([]);
+ const [busy,setBusy]=useState(false);
+ const [notice,setNotice]=useState("");
+ const [name,setName]=useState(""); const [code,setCode]=useState(""); const [email,setEmail]=useState(""); const [phone,setPhone]=useState(""); const [designation,setDesignation]=useState(""); const [salary,setSalary]=useState("0"); const [employeeId,setEmployeeId]=useState("");
+ const [leaveType,setLeaveType]=useState("Annual Leave"); const [start,setStart]=useState(day()); const [end,setEnd]=useState(day()); const [reason,setReason]=useState("");
+ const [payMonth,setPayMonth]=useState(day().slice(0,7)+"-01"); const [allowance,setAllowance]=useState("0"); const [deduction,setDeduction]=useState("0");
+ const [attDate,setAttDate]=useState(day()); const [attStatus,setAttStatus]=useState("present");
+ async function load(){
+  const [p,a,l,py,d,r]=await Promise.all([
+   db.from("etihad_employee_profiles").select("*").eq("org_id",orgId),
+   db.from("etihad_attendance").select("*").eq("org_id",orgId).order("work_date",{ascending:false}).limit(300),
+   db.from("etihad_leave_requests").select("*").eq("org_id",orgId).order("created_at",{ascending:false}).limit(200),
+   db.from("etihad_payroll").select("*").eq("org_id",orgId).order("period_month",{ascending:false}).limit(200),
+   db.from("etihad_employee_documents").select("*").eq("org_id",orgId).order("created_at",{ascending:false}).limit(200),
+   db.from("etihad_performance_reviews").select("*").eq("org_id",orgId).order("period_end",{ascending:false}).limit(200)
+  ]);
+  if(p.error||a.error||l.error||py.error||d.error||r.error){setNotice("Some HR records could not be loaded. Your account's database permissions control which records are visible.");}
+  setProfiles(p.data||[]);setAttendance(a.data||[]);setLeaves(l.data||[]);setPayroll(py.data||[]);setDocuments(d.data||[]);setReviews(r.data||[]);
+ }
+ useEffect(()=>{void load();},[orgId,userId]);
+ const myProfile=profiles.find(p=>p.user_id===userId);
+ const visibleProfiles=owner?profiles:profiles.filter(p=>p.user_id===userId);
+ async function saveProfile(){
+  if(!owner||!employeeId||!name.trim()){setNotice("Owner access, an existing employee login ID and a name are required.");return;}
+  setBusy(true);const {error}=await db.from("etihad_employee_profiles").upsert({org_id:orgId,user_id:employeeId,employee_code:code.trim(),full_name:name.trim(),email:email.trim(),phone:phone.trim(),designation:designation.trim(),base_salary:Number(salary)||0,pay_frequency:"monthly",payment_method:"Cash"},{onConflict:"org_id,user_id"});
+  setNotice(error?"Profile not saved: "+error.message:"Employee profile saved.");setBusy(false);if(!error){setEmployeeId("");setName("");setCode("");setEmail("");setPhone("");setDesignation("");setSalary("0");await load();}
+ }
+ async function recordAttendance(){
+  const profile=owner?profiles.find(p=>p.user_id===employeeId):myProfile;
+  if(!profile){setNotice("Select a valid employee profile first.");return;}
+  setBusy(true);const {error}=await db.from("etihad_attendance").insert({org_id:orgId,employee_user_id:profile.user_id,employee_code:profile.employee_code,employee_name:profile.full_name,work_date:attDate,attendance_status:attStatus,recorded_by:userId});
+  setNotice(error?"Attendance not saved: "+error.message:"Attendance saved.");setBusy(false);if(!error)await load();
+ }
+ async function requestLeave(){
+  const profile=myProfile;
+  if(!profile){setNotice("Your employee profile is not linked yet. Ask the owner to add it.");return;}
+  const days=Math.max(1,Math.round((new Date(end).getTime()-new Date(start).getTime())/86400000)+1);
+  if(end<start){setNotice("Leave end date must be on or after the start date.");return;}
+  setBusy(true);const {error}=await db.from("etihad_leave_requests").insert({org_id:orgId,employee_user_id:userId,employee_code:profile.employee_code,employee_name:profile.full_name,leave_type:leaveType,start_date:start,end_date:end,total_days:days,reason,request_status:"pending"});
+  setNotice(error?"Leave request not submitted: "+error.message:"Leave request submitted.");setBusy(false);if(!error){setReason("");await load();}
+ }
+ async function reviewLeave(id:string,status:"approved"|"rejected"){
+  setBusy(true);const {error}=await db.from("etihad_leave_requests").update({request_status:status,reviewer_user_id:userId,reviewed_at:new Date().toISOString()}).eq("id",id);
+  setNotice(error?"Could not update request: "+error.message:"Leave request "+status+".");setBusy(false);if(!error)await load();
+ }
+ async function createPayroll(){
+  if(!owner){return;}const profile=profiles.find(p=>p.user_id===employeeId);if(!profile){setNotice("Select an employee.");return;}
+  const base=Number(profile.base_salary)||0,al=Number(allowance)||0,de=Number(deduction)||0;
+  setBusy(true);const {error}=await db.from("etihad_payroll").insert({org_id:orgId,employee_user_id:profile.user_id,employee_code:profile.employee_code,employee_name:profile.full_name,period_month:payMonth,base_salary:base,allowances:al,deductions:de,net_salary:Math.max(0,base+al-de),payment_status:"unpaid",created_by:userId});
+  setNotice(error?"Payroll not created: "+error.message:"Payslip created and marked unpaid.");setBusy(false);if(!error)await load();
+ }
+ async function markPaid(id:string){setBusy(true);const {error}=await db.from("etihad_payroll").update({payment_status:"paid",payment_date:day(),payment_method:"Cash"}).eq("id",id);setNotice(error?"Payment status not updated: "+error.message:"Payroll marked paid.");setBusy(false);if(!error)await load();}
+ function printPayslip(p:HRRow){const w=window.open("","_blank","width=500,height=700");if(!w)return;w.document.write(`<html><head><title>Payslip</title><style>body{font:14px Arial;max-width:600px;margin:30px auto;color:#20304a}h1{text-align:center}table{width:100%;border-collapse:collapse}td{padding:12px;border-bottom:1px solid #ddd}</style></head><body><h1>ETIHAD TRADERS</h1><h3>Employee payslip</h3><p>${p.employee_name} · ${p.employee_code}</p><p>Period: ${dateText(p.period_month)}</p><table><tr><td>Basic salary</td><td>${fmt(p.base_salary)}</td></tr><tr><td>Allowances</td><td>${fmt(p.allowances)}</td></tr><tr><td>Deductions</td><td>${fmt(p.deductions)}</td></tr><tr><td><b>Net salary</b></td><td><b>${fmt(p.net_salary)}</b></td></tr><tr><td>Status</td><td>${p.payment_status}</td></tr></table><script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close();}
+ const tabs=[["employees","Employees"],["attendance","Attendance"],["leave","Leave"],["payroll","Payroll"],["documents","Documents"],["performance","Performance"]];
+ return <div className="people-workspace"><div className="welcome-row"><div><div className="section-kicker">PEOPLE & PAYROLL</div><h1>Employees & payroll</h1><p>Employee records, attendance, leave requests and payslips.</p></div><span className="record-count">{owner?"Owner / HR access":"Employee access"}</span></div>
+ {notice&&<div className="pos-success">{notice}</div>}<div className="hr-tabs">{tabs.map(([id,label])=><button key={id} className={tab===id?"selected":""} onClick={()=>setTab(id)}>{label}</button>)}</div>
+ {tab==="employees"&&<><div className="hr-stat-grid"><div className="metric-card"><span>Employee profiles</span><strong>{profiles.length}</strong></div><div className="metric-card"><span>Attendance entries</span><strong>{attendance.length}</strong></div><div className="metric-card"><span>Pending leave requests</span><strong>{leaves.filter(x=>x.request_status==="pending").length}</strong></div><div className="metric-card"><span>Unpaid payslips</span><strong>{payroll.filter(x=>x.payment_status==="unpaid").length}</strong></div></div><div className="panel data-panel"><div className="panel-head"><div><h3>Employee directory</h3><p>{owner?"All profiles in your organisation":"Your employee profile"}</p></div></div><div className="table-wrap"><table><thead><tr><th>EMPLOYEE</th><th>CODE</th><th>DESIGNATION</th><th>CONTACT</th><th>JOINED</th><th>BASE SALARY</th></tr></thead><tbody>{visibleProfiles.map(p=><tr key={p.user_id}><td><b>{p.full_name}</b></td><td>{p.employee_code}</td><td>{p.designation||"—"}</td><td>{p.phone||p.email||"—"}</td><td>{dateText(p.joining_date)}</td><td>{fmt(p.base_salary)}</td></tr>)}{!visibleProfiles.length&&<tr><td colSpan={6} className="empty-cell">No employee profile available.</td></tr>}</tbody></table></div></div>
+ {owner&&<div className="panel hr-form"><h3>Add / update employee profile</h3><p>Employee login must already exist in Supabase Auth. This form links the existing login; it does not create passwords or new Auth users.</p><div className="hr-form-grid"><label>Existing Auth user ID<input value={employeeId} onChange={e=>setEmployeeId(e.target.value)} placeholder="Paste employee user UUID"/></label><label>Full name<input value={name} onChange={e=>setName(e.target.value)}/></label><label>Employee code<input value={code} onChange={e=>setCode(e.target.value)}/></label><label>Email<input value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Phone<input value={phone} onChange={e=>setPhone(e.target.value)}/></label><label>Designation<input value={designation} onChange={e=>setDesignation(e.target.value)}/></label><label>Base salary (PKR)<input type="number" min="0" value={salary} onChange={e=>setSalary(e.target.value)}/></label></div><button className="primary-btn" disabled={busy} onClick={saveProfile}>Save employee profile</button></div>}</>}
+ {tab==="attendance"&&<><div className="panel hr-form"><h3>Record attendance</h3><div className="hr-form-grid"><label>Employee<select value={employeeId} onChange={e=>setEmployeeId(e.target.value)}>{owner?profiles.map(p=><option key={p.user_id} value={p.user_id}>{p.full_name}</option>):<option value={userId}>{myProfile?.full_name||"My profile"}</option>}</select></label><label>Date<input type="date" value={attDate} onChange={e=>setAttDate(e.target.value)}/></label><label>Status<select value={attStatus} onChange={e=>setAttStatus(e.target.value)}>{["present","late","half_day","absent","on_leave"].map(x=><option key={x}>{x}</option>)}</select></label></div><button className="primary-btn" disabled={busy} onClick={recordAttendance}>Save attendance</button></div><HRTable title="Attendance register" headers={["DATE","EMPLOYEE","CODE","STATUS","CHECK IN","CHECK OUT"]} rows={(owner?attendance:attendance.filter(a=>a.employee_user_id===userId)).map(a=>[dateText(a.work_date),a.employee_name,a.employee_code,a.attendance_status,dateText(a.check_in),dateText(a.check_out)])}/></>}
+ {tab==="leave"&&<><div className="panel hr-form"><h3>Submit leave request</h3><div className="hr-form-grid"><label>Leave type<select value={leaveType} onChange={e=>setLeaveType(e.target.value)}>{["Annual Leave","Sick Leave","Casual Leave","Unpaid Leave","Maternity/Paternity","Other"].map(x=><option key={x}>{x}</option>)}</select></label><label>Start date<input type="date" value={start} onChange={e=>setStart(e.target.value)}/></label><label>End date<input type="date" value={end} onChange={e=>setEnd(e.target.value)}/></label><label>Reason<input value={reason} onChange={e=>setReason(e.target.value)}/></label></div><button className="primary-btn" disabled={busy} onClick={requestLeave}>Submit leave request</button></div><div className="panel data-panel"><h3>Leave requests</h3><div className="table-wrap"><table><thead><tr><th>EMPLOYEE</th><th>TYPE</th><th>DATES</th><th>DAYS</th><th>STATUS</th><th></th></tr></thead><tbody>{(owner?leaves:leaves.filter(x=>x.employee_user_id===userId)).map(l=><tr key={l.id}><td>{l.employee_name}</td><td>{l.leave_type}</td><td>{dateText(l.start_date)} – {dateText(l.end_date)}</td><td>{l.total_days}</td><td>{l.request_status}</td><td>{owner&&l.request_status==="pending"&&<><button className="text-action" onClick={()=>reviewLeave(l.id,"approved")}>Approve</button><button className="text-action" onClick={()=>reviewLeave(l.id,"rejected")}>Reject</button></>}</td></tr>)}</tbody></table></div></div></>}
+ {tab==="payroll"&&<>{owner&&<div className="panel hr-form"><h3>Create monthly payslip</h3><div className="hr-form-grid"><label>Employee<select value={employeeId} onChange={e=>setEmployeeId(e.target.value)}>{profiles.map(p=><option key={p.user_id} value={p.user_id}>{p.full_name} · {p.employee_code}</option>)}</select></label><label>Pay period<input type="date" value={payMonth} onChange={e=>setPayMonth(e.target.value)}/></label><label>Allowances<input type="number" min="0" value={allowance} onChange={e=>setAllowance(e.target.value)}/></label><label>Deductions<input type="number" min="0" value={deduction} onChange={e=>setDeduction(e.target.value)}/></label></div><button className="primary-btn" disabled={busy||!profiles.length} onClick={createPayroll}>Create unpaid payslip</button></div>}<div className="panel data-panel"><h3>{owner?"Payroll register":"My payslips"}</h3><div className="table-wrap"><table><thead><tr><th>PERIOD</th><th>EMPLOYEE</th><th>BASIC</th><th>ALLOWANCE</th><th>DEDUCTION</th><th>NET PAY</th><th>STATUS</th><th></th></tr></thead><tbody>{(owner?payroll:payroll.filter(p=>p.employee_user_id===userId)).map(p=><tr key={p.id}><td>{dateText(p.period_month)}</td><td>{p.employee_name}</td><td>{fmt(p.base_salary)}</td><td>{fmt(p.allowances)}</td><td>{fmt(p.deductions)}</td><td><b>{fmt(p.net_salary)}</b></td><td>{p.payment_status}</td><td><button className="text-action" onClick={()=>printPayslip(p)}>Print</button>{owner&&p.payment_status==="unpaid"&&<button className="text-action" onClick={()=>markPaid(p.id)}>Mark paid</button>}</td></tr>)}</tbody></table></div></div></>}</>}
+ {tab==="documents"&&<HRTable title="Employee documents" headers={["EMPLOYEE","DOCUMENT","CATEGORY","ISSUED","EXPIRY"]} rows={(owner?documents:documents.filter(d=>d.employee_user_id===userId)).map(d=>[d.employee_name,d.document_name,d.document_category,dateText(d.issue_date),dateText(d.expiry_date)])}/>}
+ {tab==="performance"&&<HRTable title="Performance reviews" headers={["EMPLOYEE","PERIOD","RATING","STATUS","GOALS"]} rows={(owner?reviews:reviews.filter(r=>r.employee_user_id===userId)).map(r=>[r.employee_name,dateText(r.period_start)+" – "+dateText(r.period_end),r.overall_rating+"/5",r.review_status,r.goals||"—"])}/>}
+ <div className="hr-footer-note">Access to employee, payroll and HR records is enforced by your existing Supabase row-level security policies.</div>
+ </div>;
+}
+function HRTable({title,headers,rows}:{title:string;headers:string[];rows:string[][]}){return <div className="panel data-panel"><h3>{title}</h3><div className="table-wrap"><table><thead><tr>{headers.map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={i}>{r.map((c,j)=><td key={j}>{c}</td>)}</tr>)}{!rows.length&&<tr><td className="empty-cell" colSpan={headers.length}>No records available.</td></tr>}</tbody></table></div></div>}
+
+export function ReportsWorkspace({rows}:{rows:Row[]}){
+ const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data);
+ const payments=rows.filter(r=>r.collection==="mberp_payments").map(r=>r.data);
+ const expenses=rows.filter(r=>r.collection==="mberp_expenses").map(r=>r.data);
+ const products=rows.filter(r=>r.collection==="mberp_products").map(r=>r.data);
+ const active=sales.filter(s=>String(s.status||"").toLowerCase()!=="cancelled");
+ const total=active.reduce((s,x)=>s+Number(x.total||0),0);
+ const received=active.reduce((s,x)=>s+Number(x.paid||0),0);
+ const balance=active.reduce((s,x)=>s+Number(x.balance||0),0);
+ const cost=active.reduce((s,x)=>s+(x.items||[]).reduce((a:any,it:any)=>a+Number(it.cost||0)*Number(it.qty||0),0),0);
+ const expense=expenses.reduce((s,x)=>s+Number(x.amount||0),0);
+ const gross=total-cost;
+ const print=()=>window.print();
+ return <div className="reports-workspace"><div className="welcome-row"><div><div className="section-kicker">BUSINESS INTELLIGENCE</div><h1>Reports & analytics</h1><p>Summary from the business records currently accessible to your account.</p></div><button className="outline-btn" onClick={print}>Print report</button></div><div className="metrics-grid"><div className="metric-card"><span>Recorded sales</span><strong>{fmt(total)}</strong><small>{active.length} invoices</small></div><div className="metric-card"><span>Payments recorded</span><strong>{fmt(received)}</strong><small>{payments.length} payment records</small></div><div className="metric-card"><span>Outstanding balances</span><strong>{fmt(balance)}</strong><small>Invoice balances</small></div><div className="metric-card"><span>Estimated gross profit</span><strong>{fmt(gross)}</strong><small>Sales less item cost · before expenses</small></div></div><div className="dashboard-grid"><div className="panel"><h3>Financial overview</h3><div className="report-lines"><div><span>Sales revenue</span><b>{fmt(total)}</b></div><div><span>Estimated cost of goods sold</span><b>{fmt(cost)}</b></div><div><span>Gross profit</span><b>{fmt(gross)}</b></div><div><span>Recorded expenses</span><b>{fmt(expense)}</b></div><div className="report-final"><span>Estimated net after expenses</span><b>{fmt(gross-expense)}</b></div></div></div><div className="panel"><h3>Inventory snapshot</h3><div className="report-lines"><div><span>Products in catalogue</span><b>{products.length}</b></div><div><span>Units in stock</span><b>{products.reduce((s,p)=>s+Number(p.qty||0),0).toLocaleString()}</b></div><div><span>Stock cost value</span><b>{fmt(products.reduce((s,p)=>s+Number(p.qty||0)*Number(p.cost||0),0))}</b></div><div><span>Low-stock items</span><b>{products.filter(p=>Number(p.qty||0)<=Number(p.alert??p.lowAt??0)).length}</b></div></div></div></div><div className="panel data-panel"><h3>Recent sales summary</h3><div className="table-wrap"><table><thead><tr><th>INVOICE</th><th>CUSTOMER</th><th>DATE</th><th>TOTAL</th><th>PAID</th><th>BALANCE</th></tr></thead><tbody>{[...active].sort((a,b)=>new Date(b.date||0).getTime()-new Date(a.date||0).getTime()).slice(0,25).map((s,i)=><tr key={s.id||i}><td>{s.invoiceNo}</td><td>{s.customerName}</td><td>{s.date?new Date(s.date).toLocaleDateString():"—"}</td><td>{fmt(s.total)}</td><td>{fmt(s.paid)}</td><td>{fmt(s.balance)}</td></tr>)}</tbody></table></div></div><p className="hr-footer-note">Profit figures are estimates from saved line-item costs. Confirm returns, stock adjustments, taxes and expense classifications before using them as accounting statements.</p></div>;
+}
+
+export function SettingsWorkspace({rows,orgName}:{rows:Row[];orgName:string}){
+ const [notice,setNotice]=useState("");
+ function backup(){const payload={application:"Etihad Traders",createdAt:new Date().toISOString(),organization:orgName,records:rows};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="etihad-traders-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(url);setNotice("Backup file prepared from the records available to this login.");}
+ return <div className="settings-workspace"><div className="welcome-row"><div><div className="section-kicker">SYSTEM PREFERENCES</div><h1>Settings & backup</h1><p>Application information and safe business data export.</p></div></div>{notice&&<div className="pos-success">{notice}</div>}<div className="panel settings-card"><h3>Business workspace</h3><div className="report-lines"><div><span>Organisation</span><b>{orgName}</b></div><div><span>Records loaded in this session</span><b>{rows.length}</b></div><div><span>Cloud database</span><b>Existing Supabase project</b></div><div><span>Application hosting</span><b>Vercel preview</b></div></div></div><div className="panel settings-card"><h3>Business data backup</h3><p>Export a JSON backup of the business records your current login is allowed to read. This does not change or delete cloud data.</p><button className="primary-btn" onClick={backup}>Download data backup</button></div><div className="panel settings-card"><h3>Security & access</h3><p>Employee permissions, branch access and sensitive HR records are enforced by the existing Supabase row-level security policies. Employee login creation and password resets remain owner-controlled through the secure account administration workflow; this preview does not expose privileged service credentials in the browser.</p></div></div>;
+}
