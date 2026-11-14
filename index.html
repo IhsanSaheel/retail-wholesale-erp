@@ -8126,7 +8126,6 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
    if(Array.from(saved.options).some(o=>o.value===current))saved.value=current;
    else if(!q)saved.value='';
   });
-  saved.addEventListener('focus',capture);
  }
  // Always show real +/- controls in the bill. Decrease never silently removes a row.
  window.renderCart=function(){
