@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'etihad-traders-v83';
+const CACHE_NAME = 'etihad-traders-v84';
 const APP_PREFIX = '/retail-wholesale-erp/';
 
 const APP_FILES = [
@@ -52,7 +52,7 @@ self.addEventListener('fetch', event => {
   ) return;
 
   event.respondWith(
-    fetch(request)
+    fetch(new Request(request, { cache: request.mode === 'navigate' ? 'no-store' : 'default' }))
       .then(response => {
         if (response.ok && response.type === 'basic') {
           const copy = response.clone();
