@@ -1465,6 +1465,10 @@ function printInvoice(sid){
  const finalTotal=saleTotal(s);
  const paidAmount=salePaid(s);
  const balance=saleDue(s);
+ const cashReceived=Number(s.cashReceived!==undefined?s.cashReceived:paidAmount);
+ const changeReturned=Number(s.changeReturned||0);
+ const customerAdvance=Number(s.changeToCredit||0);
+ const staffTip=Number(s.tipAmount||0);
 
  const discountLabel=s.discountType==='percent'
   ? 'Discount ('+Number(s.discountInput||0)+'%)'
@@ -1567,10 +1571,16 @@ function printInvoice(sid){
  </div>
 
  <div>
- <span>Paid</span>
+ <span>Bill payment</span>
  <b>PKR ${money(paidAmount)}</b>
  </div>
-
+ <div>
+ <span>Amount received</span>
+ <b>PKR ${money(cashReceived)}</b>
+ </div>
+ ${changeReturned>0?`<div><span>Change returned</span><b>PKR ${money(changeReturned)}</b></div>`:''}
+ ${customerAdvance>0?`<div><span>Saved to customer account</span><b>PKR ${money(customerAdvance)}</b></div>`:''}
+ ${staffTip>0?`<div><span>Staff tip</span><b>PKR ${money(staffTip)}</b></div>`:''}
  <div class="due">
  <span>Balance Due</span>
  <b>PKR ${money(balance)}</b>
@@ -2867,10 +2877,16 @@ renderAll();
   <label for="etSalePaymentMethod"><b>Payment method</b></label><select id="etSalePaymentMethod"><option>Cash</option><option>Bank Transfer</option><option>JazzCash</option><option>EasyPaisa</option><option>Cheque</option><option>Other</option></select>
   <div class="et-settle-amounts">
    <div><small>Bill total</small><strong id="etSaleBillTotal">PKR 0</strong></div>
+   <div><small>Amount received</small><strong id="etSaleReceivedPreview">PKR 0</strong></div>
+   <div><small>Extra amount</small><strong id="etSaleExtraPreview">PKR 0</strong></div>
    <div><small>Remaining due</small><strong id="etSaleDuePreview">PKR 0</strong></div>
   </div>
+  <div class="et-settle-outcomes"><b>How should we handle extra payment?</b>
+   <label><input type="radio" name="etSaleExtraAction" id="etSaleReturnExtra" value="return" checked> <span><b>Return as change</b><br><small>Give the extra amount back to the customer.</small></span></label>
+   <label><input type="radio" name="etSaleExtraAction" id="etSaleAddExtra" value="credit"> <span><b>Save in customer account</b><br><small>Keep the extra as advance for the customer's next purchase.</small></span></label>
+   <label><input type="radio" name="etSaleExtraAction" id="etSaleKeepTip" value="tip"> <span><b>Record as staff tip</b><br><small>Record separately; it is not business sales or profit.</small></span></label>
+  </div>
   <label><input type="checkbox" id="etSaleAddDue" checked disabled> <span><b>Automatically add unpaid balance to customer dues</b><br><small>For named customers; Walk-in sales must be paid in full.</small></span></label>
-  <label><input type="checkbox" id="etSaleAddExtra"> <span><b>Add extra payment to customer account</b><br><small>Any amount received above the bill total becomes customer advance.</small></span></label>
   <div><label for="etihadSaleNote"><b>Sale note</b></label><textarea id="etihadSaleNote" placeholder="Add delivery details, customer instructions or a note for this invoice…"></textarea></div>
   <small id="etSaleSettlementHint" aria-live="polite">Select a customer before saving a sale with an outstanding balance or advance.</small>
  `;
@@ -2883,12 +2899,15 @@ renderAll();
  function refresh(){
   const total=amountTotal(),received=Math.max(0,Number($('salePaid')?.value||0)||0),due=Math.max(0,total-Math.min(received,total)),extra=Math.max(0,received-total);
   $('etSaleBillTotal').textContent=money(total);
+  if($('etSaleReceivedPreview'))$('etSaleReceivedPreview').textContent=money(received);
+  if($('etSaleExtraPreview'))$('etSaleExtraPreview').textContent=money(extra);
   $('etSaleDuePreview').textContent=money(due);
   $('etSaleDuePreview').style.color=due>0?'var(--danger,#b42318)':'var(--success,#16803c)';
   $('etSaleAddDue').disabled=due<=0;
   $('etSaleAddExtra').disabled=extra<=0;
   const c=customer();
-  $('etSaleSettlementHint').textContent=(due>0||extra>0)&&!c?'Select a named customer to use customer account/advance.':due>0?'Remaining amount will be added to this customer’s dues.':extra>0&&!$('etSaleAddExtra').checked?'Change to return: '+money(extra):extra>0?'Extra amount will remain as customer credit.':'Payment summary is ready.';
+  const choice=document.querySelector('input[name="etSaleExtraAction"]:checked')?.value||'return';
+  $('etSaleSettlementHint').textContent=due>0&&!c?'Select a named customer to record the unpaid balance.':due>0?'Remaining amount will be added to customer dues.':extra>0&&choice==='credit'?'Customer account will receive '+money(extra)+'.':extra>0&&choice==='tip'?'Staff tip recorded separately: '+money(extra)+'.':extra>0?'Return '+money(extra)+' to the customer.':'Payment summary is ready.';
  }
  ['salePaid','saleCustomer','salePhone'].forEach(id=>$(id)?.addEventListener('input',refresh));
  $('etSaleAddDue').addEventListener('change',refresh);
