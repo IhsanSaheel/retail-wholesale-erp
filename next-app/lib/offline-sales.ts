@@ -38,10 +38,18 @@ async function withStore<T>(mode: IDBTransactionMode, run: (store: IDBObjectStor
   const db = await openDb();
   return new Promise<T>((resolve, reject) => {
     const tx = db.transaction(STORE, mode);
-    run(tx.objectStore(STORE), resolve, reject);
-    tx.oncomplete = () => db.close();
-    tx.onerror = () => { db.close(); reject(tx.error || new Error("Offline storage transaction failed.")); };
-    tx.onabort = () => { db.close(); reject(tx.error || new Error("Offline storage transaction was cancelled.")); };
+    let value: T;
+    let hasValue = false;
+    let settled = false;
+    const fail = (reason: any) => { if (!settled) { settled = true; reject(reason); } };
+    run(tx.objectStore(STORE), result => { value = result; hasValue = true; }, fail);
+    tx.oncomplete = () => {
+      db.close();
+      if (!settled && hasValue) { settled = true; resolve(value!); }
+      else if (!settled) fail(new Error("Offline storage transaction completed without a result."));
+    };
+    tx.onerror = () => { db.close(); fail(tx.error || new Error("Offline storage transaction failed.")); };
+    tx.onabort = () => { db.close(); fail(tx.error || new Error("Offline storage transaction was cancelled.")); };
   });
 }
 
