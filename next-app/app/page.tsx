@@ -1,0 +1,125 @@
+"use client";
+
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { getSupabase } from "@/lib/supabase";
+
+type RecordRow = { collection: string; record_id: string; data: Record<string, any>; updated_at: string };
+type ModuleKey = "overview" | "sales" | "products" | "customers" | "purchases" | "suppliers" | "branches" | "payments" | "transfers" | "reports" | "employees" | "settings";
+const NAV: { group: string; items: { id: ModuleKey; label: string; icon: string }[] }[] = [
+  { group: "WORKSPACE", items: [{id:"overview",label:"Overview",icon:"⌂"},{id:"sales",label:"Sales & POS",icon:"▣"},{id:"products",label:"Products & stock",icon:"▤"},{id:"customers",label:"Customers",icon:"♙"},{id:"purchases",label:"Purchases",icon:"⇩"},{id:"suppliers",label:"Suppliers",icon:"♧"}] },
+  { group: "MANAGEMENT", items: [{id:"branches",label:"Branches",icon:"⌖"},{id:"payments",label:"Payments",icon:"＄"},{id:"transfers",label:"Stock transfers",icon:"⇄"},{id:"reports",label:"Reports & analytics",icon:"▥"},{id:"employees",label:"Employees & payroll",icon:"♧"}] },
+  { group: "SYSTEM", items: [{id:"settings",label:"Settings",icon:"⚙"}] },
+];
+const COLLECTION: Partial<Record<ModuleKey,string>> = {sales:"mberp_sales",products:"mberp_products",branches:"mberp_branches",payments:"mberp_payments",transfers:"mberp_transfers",purchases:"mberp_purchases",suppliers:"mberp_suppliers"};
+const money = (v:number) => new Intl.NumberFormat("en-PK",{style:"currency",currency:"PKR",maximumFractionDigits:0}).format(Number.isFinite(v)?v:0);
+const dateLabel = (v:any) => { const d = new Date(v); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-PK",{day:"2-digit",month:"short",year:"numeric"}); };
+const amount = (v:any) => Number(v || 0);
+
+export default function Home() {
+  const supabase = useMemo(() => getSupabase(), []);
+  const [session,setSession] = useState<Session|null>(null);
+  const [email,setEmail] = useState("");
+  const [password,setPassword] = useState("");
+  const [busy,setBusy] = useState(false);
+  const [loading,setLoading] = useState(true);
+  const [error,setError] = useState("");
+  const [rows,setRows] = useState<RecordRow[]>([]);
+  const [module,setModule] = useState<ModuleKey>("overview");
+  const [orgName,setOrgName] = useState("Etihad Traders");
+  const [role,setRole] = useState("");
+  const [userEmail,setUserEmail] = useState("");
+  const [mobileNav,setMobileNav] = useState(false);
+  const [query,setQuery] = useState("");
+
+  const loadBusiness = useCallback(async (userId:string) => {
+    setLoading(true); setError("");
+    const {data: memberships,error: memberError} = await supabase.from("etihad_memberships").select("org_id,role,active,branch_ids,permissions").eq("user_id",userId).eq("active",true);
+    if(memberError) { setError("Your account could not load its business membership. Please contact the owner."); setLoading(false); return; }
+    if(!memberships?.length) { setError("This login is not linked to an active Etihad Traders employee account."); setRows([]); setLoading(false); return; }
+    const membership = memberships[0];
+    setRole(String(membership.role || "staff"));
+    const [{data:org},{data:records,error:recordsError}] = await Promise.all([
+      supabase.from("etihad_organizations").select("name").eq("id",membership.org_id).maybeSingle(),
+      supabase.from("etihad_records").select("collection,record_id,data,updated_at").eq("org_id",membership.org_id).limit(1500)
+    ]);
+    if(org?.name) setOrgName(org.name);
+    if(recordsError) setError("Your account is signed in, but business records could not be loaded. Check your Supabase membership permissions.");
+    setRows((records || []) as RecordRow[]);
+    setLoading(false);
+  },[supabase]);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({data}) => {
+      setSession(data.session);
+      setUserEmail(data.session?.user.email || "");
+      if(data.session?.user.id) void loadBusiness(data.session.user.id); else setLoading(false);
+    });
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((_event,next) => {
+      setSession(next); setUserEmail(next?.user.email || "");
+      if(next?.user.id) void loadBusiness(next.user.id); else { setRows([]); setLoading(false); }
+    });
+    return () => subscription.unsubscribe();
+  },[supabase,loadBusiness]);
+
+  async function signIn(e:FormEvent) {
+    e.preventDefault(); setBusy(true); setError("");
+    const {error} = await supabase.auth.signInWithPassword({email:email.trim(),password});
+    if(error) setError(error.message);
+    setBusy(false);
+  }
+  async function signOut() { await supabase.auth.signOut(); setModule("overview"); }
+
+  const records = (name:string) => rows.filter(r=>r.collection===name).map(r=>r.data || {});
+  const sales = records("mberp_sales");
+  const products = records("mberp_products");
+  const branches = records("mberp_branches");
+  const payments = records("mberp_payments");
+  const activeSales = sales.filter(s=>String(s.status||"").toLowerCase()!=="cancelled");
+  const now = new Date();
+  const monthSales = activeSales.filter(s=>{const d=new Date(s.date);return !Number.isNaN(d.getTime())&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});
+  const monthTotal = monthSales.reduce((n,s)=>n+amount(s.total),0);
+  const outstanding = activeSales.reduce((n,s)=>n+amount(s.balance),0);
+  const lowStock = products.filter(p=>amount(p.qty)<=amount(p.alert ?? p.lowAt ?? 0));
+  const daily = Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));const total=activeSales.filter(s=>{const x=new Date(s.date);return !Number.isNaN(x.getTime())&&x.toDateString()===d.toDateString();}).reduce((n,s)=>n+amount(s.total),0);return {label:d.toLocaleDateString("en",{weekday:"short"}),total};});
+  const maxDaily = Math.max(1,...daily.map(x=>x.total));
+  const recent = [...activeSales].sort((a,b)=>new Date(b.date||0).getTime()-new Date(a.date||0).getTime()).slice(0,6);
+  const moduleRows = COLLECTION[module] ? records(COLLECTION[module]!) : [];
+  const filteredRows = moduleRows.filter(r=>JSON.stringify(r).toLowerCase().includes(query.toLowerCase()));
+  const title = NAV.flatMap(g=>g.items).find(i=>i.id===module)?.label || "Overview";
+
+  if(!session) return <main className="login-page"><div className="login-art"><div className="login-brand"><div className="brand-mark">ET</div><span>ETIHAD <b>TRADERS</b></span></div><div className="art-copy"><span className="eyebrow">BUSINESS MANAGEMENT, REIMAGINED</span><h1>One clear view.<br/><em>Every business move.</em></h1><p>A connected workspace for your sales, inventory, customers and team.</p><div className="art-orbit"><div className="orbit-core">ET</div><span className="orbit-chip chip-one">Sales</span><span className="orbit-chip chip-two">Inventory</span><span className="orbit-chip chip-three">People</span></div></div><div className="art-foot">ETIHAD TRADERS · RETAIL & WHOLESALE</div></div><section className="login-side"><div className="login-form-wrap"><div className="mobile-brand"><div className="brand-mark">ET</div><span>ETIHAD <b>TRADERS</b></span></div><div className="form-kicker">WELCOME BACK</div><h2>Sign in to your workspace</h2><p className="muted">Use your existing Etihad Traders employee login.</p><form onSubmit={signIn} className="login-form"><label>Email address</label><input type="email" autoComplete="username" required placeholder="you@company.com" value={email} onChange={e=>setEmail(e.target.value)}/><label>Password</label><input type="password" autoComplete="current-password" required placeholder="Enter your password" value={password} onChange={e=>setPassword(e.target.value)}/>{error&&<div className="error-box">{error}</div>}<button className="primary-btn" disabled={busy}>{busy?"Signing in…":"Sign in securely"} <span>→</span></button></form><div className="login-security"><span>⌑</span> Secure sign-in · Your existing business data stays in place</div><div className="login-help">Need access? Ask your Etihad Traders owner to create your employee account.</div></div><div className="login-bottom">© {new Date().getFullYear()} Etihad Traders</div></section></main>;
+
+  return <main className="app-shell">
+    <aside className={"sidebar "+(mobileNav?"sidebar-open":"")}><div className="side-brand"><div className="brand-mark">ET</div><div><strong>ETIHAD <b>TRADERS</b></strong><small>BUSINESS SUITE</small></div><button className="mobile-close" onClick={()=>setMobileNav(false)}>×</button></div>
+      <div className="workspace-switch"><span className="workspace-dot"></span><div><small>WORKSPACE</small><strong>{orgName}</strong></div><span className="switch-caret">⌄</span></div>
+      <nav>{NAV.map(group=><div className="nav-group" key={group.group}><div className="nav-caption">{group.group}</div>{group.items.map(item=><button key={item.id} className={"nav-item "+(module===item.id?"active":"")} onClick={()=>{setModule(item.id);setMobileNav(false);setQuery("");}}><span className="nav-icon">{item.icon}</span><span>{item.label}</span>{item.id==="sales"&&<small className="nav-tag">POS</small>}</button>)}</div>)}</nav>
+      <div className="sidebar-bottom"><div className="sync-state"><span className="sync-dot"></span><div><b>Cloud connected</b><small>Supabase live data</small></div></div><div className="user-card"><div className="avatar">{(userEmail[0]||"E").toUpperCase()}</div><div className="user-meta"><b>{userEmail.split("@")[0]||"Team member"}</b><small>{role||"Staff"}</small></div><button title="Sign out" onClick={signOut}>↗</button></div></div>
+    </aside>
+    {mobileNav&&<button className="mobile-scrim" onClick={()=>setMobileNav(false)} aria-label="Close navigation"/>}
+    <section className="main-area"><header className="topbar"><div className="top-left"><button className="hamburger" onClick={()=>setMobileNav(true)}>☰</button><div className="crumb">Workspace <span>/</span> <b>{title}</b></div></div><div className="top-actions"><div className="live-pill"><span></span> Live data</div><div className="top-date">{now.toLocaleDateString("en-PK",{weekday:"short",day:"2-digit",month:"short",year:"numeric"})}</div><button className="top-avatar" title={userEmail}>{(userEmail[0]||"E").toUpperCase()}</button></div></header>
+      <div className="page-content">
+        {error&&<div className="notice-error">{error}</div>}
+        {module==="overview"?<><div className="welcome-row"><div><div className="section-kicker">BUSINESS OVERVIEW</div><h1>Good {now.getHours()<12?"morning":now.getHours()<18?"afternoon":"evening"} <span>👋</span></h1><p>Here’s what’s happening across {orgName} today.</p></div><button className="outline-btn" onClick={()=>session.user.id&&loadBusiness(session.user.id)}>↻ <span>Refresh data</span></button></div>
+          {loading?<div className="loading-panel">Loading your live business data…</div>:<><div className="metrics-grid"><Metric label="Sales this month" value={money(monthTotal)} icon="↗" tone="gold" note={monthSales.length+" recorded invoices"}/><Metric label="Outstanding balance" value={money(outstanding)} icon="◷" tone="blue" note="Across recorded invoices"/><Metric label="Products in catalogue" value={String(products.length)} icon="▤" tone="violet" note={lowStock.length+" at or below alert level"}/><Metric label="Active branches" value={String(branches.filter(b=>b.active!==false).length)} icon="⌖" tone="green" note={branches.length+" total branches"}/></div>
+          <div className="dashboard-grid"><section className="panel chart-panel"><div className="panel-head"><div><h3>Sales activity</h3><p>Daily invoice totals · last 7 days</p></div><span className="panel-badge">THIS WEEK</span></div><div className="chart-total">{money(daily.reduce((n,d)=>n+d.total,0))}<small>Recorded sales</small></div><div className="bar-chart">{daily.map((d,i)=><div className="bar-col" key={d.label}><div className="bar-track"><div className="bar-fill" style={{height:Math.max(4,d.total/maxDaily*100)+"%"}} title={money(d.total)}></div></div><small>{d.label}</small></div>)}</div></section>
+          <section className="panel stock-panel"><div className="panel-head"><div><h3>Stock attention</h3><p>Products at or below alert quantity</p></div><button className="text-action" onClick={()=>setModule("products")}>View stock →</button></div><div className="stock-summary"><div className="stock-number">{lowStock.length.toString().padStart(2,"0")}</div><div><b>{lowStock.length?"Needs a look":"All clear"}</b><small>{lowStock.length?"Review these items and plan replenishment":"No products currently below their alert level"}</small></div></div><div className="stock-list">{lowStock.slice(0,4).map((p,i)=><div className="stock-row" key={p.id||i}><span className="stock-avatar">{String(p.name||"P").slice(0,1).toUpperCase()}</span><div className="stock-name"><b>{p.name||"Unnamed product"}</b><small>{p.sku||"No SKU"}</small></div><span className="stock-qty">{amount(p.qty)} <small>{p.unit||"units"}</small></span></div>)}{!lowStock.length&&<div className="empty-inline">Stock alerts will appear here when a product reaches its alert quantity.</div>}</div></section></div>
+          <section className="panel recent-panel"><div className="panel-head"><div><h3>Recent sales</h3><p>Latest recorded invoices from your business</p></div><button className="text-action" onClick={()=>setModule("sales")}>All sales →</button></div><div className="table-wrap"><table><thead><tr><th>INVOICE</th><th>CUSTOMER</th><th>DATE</th><th>PAYMENT STATUS</th><th className="align-right">TOTAL</th></tr></thead><tbody>{recent.map((s,i)=><tr key={s.id||i}><td><b className="invoice-id">{s.invoiceNo||"Invoice"}</b></td><td>{s.customerName||"Walk-in Customer"}</td><td>{dateLabel(s.date)}</td><td><span className={"status "+(amount(s.balance)>0?"pending":"paid")}>{amount(s.balance)>0?"Balance due":"Settled"}</span></td><td className="align-right amount-cell">{money(amount(s.total))}</td></tr>)}{!recent.length&&<tr><td colSpan={5} className="empty-cell">No sales have been recorded yet.</td></tr>}</tbody></table></div></section></>}</>
+        :<><div className="welcome-row"><div><div className="section-kicker">ETIHAD TRADERS / WORKSPACE</div><h1>{title}</h1><p>{module==="sales"?"Review recorded invoices. The redesigned transaction workspace is being built next.":module==="employees"?"Employee profiles, attendance, leave and payroll records.":module==="reports"?"Business reporting built from your existing records.":"Browse your existing business records securely."}</p></div>{COLLECTION[module]&&<span className="record-count">{moduleRows.length} records</span>}</div>
+          {module==="sales"||COLLECTION[module]?<section className="panel data-panel"><div className="data-toolbar"><div><h3>{title}</h3><p>Live records from your existing Etihad Traders database</p></div><input className="search-input" placeholder="Search records…" value={query} onChange={e=>setQuery(e.target.value)}/></div><div className="table-wrap"><table><thead><tr>{(module==="sales"?["INVOICE","CUSTOMER","DATE","TOTAL","PAID","BALANCE"]:module==="products"?["PRODUCT","SKU","CATEGORY","QUANTITY","COST","PRICE"]:module==="branches"?["BRANCH","CODE","ADDRESS","STATUS"]:module==="payments"?["RECEIPT","CUSTOMER","DATE","METHOD","AMOUNT"]:module==="transfers"?["TRANSFER","PRODUCT","FROM","TO","QUANTITY"]:["RECORD","DETAILS","DATE"]).map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{filteredRows.map((r,i)=><RecordTableRow key={r.id||r.invoiceNo||r.sku||i} module={module} row={r}/>) }{!filteredRows.length&&<tr><td colSpan={6} className="empty-cell">{query?"No matching records.":"No records in this section yet."}</td></tr>}</tbody></table></div></section>:<section className="module-placeholder"><div className="placeholder-icon">{module==="employees"?"♧":module==="reports"?"▥":"⚙"}</div><div className="section-kicker">MODULE FOUNDATION</div><h2>{title} workspace</h2><p>This section is part of the new Etihad Traders application. Its existing database and permission model have been retained. The full create, edit and approval workflows are being implemented in the next development stage.</p><div className="placeholder-chips"><span>Existing Supabase</span><span>Role-aware access</span><span>Responsive workspace</span></div></section>}</>}
+      </div><footer className="app-footer"><span>ETIHAD TRADERS</span><span>Secure business workspace · Powered by Vercel + Supabase</span></footer>
+    </section>
+  </main>;
+}
+
+function Metric({label,value,icon,tone,note}:{label:string;value:string;icon:string;tone:string;note:string}) {
+  return <article className="metric-card"><div className="metric-top"><span>{label}</span><span className={"metric-icon "+tone}>{icon}</span></div><strong>{value}</strong><small>{note}</small></article>;
+}
+function RecordTableRow({module,row:r}:{module:ModuleKey;row:Record<string,any>}) {
+  if(module==="sales") return <tr><td><b className="invoice-id">{r.invoiceNo||"—"}</b></td><td>{r.customerName||"Walk-in Customer"}</td><td>{dateLabel(r.date)}</td><td>{money(amount(r.total))}</td><td>{money(amount(r.paid))}</td><td>{money(amount(r.balance))}</td></tr>;
+  if(module==="products") return <tr><td><b>{r.name||"—"}</b></td><td>{r.sku||"—"}</td><td>{r.category||"—"}</td><td>{amount(r.qty)} {r.unit||""}</td><td>{money(amount(r.cost))}</td><td>{money(amount(r.price))}</td></tr>;
+  if(module==="branches") return <tr><td><b>{r.name||"—"}</b></td><td>{r.code||"—"}</td><td>{r.address||"—"}</td><td><span className={"status "+(r.active===false?"pending":"paid")}>{r.active===false?"Inactive":"Active"}</span></td></tr>;
+  if(module==="payments") return <tr><td><b>{r.receiptNo||r.invoiceNo||"—"}</b></td><td>{r.customerName||"—"}</td><td>{dateLabel(r.date)}</td><td>{r.method||"—"}</td><td>{money(amount(r.amount))}</td></tr>;
+  if(module==="transfers") return <tr><td><b>{r.transferNo||"—"}</b></td><td>{r.productName||"—"}</td><td>{r.fromBranchName||"—"}</td><td>{r.toBranchName||"—"}</td><td>{amount(r.qty)}</td></tr>;
+  return <tr><td><b>{r.name||r.id||"—"}</b></td><td>—</td><td>{dateLabel(r.date)}</td></tr>;
+}
