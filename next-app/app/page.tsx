@@ -8,7 +8,7 @@ import { PeopleWorkspace, ReportsWorkspace, SettingsWorkspace } from "./manageme
 import { CustomerWorkspace, SupplierWorkspace, ExpenseWorkspace, BranchWorkspace } from "./commerce";
 
 type RecordRow = { collection: string; record_id: string; data: Record<string, any>; updated_at: string };
-type ModuleKey = "overview" | "sales" | "products" | "customers" | "purchases" | "suppliers" | "branches" | "payments" | "transfers" | "reports" | "employees" | "settings";
+type ModuleKey = "overview" | "sales" | "products" | "customers" | "purchases" | "suppliers" | "expenses" | "branches" | "payments" | "transfers" | "reports" | "employees" | "settings";
 const NAV: { group: string; items: { id: ModuleKey; label: string; icon: string }[] }[] = [
   { group: "WORKSPACE", items: [{id:"overview",label:"Overview",icon:"⌂"},{id:"sales",label:"Sales & POS",icon:"▣"},{id:"products",label:"Products & stock",icon:"▤"},{id:"customers",label:"Customers",icon:"♙"},{id:"purchases",label:"Purchases",icon:"⇩"},{id:"suppliers",label:"Suppliers",icon:"♧"},{id:"expenses",label:"Expenses",icon:"−"}] },
   { group: "MANAGEMENT", items: [{id:"branches",label:"Branches",icon:"⌖"},{id:"payments",label:"Payments",icon:"＄"},{id:"transfers",label:"Stock transfers",icon:"⇄"},{id:"reports",label:"Reports & analytics",icon:"▥"},{id:"employees",label:"Employees & payroll",icon:"♧"}] },
