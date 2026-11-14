@@ -81,7 +81,8 @@ export default function Home() {
 
   const records = (name:string) => rows.filter(r=>r.collection===name).map(r=>r.data || {});
   const roleDefaults:Record<string,string[]>={owner:["sales","returns","products","customers","purchases","suppliers","expenses","branches","payments","transfers","reports","employees","settings"],manager:["sales","returns","products","customers","purchases","suppliers","expenses","branches","payments","transfers","reports","employees"],cashier:["sales","returns","customers","payments"],stockkeeper:["products","transfers","purchases"],accountant:["sales","returns","customers","suppliers","payments","expenses","reports"]};
-  const permitted=(id:ModuleKey)=>{if(role==="owner")return true;if(id==="overview")return true;if(id==="settings"||id==="branches")return false;const hasExplicit=Object.keys(permissions).length>0;return hasExplicit?permissions[id]===true:(roleDefaults[role]||[]).includes(id);};
+  const permissionAliases:Record<string,string[]>={customers:["customers","customer_balances"],returns:["returns","sales_returns"],transfers:["transfers","stock"],products:["products"],sales:["sales"],purchases:["purchases"],suppliers:["suppliers"],payments:["payments"],expenses:["expenses"],reports:["reports"],employees:["employees"]};
+  const permitted=(id:ModuleKey)=>{if(role==="owner")return true;if(id==="overview")return true;if(id==="branches")return false;if(id==="settings")return true;const hasExplicit=Object.keys(permissions).length>0;return hasExplicit?(permissionAliases[id]||[id]).some(key=>permissions[key]===true):(roleDefaults[role]||[]).includes(id);};
   const visibleNav=NAV.map(group=>({...group,items:group.items.filter(item=>permitted(item.id))})).filter(group=>group.items.length>0);
   useEffect(()=>{if(session&&!permitted(module))setModule("overview");},[role,permissions,module,session]);
 
