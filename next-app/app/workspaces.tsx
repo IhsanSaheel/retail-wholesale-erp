@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { listPendingSales, removePendingSale, savePendingSale, updatePendingSale, type PendingSale } from "@/lib/offline-sales";
 import { getSupabase } from "@/lib/supabase";
 
 type Row = { collection: string; record_id: string; data: Record<string, any> };
@@ -31,6 +32,11 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [pendingSales, setPendingSales] = useState<PendingSale[]>([]);
+  const [syncing, setSyncing] = useState(false);
+  const [syncTrigger, setSyncTrigger] = useState(0);
+  const syncLock = useRef(false);
+  const onSavedRef = useRef(onSaved);
   const [tab, setTab] = useState<"new" | "history">("new");
   const total = cart.reduce((s, x) => s + n(x.product.price) * x.qty, 0);
   const availableAdvance = customerCredits.filter(r => r.data.customerPhone === customerPhone && r.data.balance > 0).reduce((sum, r) => sum + n(r.data.balance), 0);
@@ -46,6 +52,67 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
   const recent = [...sales].sort((a,b)=>new Date(b.date||0).getTime()-new Date(a.date||0).getTime()).slice(0,30);
   const add = (p: Product) => setCart(prev => { const found = prev.find(x => x.product.id === p.id); return found ? prev.map(x => x.product.id === p.id ? { ...x, qty: x.qty + 1 } : x) : [...prev, { product: p, qty: 1 }]; });
   const changeQty = (id: string, qty: number) => setCart(prev => qty <= 0 ? prev.filter(x => x.product.id !== id) : prev.map(x => x.product.id === id ? { ...x, qty } : x));
+
+  useEffect(() => { onSavedRef.current = onSaved; }, [onSaved]);
+
+  useEffect(() => {
+    let active = true;
+    const refreshQueue = async () => {
+      try {
+        const items = await listPendingSales(orgId, userId);
+        if (active) setPendingSales(items);
+        return items;
+      } catch (error) {
+        if (active) setMessage("Offline queue could not be opened: " + (error instanceof Error ? error.message : "Storage unavailable"));
+        return [];
+      }
+    };
+    const syncQueue = async () => {
+      if (!navigator.onLine || syncLock.current) return;
+      syncLock.current = true;
+      if (active) setSyncing(true);
+      let completed = 0;
+      try {
+        const items = await refreshQueue();
+        for (const item of items) {
+          if (!active || item.status === "failed") continue;
+          const { data, error } = await supabase.rpc("etihad_create_sale", item.rpcArgs);
+          if (error || !data?.success) {
+            const detail = error?.message || "The server could not confirm this sale.";
+            const transient = !error?.code && /fetch|network|timeout|offline|load failed/i.test(detail);
+            await updatePendingSale({ ...item, status: transient ? "pending" : "failed", lastError: detail });
+            if (transient) break;
+          } else {
+            await removePendingSale(item.id);
+            completed++;
+          }
+        }
+        const remaining = await refreshQueue();
+        if (active && completed > 0) {
+          setMessage(completed + " offline sale" + (completed === 1 ? "" : "s") + " synchronised successfully. Stock and payment records are now confirmed in the cloud.");
+          onSavedRef.current();
+        }
+        if (active && remaining.some(x => x.status === "failed")) {
+          setMessage("Some saved offline sales need attention. Review the pending-sync list before retrying.");
+        }
+      } catch (error) {
+        if (active) setMessage("Offline sales remain safely stored on this device. Synchronisation will retry when the connection is available.");
+      } finally {
+        syncLock.current = false;
+        if (active) setSyncing(false);
+      }
+    };
+    void refreshQueue();
+    if (navigator.onLine) void syncQueue();
+    window.addEventListener("online", syncQueue);
+    return () => { active = false; window.removeEventListener("online", syncQueue); };
+  }, [orgId, userId, supabase, syncTrigger]);
+
+  async function retryPendingSales() {
+    const items = await listPendingSales(orgId, userId);
+    for (const item of items) if (item.status === "failed") await updatePendingSale({ ...item, status: "pending", lastError: undefined });
+    setSyncTrigger(value => value + 1);
+  }
 
   async function saveSale() {
     setMessage("");
@@ -80,7 +147,7 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
       changeReturned, customerAdvance, staffTip, overpaymentResolution: over ? resolution : "none",
       paymentMethod: method, note
     };
-    const { data: checkout, error } = await supabase.rpc("etihad_create_sale", {
+    const rpcArgs = {
       p_org_id: orgId,
       p_branch_id: String(branchId),
       p_sale: sale,
@@ -89,10 +156,37 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
       p_customer_advance: customerAdvance,
       p_staff_tip: staffTip,
       p_method: method
-    });
+    };
+    const queueSale = async (reason: string) => {
+      const pending: PendingSale = { id, orgId, userId, createdAt: date, sale, rpcArgs, status: "pending", lastError: reason };
+      await savePendingSale(pending);
+      const items = await listPendingSales(orgId, userId);
+      setPendingSales(items);
+      if (receiptWindow) {
+        receiptWindow.document.open();
+        receiptWindow.document.write(`<!doctype html><html><head><title>Pending ${esc(invoiceNo)}</title><style>body{font:14px Arial;color:#18253b;max-width:360px;margin:24px auto;padding:10px}h2{text-align:center} .warn{padding:12px;background:#fff4df;border:1px solid #e4b65f;border-radius:8px;font-weight:bold}table{width:100%}td{padding:7px 0;border-bottom:1px solid #eee}.r{text-align:right}</style></head><body><h2>ETIHAD TRADERS</h2><div class="warn">PENDING CLOUD SYNC — NOT A CONFIRMED SALES RECEIPT</div><p>Reference: ${esc(invoiceNo)}</p><p>Date: ${esc(new Date(date).toLocaleString())}</p><p>Customer: ${esc(sale.customerName)}</p><table>${sale.items.map((x:any)=>`<tr><td>${esc(x.name)} × ${x.qty}</td><td class="r">${cash(x.qty*x.price)}</td></tr>`).join("")}</table><hr/><p>Total: <b>${cash(total)}</b></p><p>Cash tendered (reported): ${cash(cashReceived)}</p><p>Keep this reference. The sale is not final until cloud synchronisation succeeds.</p></body></html>`);
+        receiptWindow.document.close();
+      }
+      setCart([]); setReceived(""); setUseAdvance(false); setCustomerName("Walk-in Customer"); setCustomerPhone(""); setNote("");
+      setMessage("Sale stored securely on this device as PENDING SYNC. It is not yet recorded in cloud stock, sales or accounts. Do not treat the pending slip as a final receipt.");
+      setSaving(false);
+    };
+    if (!navigator.onLine) {
+      try { await queueSale("Device is offline"); }
+      catch (storageError) { receiptWindow?.close(); setMessage("Sale was not recorded. Offline storage failed: " + (storageError instanceof Error ? storageError.message : "Unknown storage error")); setSaving(false); }
+      return;
+    }
+    const { data: checkout, error } = await supabase.rpc("etihad_create_sale", rpcArgs);
     if (error || !checkout?.success) {
+      const detail = error?.message || "Checkout could not be completed.";
+      const transient = !error?.code && /fetch|network|timeout|offline|load failed/i.test(detail);
+      if (transient) {
+        try { await queueSale(detail); }
+        catch (storageError) { receiptWindow?.close(); setMessage("Connection failed and the sale could not be saved locally: " + (storageError instanceof Error ? storageError.message : "Offline storage unavailable")); setSaving(false); }
+        return;
+      }
       receiptWindow?.close();
-      setMessage("Sale was not saved and stock was not changed: " + (error?.message || "Checkout could not be completed."));
+      setMessage("Sale was not saved and stock was not changed: " + detail);
       setSaving(false);
       return;
     }
@@ -107,7 +201,8 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
 
   return <div className="pos-workspace">
     <div className="pos-heading"><div><div className="section-kicker">POINT OF SALE</div><h2>New sale</h2><p>Build a bill, select a customer and settle the payment.</p></div><div className="pos-tabs"><button className={tab==="new"?"selected":""} onClick={()=>setTab("new")}>New sale</button><button className={tab==="history"?"selected":""} onClick={()=>setTab("history")}>Sales history</button></div></div>
-    {message && <div className={message.startsWith("Sale saved")?"pos-success":"notice-error"}>{message}</div>}
+    {pendingSales.length>0&&<div className="panel offline-queue-banner"><div><b>{pendingSales.length} sale{pendingSales.length===1?"":"s"} awaiting cloud sync</b><p>{syncing?"Synchronising saved sales…":"These sales are stored on this device and are not yet confirmed in cloud stock or accounts."}</p>{pendingSales.filter(x=>x.status==="failed").map(x=><small key={x.id}>Needs attention: {x.sale.invoiceNo} — {x.lastError}</small>)}</div><div className="offline-queue-actions"><button className="secondary-btn" disabled={syncing||!navigator.onLine} onClick={retryPendingSales}>{syncing?"Syncing…":"Retry sync"}</button></div></div>}
+    {message && <div className={message.startsWith("Sale saved")||message.includes("synchronised successfully")?"pos-success":"notice-error"}>{message}</div>}
     {tab==="history" ? <div className="panel data-panel"><div className="panel-head"><div><h3>Recent invoices</h3><p>Latest sales from the shared Etihad Traders database</p></div></div><div className="table-wrap"><table><thead><tr><th>INVOICE</th><th>CUSTOMER</th><th>DATE</th><th>TOTAL</th><th>PAID</th><th>BALANCE</th></tr></thead><tbody>{recent.map((s,i)=><tr key={s.id||i}><td><b>{s.invoiceNo||"—"}</b></td><td>{s.customerName||"Walk-in"}</td><td>{new Date(s.date).toLocaleDateString()}</td><td>{cash(n(s.total))}</td><td>{cash(n(s.paid))}</td><td>{cash(n(s.balance))}</td></tr>)}</tbody></table></div></div> :
     <div className="pos-layout">
       <section className="pos-catalog panel"><div className="pos-catalog-head"><div><h3>Choose products</h3><p>Tap a product shortcut to add it to the bill</p></div><span className="record-count">{products.length} products</span></div><input className="pos-search" placeholder="Search product name, SKU or category…" value={search} onChange={e=>setSearch(e.target.value)}/><div className="pos-products">{matches.map((p,i)=><button className="pos-product" key={p.id||i} onClick={()=>add(p)}><span className="product-initial">{String(p.name||"P").slice(0,1).toUpperCase()}</span><b>{p.name}</b><small>{p.sku||p.category||"Product"}</small><strong>{cash(n(p.price))}</strong><em>+ Add</em></button>)}{!matches.length&&<div className="empty-cell">No products found.</div>}</div></section>
