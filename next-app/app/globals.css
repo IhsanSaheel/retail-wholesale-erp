@@ -22,3 +22,5 @@
 
 
 .directory-workspace{display:flex;flex-direction:column;gap:15px}.single-field{display:flex;flex-direction:column;gap:6px;font-size:9px;color:#69778b;max-width:420px;margin:12px 0}.single-field input{border:1px solid #dfe4eb;border-radius:7px;padding:10px;font-size:10px}
+
+.use-advance{display:flex!important;align-items:center;gap:8px;background:#eef7f2;border:1px solid #d5e9df;border-radius:7px;padding:9px;margin-bottom:9px;color:#27765c!important}.use-advance input{width:auto!important;accent-color:#28876c}
