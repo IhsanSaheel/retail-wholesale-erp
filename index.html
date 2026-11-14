@@ -8590,7 +8590,7 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
  window.renderTipReport=function(){
   if(!$('etihadTipRows'))return;
   const from=$('reportFrom')?.value||'',to=$('reportTo')?.value||'',branch=$('reportBranch')?.value||'';
-  const rows=(Array.isArray(window.sales)?window.sales:[]).filter(s=>{
+  const rows=(typeof sales!=='undefined'&&Array.isArray(sales)?sales:[]).filter(s=>{
    const d=String(s.date||'').slice(0,10),v=Number(s.tipAmount||0);
    return v>0&&(!from||d>=from)&&(!to||d<=to)&&(!branch||s.branchId===branch);
   }).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
