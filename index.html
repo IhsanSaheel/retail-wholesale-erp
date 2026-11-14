@@ -8319,9 +8319,6 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
     localStorage.setItem(creditKey,JSON.stringify(entries));
    }
    if(typeof window.saveAll==='function')window.saveAll();
-   // Print only after the saved sale contains the actual amount received,
-   // change/advance/tip allocation, and cashier metadata.
-   if(typeof invoicePrinter==='function')invoicePrinter(deferredInvoiceId||saved.id);
    if($('etSaleAddExtra'))$('etSaleAddExtra').checked=false;
    if($('etSaleKeepTip'))$('etSaleKeepTip').checked=false;
    refreshChange();
@@ -8467,6 +8464,9 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
     localStorage.setItem(storageKey,JSON.stringify(entries));
    }
    if(typeof window.saveAll==='function')window.saveAll();
+   // Print only after the saved sale contains the actual amount received,
+   // change/advance/tip allocation, and cashier metadata.
+   if(typeof invoicePrinter==='function')invoicePrinter(deferredInvoiceId||saved.id);
    if($('etSaleAddExtra'))$('etSaleAddExtra').checked=false;
    if($('etSaleKeepTip'))$('etSaleKeepTip').checked=false;
    if($('etihadSaleNote'))$('etihadSaleNote').value='';
