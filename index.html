@@ -1676,6 +1676,104 @@ function printInvoice(sid){
  if(complete)complete.textContent='Confirm payment & save invoice';
 })();
 <\/script>
+
+<script id="etihad-pos-simple-customer-cart-v2">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const pos=$('pos'),body=$('cartTable');
+ if(!pos||!body||window.__etihadPosSimpleCustomerCartV2)return;
+ window.__etihadPosSimpleCustomerCartV2=true;
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const fmt=v=>typeof money==='function'?money(v):Number(v||0).toLocaleString('en-PK',{maximumFractionDigits:2});
+ const stockFor=item=>(Array.isArray(products)?products:[]).find(p=>String(p.id)===String(item.productId));
+ // A compact, always-visible customer picker in the bill panel.
+ const details=$('etihadPosCustomerDetails'),saved=$('savedCustomerSelect'),savedWrap=saved?.parentElement;
+ if(details){
+  details.open=true;
+  const host=$('etihadPosCustomerHost');
+  if(host){
+   host.style.display='grid';
+   host.style.gap='8px';
+  }
+  const cartHost=$('etihadPosCartHost');
+  if(cartHost&&details.parentElement===cartHost.parentElement)cartHost.before(details);
+  const summary=details.querySelector('summary');
+  if(summary){summary.innerHTML='<strong>Customer</strong><span class="muted">Choose saved / new / walk-in</span>';}
+ }
+ if(saved&&savedWrap&&!$('etihadCustomerSearch')){
+  const label=document.createElement('label');label.htmlFor='etihadCustomerSearch';label.textContent='Search customer by name or phone';
+  const search=document.createElement('input');search.id='etihadCustomerSearch';search.type='search';search.placeholder='Type customer name or phone…';search.autocomplete='off';
+  savedWrap.insertBefore(label,saved);savedWrap.insertBefore(search,saved);
+  let base=[];
+  const capture=()=>{base=Array.from(saved.options).map(o=>({value:o.value,text:o.textContent,disabled:o.disabled}));};
+  capture();
+  search.addEventListener('input',()=>{
+   const q=search.value.trim().toLocaleLowerCase(),current=saved.value;
+   if(!base.length)capture();
+   const filtered=base.filter(o=>!q||o.text.toLocaleLowerCase().includes(q)||o.value.toLocaleLowerCase().includes(q));
+   saved.replaceChildren();
+   filtered.forEach(o=>{const opt=new Option(o.text,o.value);opt.disabled=o.disabled;saved.add(opt)});
+   if(Array.from(saved.options).some(o=>o.value===current))saved.value=current;
+   else if(!q)saved.value='';
+  });
+  saved.addEventListener('focus',capture);
+ }
+ // Always show real +/- controls in the bill. Decrease never silently removes a row.
+ window.renderCart=function(){
+  body.innerHTML=cart.map((item,index)=>'<tr>'+
+   '<td class="et-pos-cart-name">'+esc(item.name)+'</td>'+
+   '<td>'+fmt(item.price)+'</td>'+
+   '<td><div class="et-pos-qty-controls">'+
+    '<button type="button" data-cart-index="'+index+'" data-cart-delta="-1" aria-label="Decrease '+esc(item.name)+' quantity">−</button>'+
+    '<strong>'+Number(item.qty||0)+'</strong>'+
+    '<button type="button" data-cart-index="'+index+'" data-cart-delta="1" aria-label="Increase '+esc(item.name)+' quantity">+</button>'+
+   '</div></td>'+
+   '<td>'+fmt(Number(item.price||0)*Number(item.qty||0))+'</td>'+
+   '<td><button type="button" class="btn small red" data-cart-remove="'+index+'">Remove</button></td>'+
+  '</tr>').join('')||'<tr><td colspan="5" class="empty">Your bill is empty. Add a product to begin.</td></tr>';
+  if($('cartTotal'))$('cartTotal').textContent=fmt(cartAmount());
+  if($('etihadPosGrandTotal'))$('etihadPosGrandTotal').textContent=fmt(cartAmount());
+  if($('etihadPosCartTitle'))$('etihadPosCartTitle').textContent=cart.length+' item'+(cart.length===1?'':'s');
+  if($('etihadPosCartQty'))$('etihadPosCartQty').textContent='Quantity: '+cart.reduce((n,x)=>n+Number(x.qty||0),0);
+  if(typeof updateBalancePreview==='function')updateBalancePreview();
+ };
+ body.addEventListener('click',e=>{
+  const remove=e.target.closest('[data-cart-remove]');
+  if(remove){const i=Number(remove.dataset.cartRemove);if(Number.isInteger(i)&&cart[i]){cart.splice(i,1);renderCart()}return;}
+  const btn=e.target.closest('[data-cart-index][data-cart-delta]');
+  if(!btn)return;
+  const i=Number(btn.dataset.cartIndex),delta=Number(btn.dataset.cartDelta),item=cart[i];
+  if(!item||![-1,1].includes(delta))return;
+  const next=Number(item.qty)+delta;
+  if(next<1)return;
+  const p=stockFor(item);
+  if(!p||next>Number(p.qty||0)){alert('Available stock: '+Number(p?.qty||0));return;}
+  item.qty=next;renderCart();
+ });
+ const css=document.createElement('style');css.id='etihad-pos-simple-customer-cart-style-v2';
+ css.textContent=`
+ #pos #etihadPosCustomerDetails{display:block!important;margin:8px 0 12px!important;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface)}
+ #pos #etihadPosCustomerDetails>summary{padding:3px 0 10px!important;border-bottom:1px solid var(--line);margin-bottom:9px;list-style:none}
+ #pos #etihadPosCustomerDetails>summary::-webkit-details-marker{display:none}
+ #pos #etihadPosCustomerDetails>summary:after{display:none!important}
+ #pos #etihadPosCustomerHost{display:grid!important;gap:8px!important;padding:0!important}
+ #pos #etihadCustomerSearch{width:100%;min-height:42px;margin:3px 0 6px}
+ #pos #savedCustomerSelect{width:100%;min-height:42px}
+ #pos .et-pos-qty-controls{display:flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap}
+ #pos .et-pos-qty-controls button{width:32px;height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:19px;font-weight:800;line-height:1;cursor:pointer}
+ #pos .et-pos-qty-controls strong{min-width:18px;text-align:center}
+ #pos .pos-cart-table{overflow-x:auto}
+ #pos .pos-cart-table table{min-width:100%;width:100%;table-layout:auto}
+ #pos .pos-cart-table th,#pos .pos-cart-table td{padding:8px 5px;white-space:normal}
+ #pos .pos-pro-side{min-width:0}
+ @media(max-width:560px){#pos .et-pos-qty-controls{gap:5px}#pos .et-pos-qty-controls button{width:34px;height:34px}#pos .pos-cart-table table{font-size:11px}}
+ `;
+ document.head.appendChild(css);
+ renderCart();
+})();
+</script>
+
 </body>
 </html>`;
 
