@@ -17,6 +17,7 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
   const products = rows.filter(r => r.collection === "mberp_products").map(r => r.data).filter(p => p.active !== false);
   const branches = rows.filter(r => r.collection === "mberp_branches").map(r => r.data).filter(b => b.active !== false && (!branchIds.length || branchIds.includes(String(b.id))));
   const sales = rows.filter(r => r.collection === "mberp_sales").map(r => r.data);
+  const customerCredits = rows.filter(r => r.collection === "mberp_customer_account_credits");
   const [cart, setCart] = useState<{ product: Product; qty: number }[]>([]);
   const [search, setSearch] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
@@ -24,6 +25,7 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
   const [customerPhone, setCustomerPhone] = useState("");
   const [branchId, setBranchId] = useState(branches[0]?.id || "");
   const [received, setReceived] = useState("");
+  const [useAdvance, setUseAdvance] = useState(false);
   const [method, setMethod] = useState("Cash");
   const [resolution, setResolution] = useState("change");
   const [note, setNote] = useState("");
@@ -31,9 +33,13 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
   const [message, setMessage] = useState("");
   const [tab, setTab] = useState<"new" | "history">("new");
   const total = cart.reduce((s, x) => s + n(x.product.price) * x.qty, 0);
-  const receivedAmount = received === "" ? total : Math.max(0, n(received));
+  const availableAdvance = customerCredits.filter(r => r.data.customerPhone === customerPhone && r.data.balance > 0).reduce((sum, r) => sum + n(r.data.balance), 0);
+  const advanceUsed = useAdvance ? Math.min(total, availableAdvance) : 0;
+  const cashReceived = received === "" ? Math.max(0, total - advanceUsed) : Math.max(0, n(received));
+  const receivedAmount = cashReceived + advanceUsed;
   const over = Math.max(0, receivedAmount - total);
   const applied = Math.min(total, receivedAmount);
+  const cashApplied = Math.min(cashReceived, Math.max(0, total - advanceUsed));
   const balance = Math.max(0, total - applied);
   const matches = products.filter(p => [p.name, p.sku, p.category].join(" ").toLowerCase().includes(search.toLowerCase()));
   const customers = Array.from(new Map(sales.filter(s => s.customerName && s.customerName !== "Walk-in Customer").map(s => [s.customerPhone || s.customerName, { name: s.customerName, phone: s.customerPhone || "" }])).values()).filter(c => (c.name + " " + c.phone).toLowerCase().includes(customerSearch.toLowerCase())).slice(0, 6);
@@ -60,7 +66,7 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
       id, date, invoiceNo, branchId, branchName: branch?.name || "",
       customerName: customerName.trim() || "Walk-in Customer", customerPhone: customerPhone.trim(),
       items: cart.map(x => ({ productId: x.product.id, name: x.product.name, sku: x.product.sku || "", qty: x.qty, cost: n(x.product.cost), price: n(x.product.price), unit: x.product.unit || "piece" })),
-      subtotal: total, total, paid: applied, balance, receivedAmount, changeReturned, customerAdvance, staffTip,
+      subtotal: total, total, paid: applied, balance, receivedAmount, cashReceived, advanceUsed, changeReturned, customerAdvance, staffTip,
       overpaymentResolution: over ? resolution : "none", paymentMethod: method, note
     };
     const record = { org_id: orgId, collection: "mberp_sales", record_id: id, branch_ids: [String(branchId)], data: sale, updated_by: userId };
@@ -68,13 +74,27 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
     if (saleError) { receiptWindow?.close(); setMessage("Sale could not be saved: " + saleError.message); setSaving(false); return; }
 
     let followupError: string | null = null;
-    if (applied > 0) {
+    if (cashApplied > 0) {
       const paymentId = makeId();
       const { error } = await supabase.from("etihad_records").insert({
         org_id: orgId, collection: "mberp_payments", record_id: paymentId, branch_ids: [String(branchId)], updated_by: userId,
-        data: { id: paymentId, date, amount: applied, method, type: "sale_payment", saleId: id, invoiceNo, receiptNo: "REC-" + invoiceNo, branchId, branchName: branch?.name || "", customerName: sale.customerName, customerPhone: sale.customerPhone, note: "Payment received at point of sale" }
+        data: { id: paymentId, date, amount: cashApplied, method, type: "sale_payment", saleId: id, invoiceNo, receiptNo: "REC-" + invoiceNo, branchId, branchName: branch?.name || "", customerName: sale.customerName, customerPhone: sale.customerPhone, note: "Payment received at point of sale" }
       });
       if (error) followupError = "Sale saved, but payment history could not be saved: " + error.message;
+    }
+    if (advanceUsed > 0) {
+      let remainingAdvance = advanceUsed;
+      for (const credit of customerCredits) {
+        if (credit.data.customerPhone !== sale.customerPhone || remainingAdvance <= 0) continue;
+        const available = n(credit.data.balance);
+        const used = Math.min(available, remainingAdvance);
+        const { error } = await supabase.from("etihad_records").update({ data: { ...credit.data, balance: available - used, lastAppliedAt: date, lastAppliedSaleId: id }, updated_by: userId }).eq("org_id", orgId).eq("collection", "mberp_customer_account_credits").eq("record_id", credit.record_id);
+        if (error) followupError = "Sale saved, but customer advance balance could not be updated: " + error.message;
+        remainingAdvance -= used;
+      }
+      const advancePaymentId = makeId();
+      const { error } = await supabase.from("etihad_records").insert({ org_id: orgId, collection: "mberp_payments", record_id: advancePaymentId, branch_ids: [String(branchId)], updated_by: userId, data: { id: advancePaymentId, date, amount: advanceUsed, method: "Customer advance", type: "advance_applied", saleId: id, invoiceNo, receiptNo: "ADV-USE-" + invoiceNo, branchId, branchName: branch?.name || "", customerName: sale.customerName, customerPhone: sale.customerPhone, note: "Saved customer advance applied to this bill." } });
+      if (error) followupError = "Sale saved, but advance payment history could not be recorded: " + error.message;
     }
     if (customerAdvance > 0) {
       const creditId = makeId();
@@ -93,9 +113,9 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
       if (error) followupError = "Sale saved, but tip could not be recorded separately: " + error.message;
     }
 
-    const receipt = `<!doctype html><html><head><title>${esc(invoiceNo)}</title><style>body{font:14px Arial;color:#18253b;max-width:360px;margin:24px auto;padding:10px}h2{text-align:center;margin:0}p{text-align:center;color:#667}hr{border:0;border-top:1px dashed #aaa}table{width:100%;border-collapse:collapse}td{padding:7px 0;border-bottom:1px solid #eee}.r{text-align:right}.total{font-weight:bold;font-size:18px}.small{font-size:12px;color:#667}</style></head><body><h2>ETIHAD TRADERS</h2><p>Sales receipt</p><hr/><div>Invoice: ${esc(invoiceNo)}</div><div>Date: ${esc(new Date(date).toLocaleString())}</div><div>Customer: ${esc(sale.customerName)}</div><div>Phone: ${esc(sale.customerPhone || "—")}</div><div>Branch: ${esc(sale.branchName)}</div><hr/><table>${sale.items.map((x:any)=>`<tr><td>${esc(x.name)} × ${x.qty}</td><td class="r">${cash(x.qty*x.price)}</td></tr>`).join("")}</table><hr/><table><tr><td>Total bill</td><td class="r">${cash(total)}</td></tr><tr><td>Amount received</td><td class="r">${cash(receivedAmount)}</td></tr><tr><td>Applied to invoice</td><td class="r">${cash(applied)}</td></tr>${changeReturned?`<tr><td>Change returned</td><td class="r">${cash(changeReturned)}</td></tr>`:""}${customerAdvance?`<tr><td>Customer advance saved</td><td class="r">${cash(customerAdvance)}</td></tr>`:""}${staffTip?`<tr><td>Staff tip (not sales)</td><td class="r">${cash(staffTip)}</td></tr>`:""}<tr><td>Balance due</td><td class="r">${cash(balance)}</td></tr></table><hr/><p class="small">Payment method: ${esc(method)}</p><p>Thank you for shopping with us.</p><script>window.onload=()=>window.print()<\/script></body></html>`;
+    const receipt = `<!doctype html><html><head><title>${esc(invoiceNo)}</title><style>body{font:14px Arial;color:#18253b;max-width:360px;margin:24px auto;padding:10px}h2{text-align:center;margin:0}p{text-align:center;color:#667}hr{border:0;border-top:1px dashed #aaa}table{width:100%;border-collapse:collapse}td{padding:7px 0;border-bottom:1px solid #eee}.r{text-align:right}.total{font-weight:bold;font-size:18px}.small{font-size:12px;color:#667}</style></head><body><h2>ETIHAD TRADERS</h2><p>Sales receipt</p><hr/><div>Invoice: ${esc(invoiceNo)}</div><div>Date: ${esc(new Date(date).toLocaleString())}</div><div>Customer: ${esc(sale.customerName)}</div><div>Phone: ${esc(sale.customerPhone || "—")}</div><div>Branch: ${esc(sale.branchName)}</div><hr/><table>${sale.items.map((x:any)=>`<tr><td>${esc(x.name)} × ${x.qty}</td><td class="r">${cash(x.qty*x.price)}</td></tr>`).join("")}</table><hr/><table><tr><td>Total bill</td><td class="r">${cash(total)}</td></tr><tr><td>Cash received</td><td class="r">${cash(cashReceived)}</td></tr>${advanceUsed?`<tr><td>Customer advance applied</td><td class="r">${cash(advanceUsed)}</td></tr>`:""}<tr><td>Total tender applied</td><td class="r">${cash(receivedAmount)}</td></tr><tr><td>Applied to invoice</td><td class="r">${cash(applied)}</td></tr>${changeReturned?`<tr><td>Change returned</td><td class="r">${cash(changeReturned)}</td></tr>`:""}${customerAdvance?`<tr><td>Customer advance saved</td><td class="r">${cash(customerAdvance)}</td></tr>`:""}${staffTip?`<tr><td>Staff tip (not sales)</td><td class="r">${cash(staffTip)}</td></tr>`:""}<tr><td>Balance due</td><td class="r">${cash(balance)}</td></tr></table><hr/><p class="small">Payment method: ${esc(method)}</p><p>Thank you for shopping with us.</p><script>window.onload=()=>window.print()<\/script></body></html>`;
     if (receiptWindow) { receiptWindow.document.open(); receiptWindow.document.write(receipt); receiptWindow.document.close(); }
-    setCart([]); setReceived(""); setCustomerName("Walk-in Customer"); setCustomerPhone(""); setNote("");
+    setCart([]); setReceived(""); setUseAdvance(false); setCustomerName("Walk-in Customer"); setCustomerPhone(""); setNote("");
     setMessage(followupError || "Sale saved successfully. Receipt opened in a new window.");
     setSaving(false); onSaved();
   }
@@ -107,10 +127,10 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
     <div className="pos-layout">
       <section className="pos-catalog panel"><div className="pos-catalog-head"><div><h3>Choose products</h3><p>Tap a product shortcut to add it to the bill</p></div><span className="record-count">{products.length} products</span></div><input className="pos-search" placeholder="Search product name, SKU or category…" value={search} onChange={e=>setSearch(e.target.value)}/><div className="pos-products">{matches.map((p,i)=><button className="pos-product" key={p.id||i} onClick={()=>add(p)}><span className="product-initial">{String(p.name||"P").slice(0,1).toUpperCase()}</span><b>{p.name}</b><small>{p.sku||p.category||"Product"}</small><strong>{cash(n(p.price))}</strong><em>+ Add</em></button>)}{!matches.length&&<div className="empty-cell">No products found.</div>}</div></section>
       <section className="pos-bill panel"><div className="bill-title"><div><h3>Current bill</h3><p>{cart.reduce((s,x)=>s+x.qty,0)} items in this sale</p></div><button className="text-action" onClick={()=>setCart([])}>Clear</button></div>
-        <div className="customer-box"><label>Customer</label><input value={customerSearch} onChange={e=>setCustomerSearch(e.target.value)} placeholder="Search saved customer by name or phone…"/>{customerSearch&&<div className="customer-results">{customers.map((c,i)=><button key={i} onClick={()=>{setCustomerName(c.name);setCustomerPhone(c.phone);setCustomerSearch("");}}><b>{c.name}</b><small>{c.phone}</small></button>)}</div>}<div className="customer-fields"><input value={customerName} onChange={e=>setCustomerName(e.target.value)} placeholder="Customer name"/><input value={customerPhone} onChange={e=>setCustomerPhone(e.target.value)} placeholder="Phone number"/></div></div>
+        <div className="customer-box"><label>Customer</label><input value={customerSearch} onChange={e=>setCustomerSearch(e.target.value)} placeholder="Search saved customer by name or phone…"/>{customerSearch&&<div className="customer-results">{customers.map((c,i)=><button key={i} onClick={()=>{setCustomerName(c.name);setCustomerPhone(c.phone);setUseAdvance(false);setCustomerSearch("");}}><b>{c.name}</b><small>{c.phone}</small></button>)}</div>}<div className="customer-fields"><input value={customerName} onChange={e=>setCustomerName(e.target.value)} placeholder="Customer name"/><input value={customerPhone} onChange={e=>setCustomerPhone(e.target.value)} placeholder="Phone number"/></div></div>
         <div className="bill-items">{cart.map(({product,qty})=><div className="bill-item" key={product.id}><div className="bill-product"><b>{product.name}</b><small>{cash(n(product.price))} each</small></div><div className="qty-control"><button onClick={()=>changeQty(product.id,qty-1)}>−</button><span>{qty}</span><button onClick={()=>changeQty(product.id,qty+1)}>+</button></div><b className="line-total">{cash(n(product.price)*qty)}</b><button className="remove-item" onClick={()=>changeQty(product.id,0)}>×</button></div>)}{!cart.length&&<div className="bill-empty">Your bill is empty.<br/>Choose a product to get started.</div>}</div>
         <div className="bill-summary"><div><span>Subtotal</span><b>{cash(total)}</b></div><div className="bill-grand"><span>Total bill</span><strong>{cash(total)}</strong></div></div>
-        <div className="payment-box"><label>Amount actually received</label><input type="number" min="0" step="0.01" value={received} placeholder={String(total)} onChange={e=>setReceived(e.target.value)}/><div className="payment-summary"><span>Applied to bill <b>{cash(applied)}</b></span><span>Balance due <b>{cash(balance)}</b></span></div>{over>0&&<div className="overpayment-box"><b>Extra received: {cash(over)}</b><p>Choose how to settle the extra amount:</p><div className="resolution-options"><label><input type="radio" checked={resolution==="change"} onChange={()=>setResolution("change")}/> Return as change</label><label><input type="radio" checked={resolution==="advance"} onChange={()=>setResolution("advance")}/> Save customer advance</label><label><input type="radio" checked={resolution==="tip"} onChange={()=>setResolution("tip")}/> Record staff tip</label></div></div>}<div className="payment-row"><select value={method} onChange={e=>setMethod(e.target.value)}><option>Cash</option><option>Card</option><option>Bank transfer</option><option>Mobile wallet</option><option>Credit</option></select><select value={branchId} onChange={e=>setBranchId(e.target.value)}>{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></div><textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Sale note (optional)" rows={2}/><button className="primary-btn checkout-btn" disabled={saving||!cart.length} onClick={saveSale}>{saving?"Saving sale…":"Save sale & print receipt"} <span>→</span></button></div>
+        <div className="payment-box">{customerPhone&&availableAdvance>0&&<label className="use-advance"><input type="checkbox" checked={useAdvance} onChange={e=>setUseAdvance(e.target.checked)}/> Use customer advance ({cash(availableAdvance)} available)</label>}<label>Cash received now</label><input type="number" min="0" step="0.01" value={received} placeholder={String(total)} onChange={e=>setReceived(e.target.value)}/><div className="payment-summary"><span>Applied to bill <b>{cash(applied)}</b></span><span>Balance due <b>{cash(balance)}</b></span></div>{over>0&&<div className="overpayment-box"><b>Extra received: {cash(over)}</b><p>Choose how to settle the extra amount:</p><div className="resolution-options"><label><input type="radio" checked={resolution==="change"} onChange={()=>setResolution("change")}/> Return as change</label><label><input type="radio" checked={resolution==="advance"} onChange={()=>setResolution("advance")}/> Save customer advance</label><label><input type="radio" checked={resolution==="tip"} onChange={()=>setResolution("tip")}/> Record staff tip</label></div></div>}<div className="payment-row"><select value={method} onChange={e=>setMethod(e.target.value)}><option>Cash</option><option>Card</option><option>Bank transfer</option><option>Mobile wallet</option><option>Credit</option></select><select value={branchId} onChange={e=>setBranchId(e.target.value)}>{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></div><textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Sale note (optional)" rows={2}/><button className="primary-btn checkout-btn" disabled={saving||!cart.length} onClick={saveSale}>{saving?"Saving sale…":"Save sale & print receipt"} <span>→</span></button></div>
       </section>
     </div>}
   </div>;
