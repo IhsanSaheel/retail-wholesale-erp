@@ -7184,7 +7184,8 @@ body.etihad-blackgold #pos .et-pos-product-price{color:#efd58f}
   const matchBranch=id=>!branch||String(id)===String(branch),sameDay=v=>String(v||'').slice(0,10)===date;
   const receiptRows=[];
   sales.filter(s=>sameDay(s.date)&&matchBranch(s.branchId)).forEach(s=>{
-   const amount=Number(s.paid||0),method=s.paymentMethod||s.method||'';
+   const tendered=s.cashReceived!==undefined&&s.cashReceived!==null?Number(s.cashReceived||0):Math.max(0,Number(s.paid||0)-Number(s.advanceUsed||0)-Number(s.advanceApplied||0));
+   const amount=Math.max(0,tendered-Number(s.tipAmount||0)-Number(s.changeToCredit||0)),method=s.paymentMethod||s.method||'';
    if(amount>0){receiptRows.push({date:s.date,ref:invoiceNo(s),customer:s.customerName||'Walk-in Customer',source:'Sale · '+(method||'Method not recorded'),amount:cashMethod(method)?amount:0,grossAmount:amount,unclassified:!method});}
   });
   sales.filter(s=>sameDay(s.tipRecordedAt||s.date)&&matchBranch(s.branchId)&&Number(s.tipAmount||0)>0).forEach(s=>{const tip=Number(s.tipAmount||0),method=s.tipPaymentMethod||s.paymentMethod||s.method||'';receiptRows.push({date:s.tipRecordedAt||s.date,ref:invoiceNo(s)+'-TIP',customer:s.customerName||'Walk-in Customer',source:'Staff tip · '+(method||'Method not recorded'),amount:cashMethod(method)?tip:0,grossAmount:tip,unclassified:!method,isTip:true});});
