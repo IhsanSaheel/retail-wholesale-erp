@@ -44,6 +44,24 @@ export function PurchaseWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Pro
 }
 
 
+
+export function PaymentWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Props){
+ const db=useMemo(()=>getSupabase(),[]);
+ const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data).filter(s=>role==="owner"||branchIds.includes(String(s.branchId))).filter(s=>num(s.balance)>0);
+ const payments=rows.filter(r=>r.collection==="mberp_payments").map(r=>r.data).filter(p=>p.type!=="staff_tip");
+ const [saleId,setSaleId]=useState(sales[0]?.id||"");const [amount,setAmount]=useState("");const [method,setMethod]=useState("Cash");const [note,setNote]=useState("");
+ const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
+ const sale=sales.find(s=>String(s.id)===String(saleId));
+ async function save(){
+  if(!sale||num(amount)<=0||num(amount)>num(sale.balance)){setMessage("Enter a payment within the remaining invoice balance.");return;}
+  setBusy(true);const {data,error}=await db.rpc("etihad_collect_sale_payment",{p_org_id:orgId,p_sale_id:String(sale.id),p_amount:num(amount),p_method:method,p_note:note});
+  setBusy(false);if(error||!data?.success){setMessage("Payment not recorded: "+(error?.message||"Could not complete payment."));return;}
+  setMessage("Payment recorded. Remaining balance: "+money(data.balance));setAmount("");setNote("");onSaved();
+ }
+ const outstanding=sales.reduce((n,s)=>n+num(s.balance),0);
+ return <div className="directory-workspace"><div className="welcome-row"><div><div className="section-kicker">RECEIVABLES & CASH COLLECTION</div><h1>Payments</h1><p>Collect customer balances against their original invoices.</p></div><span className="record-count">{money(outstanding)} outstanding</span></div>{message&&<div className={message.startsWith("Payment recorded")?"pos-success":"notice-error"}>{message}</div>}<div className="panel hr-form"><h3>Collect invoice payment</h3><div className="hr-form-grid"><label>Outstanding invoice<select value={saleId} onChange={e=>{setSaleId(e.target.value);setAmount("");}}><option value="">Select invoice</option>{sales.map(s=><option key={s.id} value={s.id}>{s.invoiceNo} · {s.customerName} · Due {money(s.balance)}</option>)}</select></label><label>Amount received (PKR)<input type="number" min="0.01" step="any" max={sale?.balance||0} value={amount} onChange={e=>setAmount(e.target.value)} /></label><label>Payment method<select value={method} onChange={e=>setMethod(e.target.value)}>{["Cash","Bank transfer","Card","Mobile wallet","Cheque"].map(x=><option key={x}>{x}</option>)}</select></label><label>Note / reference<input value={note} onChange={e=>setNote(e.target.value)} placeholder="Optional payment reference"/></label></div>{sale&&<div className="purchase-totals"><span>Invoice total <b>{money(sale.total)}</b></span><span>Previously paid <b>{money(sale.paid)}</b></span><span>Remaining before payment <b>{money(sale.balance)}</b></span><span>Remaining after payment <b>{money(Math.max(0,num(sale.balance)-num(amount)))}</b></span></div>}<button className="primary-btn" disabled={busy||!sale||num(amount)<=0||num(amount)>num(sale?.balance)} onClick={save}>{busy?"Saving payment…":"Record customer payment"}</button></div><div className="panel data-panel"><h3>Recent payment history</h3><div className="table-wrap"><table><thead><tr><th>DATE</th><th>RECEIPT</th><th>CUSTOMER</th><th>INVOICE</th><th>METHOD</th><th>AMOUNT</th></tr></thead><tbody>{[...payments].sort((a,b)=>String(b.date).localeCompare(String(a.date))).map((p,i)=><tr key={p.id||i}><td>{new Date(p.date).toLocaleDateString()}</td><td>{p.receiptNo||"—"}</td><td>{p.customerName||"—"}</td><td>{p.invoiceNo||"—"}</td><td>{p.method||"—"}</td><td>{money(p.amount)}</td></tr>)}{!payments.length&&<tr><td colSpan={6} className="empty-cell">No payment records found.</td></tr>}</tbody></table></div></div></div>;
+}
+
 export function ReturnsWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Props){
  const db=useMemo(()=>getSupabase(),[]);
  const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data).filter(s=>role==="owner"||branchIds.includes(String(s.branchId)));
