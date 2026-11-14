@@ -47,6 +47,7 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
     if (!branchId) { setMessage("Choose a branch before saving this sale."); return; }
     if (over > 0 && resolution === "advance" && (!customerPhone.trim() || customerName === "Walk-in Customer")) { setMessage("Select a saved customer or enter a customer name and phone to keep an advance."); return; }
     setSaving(true);
+    const receiptWindow = window.open("", "_blank", "width=420,height=700");
     const id = makeId();
     const date = new Date().toISOString();
     const year = new Date().getFullYear();
@@ -64,7 +65,7 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
     };
     const record = { org_id: orgId, collection: "mberp_sales", record_id: id, branch_ids: [String(branchId)], data: sale, updated_by: userId };
     const { error: saleError } = await supabase.from("etihad_records").insert(record);
-    if (saleError) { setMessage("Sale could not be saved: " + saleError.message); setSaving(false); return; }
+    if (saleError) { receiptWindow?.close(); setMessage("Sale could not be saved: " + saleError.message); setSaving(false); return; }
 
     let followupError: string | null = null;
     if (applied > 0) {
@@ -93,8 +94,7 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
     }
 
     const receipt = `<!doctype html><html><head><title>${esc(invoiceNo)}</title><style>body{font:14px Arial;color:#18253b;max-width:360px;margin:24px auto;padding:10px}h2{text-align:center;margin:0}p{text-align:center;color:#667}hr{border:0;border-top:1px dashed #aaa}table{width:100%;border-collapse:collapse}td{padding:7px 0;border-bottom:1px solid #eee}.r{text-align:right}.total{font-weight:bold;font-size:18px}.small{font-size:12px;color:#667}</style></head><body><h2>ETIHAD TRADERS</h2><p>Sales receipt</p><hr/><div>Invoice: ${esc(invoiceNo)}</div><div>Date: ${esc(new Date(date).toLocaleString())}</div><div>Customer: ${esc(sale.customerName)}</div><div>Phone: ${esc(sale.customerPhone || "—")}</div><div>Branch: ${esc(sale.branchName)}</div><hr/><table>${sale.items.map((x:any)=>`<tr><td>${esc(x.name)} × ${x.qty}</td><td class="r">${cash(x.qty*x.price)}</td></tr>`).join("")}</table><hr/><table><tr><td>Total bill</td><td class="r">${cash(total)}</td></tr><tr><td>Amount received</td><td class="r">${cash(receivedAmount)}</td></tr><tr><td>Applied to invoice</td><td class="r">${cash(applied)}</td></tr>${changeReturned?`<tr><td>Change returned</td><td class="r">${cash(changeReturned)}</td></tr>`:""}${customerAdvance?`<tr><td>Customer advance saved</td><td class="r">${cash(customerAdvance)}</td></tr>`:""}${staffTip?`<tr><td>Staff tip (not sales)</td><td class="r">${cash(staffTip)}</td></tr>`:""}<tr><td>Balance due</td><td class="r">${cash(balance)}</td></tr></table><hr/><p class="small">Payment method: ${esc(method)}</p><p>Thank you for shopping with us.</p><script>window.onload=()=>window.print()<\/script></body></html>`;
-    const win = window.open("", "_blank", "width=420,height=700");
-    if (win) { win.document.open(); win.document.write(receipt); win.document.close(); }
+    if (receiptWindow) { receiptWindow.document.open(); receiptWindow.document.write(receipt); receiptWindow.document.close(); }
     setCart([]); setReceived(""); setCustomerName("Walk-in Customer"); setCustomerPhone(""); setNote("");
     setMessage(followupError || "Sale saved successfully. Receipt opened in a new window.");
     setSaving(false); onSaved();
