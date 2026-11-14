@@ -5311,7 +5311,7 @@ body.etihad-blackgold #pos .pos-product-card:hover{border-color:#d8b75c}
    const due=Math.max(0,total-received);
    const customer=String($('saleCustomer')?.value||'').trim();
    if(due>0&&!customer){alert('Select an existing customer or add a new customer before saving a credit bill.');$('etihadPosCustomerDetails')?.setAttribute('open','');$('etihadNewCustomerFields').hidden=false;$('saleCustomer')?.focus();return;}
-   if(received<0||received>total||!Number.isFinite(received)){alert('Please enter a valid amount received.');return;}
+   if(received<0||!Number.isFinite(received)){alert('Please enter a valid amount received.');return;}
    return originalComplete.apply(this,arguments);
   };
  }
