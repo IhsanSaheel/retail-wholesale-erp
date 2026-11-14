@@ -2905,7 +2905,7 @@ renderAll();
   const due=Math.max(0,total-received),extra=Math.max(0,received-total),name=customer(),phone=String($('salePhone')?.value||'').trim();
   if(due>0&&!name){alert('Select a named customer to record the remaining amount as customer dues.');$('etihadPosCustomerDetails')?.setAttribute('open','');$('etihadNewCustomerFields').hidden=false;$('saleCustomer')?.focus();return;}
   
-  if((due>0||extra>0)&&!name){alert('Select or add a customer before assigning a due amount or extra payment to their account.');$('etihadPosCustomerDetails')?.setAttribute('open','');$('etihadNewCustomerFields').hidden=false;$('saleCustomer')?.focus();return;}
+  if(due>0&&!name){alert('Select or add a named customer before saving an unpaid balance.');$('etihadPosCustomerDetails')?.setAttribute('open','');$('etihadNewCustomerFields').hidden=false;$('saleCustomer')?.focus();return;}
   if(!Number.isFinite(received)||received<0){alert('Enter a valid received amount.');return;}
   const note=String($('etihadSaleNote').value||'').trim();
   const oldValue=$('salePaid').value;
@@ -8407,8 +8407,9 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
    const saved=Array.isArray(sales)&&sales.length>before?sales[0]:null;
    if(!saved){if(paidField)paidField.value=originalValue;return result}
    const now=new Date().toISOString();
-   saved.paid=Math.min(received,total);
-   saved.balance=Math.max(0,total-received);
+   const advanceApplied=Math.max(0,Number(saved.advanceApplied||saved.advanceUsed||0));
+   saved.paid=Math.min(received+advanceApplied,total);
+   saved.balance=Math.max(0,total-received-advanceApplied);
    saved.cashReceived=received;
    saved.changeReturned=extra>0&&!keepCredit&&!keepTip?extra:0;
    saved.changeToCredit=keepCredit?extra:0;
