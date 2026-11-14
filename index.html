@@ -8193,10 +8193,10 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
 
  // Make the two ways of keeping change explicit and mutually exclusive.
  const creditLabel=creditOption.closest('label');
- if(creditLabel)creditLabel.innerHTML='<input type="checkbox" id="etSaleAddExtra"> <span><b>Keep change in customer account</b><br><small>Save the extra amount as customer advance for a future purchase.</small></span>';
+ if(creditLabel){const creditText=creditLabel.querySelector('span');if(creditText)creditText.innerHTML='<b>Keep change in customer account</b><br><small>Save the extra amount as customer advance for a future purchase.</small>';}
  const tipLabel=document.createElement('label');
  tipLabel.innerHTML='<input type="checkbox" id="etSaleKeepTip"> <span><b>Keep change as tip</b><br><small>Record it as staff tips, not business profit.</small></span>';
- creditOption.closest('label')?.insertAdjacentElement('afterend',tipLabel);
+ if(creditLabel)creditLabel.insertAdjacentElement('afterend',tipLabel);
 
  const amounts=$('etSaleBillTotal')?.parentElement?.parentElement;
  if(amounts&&!$('etSaleChangePreview')){
