@@ -34,6 +34,7 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
   const [message, setMessage] = useState("");
   const [pendingSales, setPendingSales] = useState<PendingSale[]>([]);
   const [syncing, setSyncing] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
   const [syncTrigger, setSyncTrigger] = useState(0);
   const syncLock = useRef(false);
   const onSavedRef = useRef(onSaved);
@@ -102,10 +103,14 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
         if (active) setSyncing(false);
       }
     };
+    const handleOnline = () => { setIsOnline(true); void syncQueue(); };
+    const handleOffline = () => setIsOnline(false);
+    setIsOnline(navigator.onLine);
     void refreshQueue();
     if (navigator.onLine) void syncQueue();
-    window.addEventListener("online", syncQueue);
-    return () => { active = false; window.removeEventListener("online", syncQueue); };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => { active = false; window.removeEventListener("online", handleOnline); window.removeEventListener("offline", handleOffline); };
   }, [orgId, userId, supabase, syncTrigger]);
 
   async function retryPendingSales() {
@@ -201,7 +206,7 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
 
   return <div className="pos-workspace">
     <div className="pos-heading"><div><div className="section-kicker">POINT OF SALE</div><h2>New sale</h2><p>Build a bill, select a customer and settle the payment.</p></div><div className="pos-tabs"><button className={tab==="new"?"selected":""} onClick={()=>setTab("new")}>New sale</button><button className={tab==="history"?"selected":""} onClick={()=>setTab("history")}>Sales history</button></div></div>
-    {pendingSales.length>0&&<div className="panel offline-queue-banner"><div><b>{pendingSales.length} sale{pendingSales.length===1?"":"s"} awaiting cloud sync</b><p>{syncing?"Synchronising saved sales…":"These sales are stored on this device and are not yet confirmed in cloud stock or accounts."}</p>{pendingSales.filter(x=>x.status==="failed").map(x=><small key={x.id}>Needs attention: {x.sale.invoiceNo} — {x.lastError}</small>)}</div><div className="offline-queue-actions"><button className="secondary-btn" disabled={syncing||!navigator.onLine} onClick={retryPendingSales}>{syncing?"Syncing…":"Retry sync"}</button></div></div>}
+    {pendingSales.length>0&&<div className="panel offline-queue-banner"><div><b>{pendingSales.length} sale{pendingSales.length===1?"":"s"} awaiting cloud sync</b><p>{syncing?"Synchronising saved sales…":"These sales are stored on this device and are not yet confirmed in cloud stock or accounts."}</p>{pendingSales.filter(x=>x.status==="failed").map(x=><small key={x.id}>Needs attention: {x.sale.invoiceNo} — {x.lastError}</small>)}</div><div className="offline-queue-actions"><button className="secondary-btn" disabled={syncing||!isOnline} onClick={retryPendingSales}>{syncing?"Syncing…":"Retry sync"}</button></div></div>}
     {message && <div className={message.startsWith("Sale saved")||message.includes("synchronised successfully")?"pos-success":"notice-error"}>{message}</div>}
     {tab==="history" ? <div className="panel data-panel"><div className="panel-head"><div><h3>Recent invoices</h3><p>Latest sales from the shared Etihad Traders database</p></div></div><div className="table-wrap"><table><thead><tr><th>INVOICE</th><th>CUSTOMER</th><th>DATE</th><th>TOTAL</th><th>PAID</th><th>BALANCE</th></tr></thead><tbody>{recent.map((s,i)=><tr key={s.id||i}><td><b>{s.invoiceNo||"—"}</b></td><td>{s.customerName||"Walk-in"}</td><td>{new Date(s.date).toLocaleDateString()}</td><td>{cash(n(s.total))}</td><td>{cash(n(s.paid))}</td><td>{cash(n(s.balance))}</td></tr>)}</tbody></table></div></div> :
     <div className="pos-layout">
