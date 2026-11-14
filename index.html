@@ -8181,5 +8181,160 @@ body.etihad-blackgold input,body.etihad-blackgold select,body.etihad-blackgold t
  renderCart();
 })();
 </script>
+
+<script id="etihad-change-tip-account-report-v1">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const settlement=$('etihadSaleSettlement');
+ const creditOption=$('etSaleAddExtra');
+ if(!settlement||!creditOption||window.__etihadChangeTipAccountReportV1)return;
+ window.__etihadChangeTipAccountReportV1=true;
+
+ // Make the two ways of keeping change explicit and mutually exclusive.
+ const creditLabel=creditOption.closest('label');
+ if(creditLabel)creditLabel.innerHTML='<input type="checkbox" id="etSaleAddExtra"> <span><b>Keep change in customer account</b><br><small>Save the extra amount as customer advance for a future purchase.</small></span>';
+ const tipLabel=document.createElement('label');
+ tipLabel.innerHTML='<input type="checkbox" id="etSaleKeepTip"> <span><b>Keep change as tip</b><br><small>Record it as staff tips, not business profit.</small></span>';
+ creditOption.closest('label')?.insertAdjacentElement('afterend',tipLabel);
+
+ const amounts=$('etSaleBillTotal')?.parentElement?.parentElement;
+ if(amounts&&!$('etSaleChangePreview')){
+  const change=document.createElement('div');
+  change.innerHTML='<small>Change / extra amount</small><strong id="etSaleChangePreview">PKR 0</strong>';
+  amounts.appendChild(change);
+ }
+ const css=document.createElement('style');
+ css.textContent='#etihadSaleSettlement .et-settle-amounts{grid-template-columns:repeat(3,minmax(0,1fr))}#etSaleChangePreview{color:#16803c}@media(max-width:560px){#etihadSaleSettlement .et-settle-amounts{grid-template-columns:1fr 1fr}#etihadSaleSettlement .et-settle-amounts>div:last-child{grid-column:1/-1}}';
+ document.head.appendChild(css);
+
+ const fmt=n=>'PKR '+Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
+ function currentCashier(){
+  try{
+   const u=JSON.parse(localStorage.getItem('etihad_active_user_v1')||'null')||{};
+   return String(u.name||u.fullName||u.displayName||u.email||u.user?.name||u.user?.email||u.role||'Signed-in user');
+  }catch(_){return 'Signed-in user'}
+ }
+ function refreshChange(){
+  const total=Number(typeof window.cartAmount==='function'?window.cartAmount():0)||0;
+  const received=Math.max(0,Number($('salePaid')?.value||0)||0);
+  const extra=Math.max(0,received-total);
+  if($('etSaleChangePreview'))$('etSaleChangePreview').textContent=fmt(extra);
+  if($('etSaleDuePreview'))$('etSaleDuePreview').textContent=fmt(Math.max(0,total-Math.min(received,total)));
+  if($('etSaleAddExtra'))$('etSaleAddExtra').disabled=extra<=0;
+  if($('etSaleKeepTip'))$('etSaleKeepTip').disabled=extra<=0;
+  if($('etSaleSettlementHint')){
+   const keepCredit=$('etSaleAddExtra')?.checked,keepTip=$('etSaleKeepTip')?.checked;
+   $('etSaleSettlementHint').textContent=extra<=0?'No change is due.':keepCredit?'Extra amount will be saved in the customer account.':keepTip?'Extra amount will be recorded as staff tip.':'Return '+fmt(extra)+' to the customer, unless you select one of the options above.';
+  }
+ }
+ creditOption.addEventListener('change',function(){
+  if(this.checked&&$('etSaleKeepTip'))$('etSaleKeepTip').checked=false;
+  refreshChange();
+ });
+ $('etSaleKeepTip')?.addEventListener('change',function(){
+  if(this.checked&&$('etSaleAddExtra'))$('etSaleAddExtra').checked=false;
+  refreshChange();
+ });
+ ['salePaid','saleCustomer','salePhone'].forEach(id=>$(id)?.addEventListener('input',refreshChange));
+ document.addEventListener('input',e=>{if(e.target?.id==='cartTotal')refreshChange()});
+ const oldRender=window.renderCart;
+ if(typeof oldRender==='function'&&!window.__etihadChangeTipRenderWrapped){
+  window.__etihadChangeTipRenderWrapped=true;
+  window.renderCart=function(){const result=oldRender.apply(this,arguments);refreshChange();return result};
+ }
+
+ // Wrap the existing sale flow so stock, batches, dues, advance usage,
+ // invoice printing and all existing validations remain intact.
+ const previousComplete=window.completeSale;
+ if(typeof previousComplete==='function'){
+  window.completeSale=function(){
+   const total=Number(typeof window.cartAmount==='function'?window.cartAmount():0)||0;
+   const received=Number($('salePaid')?.value||0);
+   if(!Number.isFinite(received)||received<0){alert('Enter a valid amount received.');return}
+   const extra=Math.max(0,received-total);
+   const keepCredit=!!$('etSaleAddExtra')?.checked;
+   const keepTip=!!$('etSaleKeepTip')?.checked;
+   const customer=String($('saleCustomer')?.value||'').trim();
+   const phone=String($('salePhone')?.value||'').trim();
+   if(keepCredit&&keepTip){alert('Choose either customer account or tip, not both.');return}
+   if(keepCredit&&!customer){alert('Select a saved customer before keeping change in their account.');$('etihadPosCustomerDetails')?.setAttribute('open','');$('saleCustomer')?.focus();return}
+   const oldPaid=$('salePaid').value;
+   const before=Array.isArray(sales)?sales.length:0;
+   $('salePaid').value=String(Math.min(received,total));
+   let result;
+   try{result=previousComplete.apply(this,arguments)}
+   catch(error){$('salePaid').value=oldPaid;throw error}
+   const saved=Array.isArray(sales)&&sales.length>before?sales[0]:null;
+   if(!saved){$('salePaid').value=oldPaid;return result}
+
+   const now=new Date().toISOString();
+   const cashier=currentCashier();
+   saved.cashReceived=received;
+   saved.changeReturned=extra>0&&!keepCredit&&!keepTip?extra:0;
+   saved.changeToCredit=keepCredit?extra:0;
+   saved.tipAmount=keepTip?extra:0;
+   if(keepTip&&extra>0){
+    saved.tipCashier=cashier;
+    saved.tipRecordedAt=now;
+    saved.tipPaymentMethod=String($('etSalePaymentMethod')?.value||'Cash');
+   }
+   if(keepCredit&&extra>0){
+    const key=phone?'phone:'+phone.replace(/\s/g,''):'name:'+customer.toLowerCase();
+    const creditKey='mberp_customer_account_credits';
+    let entries=[];
+    try{const parsed=JSON.parse(localStorage.getItem(creditKey)||'[]');if(Array.isArray(parsed))entries=parsed}catch(_){}
+    entries.unshift({
+     id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+     customerKey:key,customerName:customer,customerPhone:phone,
+     date:now,amount:extra,remaining:extra,
+     method:String($('etSalePaymentMethod')?.value||'Cash'),
+     note:'Change saved from invoice '+String(saved.invoiceNo||saved.id),
+     receiptNo:String(saved.invoiceNo||saved.id)
+    });
+    localStorage.setItem(creditKey,JSON.stringify(entries));
+   }
+   if(typeof window.saveAll==='function')window.saveAll();
+   if($('etSaleAddExtra'))$('etSaleAddExtra').checked=false;
+   if($('etSaleKeepTip'))$('etSaleKeepTip').checked=false;
+   refreshChange();
+   if(typeof window.renderTipReport==='function')window.renderTipReport();
+   return result;
+  };
+ }
+
+ // Dedicated tips reporting. Tips are stored on their sale invoices and
+ // deliberately never added to sales revenue or profit calculations.
+ const reports=$('reports');
+ if(reports&&!$('etihadTipsReport')){
+  const panel=document.createElement('div');
+  panel.className='panel';
+  panel.id='etihadTipsReport';
+  panel.innerHTML='<h3>Staff Tips Report</h3><p class="muted">Tips received from customers, shown separately from sales and business profit.</p><div class="cards" id="etihadTipCards"></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Invoice</th><th>Customer</th><th>Cashier</th><th>Branch</th><th>Tip Amount</th></tr></thead><tbody id="etihadTipRows"></tbody></table></div><h4>Tips by Cashier</h4><div class="table-wrap"><table><thead><tr><th>Cashier</th><th>Number of tipped bills</th><th>Total tips</th></tr></thead><tbody id="etihadTipCashierRows"></tbody></table></div>';
+  reports.appendChild(panel);
+ }
+ window.renderTipReport=function(){
+  if(!$('etihadTipRows'))return;
+  const from=$('reportFrom')?.value||'',to=$('reportTo')?.value||'',branch=$('reportBranch')?.value||'';
+  const rows=(Array.isArray(sales)?sales:[]).filter(s=>{
+   const tip=Number(s.tipAmount||0),date=String(s.date||'').slice(0,10);
+   return tip>0&&(!from||date>=from)&&(!to||date<=to)&&(!branch||s.branchId===branch);
+  }).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const total=rows.reduce((n,s)=>n+Number(s.tipAmount||0),0);
+  const cashiers={};
+  rows.forEach(s=>{const who=String(s.tipCashier||'Signed-in user');if(!cashiers[who])cashiers[who]={count:0,total:0};cashiers[who].count++;cashiers[who].total+=Number(s.tipAmount||0)});
+  $('etihadTipCards').innerHTML='<div class="card"><small>Total Tips</small><strong>PKR '+money(total)+'</strong></div><div class="card"><small>Bills With Tips</small><strong>'+rows.length+'</strong></div><div class="card"><small>Cashiers Receiving Tips</small><strong>'+Object.keys(cashiers).length+'</strong></div>';
+  $('etihadTipRows').innerHTML=rows.map(s=>'<tr><td>'+esc(new Date(s.tipRecordedAt||s.date||Date.now()).toLocaleDateString())+'</td><td>'+esc(invoiceNo(s))+'</td><td>'+esc(s.customerName||'Walk-in Customer')+'</td><td>'+esc(s.tipCashier||'Signed-in user')+'</td><td>'+esc(s.branchName||branchName(s.branchId))+'</td><td><b>PKR '+money(s.tipAmount)+'</b></td></tr>').join('')||'<tr><td colspan="6" class="empty">No tips recorded for this period.</td></tr>';
+  $('etihadTipCashierRows').innerHTML=Object.entries(cashiers).sort((a,b)=>b[1].total-a[1].total).map(([name,v])=>'<tr><td>'+esc(name)+'</td><td>'+v.count+'</td><td><b>PKR '+money(v.total)+'</b></td></tr>').join('')||'<tr><td colspan="3" class="empty">No cashier tips recorded.</td></tr>';
+ };
+ const originalReport=window.renderProfitLoss;
+ if(typeof originalReport==='function'&&!window.__etihadTipReportWrapped){
+  window.__etihadTipReportWrapped=true;
+  window.renderProfitLoss=function(){const result=originalReport.apply(this,arguments);window.renderTipReport();return result};
+ }
+ window.renderTipReport();
+ refreshChange();
+})();
+</script>
 </body>
 </html>
