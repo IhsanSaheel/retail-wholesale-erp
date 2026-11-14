@@ -52,12 +52,22 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
     if (!cart.length) { setMessage("Add at least one product to the bill."); return; }
     if (!branchId) { setMessage("Choose a branch before saving this sale."); return; }
     if (over > 0 && resolution === "advance" && (!customerPhone.trim() || customerName === "Walk-in Customer")) { setMessage("Select a saved customer or enter a customer name and phone to keep an advance."); return; }
+    if (advanceUsed > 0 && (!customerPhone.trim() || customerName === "Walk-in Customer")) { setMessage("Select a saved customer before applying an account advance."); return; }
+    if (cart.some(x => n(x.product.qty) < x.qty && String(x.product.branchId) === String(branchId))) {
+      const shortage = cart.find(x => n(x.product.qty) < x.qty && String(x.product.branchId) === String(branchId));
+      setMessage("Insufficient available stock for " + shortage?.product.name + ". Available: " + n(shortage?.product.qty));
+      return;
+    }
+    if (cart.some(x => String(x.product.branchId) !== String(branchId))) {
+      setMessage("One or more selected products belong to a different branch. Select the correct branch or transfer stock first.");
+      return;
+    }
     setSaving(true);
     const receiptWindow = window.open("", "_blank", "width=420,height=700");
     const id = makeId();
     const date = new Date().toISOString();
     const year = new Date().getFullYear();
-    const invoiceNo = `INV-${year}-${String(sales.length + 1).padStart(5, "0")}`;
+    const invoiceNo = `INV-${year}-${id.slice(-6).toUpperCase()}`;
     const branch = branches.find(b => String(b.id) === String(branchId));
     const changeReturned = over > 0 && resolution === "change" ? over : 0;
     const customerAdvance = over > 0 && resolution === "advance" ? over : 0;
@@ -66,58 +76,33 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
       id, date, invoiceNo, branchId, branchName: branch?.name || "",
       customerName: customerName.trim() || "Walk-in Customer", customerPhone: customerPhone.trim(),
       items: cart.map(x => ({ productId: x.product.id, name: x.product.name, sku: x.product.sku || "", qty: x.qty, cost: n(x.product.cost), price: n(x.product.price), unit: x.product.unit || "piece" })),
-      subtotal: total, total, paid: applied, balance, receivedAmount, cashReceived, advanceUsed, changeReturned, customerAdvance, staffTip,
-      overpaymentResolution: over ? resolution : "none", paymentMethod: method, note
+      subtotal: total, total, paid: applied, balance, receivedAmount, cashReceived, advanceUsed,
+      changeReturned, customerAdvance, staffTip, overpaymentResolution: over ? resolution : "none",
+      paymentMethod: method, note
     };
-    const record = { org_id: orgId, collection: "mberp_sales", record_id: id, branch_ids: [String(branchId)], data: sale, updated_by: userId };
-    const { error: saleError } = await supabase.from("etihad_records").insert(record);
-    if (saleError) { receiptWindow?.close(); setMessage("Sale could not be saved: " + saleError.message); setSaving(false); return; }
-
-    let followupError: string | null = null;
-    if (cashApplied > 0) {
-      const paymentId = makeId();
-      const { error } = await supabase.from("etihad_records").insert({
-        org_id: orgId, collection: "mberp_payments", record_id: paymentId, branch_ids: [String(branchId)], updated_by: userId,
-        data: { id: paymentId, date, amount: cashApplied, method, type: "sale_payment", saleId: id, invoiceNo, receiptNo: "REC-" + invoiceNo, branchId, branchName: branch?.name || "", customerName: sale.customerName, customerPhone: sale.customerPhone, note: "Payment received at point of sale" }
-      });
-      if (error) followupError = "Sale saved, but payment history could not be saved: " + error.message;
-    }
-    if (advanceUsed > 0) {
-      let remainingAdvance = advanceUsed;
-      for (const credit of customerCredits) {
-        if (credit.data.customerPhone !== sale.customerPhone || remainingAdvance <= 0) continue;
-        const available = n(credit.data.balance);
-        const used = Math.min(available, remainingAdvance);
-        const { error } = await supabase.from("etihad_records").update({ data: { ...credit.data, balance: available - used, lastAppliedAt: date, lastAppliedSaleId: id }, updated_by: userId }).eq("org_id", orgId).eq("collection", "mberp_customer_account_credits").eq("record_id", credit.record_id);
-        if (error) followupError = "Sale saved, but customer advance balance could not be updated: " + error.message;
-        remainingAdvance -= used;
-      }
-      const advancePaymentId = makeId();
-      const { error } = await supabase.from("etihad_records").insert({ org_id: orgId, collection: "mberp_payments", record_id: advancePaymentId, branch_ids: [String(branchId)], updated_by: userId, data: { id: advancePaymentId, date, amount: advanceUsed, method: "Customer advance", type: "advance_applied", saleId: id, invoiceNo, receiptNo: "ADV-USE-" + invoiceNo, branchId, branchName: branch?.name || "", customerName: sale.customerName, customerPhone: sale.customerPhone, note: "Saved customer advance applied to this bill." } });
-      if (error) followupError = "Sale saved, but advance payment history could not be recorded: " + error.message;
-    }
-    if (customerAdvance > 0) {
-      const creditId = makeId();
-      const { error } = await supabase.from("etihad_records").insert({
-        org_id: orgId, collection: "mberp_customer_account_credits", record_id: creditId, branch_ids: [], updated_by: userId,
-        data: { id: creditId, key: "phone:" + sale.customerPhone, customerName: sale.customerName, customerPhone: sale.customerPhone, amount: customerAdvance, balance: customerAdvance, date, type: "overpayment_advance", sourceSaleId: id, invoiceNo, branchId, branchName: branch?.name || "", note: "Extra amount received and retained as customer account advance." }
-      });
-      if (error) followupError = "Sale saved, but customer advance could not be recorded: " + error.message;
-    }
-    if (staffTip > 0) {
-      const tipId = makeId();
-      const { error } = await supabase.from("etihad_records").insert({
-        org_id: orgId, collection: "mberp_payments", record_id: tipId, branch_ids: [String(branchId)], updated_by: userId,
-        data: { id: tipId, date, amount: staffTip, method, type: "staff_tip", saleId: id, invoiceNo, receiptNo: "TIP-" + invoiceNo, branchId, branchName: branch?.name || "", customerName: sale.customerName, customerPhone: sale.customerPhone, note: "Staff tip; excluded from sales revenue." }
-      });
-      if (error) followupError = "Sale saved, but tip could not be recorded separately: " + error.message;
+    const { data: checkout, error } = await supabase.rpc("etihad_create_sale", {
+      p_org_id: orgId,
+      p_branch_id: String(branchId),
+      p_sale: sale,
+      p_cash_applied: cashApplied,
+      p_advance_used: advanceUsed,
+      p_customer_advance: customerAdvance,
+      p_staff_tip: staffTip,
+      p_method: method
+    });
+    if (error || !checkout?.success) {
+      receiptWindow?.close();
+      setMessage("Sale was not saved and stock was not changed: " + (error?.message || "Checkout could not be completed."));
+      setSaving(false);
+      return;
     }
 
-    const receipt = `<!doctype html><html><head><title>${esc(invoiceNo)}</title><style>body{font:14px Arial;color:#18253b;max-width:360px;margin:24px auto;padding:10px}h2{text-align:center;margin:0}p{text-align:center;color:#667}hr{border:0;border-top:1px dashed #aaa}table{width:100%;border-collapse:collapse}td{padding:7px 0;border-bottom:1px solid #eee}.r{text-align:right}.total{font-weight:bold;font-size:18px}.small{font-size:12px;color:#667}</style></head><body><h2>ETIHAD TRADERS</h2><p>Sales receipt</p><hr/><div>Invoice: ${esc(invoiceNo)}</div><div>Date: ${esc(new Date(date).toLocaleString())}</div><div>Customer: ${esc(sale.customerName)}</div><div>Phone: ${esc(sale.customerPhone || "—")}</div><div>Branch: ${esc(sale.branchName)}</div><hr/><table>${sale.items.map((x:any)=>`<tr><td>${esc(x.name)} × ${x.qty}</td><td class="r">${cash(x.qty*x.price)}</td></tr>`).join("")}</table><hr/><table><tr><td>Total bill</td><td class="r">${cash(total)}</td></tr><tr><td>Cash received</td><td class="r">${cash(cashReceived)}</td></tr>${advanceUsed?`<tr><td>Customer advance applied</td><td class="r">${cash(advanceUsed)}</td></tr>`:""}<tr><td>Total tender applied</td><td class="r">${cash(receivedAmount)}</td></tr><tr><td>Applied to invoice</td><td class="r">${cash(applied)}</td></tr>${changeReturned?`<tr><td>Change returned</td><td class="r">${cash(changeReturned)}</td></tr>`:""}${customerAdvance?`<tr><td>Customer advance saved</td><td class="r">${cash(customerAdvance)}</td></tr>`:""}${staffTip?`<tr><td>Staff tip (not sales)</td><td class="r">${cash(staffTip)}</td></tr>`:""}<tr><td>Balance due</td><td class="r">${cash(balance)}</td></tr></table><hr/><p class="small">Payment method: ${esc(method)}</p><p>Thank you for shopping with us.</p><script>window.onload=()=>window.print()<\/script></body></html>`;
+    const receipt = `<!doctype html><html><head><title>${esc(invoiceNo)}</title><style>body{font:14px Arial;color:#18253b;max-width:360px;margin:24px auto;padding:10px}h2{text-align:center;margin:0}p{text-align:center;color:#667}hr{border:0;border-top:1px dashed #aaa}table{width:100%;border-collapse:collapse}td{padding:7px 0;border-bottom:1px solid #eee}.r{text-align:right}.small{font-size:12px;color:#667}</style></head><body><h2>ETIHAD TRADERS</h2><p>Sales receipt</p><hr/><div>Invoice: ${esc(invoiceNo)}</div><div>Date: ${esc(new Date(date).toLocaleString())}</div><div>Customer: ${esc(sale.customerName)}</div><div>Phone: ${esc(sale.customerPhone || "—")}</div><div>Branch: ${esc(sale.branchName)}</div><hr/><table>${sale.items.map((x:any)=>`<tr><td>${esc(x.name)} × ${x.qty}</td><td class="r">${cash(x.qty*x.price)}</td></tr>`).join("")}</table><hr/><table><tr><td>Total bill</td><td class="r">${cash(total)}</td></tr><tr><td>Cash received</td><td class="r">${cash(cashReceived)}</td></tr>${advanceUsed?`<tr><td>Customer advance applied</td><td class="r">${cash(advanceUsed)}</td></tr>`:""}<tr><td>Total tender applied</td><td class="r">${cash(receivedAmount)}</td></tr><tr><td>Applied to invoice</td><td class="r">${cash(applied)}</td></tr>${changeReturned?`<tr><td>Change returned</td><td class="r">${cash(changeReturned)}</td></tr>`:""}${customerAdvance?`<tr><td>Customer advance saved</td><td class="r">${cash(customerAdvance)}</td></tr>`:""}${staffTip?`<tr><td>Staff tip (not sales)</td><td class="r">${cash(staffTip)}</td></tr>`:""}<tr><td>Balance due</td><td class="r">${cash(balance)}</td></tr></table><hr/><p class="small">Payment method: ${esc(method)}</p><p>Thank you for shopping with us.</p><script>window.onload=()=>window.print()<\\/script></body></html>`;
     if (receiptWindow) { receiptWindow.document.open(); receiptWindow.document.write(receipt); receiptWindow.document.close(); }
     setCart([]); setReceived(""); setUseAdvance(false); setCustomerName("Walk-in Customer"); setCustomerPhone(""); setNote("");
-    setMessage(followupError || "Sale saved successfully. Receipt opened in a new window.");
-    setSaving(false); onSaved();
+    setMessage("Sale saved successfully. Stock and payment records updated atomically. Receipt opened in a new window.");
+    setSaving(false);
+    onSaved();
   }
 
   return <div className="pos-workspace">
