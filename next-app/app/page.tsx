@@ -33,6 +33,7 @@ export default function Home() {
   const [orgId,setOrgId] = useState("");
   const [branchIds,setBranchIds] = useState<string[]>([]);
   const [role,setRole] = useState("");
+  const [permissions,setPermissions] = useState<Record<string,boolean>>({});
   const [userEmail,setUserEmail] = useState("");
   const [mobileNav,setMobileNav] = useState(false);
   const [query,setQuery] = useState("");
@@ -46,6 +47,7 @@ export default function Home() {
     setOrgId(membership.org_id);
     setBranchIds(Array.isArray(membership.branch_ids) ? membership.branch_ids : []);
     setRole(String(membership.role || "staff"));
+    setPermissions((membership.permissions && typeof membership.permissions==="object") ? membership.permissions : {});
     const [{data:org},{data:records,error:recordsError}] = await Promise.all([
       supabase.from("etihad_organizations").select("name").eq("id",membership.org_id).maybeSingle(),
       supabase.from("etihad_records").select("collection,record_id,data,updated_at").eq("org_id",membership.org_id).limit(1500)
@@ -75,9 +77,14 @@ export default function Home() {
     if(error) setError(error.message);
     setBusy(false);
   }
-  async function signOut() { await supabase.auth.signOut(); setModule("overview"); }
+  async function signOut() { await supabase.auth.signOut(); setModule("overview"); setPermissions({}); setRole(""); }
 
   const records = (name:string) => rows.filter(r=>r.collection===name).map(r=>r.data || {});
+  const roleDefaults:Record<string,string[]>={owner:["sales","returns","products","customers","purchases","suppliers","expenses","branches","payments","transfers","reports","employees","settings"],manager:["sales","returns","products","customers","purchases","suppliers","expenses","branches","payments","transfers","reports","employees"],cashier:["sales","returns","customers","payments"],stockkeeper:["products","transfers","purchases"],accountant:["sales","returns","customers","suppliers","payments","expenses","reports"]};
+  const permitted=(id:ModuleKey)=>{if(role==="owner")return true;if(id==="overview")return true;if(id==="settings"||id==="branches")return false;const hasExplicit=Object.keys(permissions).length>0;return hasExplicit?permissions[id]===true:(roleDefaults[role]||[]).includes(id);};
+  const visibleNav=NAV.map(group=>({...group,items:group.items.filter(item=>permitted(item.id))})).filter(group=>group.items.length>0);
+  useEffect(()=>{if(session&&!permitted(module))setModule("overview");},[role,permissions,module,session]);
+
   const sales = records("mberp_sales");
   const products = records("mberp_products");
   const branches = records("mberp_branches");
@@ -100,7 +107,7 @@ export default function Home() {
   return <main className="app-shell">
     <aside className={"sidebar "+(mobileNav?"sidebar-open":"")}><div className="side-brand"><div className="brand-mark">ET</div><div><strong>ETIHAD <b>TRADERS</b></strong><small>BUSINESS SUITE</small></div><button className="mobile-close" onClick={()=>setMobileNav(false)}>×</button></div>
       <div className="workspace-switch"><span className="workspace-dot"></span><div><small>WORKSPACE</small><strong>{orgName}</strong></div><span className="switch-caret">⌄</span></div>
-      <nav>{NAV.map(group=><div className="nav-group" key={group.group}><div className="nav-caption">{group.group}</div>{group.items.map(item=><button key={item.id} className={"nav-item "+(module===item.id?"active":"")} onClick={()=>{setModule(item.id);setMobileNav(false);setQuery("");}}><span className="nav-icon">{item.icon}</span><span>{item.label}</span>{item.id==="sales"&&<small className="nav-tag">POS</small>}</button>)}</div>)}</nav>
+      <nav>{visibleNav.map(group=><div className="nav-group" key={group.group}><div className="nav-caption">{group.group}</div>{group.items.map(item=><button key={item.id} className={"nav-item "+(module===item.id?"active":"")} onClick={()=>{setModule(item.id);setMobileNav(false);setQuery("");}}><span className="nav-icon">{item.icon}</span><span>{item.label}</span>{item.id==="sales"&&<small className="nav-tag">POS</small>}</button>)}</div>)}</nav>
       <div className="sidebar-bottom"><div className="sync-state"><span className="sync-dot"></span><div><b>Cloud connected</b><small>Supabase live data</small></div></div><div className="user-card"><div className="avatar">{(userEmail[0]||"E").toUpperCase()}</div><div className="user-meta"><b>{userEmail.split("@")[0]||"Team member"}</b><small>{role||"Staff"}</small></div><button title="Sign out" onClick={signOut}>↗</button></div></div>
     </aside>
     {mobileNav&&<button className="mobile-scrim" onClick={()=>setMobileNav(false)} aria-label="Close navigation"/>}
