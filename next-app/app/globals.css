@@ -35,3 +35,6 @@
 
 /* POS quantity controls: editable, touch-friendly and stock bounded */
 .qty-control .qty-entry{width:58px;min-width:0;height:34px;padding:4px 5px;border:1px solid var(--line,#dce2eb);border-radius:8px;background:var(--surface,#fff);color:inherit;text-align:center;font:inherit;font-weight:700;outline-offset:2px}.qty-control .qty-entry:focus{border-color:var(--gold,#b58a3a);box-shadow:0 0 0 3px rgba(181,138,58,.14)}.qty-control button:disabled{opacity:.35;cursor:not-allowed}.qty-control{gap:6px;align-items:center}
+
+/* Fast POS tender presets */
+.tender-shortcuts{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}.tender-shortcuts button{border:1px solid var(--line,#dce2eb);border-radius:8px;background:var(--surface,#fff);color:var(--text,#26364d);padding:7px 10px;font-size:12px;font-weight:650;cursor:pointer}.tender-shortcuts button:hover{border-color:var(--gold,#b58a3a);background:rgba(181,138,58,.08)}
