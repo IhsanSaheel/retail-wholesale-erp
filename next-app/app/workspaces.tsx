@@ -142,6 +142,26 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
     setSyncTrigger(value => value + 1);
   }
 
+  function reprintSale(s: Product) {
+    const popup = window.open("", "_blank", "width=420,height=700");
+    if (!popup) { setMessage("Allow pop-ups to reprint this receipt."); return; }
+    const items = Array.isArray(s.items) ? s.items : [];
+    const itemRows = items.map((item: Product) => `<tr><td>${esc(item.name)} × ${n(item.qty)}</td><td class="r">${cash(n(item.qty) * n(item.price))}</td></tr>`).join("");
+    const rowsHtml = [
+      ["Total bill", s.total],
+      ["Amount received (" + (s.paymentMethod || "Payment") + ")", s.cashReceived ?? s.paid],
+      ...(n(s.advanceUsed) > 0 ? [["Customer advance applied", s.advanceUsed] as [string, any]] : []),
+      ["Applied to invoice", s.paid],
+      ...(n(s.changeReturned) > 0 ? [["Change returned", s.changeReturned] as [string, any]] : []),
+      ...(n(s.customerAdvance) > 0 ? [["Customer advance saved", s.customerAdvance] as [string, any]] : []),
+      ...(n(s.staffTip) > 0 ? [["Staff tip (not sales)", s.staffTip] as [string, any]] : []),
+      ["Balance due", s.balance]
+    ].map(([label, amount]) => `<tr><td>${esc(label)}</td><td class="r">${cash(n(amount))}</td></tr>`).join("");
+    popup.document.open();
+    popup.document.write(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(s.invoiceNo || "Sales receipt")}</title><style>body{font:14px Arial;color:#18253b;max-width:360px;margin:24px auto;padding:10px}h2{text-align:center;margin:0}p{text-align:center;color:#667}hr{border:0;border-top:1px dashed #aaa}table{width:100%;border-collapse:collapse}td{padding:7px 0;border-bottom:1px solid #eee}.r{text-align:right}.small{font-size:12px;color:#667}@media print{body{margin:0 auto}}</style></head><body><h2>ETIHAD TRADERS</h2><p>Sales receipt · Reprint</p><hr/><div>Invoice: ${esc(s.invoiceNo || "—")}</div><div>Date: ${esc(s.date ? new Date(s.date).toLocaleString() : "—")}</div><div>Customer: ${esc(s.customerName || "Walk-in Customer")}</div><div>Phone: ${esc(s.customerPhone || "—")}</div><div>Branch: ${esc(s.branchName || "—")}</div><hr/><table>${itemRows}</table><hr/><table>${rowsHtml}</table><hr/><p class="small">Payment method: ${esc(s.paymentMethod || "—")}</p><p>Thank you for shopping with us.</p><script>window.onload=()=>window.print()<\\/script></body></html>`);
+    popup.document.close();
+  }
+
   async function saveSale() {
     setMessage("");
     if (!cart.length) { setMessage("Add at least one product to the bill."); return; }
@@ -232,7 +252,7 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
     <div className="pos-heading"><div><div className="section-kicker">POINT OF SALE</div><h2>New sale</h2><p>Build a bill, select a customer and settle the payment.</p></div><div className="pos-tabs"><button className={tab==="new"?"selected":""} onClick={()=>setTab("new")}>New sale</button><button className={tab==="history"?"selected":""} onClick={()=>setTab("history")}>Sales history</button></div></div>
     {pendingSales.length>0&&<div className="panel offline-queue-banner"><div><b>{pendingSales.length} sale{pendingSales.length===1?"":"s"} awaiting cloud sync</b><p>{syncing?"Synchronising saved sales…":"These sales are stored on this device and are not yet confirmed in cloud stock or accounts."}</p>{pendingSales.filter(x=>x.status==="failed").map(x=><small key={x.id}>Needs attention: {x.sale.invoiceNo} — {x.lastError}</small>)}</div><div className="offline-queue-actions"><button className="secondary-btn" disabled={syncing||!isOnline} onClick={retryPendingSales}>{syncing?"Syncing…":"Retry sync"}</button></div></div>}
     {message && <div className={message.startsWith("Sale saved")||message.includes("synchronised successfully")?"pos-success":"notice-error"}>{message}</div>}
-    {tab==="history" ? <div className="panel data-panel"><div className="panel-head"><div><h3>Recent invoices</h3><p>Latest sales from the shared Etihad Traders database</p></div></div><div className="table-wrap"><table><thead><tr><th>INVOICE</th><th>CUSTOMER</th><th>DATE</th><th>TOTAL</th><th>PAID</th><th>BALANCE</th></tr></thead><tbody>{recent.map((s,i)=><tr key={s.id||i}><td><b>{s.invoiceNo||"—"}</b></td><td>{s.customerName||"Walk-in"}</td><td>{new Date(s.date).toLocaleDateString()}</td><td>{cash(n(s.total))}</td><td>{cash(n(s.paid))}</td><td>{cash(n(s.balance))}</td></tr>)}</tbody></table></div></div> :
+    {tab==="history" ? <div className="panel data-panel"><div className="panel-head"><div><h3>Recent invoices</h3><p>Latest sales from the shared Etihad Traders database</p></div></div><div className="table-wrap"><table><thead><tr><th>INVOICE</th><th>CUSTOMER</th><th>DATE</th><th>TOTAL</th><th>PAID</th><th>BALANCE</th><th>RECEIPT</th></tr></thead><tbody>{recent.map((s,i)=><tr key={s.id||i}><td><b>{s.invoiceNo||"—"}</b></td><td>{s.customerName||"Walk-in"}</td><td>{s.date?new Date(s.date).toLocaleDateString():"—"}</td><td>{cash(n(s.total))}</td><td>{cash(n(s.paid))}</td><td>{cash(n(s.balance))}</td><td><button className="text-action" onClick={()=>reprintSale(s)}>Reprint</button></td></tr>)}</tbody></table></div></div> :
     <div className="pos-layout">
       <section className="pos-catalog panel"><div className="pos-catalog-head"><div><h3>Choose products</h3><p>Tap a product shortcut to add it to the bill</p></div><span className="record-count">{products.length} products</span></div><input className="pos-search" placeholder="Search or scan barcode / SKU, then press Enter…" value={search} onChange={e=>setSearch(e.target.value)} onKeyDown={handleProductSearchKey}/><div className="pos-category-bar">{categories.map(category=><button type="button" key={category} className={categoryFilter===category?"active":""} onClick={()=>setCategoryFilter(category)}>{category}</button>)}<label className="stock-toggle"><input type="checkbox" checked={showOutOfStock} onChange={e=>setShowOutOfStock(e.target.checked)}/> Include out of stock</label></div><div className="pos-products">{matches.map((p,i)=><button className="pos-product" key={p.id||i} onClick={()=>add(p)} disabled={n(p.qty)<=0}><span className="product-initial">{String(p.name||"P").slice(0,1).toUpperCase()}</span><b>{p.name}</b><small>{p.sku||p.category||"Product"} · Stock {n(p.qty)}</small><strong>{cash(n(p.price))}</strong><em>{n(p.qty)>0?"+ Add":"Out of stock"}</em></button>)}{!matches.length&&<div className="empty-cell">No products found.</div>}</div></section>
       <section className="pos-bill panel"><div className="bill-title"><div><h3>Current bill</h3><p>{cart.reduce((s,x)=>s+x.qty,0)} items in this sale</p></div><button className="text-action" onClick={()=>setCart([])}>Clear</button></div>
