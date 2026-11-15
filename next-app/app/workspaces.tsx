@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { listPendingSales, removePendingSale, savePendingSale, updatePendingSale, type PendingSale } from "@/lib/offline-sales";
 import { getSupabase } from "@/lib/supabase";
 
@@ -21,6 +21,8 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
   const customerCredits = rows.filter(r => r.collection === "mberp_customer_account_credits");
   const [cart, setCart] = useState<{ product: Product; qty: number }[]>([]);
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [showOutOfStock, setShowOutOfStock] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
   const [customerName, setCustomerName] = useState("Walk-in Customer");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -48,7 +50,28 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
   const applied = Math.min(total, receivedAmount);
   const cashApplied = Math.min(cashReceived, Math.max(0, total - advanceUsed));
   const balance = Math.max(0, total - applied);
-  const matches = products.filter(p => [p.name, p.sku, p.category].join(" ").toLowerCase().includes(search.toLowerCase()));
+  const categories = ["All", ...Array.from(new Set(products.filter(p => String(p.branchId) === String(branchId)).map(p => String(p.category || "Uncategorised").trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b))];
+  const branchProducts = products.filter(p => String(p.branchId) === String(branchId));
+  const matches = branchProducts
+    .filter(p => categoryFilter === "All" || String(p.category || "Uncategorised") === categoryFilter)
+    .filter(p => showOutOfStock || n(p.qty) > 0)
+    .filter(p => [p.name, p.sku, p.category, p.barcode].join(" ").toLowerCase().includes(search.toLowerCase()))
+    .sort((a,b) => String(a.name).localeCompare(String(b.name)));
+  const handleProductSearchKey = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") return;
+    const term = search.trim().toLowerCase();
+    if (!term) return;
+    const exact = branchProducts.find(p => [p.sku, p.barcode].some(code => String(code || "").trim().toLowerCase() === term));
+    if (exact && n(exact.qty) > 0) {
+      add(exact);
+      setSearch("");
+      setMessage(exact.name + " added to the bill.");
+    } else if (exact) {
+      setMessage(exact.name + " is out of stock at this branch.");
+    } else {
+      setMessage("No exact SKU or barcode match. Review the search results.");
+    }
+  };
   const customers = Array.from(new Map(sales.filter(s => s.customerName && s.customerName !== "Walk-in Customer").map(s => [s.customerPhone || s.customerName, { name: s.customerName, phone: s.customerPhone || "" }])).values()).filter(c => (c.name + " " + c.phone).toLowerCase().includes(customerSearch.toLowerCase())).slice(0, 6);
   const recent = [...sales].sort((a,b)=>new Date(b.date||0).getTime()-new Date(a.date||0).getTime()).slice(0,30);
   const add = (p: Product) => setCart(prev => { const found = prev.find(x => x.product.id === p.id); return found ? prev.map(x => x.product.id === p.id ? { ...x, qty: x.qty + 1 } : x) : [...prev, { product: p, qty: 1 }]; });
@@ -210,7 +233,7 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
     {message && <div className={message.startsWith("Sale saved")||message.includes("synchronised successfully")?"pos-success":"notice-error"}>{message}</div>}
     {tab==="history" ? <div className="panel data-panel"><div className="panel-head"><div><h3>Recent invoices</h3><p>Latest sales from the shared Etihad Traders database</p></div></div><div className="table-wrap"><table><thead><tr><th>INVOICE</th><th>CUSTOMER</th><th>DATE</th><th>TOTAL</th><th>PAID</th><th>BALANCE</th></tr></thead><tbody>{recent.map((s,i)=><tr key={s.id||i}><td><b>{s.invoiceNo||"—"}</b></td><td>{s.customerName||"Walk-in"}</td><td>{new Date(s.date).toLocaleDateString()}</td><td>{cash(n(s.total))}</td><td>{cash(n(s.paid))}</td><td>{cash(n(s.balance))}</td></tr>)}</tbody></table></div></div> :
     <div className="pos-layout">
-      <section className="pos-catalog panel"><div className="pos-catalog-head"><div><h3>Choose products</h3><p>Tap a product shortcut to add it to the bill</p></div><span className="record-count">{products.length} products</span></div><input className="pos-search" placeholder="Search product name, SKU or category…" value={search} onChange={e=>setSearch(e.target.value)}/><div className="pos-products">{matches.map((p,i)=><button className="pos-product" key={p.id||i} onClick={()=>add(p)}><span className="product-initial">{String(p.name||"P").slice(0,1).toUpperCase()}</span><b>{p.name}</b><small>{p.sku||p.category||"Product"}</small><strong>{cash(n(p.price))}</strong><em>+ Add</em></button>)}{!matches.length&&<div className="empty-cell">No products found.</div>}</div></section>
+      <section className="pos-catalog panel"><div className="pos-catalog-head"><div><h3>Choose products</h3><p>Tap a product shortcut to add it to the bill</p></div><span className="record-count">{products.length} products</span></div><input className="pos-search" placeholder="Search or scan barcode / SKU, then press Enter…" value={search} onChange={e=>setSearch(e.target.value)} onKeyDown={handleProductSearchKey}/><div className="pos-category-bar">{categories.map(category=><button type="button" key={category} className={categoryFilter===category?"active":""} onClick={()=>setCategoryFilter(category)}>{category}</button>)}<label className="stock-toggle"><input type="checkbox" checked={showOutOfStock} onChange={e=>setShowOutOfStock(e.target.checked)}/> Include out of stock</label></div><div className="pos-products">{matches.map((p,i)=><button className="pos-product" key={p.id||i} onClick={()=>add(p)} disabled={n(p.qty)<=0}><span className="product-initial">{String(p.name||"P").slice(0,1).toUpperCase()}</span><b>{p.name}</b><small>{p.sku||p.category||"Product"} · Stock {n(p.qty)}</small><strong>{cash(n(p.price))}</strong><em>{n(p.qty)>0?"+ Add":"Out of stock"}</em></button>)}{!matches.length&&<div className="empty-cell">No products found.</div>}</div></section>
       <section className="pos-bill panel"><div className="bill-title"><div><h3>Current bill</h3><p>{cart.reduce((s,x)=>s+x.qty,0)} items in this sale</p></div><button className="text-action" onClick={()=>setCart([])}>Clear</button></div>
         <div className="customer-box"><label>Customer</label><input value={customerSearch} onChange={e=>setCustomerSearch(e.target.value)} placeholder="Search saved customer by name or phone…"/>{customerSearch&&<div className="customer-results">{customers.map((c,i)=><button key={i} onClick={()=>{setCustomerName(c.name);setCustomerPhone(c.phone);setUseAdvance(false);setCustomerSearch("");}}><b>{c.name}</b><small>{c.phone}</small></button>)}</div>}<div className="customer-fields"><input value={customerName} onChange={e=>setCustomerName(e.target.value)} placeholder="Customer name"/><input value={customerPhone} onChange={e=>setCustomerPhone(e.target.value)} placeholder="Phone number"/></div></div>
         <div className="bill-items">{cart.map(({product,qty})=><div className="bill-item" key={product.id}><div className="bill-product"><b>{product.name}</b><small>{cash(n(product.price))} each</small></div><div className="qty-control"><button onClick={()=>changeQty(product.id,qty-1)}>−</button><span>{qty}</span><button onClick={()=>changeQty(product.id,qty+1)}>+</button></div><b className="line-total">{cash(n(product.price)*qty)}</b><button className="remove-item" onClick={()=>changeQty(product.id,0)}>×</button></div>)}{!cart.length&&<div className="bill-empty">Your bill is empty.<br/>Choose a product to get started.</div>}</div>
