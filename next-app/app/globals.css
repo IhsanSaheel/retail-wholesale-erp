@@ -31,3 +31,7 @@
 /* POS catalog refinements: branch-aware shortcuts, scanner-first search and stock visibility */
 .pos-category-bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 0 12px}.pos-category-bar>button{border:1px solid #e4e8ee;background:#fff;color:#68768a;border-radius:999px;padding:7px 11px;font-size:9px;white-space:nowrap}.pos-category-bar>button.active{background:#243651;border-color:#243651;color:#fff;font-weight:700}.pos-category-bar .stock-toggle{display:flex;align-items:center;gap:5px;margin-left:auto;color:#7d8999;font-size:9px;white-space:nowrap}.pos-category-bar .stock-toggle input{accent-color:#a17e43}.pos-product:disabled{opacity:.48;cursor:not-allowed;background:#f7f8fa}.pos-product:disabled em{color:#a0a8b3}.pos-product em{font-weight:700}
 @media(max-width:600px){.pos-category-bar{flex-wrap:nowrap;overflow-x:auto;padding-bottom:5px}.pos-category-bar>button{flex:0 0 auto}.pos-category-bar .stock-toggle{margin-left:0;flex:0 0 auto}}
+
+
+/* POS quantity controls: editable, touch-friendly and stock bounded */
+.qty-control .qty-entry{width:58px;min-width:0;height:34px;padding:4px 5px;border:1px solid var(--line,#dce2eb);border-radius:8px;background:var(--surface,#fff);color:inherit;text-align:center;font:inherit;font-weight:700;outline-offset:2px}.qty-control .qty-entry:focus{border-color:var(--gold,#b58a3a);box-shadow:0 0 0 3px rgba(181,138,58,.14)}.qty-control button:disabled{opacity:.35;cursor:not-allowed}.qty-control{gap:6px;align-items:center}
