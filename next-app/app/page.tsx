@@ -49,13 +49,35 @@ export default function Home() {
     setBranchIds(Array.isArray(membership.branch_ids) ? membership.branch_ids : []);
     setRole(String(membership.role || "staff"));
     setPermissions((membership.permissions && typeof membership.permissions==="object") ? membership.permissions : {});
-    const [{data:org},{data:records,error:recordsError}] = await Promise.all([
-      supabase.from("etihad_organizations").select("name").eq("id",membership.org_id).maybeSingle(),
-      supabase.from("etihad_records").select("collection,record_id,data,updated_at").eq("org_id",membership.org_id).limit(1500)
-    ]);
+    const {data:org} = await supabase.from("etihad_organizations").select("name").eq("id",membership.org_id).maybeSingle();
     if(org?.name) setOrgName(org.name);
-    if(recordsError) setError("Your account is signed in, but business records could not be loaded. Check your Supabase membership permissions.");
-    setRows((records || []) as RecordRow[]);
+
+    // Supabase's default row cap can silently truncate a large business.
+    // Fetch stable, ordered pages so POS history, customer credits and stock
+    // calculations use the complete authorised record set.
+    const allRecords: RecordRow[] = [];
+    let offset = 0;
+    let recordsError: Error | null = null;
+    const pageSize = 1000;
+    while (true) {
+      const {data: page, error: pageError} = await supabase
+        .from("etihad_records")
+        .select("collection,record_id,data,updated_at")
+        .eq("org_id",membership.org_id)
+        .order("updated_at",{ascending:false})
+        .order("record_id",{ascending:true})
+        .range(offset,offset+pageSize-1);
+      if (pageError) { recordsError = pageError; break; }
+      const batch = (page || []) as RecordRow[];
+      allRecords.push(...batch);
+      if (batch.length < pageSize) break;
+      offset += pageSize;
+    }
+    if(recordsError) {
+      setError("Your account is signed in, but all business records could not be loaded. Existing screen data has been kept; refresh or contact the owner.");
+    } else {
+      setRows(allRecords);
+    }
     setLoading(false);
   },[supabase]);
 
