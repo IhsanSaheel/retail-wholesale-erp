@@ -9,7 +9,7 @@ type Product = Record<string, any>;
 type Props = { orgId: string; userId: string; role: string; branchIds: string[]; rows: Row[]; onSaved: () => void };
 
 const n = (v: any) => Number(v || 0);
-const searchText = (v: any) => String(v ?? "").normalize("NFKC").trim().replace(/\\s+/g, " ").toLocaleLowerCase();
+const searchText = (v: any) => String(v ?? "").normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase();
 const cash = (v: number) => new Intl.NumberFormat("en-PK", { style: "currency", currency: "PKR", maximumFractionDigits: 0 }).format(v);
 const makeId = () => crypto.randomUUID().replaceAll("-", "").slice(0, 13);
 const esc = (v: any) => String(v ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
@@ -226,7 +226,29 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
       catch (storageError) { receiptWindow?.close(); setMessage("Sale was not recorded. Offline storage failed: " + (storageError instanceof Error ? storageError.message : "Unknown storage error")); setSaving(false); }
       return;
     }
-    const { data: checkout, error } = await supabase.rpc("etihad_create_sale", rpcArgs);
+    let checkout: any = null;
+    let error: any = null;
+    try {
+      const result = await supabase.rpc("etihad_create_sale", rpcArgs);
+      checkout = result.data;
+      error = result.error;
+    } catch (rpcFailure) {
+      const detail = rpcFailure instanceof Error ? rpcFailure.message : "The connection was interrupted before the server confirmed checkout.";
+      const transient = /fetch|network|timeout|offline|load failed|connection|request failed/i.test(detail);
+      if (transient) {
+        try { await queueSale(detail); }
+        catch (storageError) {
+          receiptWindow?.close();
+          setMessage("Connection failed and the sale could not be saved locally: " + (storageError instanceof Error ? storageError.message : "Offline storage unavailable"));
+          setSaving(false);
+        }
+      } else {
+        receiptWindow?.close();
+        setMessage("Sale was not confirmed. No stock change is assumed: " + detail);
+        setSaving(false);
+      }
+      return;
+    }
     if (error || !checkout?.success) {
       const detail = error?.message || "Checkout could not be completed.";
       const transient = !error?.code && /fetch|network|timeout|offline|load failed/i.test(detail);
