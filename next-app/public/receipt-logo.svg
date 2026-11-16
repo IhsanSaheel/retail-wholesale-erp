@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Etihad Traders — Shop Sell Grow"><rect width="1200" height="800" fill="#fff"/><g transform="translate(185 10) scale(.78)"><g fill="none" stroke="#102b62" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"><path d="M92 112h48l45 205h190l46-145H171"/><path d="M210 211h170M225 253h142M232 318l-24 42h168"/><circle cx="230" cy="397" r="22" fill="#102b62" stroke="none"/><circle cx="355" cy="397" r="22" fill="#102b62" stroke="none"/></g><path d="M84 180h50M73 224h62M62 268h74" stroke="#d9a322" stroke-width="15" stroke-linecap="round"/><path d="M216 327C316 319 377 241 432 123l-43 8 76-91 10 117-30-35C391 270 316 354 216 370" fill="none" stroke="#d9a322" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/></g><text x="600" y="575" text-anchor="middle" font-family="Arial,sans-serif" font-size="150" font-weight="900" letter-spacing="3" fill="#102b62">ETIHAD</text><text x="600" y="690" text-anchor="middle" font-family="Arial,sans-serif" font-size="100" font-weight="800" letter-spacing="18" fill="#c18a24">TRADERS</text><rect x="170" y="720" width="860" height="68" rx="34" fill="#102b62"/><text x="600" y="768" text-anchor="middle" font-family="Arial,sans-serif" font-size="42" font-weight="700" letter-spacing="8" fill="#fff">SHOP • SELL • GROW</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Etihad Traders — Shop Sell Grow">
+<rect width="1200" height="800" rx="24" fill="#fff"/>
+<g transform="translate(0 4)">
+<g fill="none" stroke="#082967" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
+<path d="M330 82h75l65 230h370l65-180H450"/>
+<path d="M515 170h330M535 220h275M555 270h230"/>
+<path d="M510 315h350"/>
+<circle cx="535" cy="360" r="31" fill="#082967" stroke="none"/><circle cx="790" cy="360" r="31" fill="#082967" stroke="none"/>
+</g>
+<path d="M235 185h155M215 235h175M195 285h175" stroke="#d69a00" stroke-width="24" stroke-linecap="round"/>
+<path d="M405 335C650 365 850 245 1030 42l-78 4 110-105 18 155-43-48C865 280 650 415 420 390" fill="#e0a000"/>
+</g>
+<text x="600" y="555" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="160" font-weight="900" letter-spacing="3" fill="#082967">ETIHAD</text>
+<path d="M55 635H270M930 635h215" stroke="#d69a00" stroke-width="10"/>
+<text x="600" y="675" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="92" font-weight="900" letter-spacing="14" fill="#d69a00">TRADERS</text>
+<rect x="220" y="710" width="760" height="72" rx="36" fill="#082967"/>
+<text x="600" y="761" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="43" font-weight="800" letter-spacing="8" fill="#fff">SHOP  •  SELL  •  GROW</text>
+</svg>
