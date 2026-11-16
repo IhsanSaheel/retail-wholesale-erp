@@ -38,3 +38,13 @@
 
 /* Fast POS tender presets */
 .tender-shortcuts{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}.tender-shortcuts button{border:1px solid var(--line,#dce2eb);border-radius:8px;background:var(--surface,#fff);color:var(--text,#26364d);padding:7px 10px;font-size:12px;font-weight:650;cursor:pointer}.tender-shortcuts button:hover{border-color:var(--gold,#b58a3a);background:rgba(181,138,58,.08)}
+
+
+/* POS checkout hierarchy and tender breakdown */
+.payment-method-row{margin:0 0 10px}
+.payment-method-row label{display:flex;flex-direction:column;gap:6px;width:100%;font-size:9px;font-weight:700;color:#67758a}
+.payment-method-row select{width:100%;min-height:40px;border:1px solid #dce2e9;border-radius:8px;background:#fff;padding:9px 11px;color:#26364d;font-size:11px}
+.settlement-preview{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;padding:10px 0;margin:8px 0;border-top:1px solid #edf0f3;border-bottom:1px solid #edf0f3}
+.settlement-preview>span{display:flex;flex-direction:column;gap:4px;font-size:8px;color:#8792a3}
+.settlement-preview b{font-size:11px;color:#2d3d55}
+@media(max-width:390px){.settlement-preview{grid-template-columns:1fr 1fr}}
