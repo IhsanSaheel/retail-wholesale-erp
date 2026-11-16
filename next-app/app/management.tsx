@@ -171,7 +171,7 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
   add(key,label,Number(s.total||0));
  }
  if(report==="payment"){
-  const paymentSaleIds=new Set(collectedPayments.map(p=>String(p.saleId||"")));
+  const paymentSaleIds=new Set(payments.filter(p=>!["advance_applied","sales_return_refund"].includes(String(p.type||""))).map(p=>String(p.saleId||"")));
   for(const p of collectedPayments){const label=String(p.method||"Unspecified");add(label,label,Number(p.amount||0));}
   for(const sale of active){if(paymentSaleIds.has(String(sale.id||"")))continue;const legacyAmount=Math.max(0,Number(sale.paid||0)-Number(sale.advanceUsed||0));if(legacyAmount>0){const label=String(sale.paymentMethod||"Unspecified");add(label,label,legacyAmount);}}
  }
