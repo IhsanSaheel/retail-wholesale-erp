@@ -48,3 +48,10 @@
 .settlement-preview>span{display:flex;flex-direction:column;gap:4px;font-size:8px;color:#8792a3}
 .settlement-preview b{font-size:11px;color:#2d3d55}
 @media(max-width:390px){.settlement-preview{grid-template-columns:1fr 1fr}}
+
+/* Installable Etihad Traders app controls */
+.pwa-install-wrap{position:fixed;right:18px;bottom:18px;z-index:1200;display:flex;flex-direction:column;align-items:flex-end;gap:8px;max-width:min(92vw,340px)}
+.pwa-install-button{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:#082967;color:#fff;padding:12px 17px;box-shadow:0 10px 30px rgba(8,41,103,.25);font:700 13px/1.2 inherit;cursor:pointer}
+.pwa-install-button span{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#d69a00;color:#082967;font-size:15px}
+.pwa-install-help{max-width:300px;padding:12px 14px;border:1px solid #e2e7ef;border-radius:12px;background:#fff;color:#26364d;box-shadow:0 8px 28px rgba(8,25,55,.14);font-size:12px;line-height:1.55}
+@media(max-width:600px){.pwa-install-wrap{right:12px;bottom:calc(12px + env(safe-area-inset-bottom))}.pwa-install-button{padding:11px 15px}}
