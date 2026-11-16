@@ -6,15 +6,54 @@ import { getSupabase } from "@/lib/supabase";
 
 type Row = { collection: string; record_id: string; data: Record<string, any> };
 type Product = Record<string, any>;
-type Props = { orgId: string; userId: string; role: string; branchIds: string[]; rows: Row[]; onSaved: () => void };
+type Props = { orgId: string; userId: string; cashier: string; role: string; branchIds: string[]; rows: Row[]; onSaved: () => void };
 
 const n = (v: any) => Number(v || 0);
 const searchText = (v: any) => String(v ?? "").normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase();
 const cash = (v: number) => new Intl.NumberFormat("en-PK", { style: "currency", currency: "PKR", maximumFractionDigits: 0 }).format(v);
 const makeId = () => crypto.randomUUID().replaceAll("-", "").slice(0, 13);
 const esc = (v: any) => String(v ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+function buildReceiptDocument(data: Record<string, any>) {
+  const itemRows = (Array.isArray(data.items) ? data.items : []).map((item: Product) => {
+    const qty = n(item.qty);
+    const price = n(item.price);
+    return `<tr><td class="item-name"><strong>${esc(item.name)}</strong>${item.sku ? `<small>SKU: ${esc(item.sku)}</small>` : ""}<small>${qty} × ${cash(price)}</small></td><td class="r item-total">${cash(qty * price)}</td></tr>`;
+  }).join("");
+  const totalRows = (Array.isArray(data.rows) ? data.rows : []).map(([label, amount]: [string, any]) =>
+    `<tr><td>${esc(label)}</td><td class="r">${cash(n(amount))}</td></tr>`
+  ).join("");
+  const logoUrl = `${data.origin || ""}/icon.svg`;
+  return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(data.invoiceNo || "Sales receipt")}</title>
+  <style>
+    *{box-sizing:border-box}html{background:#fff}body{font:12px/1.45 Arial,Helvetica,sans-serif;color:#17243a;width:100%;max-width:420px;margin:18px auto;padding:14px}
+    .brand{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto 5px;text-align:left}.brand img{width:58px;height:58px;object-fit:contain;border-radius:9px}.brand strong{display:block;font-size:17px;letter-spacing:1.2px;color:#14243b}.brand span{display:block;font-size:9px;letter-spacing:1.6px;color:#9b7b43;font-weight:700;margin-top:3px}
+    .receipt-title{text-align:center;font-size:12px;font-weight:700;letter-spacing:1px;margin:7px 0 3px}.status{margin:8px 0;padding:8px;border:1px solid #d8b66b;background:#fff7e7;color:#75551c;text-align:center;font-size:10px;font-weight:800;letter-spacing:.4px}
+    .meta{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;font-size:10px;margin:10px 0}.meta div{min-width:0;overflow-wrap:anywhere}.meta b{display:block;color:#687487;font-size:9px;font-weight:600}.meta span{font-weight:700}
+    hr{border:0;border-top:1px dashed #9da6b3;margin:10px 0}table{width:100%;border-collapse:collapse}td{padding:6px 0;border-bottom:1px solid #edf0f3;vertical-align:top}.r{text-align:right;white-space:nowrap}.item-name{padding-right:8px}.item-name strong{display:block;font-size:11px}.item-name small{display:block;color:#738095;font-size:9px}.item-total{font-weight:700;font-size:10px}.totals td{font-size:10px}.totals tr:last-child td{font-weight:800;font-size:13px;color:#17243a;border-top:1px solid #aeb7c3;border-bottom:0;padding-top:9px}
+    .payment-label{text-align:center;font-size:9px;color:#667387;margin:8px 0}.note{font-size:9px;color:#667387;overflow-wrap:anywhere}.thanks{text-align:center;font-weight:700;font-size:11px;margin:13px 0 3px}.footer{text-align:center;font-size:8px;color:#8b95a4}
+    @page{size:80mm auto;margin:3mm}@media print{html,body{width:100%;max-width:none;margin:0;padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.brand img{width:48px;height:48px}.brand strong{font-size:15px}.receipt-title{margin-top:5px}hr{margin:7px 0}td{padding:5px 0}.status{padding:6px}}
+  </style></head><body>
+  <header class="brand"><img src="${esc(logoUrl)}" alt="Etihad Traders logo"><div><strong>ETIHAD TRADERS</strong><span>RETAIL &amp; WHOLESALE</span></div></header>
+  <div class="receipt-title">${esc(data.title || "SALES RECEIPT")}</div>
+  ${data.status ? `<div class="status">${esc(data.status)}</div>` : ""}
+  <hr><section class="meta">
+    <div><b>INVOICE</b><span>${esc(data.invoiceNo || "—")}</span></div>
+    <div><b>DATE &amp; TIME</b><span>${esc(data.date ? new Date(data.date).toLocaleString("en-PK") : "—")}</span></div>
+    <div><b>CUSTOMER</b><span>${esc(data.customerName || "Walk-in Customer")}</span></div>
+    <div><b>PHONE</b><span>${esc(data.customerPhone || "—")}</span></div>
+    <div><b>BRANCH</b><span>${esc(data.branchName || "—")}</span></div>
+    <div><b>CASHIER / LOGIN</b><span>${esc(data.cashier || "—")}</span></div>
+  </section><hr>
+  <table><tbody>${itemRows || '<tr><td colspan="2">No items</td></tr>'}</tbody></table>
+  <hr><table class="totals"><tbody>${totalRows}</tbody></table>
+  <p class="payment-label">PAYMENT METHOD: <strong>${esc(data.paymentMethod || "—")}</strong></p>
+  ${data.note ? `<p class="note">Note: ${esc(data.note)}</p>` : ""}
+  <hr><p class="thanks">Thank you for shopping with us!</p><p class="footer">ETIHAD TRADERS · PLEASE VISIT AGAIN</p>
+  <script>window.onload=()=>window.print()<\\/script></body></html>`;
+}
 
-export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: Props) {
+
+export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, onSaved }: Props) {
   const supabase = useMemo(() => getSupabase(), []);
   const products = rows.filter(r => r.collection === "mberp_products").map(r => r.data).filter(p => p.active !== false);
   const branches = rows.filter(r => r.collection === "mberp_branches").map(r => r.data).filter(b => b.active !== false && (!branchIds.length || branchIds.includes(String(b.id))));
@@ -159,11 +198,10 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
   }
 
   function reprintSale(s: Product) {
-    const popup = window.open("", "_blank", "width=420,height=700");
+    const popup = window.open("", "_blank", "width=440,height=760");
     if (!popup) { setMessage("Allow pop-ups to reprint this receipt."); return; }
-    const items = Array.isArray(s.items) ? s.items : [];
-    const itemRows = items.map((item: Product) => `<tr><td>${esc(item.name)} × ${n(item.qty)}</td><td class="r">${cash(n(item.qty) * n(item.price))}</td></tr>`).join("");
-    const rowsHtml = [
+    const rowsHtml: [string, any][] = [
+      ["Subtotal", s.subtotal ?? s.total],
       ["Total bill", s.total],
       ["Amount received (" + (s.paymentMethod || "Payment") + ")", s.cashReceived ?? s.paid],
       ...(n(s.advanceUsed) > 0 ? [["Customer advance applied", s.advanceUsed] as [string, any]] : []),
@@ -172,9 +210,14 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
       ...(n(s.customerAdvance) > 0 ? [["Customer advance saved", s.customerAdvance] as [string, any]] : []),
       ...(n(s.staffTip) > 0 ? [["Staff tip (not sales)", s.staffTip] as [string, any]] : []),
       ["Balance due", s.balance]
-    ].map(([label, amount]) => `<tr><td>${esc(label)}</td><td class="r">${cash(n(amount))}</td></tr>`).join("");
+    ];
     popup.document.open();
-    popup.document.write(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(s.invoiceNo || "Sales receipt")}</title><style>body{font:14px Arial;color:#18253b;max-width:360px;margin:24px auto;padding:10px}h2{text-align:center;margin:0}p{text-align:center;color:#667}hr{border:0;border-top:1px dashed #aaa}table{width:100%;border-collapse:collapse}td{padding:7px 0;border-bottom:1px solid #eee}.r{text-align:right}.small{font-size:12px;color:#667}@media print{body{margin:0 auto}}</style></head><body><h2>ETIHAD TRADERS</h2><p>Sales receipt · Reprint</p><hr/><div>Invoice: ${esc(s.invoiceNo || "—")}</div><div>Date: ${esc(s.date ? new Date(s.date).toLocaleString() : "—")}</div><div>Customer: ${esc(s.customerName || "Walk-in Customer")}</div><div>Phone: ${esc(s.customerPhone || "—")}</div><div>Branch: ${esc(s.branchName || "—")}</div><hr/><table>${itemRows}</table><hr/><table>${rowsHtml}</table><hr/><p class="small">Payment method: ${esc(s.paymentMethod || "—")}</p><p>Thank you for shopping with us.</p><script>window.onload=()=>window.print()<\\/script></body></html>`);
+    popup.document.write(buildReceiptDocument({
+      origin: window.location.origin, title: "SALES RECEIPT · REPRINT",
+      invoiceNo: s.invoiceNo, date: s.date, customerName: s.customerName,
+      customerPhone: s.customerPhone, branchName: s.branchName, cashier: s.cashier || cashier,
+      items: s.items, rows: rowsHtml, paymentMethod: s.paymentMethod, note: s.note
+    }));
     popup.document.close();
   }
 
@@ -208,7 +251,7 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
     const staffTip = over > 0 && resolution === "tip" ? over : 0;
     const sale = {
       id, date, invoiceNo, branchId, branchName: branch?.name || "",
-      customerName: customerName.trim() || "Walk-in Customer", customerPhone: customerPhone.trim(),
+      customerName: customerName.trim() || "Walk-in Customer", customerPhone: customerPhone.trim(), cashier,
       items: cart.map(x => ({ productId: x.product.id, name: x.product.name, sku: x.product.sku || "", qty: x.qty, cost: n(x.product.cost), price: n(x.product.price), unit: x.product.unit || "piece" })),
       subtotal: total, total, paid: applied, balance, receivedAmount, cashReceived, advanceUsed,
       changeReturned, customerAdvance, staffTip, overpaymentResolution: over ? resolution : "none",
@@ -231,7 +274,15 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
       setPendingSales(items);
       if (receiptWindow) {
         receiptWindow.document.open();
-        receiptWindow.document.write(`<!doctype html><html><head><title>Pending ${esc(invoiceNo)}</title><style>body{font:14px Arial;color:#18253b;max-width:360px;margin:24px auto;padding:10px}h2{text-align:center} .warn{padding:12px;background:#fff4df;border:1px solid #e4b65f;border-radius:8px;font-weight:bold}table{width:100%}td{padding:7px 0;border-bottom:1px solid #eee}.r{text-align:right}</style></head><body><h2>ETIHAD TRADERS</h2><div class="warn">PENDING CLOUD SYNC — NOT A CONFIRMED SALES RECEIPT</div><p>Reference: ${esc(invoiceNo)}</p><p>Date: ${esc(new Date(date).toLocaleString())}</p><p>Customer: ${esc(sale.customerName)}</p><table>${sale.items.map((x:any)=>`<tr><td>${esc(x.name)} × ${x.qty}</td><td class="r">${cash(x.qty*x.price)}</td></tr>`).join("")}</table><hr/><p>Total: <b>${cash(total)}</b></p><p>Amount tendered (${esc(method)}): ${cash(cashReceived)}</p><p>Keep this reference. The sale is not final until cloud synchronisation succeeds.</p></body></html>`);
+        receiptWindow.document.write(buildReceiptDocument({
+          origin: window.location.origin, title: "OFFLINE SALES SLIP",
+          status: "PENDING CLOUD SYNC — NOT A CONFIRMED SALES RECEIPT",
+          invoiceNo, date, customerName: sale.customerName, customerPhone: sale.customerPhone,
+          branchName: sale.branchName, cashier, items: sale.items,
+          rows: [["Subtotal", total], ["Total bill", total], ["Amount tendered (" + method + ")", cashReceived],
+            ...(advanceUsed > 0 ? [["Customer advance applied", advanceUsed] as [string, any]] : []),
+            ["Balance due", balance]], paymentMethod: method, note
+        }));
         receiptWindow.document.close();
       }
       setCart([]); setReceived(""); setUseAdvance(false); setCustomerName("Walk-in Customer"); setCustomerPhone(""); setNote("");
@@ -280,8 +331,22 @@ export function POSWorkspace({ orgId, userId, role, branchIds, rows, onSaved }: 
       return;
     }
 
-    const receipt = `<!doctype html><html><head><title>${esc(invoiceNo)}</title><style>body{font:14px Arial;color:#18253b;max-width:360px;margin:24px auto;padding:10px}h2{text-align:center;margin:0}p{text-align:center;color:#667}hr{border:0;border-top:1px dashed #aaa}table{width:100%;border-collapse:collapse}td{padding:7px 0;border-bottom:1px solid #eee}.r{text-align:right}.small{font-size:12px;color:#667}</style></head><body><h2>ETIHAD TRADERS</h2><p>Sales receipt</p><hr/><div>Invoice: ${esc(invoiceNo)}</div><div>Date: ${esc(new Date(date).toLocaleString())}</div><div>Customer: ${esc(sale.customerName)}</div><div>Phone: ${esc(sale.customerPhone || "—")}</div><div>Branch: ${esc(sale.branchName)}</div><hr/><table>${sale.items.map((x:any)=>`<tr><td>${esc(x.name)} × ${x.qty}</td><td class="r">${cash(x.qty*x.price)}</td></tr>`).join("")}</table><hr/><table><tr><td>Total bill</td><td class="r">${cash(total)}</td></tr><tr><td>Amount received (${esc(method)})</td><td class="r">${cash(cashReceived)}</td></tr>${advanceUsed?`<tr><td>Customer advance applied</td><td class="r">${cash(advanceUsed)}</td></tr>`:""}<tr><td>Total tender applied</td><td class="r">${cash(receivedAmount)}</td></tr><tr><td>Applied to invoice</td><td class="r">${cash(applied)}</td></tr>${changeReturned?`<tr><td>Change returned</td><td class="r">${cash(changeReturned)}</td></tr>`:""}${customerAdvance?`<tr><td>Customer advance saved</td><td class="r">${cash(customerAdvance)}</td></tr>`:""}${staffTip?`<tr><td>Staff tip (not sales)</td><td class="r">${cash(staffTip)}</td></tr>`:""}<tr><td>Balance due</td><td class="r">${cash(balance)}</td></tr></table><hr/><p class="small">Payment method: ${esc(method)}</p><p>Thank you for shopping with us.</p><script>window.onload=()=>window.print()<\\/script></body></html>`;
-    if (receiptWindow) { receiptWindow.document.open(); receiptWindow.document.write(receipt); receiptWindow.document.close(); }
+    if (receiptWindow) {
+      receiptWindow.document.open();
+      receiptWindow.document.write(buildReceiptDocument({
+        origin: window.location.origin, title: "SALES RECEIPT",
+        invoiceNo, date, customerName: sale.customerName, customerPhone: sale.customerPhone,
+        branchName: sale.branchName, cashier, items: sale.items,
+        rows: [["Subtotal", total], ["Total bill", total], ["Amount received (" + method + ")", cashReceived],
+          ...(advanceUsed > 0 ? [["Customer advance applied", advanceUsed] as [string, any]] : []),
+          ["Total tender applied", receivedAmount], ["Applied to invoice", applied],
+          ...(changeReturned > 0 ? [["Change returned", changeReturned] as [string, any]] : []),
+          ...(customerAdvance > 0 ? [["Customer advance saved", customerAdvance] as [string, any]] : []),
+          ...(staffTip > 0 ? [["Staff tip (not sales)", staffTip] as [string, any]] : []),
+          ["Balance due", balance]], paymentMethod: method, note
+      }));
+      receiptWindow.document.close();
+    }
     setCart([]); setReceived(""); setUseAdvance(false); setCustomerName("Walk-in Customer"); setCustomerPhone(""); setNote("");
     setMessage("Sale saved successfully. Stock and payment records updated atomically. Receipt opened in a new window.");
     setSaving(false);
