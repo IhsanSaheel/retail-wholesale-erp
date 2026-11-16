@@ -55,3 +55,20 @@
 .pwa-install-button span{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#d69a00;color:#082967;font-size:15px}
 .pwa-install-help{max-width:300px;padding:12px 14px;border:1px solid #e2e7ef;border-radius:12px;background:#fff;color:#26364d;box-shadow:0 8px 28px rgba(8,25,55,.14);font-size:12px;line-height:1.55}
 @media(max-width:600px){.pwa-install-wrap{right:12px;bottom:calc(12px + env(safe-area-inset-bottom))}.pwa-install-button{padding:11px 15px}}
+
+/* Customer ledger: clear balance status and printable account statements */
+.customer-outstanding{color:#c33b3b!important;font-weight:800!important}
+.customer-advance{color:#21845d!important;font-weight:800!important}
+.statement-actions{display:flex;gap:8px;align-items:center}
+.statement-actions .primary-btn{margin:0}
+.statement-filters{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:18px 0 12px}
+.statement-filters label{display:flex;flex-direction:column;gap:6px;min-width:150px;font-size:9px;font-weight:700;color:#68768a}
+.statement-filters input,.statement-filters select{border:1px solid #dfe4eb;border-radius:7px;background:#fff;padding:9px 10px;font-size:10px;color:#2d3c53}
+.statement-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0;padding:12px;background:#f7f8fa;border:1px solid #edf0f3;border-radius:9px}
+.statement-summary>div{display:flex;flex-direction:column;gap:7px;font-size:9px;color:#8792a3}
+.statement-summary b{font-size:13px;color:#263650}
+.statement-items{display:flex;flex-direction:column;gap:4px;margin-top:6px;white-space:normal;min-width:160px;color:#526176;font-size:9px;line-height:1.5}
+.statement-items small{color:#8a95a4}
+.customer-statement{scroll-margin-top:80px}
+@media(max-width:650px){.statement-actions{width:100%}.statement-actions button{flex:1}.statement-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.statement-filters{align-items:stretch}.statement-filters label{flex:1;min-width:125px}}
+@media print{.customer-outstanding{color:#c33b3b!important}.customer-advance{color:#21845d!important}}
