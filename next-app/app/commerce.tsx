@@ -145,3 +145,61 @@ export function BranchWorkspace({orgId,userId,role,rows,onSaved}:Props){
  async function save(){if(!owner||!name.trim())return;setBusy(true);const bid=id();const {error}=await db.from("etihad_records").insert({org_id:orgId,collection:"mberp_branches",record_id:bid,branch_ids:[],updated_by:userId,data:{id:bid,name:name.trim(),address:address.trim(),phone:phone.trim(),active:true}});setMessage(error?"Branch not saved: "+error.message:"Branch created.");setBusy(false);if(!error){setName("");setAddress("");setPhone("");onSaved();}}
  return <div className="directory-workspace"><div className="welcome-row"><div><div className="section-kicker">MULTI-BRANCH OPERATIONS</div><h1>Branches</h1><p>Business locations and branch status.</p></div><span className="record-count">{branches.length} branches</span></div>{message&&<div className="pos-success">{message}</div>}{owner&&<div className="panel hr-form"><h3>Add branch</h3><div className="hr-form-grid"><label>Branch name<input value={name} onChange={e=>setName(e.target.value)}/></label><label>Address<input value={address} onChange={e=>setAddress(e.target.value)}/></label><label>Phone<input value={phone} onChange={e=>setPhone(e.target.value)}/></label></div><button className="primary-btn" disabled={busy||!name.trim()} onClick={save}>Create branch</button></div>}<div className="panel data-panel"><h3>Branch directory</h3><div className="table-wrap"><table><thead><tr><th>BRANCH</th><th>ADDRESS</th><th>PHONE</th><th>STATUS</th></tr></thead><tbody>{branches.map((b,i)=><tr key={b.id||i}><td><b>{b.name}</b></td><td>{b.address||"—"}</td><td>{b.phone||"—"}</td><td>{b.active===false?"Inactive":"Active"}</td></tr>)}</tbody></table></div></div></div>;
 }
+
+
+export function CashRegisterWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Props){
+ const db=useMemo(()=>getSupabase(),[]);
+ const branches=rows.filter(r=>r.collection==="mberp_branches").map(r=>({...r.data,id:r.record_id})).filter(b=>b.active!==false&&(!branchIds.length||branchIds.includes(String(b.id))));
+ const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data);
+ const sessions=rows.filter(r=>r.collection==="mberp_cash_registers").map(r=>({...r.data,_recordId:r.record_id}));
+ const movements=rows.filter(r=>r.collection==="mberp_cash_movements").map(r=>r.data);
+ const [branchId,setBranchId]=useState(branches[0]?.id||"");
+ const [opening,setOpening]=useState("0");
+ const [movementType,setMovementType]=useState("cash_in");
+ const [movementAmount,setMovementAmount]=useState("");
+ const [movementNote,setMovementNote]=useState("");
+ const [counted,setCounted]=useState("");
+ const [busy,setBusy]=useState(false);
+ const [message,setMessage]=useState("");
+ const [selectedSession,setSelectedSession]=useState("");
+ const canManage=["owner","manager","accountant","cashier"].includes(role);
+ const active=sessions.find(s=>s.status==="open"&&String(s.branchId)===String(branchId)&&String(s.cashierId)===String(userId));
+ const session=selectedSession?sessions.find(s=>String(s.id)===selectedSession):active;
+ const sessionSales=session?sales.filter(s=>String(s.branchId)===String(session.branchId)&&new Date(s.date||s.createdAt||0).getTime()>=new Date(session.openedAt).getTime()&&String(s.status||"").toLowerCase()!=="cancelled"&&(!session.closedAt||new Date(s.date||s.createdAt||0).getTime()<=new Date(session.closedAt).getTime())):[];
+ const sessionMoves=session?movements.filter(m=>String(m.sessionId)===String(session.id)):[];
+ const cashSales=sessionSales.reduce((sum,s)=>sum+(String(s.paymentMethod||"").toLowerCase()==="cash"?Math.max(0,num(s.cashReceived)-num(s.changeReturned)):0),0);
+ const nonCashSales=sessionSales.reduce((sum,s)=>sum+(String(s.paymentMethod||"").toLowerCase()!=="cash"?Math.max(0,num(s.cashReceived)):0),0);
+ const cashIn=sessionMoves.filter(m=>m.type==="cash_in").reduce((a,m)=>a+num(m.amount),0);
+ const cashOut=sessionMoves.filter(m=>m.type==="cash_out").reduce((a,m)=>a+num(m.amount),0);
+ const expected=session?num(session.openingFloat)+cashSales+cashIn-cashOut:0;
+ const branch=branches.find(b=>String(b.id)===String(branchId));
+ async function openRegister(){
+  if(!branch||num(opening)<0){setMessage("Select a branch and enter a valid opening float.");return;}
+  if(sessions.some(s=>s.status==="open"&&String(s.branchId)===String(branchId)&&String(s.cashierId)===String(userId))){setMessage("You already have an open register for this branch.");return;}
+  setBusy(true);const sid=id(),openedAt=new Date().toISOString();
+  const data={id:sid,branchId:String(branchId),branchName:branch.name||"",cashierId:userId,cashierName:userId,openedAt,openingFloat:num(opening),status:"open"};
+  const {error}=await db.from("etihad_records").insert({org_id:orgId,collection:"mberp_cash_registers",record_id:sid,branch_ids:[String(branchId)],updated_by:userId,data});
+  setMessage(error?"Register could not be opened: "+error.message:"Cash register opened. Record your cash movements and close it after counting the drawer.");setBusy(false);if(!error){setSelectedSession(sid);onSaved();}
+ }
+ async function addMovement(){
+  if(!session||session.status!=="open"||num(movementAmount)<=0){setMessage("Enter a positive amount on an open register.");return;}
+  if(movementType==="cash_out"&&num(movementAmount)>expected){setMessage("Cash-out amount cannot exceed the current expected drawer balance.");return;}
+  setBusy(true);const mid=id(),date=new Date().toISOString(),data={id:mid,sessionId:session.id,branchId:session.branchId,branchName:session.branchName,type:movementType,amount:num(movementAmount),note:movementNote.trim(),date,recordedBy:userId};
+  const {error}=await db.from("etihad_records").insert({org_id:orgId,collection:"mberp_cash_movements",record_id:mid,branch_ids:[String(session.branchId)],updated_by:userId,data});
+  setMessage(error?"Movement not saved: "+error.message:"Cash movement recorded.");setBusy(false);if(!error){setMovementAmount("");setMovementNote("");onSaved();}
+ }
+ async function closeRegister(){
+  if(!session||session.status!=="open"||counted===""||num(counted)<0){setMessage("Enter the actual counted cash before closing the register.");return;}
+  setBusy(true);const closedAt=new Date().toISOString(),actual=num(counted),variance=actual-expected;
+  const updated={...session,status:"closed",closedAt,expectedCash:expected,actualCash:actual,variance,closedBy:userId};
+  const {error}=await db.from("etihad_records").update({data:updated,updated_by:userId}).eq("org_id",orgId).eq("collection","mberp_cash_registers").eq("record_id",String(session._recordId||session.id));
+  setMessage(error?"Register could not be closed: "+error.message:"Register closed. Cash variance: "+money(variance));setBusy(false);if(!error){setCounted("");onSaved();}
+ }
+ return <div className="directory-workspace"><div className="welcome-row"><div><div className="section-kicker">CASH CONTROL</div><h1>Cash register</h1><p>Open a cashier shift, record cash in/out and reconcile the drawer.</p></div><span className="record-count">{sessions.filter(s=>s.status==="open").length} open sessions</span></div>
+ {message&&<div className={message.includes("not ")||message.includes("could not")||message.includes("cannot")?"notice-error":"pos-success"}>{message}</div>}
+ <div className="panel hr-form"><h3>Register session</h3><div className="hr-form-grid"><label>Branch<select value={branchId} onChange={e=>{setBranchId(e.target.value);setSelectedSession("");}}>{branches.map(b=><option key={b.id} value={b.id}>{b.name||"Branch"}</option>)}</select></label><label>Opening float (PKR)<input type="number" min="0" step="any" value={opening} onChange={e=>setOpening(e.target.value)} disabled={!!active}/></label></div>{active?<div className="purchase-totals"><span>Opened <b>{new Date(active.openedAt).toLocaleString("en-PK")}</b></span><span>Opening float <b>{money(active.openingFloat)}</b></span><span>Expected cash <b>{money(expected)}</b></span></div>:<button className="primary-btn" disabled={busy||!branch} onClick={openRegister}>Open cash register</button>}</div>
+ {session&&<><div className="metrics-grid"><article className="metric-card"><div className="metric-top"><span>Opening float</span></div><strong>{money(session.openingFloat)}</strong></article><article className="metric-card"><div className="metric-top"><span>Cash sales</span></div><strong>{money(cashSales)}</strong></article><article className="metric-card"><div className="metric-top"><span>Cash in / out</span></div><strong>{money(cashIn-cashOut)}</strong></article><article className="metric-card"><div className="metric-top"><span>Expected drawer</span></div><strong>{money(session.status==="closed"?session.expectedCash:expected)}</strong></article></div>
+ <div className="panel hr-form"><h3>Cash movement</h3>{session.status==="open"?<><div className="hr-form-grid"><label>Movement<select value={movementType} onChange={e=>setMovementType(e.target.value)}><option value="cash_in">Cash in</option><option value="cash_out">Cash out</option></select></label><label>Amount (PKR)<input type="number" min="0.01" step="any" value={movementAmount} onChange={e=>setMovementAmount(e.target.value)}/></label><label>Reason / reference<input value={movementNote} onChange={e=>setMovementNote(e.target.value)} placeholder="e.g. petty cash, bank deposit"/></label></div><button className="primary-btn" disabled={busy||num(movementAmount)<=0} onClick={addMovement}>Record movement</button><div className="divider-line"></div><h3>Close & reconcile drawer</h3><div className="hr-form-grid"><label>Actual counted cash (PKR)<input type="number" min="0" step="any" value={counted} onChange={e=>setCounted(e.target.value)}/></label></div><div className="purchase-totals"><span>Expected <b>{money(expected)}</b></span><span>Counted <b>{counted===""?"—":money(counted)}</b></span><span>Difference <b>{counted===""?"—":money(num(counted)-expected)}</b></span></div><button className="primary-btn" disabled={busy||counted===""||num(counted)<0} onClick={closeRegister}>Close register & save reconciliation</button></>:<div className="purchase-totals"><span>Closed <b>{session.closedAt?new Date(session.closedAt).toLocaleString("en-PK"):"—"}</b></span><span>Actual counted <b>{money(session.actualCash)}</b></span><span>Variance <b>{money(session.variance)}</b></span></div>}</div>
+ <div className="panel data-panel"><h3>Shift transactions</h3><div className="table-wrap"><table><thead><tr><th>TIME / REFERENCE</th><th>TYPE</th><th>DETAILS</th><th>AMOUNT</th></tr></thead><tbody>{sessionSales.map((s,i)=><tr key={s.id||i}><td>{new Date(s.date||s.createdAt).toLocaleString("en-PK")}<small className="table-subline">{s.invoiceNo||"Sale"}</small></td><td>Sale · {s.paymentMethod||"—"}</td><td>{s.customerName||"Walk-in Customer"}</td><td>{money(String(s.paymentMethod||"").toLowerCase()==="cash"?Math.max(0,num(s.cashReceived)-num(s.changeReturned)):num(s.cashReceived))}</td></tr>)}{sessionMoves.map((m,i)=><tr key={m.id||i}><td>{new Date(m.date).toLocaleString("en-PK")}</td><td>{m.type==="cash_in"?"Cash in":"Cash out"}</td><td>{m.note||"—"}</td><td>{money(m.amount)}</td></tr>)}{!sessionSales.length&&!sessionMoves.length&&<tr><td colSpan={4} className="empty-cell">No transactions recorded in this shift yet.</td></tr>}</tbody></table></div></div></>}
+ <div className="panel data-panel"><h3>Previous register sessions</h3><div className="table-wrap"><table><thead><tr><th>OPENED</th><th>BRANCH</th><th>STATUS</th><th>EXPECTED</th><th>COUNTED</th><th>VARIANCE</th><th></th></tr></thead><tbody>{[...sessions].sort((a,b)=>String(b.openedAt).localeCompare(String(a.openedAt))).map((s,i)=><tr key={s.id||i}><td>{s.openedAt?new Date(s.openedAt).toLocaleString("en-PK"):"—"}</td><td>{s.branchName||"—"}</td><td>{s.status}</td><td>{money(s.expectedCash??(s.status==="open"&&String(s.id)===String(session?.id)?expected:s.openingFloat))}</td><td>{s.actualCash==null?"—":money(s.actualCash)}</td><td>{s.variance==null?"—":money(s.variance)}</td><td><button className="text-action" onClick={()=>{setBranchId(String(s.branchId));setSelectedSession(String(s.id));}}>View</button></td></tr>)}{!sessions.length&&<tr><td colSpan={7} className="empty-cell">No register sessions yet.</td></tr>}</tbody></table></div></div></div>;
+}
