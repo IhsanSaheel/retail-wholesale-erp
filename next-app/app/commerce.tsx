@@ -2,7 +2,7 @@
 import { useMemo, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 type Row={collection:string;record_id:string;data:Record<string,any>};
-type Props={orgId:string;userId:string;role:string;branchIds:string[];rows:Row[];onSaved:()=>void};
+type Props={orgId:string;userId:string;role:string;branchIds:string[];rows:Row[];onSaved:()=>void;cashier?:string};
 const num=(v:any)=>Number(v||0), money=(v:any)=>new Intl.NumberFormat("en-PK",{style:"currency",currency:"PKR",maximumFractionDigits:0}).format(num(v)), id=()=>crypto.randomUUID().replaceAll("-","").slice(0,13);
 export function CustomerWorkspace({orgId,userId,role,rows,onSaved}:Props){
  const db=useMemo(()=>getSupabase(),[]);
@@ -147,7 +147,7 @@ export function BranchWorkspace({orgId,userId,role,rows,onSaved}:Props){
 }
 
 
-export function CashRegisterWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Props){
+export function CashRegisterWorkspace({orgId,userId,role,branchIds,rows,onSaved,cashier}:Props){
  const db=useMemo(()=>getSupabase(),[]);
  const branches:Record<string,any>[]=rows.filter(r=>r.collection==="mberp_branches").map(r=>({...r.data,id:r.record_id} as Record<string,any>)).filter(b=>b.active!==false&&(!branchIds.length||branchIds.includes(String(b.id))));
  const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data);
@@ -165,7 +165,7 @@ export function CashRegisterWorkspace({orgId,userId,role,branchIds,rows,onSaved}
  const canManage=["owner","manager","accountant","cashier"].includes(role);
  const active=sessions.find(s=>s.status==="open"&&String(s.branchId)===String(branchId)&&String(s.cashierId)===String(userId));
  const session=selectedSession?sessions.find(s=>String(s.id)===selectedSession):active;
- const sessionSales=session?sales.filter(s=>String(s.branchId)===String(session.branchId)&&new Date(s.date||s.createdAt||0).getTime()>=new Date(session.openedAt).getTime()&&String(s.status||"").toLowerCase()!=="cancelled"&&(!session.closedAt||new Date(s.date||s.createdAt||0).getTime()<=new Date(session.closedAt).getTime())):[];
+ const sessionSales=session?sales.filter(s=>String(s.branchId)===String(session.branchId)&&new Date(s.date||s.createdAt||0).getTime()>=new Date(session.openedAt).getTime()&&String(s.status||"").toLowerCase()!=="cancelled"&&(!session.cashierName||String(s.cashier||"")===String(session.cashierName))&&(!session.closedAt||new Date(s.date||s.createdAt||0).getTime()<=new Date(session.closedAt).getTime())):[];
  const sessionMoves=session?movements.filter(m=>String(m.sessionId)===String(session.id)):[];
  const cashSales=sessionSales.reduce((sum,s)=>sum+(String(s.paymentMethod||"").toLowerCase()==="cash"?Math.max(0,num(s.cashReceived)-num(s.changeReturned)):0),0);
  const nonCashSales=sessionSales.reduce((sum,s)=>sum+(String(s.paymentMethod||"").toLowerCase()!=="cash"?Math.max(0,num(s.cashReceived)):0),0);
@@ -177,8 +177,8 @@ export function CashRegisterWorkspace({orgId,userId,role,branchIds,rows,onSaved}
   if(!branch||num(opening)<0){setMessage("Select a branch and enter a valid opening float.");return;}
   if(sessions.some(s=>s.status==="open"&&String(s.branchId)===String(branchId)&&String(s.cashierId)===String(userId))){setMessage("You already have an open register for this branch.");return;}
   setBusy(true);const sid=id(),openedAt=new Date().toISOString();
-  const data={id:sid,branchId:String(branchId),branchName:branch.name||"",cashierId:userId,cashierName:userId,openedAt,openingFloat:num(opening),status:"open"};
-  const {data:result,error}=await db.rpc("etihad_open_cash_register",{p_org_id:orgId,p_branch_id:String(branchId),p_opening_float:num(opening),p_session_id:sid,p_cashier_name:userId});
+  const data={id:sid,branchId:String(branchId),branchName:branch.name||"",cashierId:userId,cashierName:cashier||userId,openedAt,openingFloat:num(opening),status:"open"};
+  const {data:result,error}=await db.rpc("etihad_open_cash_register",{p_org_id:orgId,p_branch_id:String(branchId),p_opening_float:num(opening),p_session_id:sid,p_cashier_name:cashier||userId});
   setMessage(error?"Register could not be opened: "+error.message:result?.success?"Cash register opened. Record your cash movements and close it after counting the drawer.":"Register could not be opened.");setBusy(false);if(!error&&result?.success){setSelectedSession(sid);onSaved();}
  }
  async function addMovement(){
