@@ -83,7 +83,8 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
   const onSavedRef = useRef(onSaved);
   const [tab, setTab] = useState<"new" | "history">("new");
   const total = cart.reduce((s, x) => s + n(x.product.price) * x.qty, 0);
-  const availableAdvance = customerCredits.filter(r => r.data.customerPhone === customerPhone && r.data.balance > 0).reduce((sum, r) => sum + n(r.data.balance), 0);
+  const customerOutstanding = customerPhone.trim() ? sales.filter(s => String(s.customerPhone || "").trim() === customerPhone.trim() && String(s.status || "").toLowerCase() !== "cancelled").reduce((sum, s) => sum + n(s.balance), 0) : 0;
+  const availableAdvance = customerOutstanding > 0 ? 0 : customerCredits.filter(r => String(r.data.customerPhone || "").trim() === customerPhone.trim() && n(r.data.balance) > 0).reduce((sum, r) => sum + n(r.data.balance), 0);
   const advanceUsed = useAdvance ? Math.min(total, availableAdvance) : 0;
   const cashReceived = received === "" ? (method === "Credit" ? 0 : Math.max(0, total - advanceUsed)) : Math.max(0, n(received));
   const receivedAmount = cashReceived + advanceUsed;
