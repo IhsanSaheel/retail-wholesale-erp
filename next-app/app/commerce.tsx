@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
-type Row={collection:string;record_id:string;data:Record<string,any>};
+type Row={collection:string;record_id:string;data:Record<string,any>;updated_by?:string};
 type Props={orgId:string;userId:string;role:string;branchIds:string[];rows:Row[];onSaved:()=>void;cashier?:string};
 const num=(v:any)=>Number(v||0), money=(v:any)=>new Intl.NumberFormat("en-PK",{style:"currency",currency:"PKR",maximumFractionDigits:0}).format(num(v)), id=()=>crypto.randomUUID().replaceAll("-","").slice(0,13);
 export function CustomerWorkspace({orgId,userId,role,rows,onSaved}:Props){
