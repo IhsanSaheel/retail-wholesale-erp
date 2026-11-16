@@ -395,7 +395,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, onSaved }
  const [bulkRows,setBulkRows]=useState<Record<string,string>[]>([]),[bulkName,setBulkName]=useState(""),[bulkError,setBulkError]=useState(""),[bulkBusy,setBulkBusy]=useState(false),[bulkSummary,setBulkSummary]=useState("");
  function parseProductCsv(text:string){
   const lines:string[][]=[];let row:string[]=[],cell="",quoted=false;
-  for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quoted&&text[i+1]==='"'){cell+='"';i++;}else quoted=!quoted;}else if(c===","&&!quoted){row.push(cell.trim());cell="";}else if((c==="\\n"||c==="\\r")&&!quoted){if(c==="\\r"&&text[i+1]==="\\n")i++;row.push(cell.trim());if(row.some(v=>v!==""))lines.push(row);row=[];cell="";}else cell+=c;}
+  for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quoted&&text[i+1]==='"'){cell+='"';i++;}else quoted=!quoted;}else if(c===","&&!quoted){row.push(cell.trim());cell="";}else if((c==="\n"||c==="\r")&&!quoted){if(c==="\r"&&text[i+1]==="\n")i++;row.push(cell.trim());if(row.some(v=>v!==""))lines.push(row);row=[];cell="";}else cell+=c;}
   row.push(cell.trim());if(row.some(v=>v!==""))lines.push(row);
   if(lines.length<2)throw new Error("The CSV must contain a header row and at least one product.");
   const headers=lines[0].map(h=>h.toLowerCase().replace(/[ _-]+/g,""));
