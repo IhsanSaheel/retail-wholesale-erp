@@ -6,7 +6,7 @@ import { getSupabase } from "@/lib/supabase";
 
 type Row = { collection: string; record_id: string; data: Record<string, any> };
 type Product = Record<string, any>;
-type Props = { orgId: string; userId: string; cashier: string; role: string; branchIds: string[]; rows: Row[]; onSaved: () => void };
+type Props = { orgId: string; userId: string; cashier?: string; role: string; branchIds: string[]; rows: Row[]; onSaved: () => void };
 
 const n = (v: any) => Number(v || 0);
 const searchText = (v: any) => String(v ?? "").normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase();
@@ -215,7 +215,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     popup.document.write(buildReceiptDocument({
       origin: window.location.origin, title: "SALES RECEIPT · REPRINT",
       invoiceNo: s.invoiceNo, date: s.date, customerName: s.customerName,
-      customerPhone: s.customerPhone, branchName: s.branchName, cashier: s.cashier || cashier,
+      customerPhone: s.customerPhone, branchName: s.branchName, cashier: s.cashier || cashier || userId,
       items: s.items, rows: rowsHtml, paymentMethod: s.paymentMethod, note: s.note
     }));
     popup.document.close();
@@ -251,7 +251,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     const staffTip = over > 0 && resolution === "tip" ? over : 0;
     const sale = {
       id, date, invoiceNo, branchId, branchName: branch?.name || "",
-      customerName: customerName.trim() || "Walk-in Customer", customerPhone: customerPhone.trim(), cashier,
+      customerName: customerName.trim() || "Walk-in Customer", customerPhone: customerPhone.trim(), cashier: cashier || userId,
       items: cart.map(x => ({ productId: x.product.id, name: x.product.name, sku: x.product.sku || "", qty: x.qty, cost: n(x.product.cost), price: n(x.product.price), unit: x.product.unit || "piece" })),
       subtotal: total, total, paid: applied, balance, receivedAmount, cashReceived, advanceUsed,
       changeReturned, customerAdvance, staffTip, overpaymentResolution: over ? resolution : "none",
@@ -278,7 +278,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
           origin: window.location.origin, title: "OFFLINE SALES SLIP",
           status: "PENDING CLOUD SYNC — NOT A CONFIRMED SALES RECEIPT",
           invoiceNo, date, customerName: sale.customerName, customerPhone: sale.customerPhone,
-          branchName: sale.branchName, cashier, items: sale.items,
+          branchName: sale.branchName, cashier: cashier || userId, items: sale.items,
           rows: [["Subtotal", total], ["Total bill", total], ["Amount tendered (" + method + ")", cashReceived],
             ...(advanceUsed > 0 ? [["Customer advance applied", advanceUsed] as [string, any]] : []),
             ["Balance due", balance]], paymentMethod: method, note
@@ -336,7 +336,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
       receiptWindow.document.write(buildReceiptDocument({
         origin: window.location.origin, title: "SALES RECEIPT",
         invoiceNo, date, customerName: sale.customerName, customerPhone: sale.customerPhone,
-        branchName: sale.branchName, cashier, items: sale.items,
+        branchName: sale.branchName, cashier: cashier || userId, items: sale.items,
         rows: [["Subtotal", total], ["Total bill", total], ["Amount received (" + method + ")", cashReceived],
           ...(advanceUsed > 0 ? [["Customer advance applied", advanceUsed] as [string, any]] : []),
           ["Total tender applied", receivedAmount], ["Applied to invoice", applied],
