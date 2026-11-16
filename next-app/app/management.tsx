@@ -131,6 +131,8 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const purchases=rows.filter(r=>r.collection==="mberp_purchases").map(r=>r.data);
  const supplierPayments=rows.filter(r=>r.collection==="mberp_supplier_payments").map(r=>r.data);
  const products=rows.filter(r=>r.collection==="mberp_products").map(r=>r.data);
+ const productById=new Map(products.map(p=>[String(p.id||""),p]));
+ const saleById=new Map(sales.map(s=>[String(s.id||""),s]));
  const branches=rows.filter(r=>r.collection==="mberp_branches").map(r=>r.data);
  const today=new Date(); const iso=(d:Date)=>{const x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10);};
  const startDate=new Date(); if(period==="7")startDate.setDate(today.getDate()-6);else if(period==="30")startDate.setDate(today.getDate()-29);else if(period==="month")startDate.setDate(1);else if(period==="all")startDate.setFullYear(2000);
@@ -141,7 +143,11 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const periodReturns=returns.filter(r=>inRange(r.date)&&(branch==="all"||String(r.branchId)===branch));
  const returnCredit=periodReturns.reduce((sum,r)=>sum+Number(r.creditAmount??r.refund??0),0);
  const grossSales=netSales+returnCredit;
- const received=payments.filter(p=>["sale_payment","advance_applied"].includes(p.type)&&inRange(p.date)&&(branch==="all"||String(p.branchId)===branch)).reduce((sum,p)=>sum+Number(p.amount||0),0)-payments.filter(p=>p.type==="sales_return_refund"&&inRange(p.date)&&(branch==="all"||String(p.branchId)===branch)).reduce((sum,p)=>sum+Number(p.amount||0),0);
+ const paymentInRange=payments.filter(p=>{const sale=saleById.get(String(p.saleId||""));const paymentBranch=p.branchId||sale?.branchId;return inRange(p.date)&&(branch==="all"||String(paymentBranch||"")===branch);});
+ const collectedPayments=paymentInRange.filter(p=>!["advance_applied","sales_return_refund"].includes(String(p.type||"")));
+ const paymentRefunds=paymentInRange.filter(p=>p.type==="sales_return_refund").reduce((sum,p)=>sum+Number(p.amount||0),0);
+ const returnCashRefunds=periodReturns.reduce((sum,r)=>sum+Number(r.cashRefund||0),0);
+ const received=collectedPayments.reduce((sum,p)=>sum+Number(p.amount||0),0)-Math.max(paymentRefunds,returnCashRefunds);
  const balance=active.reduce((sum,s)=>sum+Number(s.balance||0),0);
  const cost=active.reduce((sum,s)=>sum+(s.items||[]).reduce((a:any,it:any)=>a+Number(it.cost||0)*Number(it.qty||0),0),0);
  const returnedCost=periodReturns.reduce((sum,r)=>sum+Number(r.unitCost||0)*Number(r.qty||0),0);
@@ -153,9 +159,9 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const group=new Map<string,{key:string;label:string;count:number;total:number}>();
  const add=(key:string,label:string,value:number)=>{const x=group.get(key)||{key,label,count:0,total:0};x.count++;x.total+=value;group.set(key,x);};
  for(const s of active){
-  if(["supplier","purchaseProduct","expenseCategory","profitProduct"].includes(report))continue;
+  if(["supplier","purchaseProduct","expenseCategory","profitProduct","payment"].includes(report))continue;
   const d=new Date(s.date||"");let key="",label="";
-  if(report==="brand"||report==="category"||report==="salesperson"||report==="tax"){const salesperson=String(s.salespersonName||s.cashierName||s.cashier||s.staffName||s.createdByName||"Unassigned");if(report==="salesperson"){add(salesperson,salesperson,Number(s.total||0));continue;}if(report==="tax"){const tax=Number(s.taxAmount??s.tax??(s.items||[]).reduce((a:any,it:any)=>a+Number(it.taxAmount||0),0));add("Tax", "Tax collected",tax);continue;}for(const it of s.items||[]){const label=report==="brand"?String(it.brand||"Unbranded"):String(it.category||"Uncategorised");add(label,label,Number(it.price||0)*Number(it.qty||0));}continue;}
+  if(report==="brand"||report==="category"||report==="salesperson"||report==="tax"){const salesperson=String(s.salespersonName||s.cashierName||s.cashier||s.staffName||s.createdByName||"Unassigned");if(report==="salesperson"){add(salesperson,salesperson,Number(s.total||0));continue;}if(report==="tax"){const tax=Number(s.taxAmount??s.tax??(s.items||[]).reduce((a:any,it:any)=>a+Number(it.taxAmount||0),0));add("Tax", "Tax collected",tax);continue;}for(const it of s.items||[]){const product=productById.get(String(it.productId||""));const label=report==="brand"?String(it.brand||product?.brand||"Unbranded"):String(it.category||product?.category||"Uncategorised");add(label,label,Number(it.price||0)*Number(it.qty||0));}continue;}
   if(report==="hourly"){key=String(d.getHours()).padStart(2,"0");label=key+":00";}
   else if(report==="weekday"){key=String(d.getDay());label=d.toLocaleDateString("en-PK",{weekday:"long"});}
   else if(report==="product"){for(const it of s.items||[])add(String(it.name||"Unnamed"),String(it.name||"Unnamed"),Number(it.price||0)*Number(it.qty||0));continue;}
@@ -163,6 +169,11 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
   else if(report==="payment"){key=String(s.paymentMethod||s.method||"Unspecified");label=key;}
   else {key=iso(d);label=d.toLocaleDateString("en-PK",{day:"2-digit",month:"short",year:"numeric"});}
   add(key,label,Number(s.total||0));
+ }
+ if(report==="payment"){
+  const paymentSaleIds=new Set(collectedPayments.map(p=>String(p.saleId||"")));
+  for(const p of collectedPayments){const label=String(p.method||"Unspecified");add(label,label,Number(p.amount||0));}
+  for(const sale of active){if(paymentSaleIds.has(String(sale.id||"")))continue;const legacyAmount=Math.max(0,Number(sale.paid||0)-Number(sale.advanceUsed||0));if(legacyAmount>0){const label=String(sale.paymentMethod||"Unspecified");add(label,label,legacyAmount);}}
  }
  if(report==="supplier")for(const p of filteredPurchases){const label=String(p.supplierName||"Unassigned supplier");add(String(p.supplierId||label),label,Number(p.total||0));}
  if(report==="purchaseProduct")for(const p of filteredPurchases){const label=String(p.productName||"Unnamed product");add(String(p.productId||label),label,Number(p.cost||0)*Number(p.qty||0));}
