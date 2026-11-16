@@ -149,7 +149,7 @@ export function BranchWorkspace({orgId,userId,role,rows,onSaved}:Props){
 
 export function CashRegisterWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Props){
  const db=useMemo(()=>getSupabase(),[]);
- const branches:Record<string,any>[]=rows.filter(r=>r.collection==="mberp_branches").map(r=>({...r.data,id:r.record_id})).filter(b=>b.active!==false&&(!branchIds.length||branchIds.includes(String(b.id))));
+ const branches:Record<string,any>[]=rows.filter(r=>r.collection==="mberp_branches").map(r=>({...r.data,id:r.record_id} as Record<string,any>)).filter(b=>b.active!==false&&(!branchIds.length||branchIds.includes(String(b.id))));
  const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data);
  const sessions=rows.filter(r=>r.collection==="mberp_cash_registers").map(r=>({...r.data,_recordId:r.record_id}));
  const movements=rows.filter(r=>r.collection==="mberp_cash_movements").map(r=>r.data);
