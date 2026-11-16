@@ -22,18 +22,18 @@ function buildReceiptDocument(data: Record<string, any>) {
   const totalRows = (Array.isArray(data.rows) ? data.rows : []).map(([label, amount]: [string, any]) =>
     `<tr><td>${esc(label)}</td><td class="r">${cash(n(amount))}</td></tr>`
   ).join("");
-  const logoUrl = `${data.origin || ""}/icon.svg`;
+  const logoUrl = `${data.origin || ""}/receipt-logo.svg`;
   return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(data.invoiceNo || "Sales receipt")}</title>
   <style>
     *{box-sizing:border-box}html{background:#fff}body{font:12px/1.45 Arial,Helvetica,sans-serif;color:#17243a;width:100%;max-width:420px;margin:18px auto;padding:14px}
-    .brand{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto 5px;text-align:left}.brand img{width:58px;height:58px;object-fit:contain;background:#f7f1e5;padding:3px;border:2px solid #d8b978;border-radius:10px;box-shadow:0 2px 8px #17274420}.brand strong{display:block;font-size:17px;letter-spacing:1.2px;color:#14243b}.brand span{display:block;font-size:9px;letter-spacing:1.6px;color:#9b7b43;font-weight:700;margin-top:3px}
+    .brand{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto 5px;text-align:left}.brand img{display:block;width:210px;height:auto;max-height:132px;object-fit:contain;margin:0 auto 4px}.brand strong{display:block;font-size:17px;letter-spacing:1.2px;color:#14243b}.brand span{display:block;font-size:9px;letter-spacing:1.6px;color:#9b7b43;font-weight:700;margin-top:3px}
     .receipt-title{text-align:center;font-size:12px;font-weight:700;letter-spacing:1px;margin:7px 0 3px}.status{margin:8px 0;padding:8px;border:1px solid #d8b66b;background:#fff7e7;color:#75551c;text-align:center;font-size:10px;font-weight:800;letter-spacing:.4px}
     .meta{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;font-size:10px;margin:10px 0}.meta div{min-width:0;overflow-wrap:anywhere}.meta b{display:block;color:#687487;font-size:9px;font-weight:600}.meta span{font-weight:700}
     hr{border:0;border-top:1px dashed #9da6b3;margin:10px 0}table{width:100%;border-collapse:collapse}td{padding:6px 0;border-bottom:1px solid #edf0f3;vertical-align:top}.r{text-align:right;white-space:nowrap}.item-name{padding-right:8px}.item-name strong{display:block;font-size:11px}.item-name small{display:block;color:#738095;font-size:9px}.item-total{font-weight:700;font-size:10px}.totals td{font-size:10px}.totals tr:last-child td{font-weight:800;font-size:13px;color:#17243a;border-top:1px solid #aeb7c3;border-bottom:0;padding-top:9px}
     .payment-label{text-align:center;font-size:9px;color:#667387;margin:8px 0}.note{font-size:9px;color:#667387;overflow-wrap:anywhere}.thanks{text-align:center;font-weight:700;font-size:11px;margin:13px 0 3px}.footer{text-align:center;font-size:8px;color:#8b95a4}
-    @page{size:80mm auto;margin:3mm}@media print{html,body{width:100%;max-width:none;margin:0;padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.brand img{width:48px;height:48px}.brand strong{font-size:15px}.receipt-title{margin-top:5px}hr{margin:7px 0}td{padding:5px 0}.status{padding:6px}}
+    @page{size:80mm auto;margin:3mm}@media print{html,body{width:100%;max-width:none;margin:0;padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.brand img{width:190px;max-height:118px}.brand strong{font-size:15px}.receipt-title{margin-top:5px}hr{margin:7px 0}td{padding:5px 0}.status{padding:6px}}
   </style></head><body>
-  <header class="brand"><img src="${esc(logoUrl)}" alt="Etihad Traders logo"><div><strong>ETIHAD TRADERS</strong><span>RETAIL &amp; WHOLESALE</span></div></header>
+  <header class="brand"><img src="${esc(logoUrl)}" alt="Etihad Traders — Shop, Sell, Grow"></header>
   <div class="receipt-title">${esc(data.title || "SALES RECEIPT")}</div>
   ${data.status ? `<div class="status">${esc(data.status)}</div>` : ""}
   <hr><section class="meta">
