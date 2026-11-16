@@ -7,7 +7,7 @@ import { POSWorkspace, ProductManager } from "./workspaces";
 import { PeopleWorkspace, ReportsWorkspace, SettingsWorkspace } from "./management";
 import { CustomerWorkspace, SupplierWorkspace, PurchaseWorkspace, ReturnsWorkspace, PaymentWorkspace, TransferWorkspace, ExpenseWorkspace, BranchWorkspace, CashRegisterWorkspace } from "./commerce";
 
-type RecordRow = { collection: string; record_id: string; data: Record<string, any>; updated_at: string };
+type RecordRow = { collection: string; record_id: string; data: Record<string, any>; updated_at: string; updated_by?: string };
 type ModuleKey = "overview" | "cashregister" | "sales" | "returns" | "products" | "customers" | "purchases" | "suppliers" | "expenses" | "branches" | "payments" | "transfers" | "reports" | "employees" | "settings";
 const NAV: { group: string; items: { id: ModuleKey; label: string; icon: string }[] }[] = [
   { group: "WORKSPACE", items: [{id:"overview",label:"Overview",icon:"⌂"},{id:"cashregister",label:"Cash register",icon:"＄"},{id:"sales",label:"Sales & POS",icon:"▣"},{id:"returns",label:"Sales returns",icon:"↩"},{id:"products",label:"Products & stock",icon:"▤"},{id:"customers",label:"Customers",icon:"♙"},{id:"purchases",label:"Purchases",icon:"⇩"},{id:"suppliers",label:"Suppliers",icon:"♧"},{id:"expenses",label:"Expenses",icon:"−"}] },
@@ -62,7 +62,7 @@ export default function Home() {
     while (true) {
       const {data: page, error: pageError} = await supabase
         .from("etihad_records")
-        .select("collection,record_id,data,updated_at")
+        .select("collection,record_id,data,updated_at,updated_by")
         .eq("org_id",membership.org_id)
         .order("updated_at",{ascending:false})
         .order("record_id",{ascending:true})

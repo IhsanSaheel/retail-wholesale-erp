@@ -169,9 +169,9 @@ export function CashRegisterWorkspace({orgId,userId,role,branchIds,rows,onSaved,
  const sessionMoves=session?movements.filter(m=>String(m.sessionId)===String(session.id)):[];
  const cashSales=sessionSales.reduce((sum,s)=>sum+(String(s.paymentMethod||"").toLowerCase()==="cash"?Math.max(0,num(s.cashReceived)-num(s.changeReturned)):0),0);
  const nonCashSales=sessionSales.reduce((sum,s)=>sum+(String(s.paymentMethod||"").toLowerCase()!=="cash"?Math.max(0,num(s.cashReceived)):0),0);
- const cashIn=sessionMoves.filter(m=>m.type==="cash_in").reduce((a,m)=>a+num(m.amount),0);
+ const cashRefunds=session?rows.filter(r=>r.collection==="mberp_payments"&&r.data.type==="sales_return_refund"&&String(r.data.method||"").toLowerCase()==="cash"&&String(r.data.branchId||"")===String(session.branchId)&&String(r.updated_by||"")===String(session.cashierId)&&new Date(r.data.date||0).getTime()>=new Date(session.openedAt).getTime()&&new Date(r.data.date||0).getTime()<=(session.closedAt?new Date(session.closedAt).getTime():Date.now())).reduce((a,r)=>a+num(r.data.amount),0):0;\n const cashIn=sessionMoves.filter(m=>m.type==="cash_in").reduce((a,m)=>a+num(m.amount),0);
  const cashOut=sessionMoves.filter(m=>m.type==="cash_out").reduce((a,m)=>a+num(m.amount),0);
- const expected=session?num(session.openingFloat)+cashSales+cashIn-cashOut:0;
+ const expected=session?num(session.openingFloat)+cashSales-cashRefunds+cashIn-cashOut:0;
  const branch=branches.find(b=>String(b.id)===String(branchId));
  async function openRegister(){
   if(!branch||num(opening)<0){setMessage("Select a branch and enter a valid opening float.");return;}
