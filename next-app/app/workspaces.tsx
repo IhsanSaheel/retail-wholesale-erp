@@ -83,11 +83,14 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
   const onSavedRef = useRef(onSaved);
   const [tab, setTab] = useState<"new" | "history">("new");
   const total = cart.reduce((s, x) => s + n(x.product.price) * x.qty, 0);
-  const availableAdvance = customerCredits.filter(r => r.data.customerPhone === customerPhone && r.data.balance > 0).reduce((sum, r) => sum + n(r.data.balance), 0);
+  const availableAdvance = customerCredits.filter(r => r.data.customerPhone === customerPhone && n(r.data.balance) > 0).reduce((sum, r) => sum + n(r.data.balance), 0);
+  const customerOutstanding = sales.filter(s => s.customerPhone === customerPhone && s.customerPhone && n(s.balance) > 0 && String(s.status || "").toLowerCase() !== "cancelled").reduce((sum, s) => sum + n(s.balance), 0);
   const advanceUsed = useAdvance ? Math.min(total, availableAdvance) : 0;
   const cashReceived = received === "" ? (method === "Credit" ? 0 : Math.max(0, total - advanceUsed)) : Math.max(0, n(received));
   const receivedAmount = cashReceived + advanceUsed;
   const over = Math.max(0, receivedAmount - total);
+  const priorOutstandingApplied = Math.min(over, customerOutstanding);
+  const remainingOverpayment = Math.max(0, over - priorOutstandingApplied);
   const applied = Math.min(total, receivedAmount);
   const cashApplied = Math.min(cashReceived, Math.max(0, total - advanceUsed));
   const balance = Math.max(0, total - applied);
@@ -228,7 +231,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     if (received.trim() !== "" && (!Number.isFinite(Number(received)) || Number(received) < 0)) { setMessage("Enter a valid payment amount of zero or more."); return; }
     if (method === "Credit" && cashReceived > 0) { setMessage("For a credit sale, set amount received now to zero. Record any cash payment using Cash or another payment method."); return; }
     if (method === "Credit" && (!customerName.trim() || customerName === "Walk-in Customer" || !customerPhone.trim())) { setMessage("Credit sales require a named customer and phone number so the outstanding balance can be tracked."); return; }
-    if (over > 0 && resolution === "advance" && (!customerPhone.trim() || customerName === "Walk-in Customer")) { setMessage("Select a saved customer or enter a customer name and phone to keep an advance."); return; }
+    if (remainingOverpayment > 0 && resolution === "advance" && (!customerPhone.trim() || customerName === "Walk-in Customer")) { setMessage("Select a saved customer or enter a customer name and phone to keep an advance."); return; }
     if (advanceUsed > 0 && (!customerPhone.trim() || customerName === "Walk-in Customer")) { setMessage("Select a saved customer before applying an account advance."); return; }
     if (cart.some(x => n(x.product.qty) < x.qty && String(x.product.branchId) === String(branchId))) {
       const shortage = cart.find(x => n(x.product.qty) < x.qty && String(x.product.branchId) === String(branchId));
@@ -246,15 +249,15 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     const year = new Date().getFullYear();
     const invoiceNo = `INV-${year}-${id.slice(-6).toUpperCase()}`;
     const branch = branches.find(b => String(b.id) === String(branchId));
-    const changeReturned = over > 0 && resolution === "change" ? over : 0;
-    const customerAdvance = over > 0 && resolution === "advance" ? over : 0;
-    const staffTip = over > 0 && resolution === "tip" ? over : 0;
+    const changeReturned = remainingOverpayment > 0 && resolution === "change" ? remainingOverpayment : 0;
+    const customerAdvance = remainingOverpayment > 0 && resolution === "advance" ? remainingOverpayment : 0;
+    const staffTip = remainingOverpayment > 0 && resolution === "tip" ? remainingOverpayment : 0;
     const sale = {
       id, date, invoiceNo, branchId, branchName: branch?.name || "",
       customerName: customerName.trim() || "Walk-in Customer", customerPhone: customerPhone.trim(), cashier: cashier || userId,
       items: cart.map(x => ({ productId: x.product.id, name: x.product.name, sku: x.product.sku || "", qty: x.qty, cost: n(x.product.cost), price: n(x.product.price), unit: x.product.unit || "piece" })),
       subtotal: total, total, paid: applied, balance, receivedAmount, cashReceived, advanceUsed,
-      changeReturned, customerAdvance, staffTip, overpaymentResolution: over ? resolution : "none",
+      priorOutstandingApplied, changeReturned, customerAdvance, staffTip, overpaymentResolution: remainingOverpayment > 0 ? resolution : "none",
       paymentMethod: method, note
     };
     const rpcArgs = {
@@ -281,7 +284,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
           branchName: sale.branchName, cashier: cashier || userId, items: sale.items,
           rows: [["Subtotal", total], ["Total bill", total], ["Amount tendered (" + method + ")", cashReceived],
             ...(advanceUsed > 0 ? [["Customer advance applied", advanceUsed] as [string, any]] : []),
-            ["Balance due", balance]], paymentMethod: method, note
+            ["Previous outstanding settled", priorOutstandingApplied], ["Balance due", balance]], paymentMethod: method, note
         }));
         receiptWindow.document.close();
       }
@@ -343,6 +346,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
           ...(changeReturned > 0 ? [["Change returned", changeReturned] as [string, any]] : []),
           ...(customerAdvance > 0 ? [["Customer advance saved", customerAdvance] as [string, any]] : []),
           ...(staffTip > 0 ? [["Staff tip (not sales)", staffTip] as [string, any]] : []),
+          ...(priorOutstandingApplied > 0 ? [["Previous outstanding settled", priorOutstandingApplied] as [string, any]] : []),
           ["Balance due", balance]], paymentMethod: method, note
       }));
       receiptWindow.document.close();
@@ -364,7 +368,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
         <div className="customer-box"><label>Customer</label><input value={customerSearch} onChange={e=>setCustomerSearch(e.target.value)} placeholder="Search saved customer by name or phone…"/>{customerSearch&&<div className="customer-results">{customers.map((c,i)=><button key={i} onClick={()=>{setCustomerName(c.name);setCustomerPhone(c.phone);setUseAdvance(false);setCustomerSearch("");}}><b>{c.name}</b><small>{c.phone}</small></button>)}</div>}<div className="customer-fields"><input value={customerName} onChange={e=>setCustomerName(e.target.value)} placeholder="Customer name"/><input value={customerPhone} onChange={e=>setCustomerPhone(e.target.value)} placeholder="Phone number"/></div></div>
         <div className="bill-items">{cart.map(({product,qty})=><div className="bill-item" key={product.id}><div className="bill-product"><b>{product.name}</b><small>{cash(n(product.price))} each</small></div><div className="qty-control"><button aria-label={"Decrease "+product.name} onClick={()=>changeQty(product.id,qty-1)} disabled={qty<=1}>−</button><input className="qty-entry" aria-label={"Quantity for "+product.name} type="number" inputMode="decimal" min="0.001" step="any" max={n(product.qty)} value={qty} onChange={e=>changeQty(product.id,Number(e.target.value))}/><button aria-label={"Increase "+product.name} onClick={()=>changeQty(product.id,qty+1)} disabled={qty>=n(product.qty)}>+</button></div><b className="line-total">{cash(n(product.price)*qty)}</b><button className="remove-item" onClick={()=>changeQty(product.id,0)}>×</button></div>)}{!cart.length&&<div className="bill-empty">Your bill is empty.<br/>Choose a product to get started.</div>}</div>
         <div className="bill-summary"><div><span>Subtotal</span><b>{cash(total)}</b></div><div className="bill-grand"><span>Total bill</span><strong>{cash(total)}</strong></div></div>
-        <div className="payment-box">{customerPhone&&availableAdvance>0&&<label className="use-advance"><input type="checkbox" checked={useAdvance} onChange={e=>setUseAdvance(e.target.checked)}/> Use customer advance ({cash(availableAdvance)} available)</label>}<div className="payment-row payment-method-row"><label>Payment method<select aria-label="Payment method" value={method} onChange={e=>setMethod(e.target.value)}><option>Cash</option><option>Card</option><option>Bank transfer</option><option>Mobile wallet</option><option>Credit</option></select></label></div><label>Amount received now ({method})</label><input type="number" min="0" step="0.01" inputMode="decimal" value={received} placeholder={String(Math.max(0,total-advanceUsed))} onChange={e=>setReceived(e.target.value)}/><div className="tender-shortcuts"><button type="button" onClick={()=>setReceived(String(Math.max(0,total-advanceUsed)))}>Exact due</button><button type="button" onClick={()=>setReceived(String(Math.max(0,total-advanceUsed+500)))}>＋ Rs 500</button><button type="button" onClick={()=>setReceived(String(Math.max(0,total-advanceUsed+1000)))}>＋ Rs 1,000</button><button type="button" onClick={()=>setReceived(String(Math.max(0,total-advanceUsed+2000)))}>＋ Rs 2,000</button><button type="button" onClick={()=>setReceived("0")}>No payment</button><button type="button" onClick={()=>setReceived("")}>Reset</button></div><div className="payment-summary settlement-preview"><span>Cash received <b>{cash(cashReceived)}</b></span><span>Advance applied <b>{cash(advanceUsed)}</b></span><span>Applied to bill <b>{cash(applied)}</b></span><span>Balance due <b>{cash(balance)}</b></span>{over>0&&<span>Extra tender <b>{cash(over)}</b></span>}</div>{over>0&&<div className="overpayment-box"><b>Extra received: {cash(over)}</b><p>Choose how to settle the extra amount:</p><div className="resolution-options"><label><input type="radio" checked={resolution==="change"} onChange={()=>setResolution("change")}/> Return as change</label><label><input type="radio" checked={resolution==="advance"} onChange={()=>setResolution("advance")}/> Save customer advance</label><label><input type="radio" checked={resolution==="tip"} onChange={()=>setResolution("tip")}/> Record staff tip</label></div></div>}<textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Sale note (optional)" rows={2}/><button className="primary-btn checkout-btn" disabled={saving||!cart.length} onClick={saveSale}>{saving?"Saving sale…":"Save sale & print receipt"} <span>→</span></button></div>
+        <div className="payment-box">{customerPhone&&availableAdvance>0&&<label className="use-advance"><input type="checkbox" checked={useAdvance} onChange={e=>setUseAdvance(e.target.checked)}/> Use customer advance ({cash(availableAdvance)} available)</label>}<div className="payment-row payment-method-row"><label>Payment method<select aria-label="Payment method" value={method} onChange={e=>setMethod(e.target.value)}><option>Cash</option><option>Card</option><option>Bank transfer</option><option>Mobile wallet</option><option>Credit</option></select></label></div><label>Amount received now ({method})</label><input type="number" min="0" step="0.01" inputMode="decimal" value={received} placeholder={String(Math.max(0,total-advanceUsed))} onChange={e=>setReceived(e.target.value)}/><div className="tender-shortcuts"><button type="button" onClick={()=>setReceived(String(Math.max(0,total-advanceUsed)))}>Exact due</button><button type="button" onClick={()=>setReceived(String(Math.max(0,total-advanceUsed+500)))}>＋ Rs 500</button><button type="button" onClick={()=>setReceived(String(Math.max(0,total-advanceUsed+1000)))}>＋ Rs 1,000</button><button type="button" onClick={()=>setReceived(String(Math.max(0,total-advanceUsed+2000)))}>＋ Rs 2,000</button><button type="button" onClick={()=>setReceived("0")}>No payment</button><button type="button" onClick={()=>setReceived("")}>Reset</button></div><div className="payment-summary settlement-preview"><span>Cash received <b>{cash(cashReceived)}</b></span><span>Advance applied <b>{cash(advanceUsed)}</b></span><span>Applied to bill <b>{cash(applied)}</b></span><span>Balance due <b>{cash(balance)}</b></span>{over>0&&<span>Extra tender <b>{cash(over)}</b></span>{priorOutstandingApplied>0&&<span>Previous outstanding settled <b>{cash(priorOutstandingApplied)}</b></span>}{remainingOverpayment>0&&<span>Remaining extra <b>{cash(remainingOverpayment)}</b></span>}}</div>{customerPhone&&customerOutstanding>0&&<div className="overpayment-box"><b>Existing outstanding: {cash(customerOutstanding)}</b><p>Extra tender is automatically applied to the customer's oldest outstanding invoices first.</p>{over>0&&<p>Applied to previous outstanding: <strong>{cash(priorOutstandingApplied)}</strong></p>}</div>}{remainingOverpayment>0&&<div className="overpayment-box"><b>Remaining extra: {cash(remainingOverpayment)}</b><p>Choose what to do with the amount left after settling previous invoices:</p><div className="resolution-options"><label><input type="radio" checked={resolution==="change"} onChange={()=>setResolution("change")}/> Return as change</label><label><input type="radio" checked={resolution==="advance"} onChange={()=>setResolution("advance")}/> Save customer advance</label><label><input type="radio" checked={resolution==="tip"} onChange={()=>setResolution("tip")}/> Record staff tip</label></div></div>}<textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Sale note (optional)" rows={2}/><button className="primary-btn checkout-btn" disabled={saving||!cart.length} onClick={saveSale}>{saving?"Saving sale…":"Save sale & print receipt"} <span>→</span></button></div>
       </section>
     </div>}
   </div>;
