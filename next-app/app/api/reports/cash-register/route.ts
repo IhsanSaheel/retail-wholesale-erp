@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
   const { data: prior, error: priorError } = await db.from("etihad_records").select("record_id,data").eq("org_id", orgId).eq("collection", "mberp_email_delivery").eq("record_id", recordId).maybeSingle();
   if (priorError) return json("Could not check the email delivery record: " + priorError.message, 500);
   if (prior?.data?.status === "sent") return json("This closing report was already emailed. Duplicate delivery prevented.");
+  if (prior?.data?.status === "sending") return json("This closing report is already being emailed. Please wait before retrying.", 409);
 
   const logData = { kind: "cash_register_closing", sessionId, branchId, branchName: String(s.branchName || ""), status: "sending", recipient, updatedAt: new Date().toISOString() };
   if (prior) {
@@ -185,10 +186,10 @@ export async function POST(request: NextRequest) {
   textAt("CASH RECONCILIATION SUMMARY", 38, y, 9, navy, true);
   y += 19;
   const summaryPairs: [string, unknown][] = [
-    ["Opening float", s.openingFloat], ["Cash sales", summary.cashSales],
-    ["Cash tips", s.cashTips ?? summary.cashTips], ["Customer cash advances", s.cashAdvances ?? summary.cashAdvances],
-    ["Cash refunds", summary.cashRefunds], ["Cash in", summary.cashIn],
-    ["Cash out", summary.cashOut], ["Expected cash", expected],
+    ["Opening float", s.openingFloat], ["Cash sales", cashSales],
+    ["Cash tips", s.cashTips ?? cashTips], ["Customer cash advances", s.cashAdvances ?? cashAdvances],
+    ["Cash refunds", cashRefunds], ["Cash in", cashIn],
+    ["Cash out", cashOut], ["Expected cash", expected],
     ["Actual counted cash", actual], ["Variance", variance]
   ];
   const cardW = 250;
