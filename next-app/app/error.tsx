@@ -12,7 +12,7 @@ export default function Error({
 }) {
   useEffect(() => {
     if (!posthog.__loaded) return;
-    const safeError = new Error("Application route rendering failed");
+    const safeError = new globalThis.Error("Application route rendering failed");
     safeError.name = /^[A-Za-z][A-Za-z0-9_]{0,60}$/.test(error?.name || "")
       ? error.name
       : "ApplicationError";
