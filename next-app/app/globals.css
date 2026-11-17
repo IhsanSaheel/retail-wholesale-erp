@@ -72,3 +72,7 @@
 .customer-statement{scroll-margin-top:80px}
 @media(max-width:650px){.statement-actions{width:100%}.statement-actions button{flex:1}.statement-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.statement-filters{align-items:stretch}.statement-filters label{flex:1;min-width:125px}}
 @media print{.customer-outstanding{color:#c33b3b!important}.customer-advance{color:#21845d!important}}
+
+
+/* POS flow: catalogue first, then bill, customer and payment; retain existing Etihad styling. */
+.pos-layout{grid-template-columns:minmax(0,1fr)!important;align-items:stretch}.pos-catalog{grid-row:auto!important}.pos-products{max-height:440px}.pos-bill{width:100%}.digital-clock{display:inline-block;margin-left:7px;font-variant-numeric:tabular-nums;letter-spacing:.04em;color:var(--navy)}.bar-select{border:0;background:transparent;padding:0;cursor:pointer;font:inherit}.bar-select.active .bar-fill{background:var(--gold2);outline:2px solid var(--gold);outline-offset:1px}.activity-drilldown{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fbfcfe}.activity-drilldown h4{margin:0;font:700 12px Manrope,sans-serif}.activity-sale-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:10px}.activity-sale-row span{display:flex;flex-direction:column;gap:3px}.activity-sale-row small{color:var(--muted)}.activity-sale-row strong{white-space:nowrap}.expiry-attention .stock-avatar{background:#fff1e8;color:#b85a27}
