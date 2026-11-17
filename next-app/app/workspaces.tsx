@@ -347,7 +347,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     const sale = {
       id, date, invoiceNo, branchId, branchName: branch?.name || "",
       customerName: customerName.trim() || "Walk-in Customer", customerPhone: customerPhone.trim(), cashier: cashier || userId,
-      items: cart.map(x => ({ productId: x.product.id, name: x.product.name, sku: x.product.sku || "", qty: x.qty, cost: n(x.product.cost), price: n(x.product.price), unit: x.product.unit || "piece" })),
+      items: cart.map(x => {const originalPrice=n(x.product.price),netPrice=subtotal>0?originalPrice*total/subtotal:originalPrice;return {productId:x.product.id,name:x.product.name,sku:x.product.sku||"",qty:x.qty,cost:n(x.product.cost),price:netPrice,originalPrice,loyaltyDiscountPerUnit:Math.max(0,originalPrice-netPrice),unit:x.product.unit||"piece"};}),
       subtotal, taxId:selectedTax?.id||null, taxName:selectedTax?.name||"", taxRate, taxType:selectedTax?.type||null, taxAmount, total, paid: applied, balance, receivedAmount, cashReceived, advanceUsed,
       priorOutstandingApplied, changeReturned, customerAdvance, staffTip, overpaymentResolution: over ? resolution : "none",
       loyaltyPointsRedeemed, loyaltyDiscount, loyaltyPointsEarned, loyaltyEligibleTotal:total,
