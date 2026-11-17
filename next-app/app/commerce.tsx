@@ -121,7 +121,7 @@ export function ReturnsWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Prop
  const visibleSaleIds=new Set(sales.map(s=>String(s.id)));
  const returns=rows.filter(r=>r.collection==="mberp_sales_returns").map(r=>r.data).filter(r=>visibleSaleIds.has(String(r.saleId)));
  const [saleId,setSaleId]=useState(sales[0]?.id||"");const [productId,setProductId]=useState("");
- const [qty,setQty]=useState("1");const [refund,setRefund]=useState("0");const [reason,setReason]=useState("");
+ const [qty,setQty]=useState("1");const [refund,setRefund]=useState("0");const [cashRefund,setCashRefund]=useState("0");const [balanceAdjustment,setBalanceAdjustment]=useState("0");const [reason,setReason]=useState("");
  const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");const pendingReturnId=useRef<string|null>(null);
  const sale=sales.find(s=>String(s.id)===String(saleId));
  const returnsForSale=returns.filter(r=>String(r.saleId)===String(saleId));
@@ -131,6 +131,7 @@ export function ReturnsWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Prop
  const alreadyReturned=item?returnedQty(String(item.productId)):0;
  const remainingQty=item?Math.max(0,num(item.qty)-alreadyReturned):0;
  const originalTotal=sale?num(sale.total)+returnsForSale.reduce((sum,r)=>sum+num(r.creditAmount??r.refund),0):0;
+ const retainedAdvance=Math.max(0,num(refund)-num(cashRefund)-num(balanceAdjustment));
  const fmtDate=(value:any)=>{const d=new Date(value||"");return Number.isNaN(d.getTime())?"—":d.toLocaleString();};
  const esc=(value:any)=>String(value??"—").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]||ch));
  function printReturnRegister(){
@@ -157,16 +158,19 @@ export function ReturnsWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Prop
  async function save(){
   if(!sale||!item||num(qty)<=0||num(qty)>remainingQty){setMessage("Choose an invoice and a valid quantity that has not already been returned.");return;}
   if(!Number.isFinite(Number(refund))||num(refund)<0||num(refund)>num(qty)*num(item.price)){setMessage("Return credit must be between zero and the returned items selling value.");return;}
+  if(!Number.isFinite(Number(cashRefund))||num(cashRefund)<0||num(cashRefund)>num(refund)){setMessage("Cash refund must be between zero and the total return credit.");return;}
+  if(!Number.isFinite(Number(balanceAdjustment))||num(balanceAdjustment)<0||num(balanceAdjustment)>num(sale.balance)||num(balanceAdjustment)+num(cashRefund)>num(refund)){setMessage("Balance adjustment and cash refund cannot exceed the return credit or outstanding invoice balance.");return;}
   setBusy(true);pendingReturnId.current=pendingReturnId.current||id();
   try{
    const {data,error}=await db.rpc("etihad_create_sales_return",{
     p_org_id:orgId,p_sale_id:String(sale.id),p_product_id:String(item.productId),
-    p_qty:num(qty),p_refund:num(refund),p_reason:reason,p_return_id:pendingReturnId.current
+    p_qty:num(qty),p_refund:num(refund),p_reason:reason,p_return_id:pendingReturnId.current,
+    p_cash_refund:num(cashRefund),p_apply_to_balance:num(balanceAdjustment)
    });
    if(error||!data?.success){setMessage("Return not confirmed: "+(error?.message||"Could not process return. Keep this entry unchanged and retry only after checking the register."));setBusy(false);return;}
    pendingReturnId.current=null;
-   setMessage("Return recorded. "+data.stockRestocked+" units restocked · Invoice credit "+money(data.creditAmount)+" · Cash refund "+money(data.cashRefund)+" · Revised invoice balance "+money(data.balance)+".");
-   setQty("1");setRefund("0");setReason("");setBusy(false);onSaved();
+   setMessage("Return recorded. "+data.stockRestocked+" units restocked · Credit "+money(data.creditAmount)+" · Applied to due "+money(data.balanceApplied)+" · Cash refund "+money(data.cashRefund)+" · Customer advance "+money(data.advanceCreated)+" · Remaining due "+money(data.balance)+".");
+   setQty("1");setRefund("0");setCashRefund("0");setBalanceAdjustment("0");setReason("");setBusy(false);onSaved();
   }catch{
    setMessage("Connection interrupted. This return may already be recorded. Keep the form unchanged and retry safely; the same reference prevents duplicate stock or refunds.");
    setBusy(false);
@@ -175,15 +179,18 @@ export function ReturnsWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Prop
  return <div className="directory-workspace"><div className="welcome-row"><div><div className="section-kicker">RETURNS & REFUNDS</div><h1>Sales returns</h1><p>Review invoice details, remaining returnable quantities and the complete return/refund history.</p></div><span className="record-count">{returns.length} return records</span></div>
  {message&&<div className={message.startsWith("Return recorded")?"pos-success":"notice-error"}>{message}</div>}
  <div className="panel hr-form"><h3>Process a sales return</h3><div className="hr-form-grid">
- <label>Original invoice<select value={saleId} onChange={e=>{setSaleId(e.target.value);setProductId("");setQty("1");setRefund("0");pendingReturnId.current=null;}}><option value="">Select invoice</option>{sales.map((s:any)=><option key={s.id} value={s.id}>{s.invoiceNo||s.id} · {s.customerName||"Walk-in Customer"} · {fmtDate(s.date)}</option>)}</select></label>
- <label>Product to return<select value={productId} onChange={e=>{setProductId(e.target.value);pendingReturnId.current=null;const p=items.find((x:any)=>String(x.productId)===e.target.value);setRefund(String(num(p?.price)));}}><option value="">Select product</option>{items.map((x:any)=><option key={x.productId} value={x.productId}>{x.name} · remaining {Math.max(0,num(x.qty)-returnedQty(String(x.productId)))} / sold {x.qty}</option>)}</select></label>
- <label>Return quantity<input type="number" min="0.001" step="any" max={remainingQty||1} value={qty} onChange={e=>setQty(e.target.value)}/></label>
- <label>Return credit (PKR)<input type="number" min="0" step="any" max={num(qty)*num(item?.price)} value={refund} onChange={e=>setRefund(e.target.value)}/></label>
+ <label>Original invoice<select value={saleId} onChange={e=>{setSaleId(e.target.value);setProductId("");setQty("1");setRefund("0");setCashRefund("0");setBalanceAdjustment("0");pendingReturnId.current=null;}}><option value="">Select invoice</option>{sales.map((s:any)=><option key={s.id} value={s.id}>{s.invoiceNo||s.id} · {s.customerName||"Walk-in Customer"} · {fmtDate(s.date)}</option>)}</select></label>
+ <label>Product to return<select value={productId} onChange={e=>{setProductId(e.target.value);pendingReturnId.current=null;const p=items.find((x:any)=>String(x.productId)===e.target.value);const credit=num(p?.price)*num(qty);setRefund(String(credit));setCashRefund("0");setBalanceAdjustment(String(Math.min(num(sale?.balance),credit)));}}><option value="">Select product</option>{items.map((x:any)=><option key={x.productId} value={x.productId}>{x.name} · remaining {Math.max(0,num(x.qty)-returnedQty(String(x.productId)))} / sold {x.qty}</option>)}</select></label>
+ <label>Return quantity<input type="number" min="0.001" step="any" max={remainingQty||1} value={qty} onChange={e=>{const next=e.target.value;const credit=num(next)*num(item?.price);setQty(next);setRefund(String(credit));setCashRefund("0");setBalanceAdjustment(String(Math.min(num(sale?.balance),credit)));pendingReturnId.current=null;}}/></label>
+ <label>Total return credit (PKR)<input type="number" min="0" step="any" max={num(qty)*num(item?.price)} value={refund} onChange={e=>{setRefund(e.target.value);setBalanceAdjustment(String(Math.min(num(sale?.balance),Math.max(0,num(e.target.value)-num(cashRefund)))));pendingReturnId.current=null;}}/></label>
+ <label>Apply to outstanding balance (PKR)<input type="number" min="0" step="any" max={num(sale?.balance)} value={balanceAdjustment} onChange={e=>{setBalanceAdjustment(e.target.value);pendingReturnId.current=null;}}/></label>
+ <label>Cash refund (PKR)<input type="number" min="0" step="any" max={num(refund)} value={cashRefund} onChange={e=>{setCashRefund(e.target.value);setBalanceAdjustment(String(Math.min(num(sale?.balance),Math.max(0,num(refund)-num(e.target.value)))));pendingReturnId.current=null;}}/></label>
  <label>Reason<input value={reason} onChange={e=>setReason(e.target.value)} placeholder="Damaged, wrong item, customer return…"/></label></div>
- {sale&&<><div className="purchase-totals"><span>Invoice number <b>{sale.invoiceNo||sale.id}</b></span><span>Customer <b>{sale.customerName||"Walk-in Customer"}</b></span><span>Branch <b>{sale.branchName||"—"}</b></span><span>Original total <b>{money(originalTotal)}</b></span><span>Current invoice total <b>{money(sale.total)}</b></span><span>Current balance <b>{money(sale.balance)}</b></span><span>Recorded return credits <b>{money(returnsForSale.reduce((sum,r)=>sum+num(r.creditAmount??r.refund),0))}</b></span></div>
+ {sale&&<><div className="purchase-totals"><span>Invoice number <b>{sale.invoiceNo||sale.id}</b></span><span>Customer <b>{sale.customerName||"Walk-in Customer"}</b></span><span>Branch <b>{sale.branchName||"—"}</b></span><span>Original total <b>{money(originalTotal)}</b></span><span>Current invoice total <b>{money(sale.total)}</b></span><span>Current balance <b>{money(sale.balance)}</b></span><span>Balance after this return <b>{money(Math.max(0,num(sale.balance)-num(balanceAdjustment)))}</b></span><span>Recorded return credits <b>{money(returnsForSale.reduce((sum,r)=>sum+num(r.creditAmount??r.refund),0))}</b></span></div>
  <div className="purchase-totals"><span>Invoice date & time <b>{fmtDate(sale.date)}</b></span>{item&&<><span>Selected product <b>{item.name}</b></span><span>Original sold quantity <b>{num(item.qty)}</b></span><span>Previously returned <b>{alreadyReturned}</b></span><span>Remaining returnable <b>{remainingQty} units</b></span><span>Unit selling price <b>{money(item.price)}</b></span></>}</div></>}
- <p className="muted">Return credit reduces the invoice total. Cash is refunded only when the amount already paid exceeds the revised invoice total. The server validates the remaining quantity again before stock or balances are changed.</p>
- <button className="primary-btn" disabled={busy||!sale||!item||num(qty)<=0||num(qty)>remainingQty||num(refund)<0||num(refund)>num(qty)*num(item?.price)} onClick={save}>{busy?"Processing return…":"Confirm return, reconcile invoice & restock"}</button></div>
+ <p className="muted">Allocate each return credit between the outstanding invoice balance, a cash refund and the customer account advance. Any unallocated remainder is retained as customer advance. The server validates every amount before stock or account balances are changed.</p>
+ <div className="purchase-totals"><span>Total return credit <b>{money(refund)}</b></span><span>Applied to outstanding <b>{money(balanceAdjustment)}</b></span><span>Cash refund <b>{money(cashRefund)}</b></span><span>Retained customer advance <b>{money(retainedAdvance)}</b></span></div>
+ <button className="primary-btn" disabled={busy||!sale||!item||num(qty)<=0||num(qty)>remainingQty||num(refund)<0||num(refund)>num(qty)*num(item?.price)||num(cashRefund)<0||num(cashRefund)>num(refund)||num(balanceAdjustment)<0||num(balanceAdjustment)>num(sale?.balance)||num(cashRefund)+num(balanceAdjustment)>num(refund)} onClick={save}>{busy?"Processing return…":"Confirm return, reconcile invoice & restock"}</button></div>
  <div className="panel data-panel"><div className="panel-head"><div><h3>Return register</h3><p>Recorded date/time, invoice, customer, item quantities and refund reconciliation.</p></div><button className="text-action" onClick={printReturnRegister}>Print / Save PDF</button></div>
  <div className="table-wrap"><table><thead><tr><th>DATE & TIME</th><th>INVOICE</th><th>CUSTOMER</th><th>BRANCH</th><th>PRODUCT</th><th>QTY</th><th>INVOICE CREDIT</th><th>CASH REFUND</th><th>REASON</th></tr></thead><tbody>{[...returns].sort((a,b)=>new Date(b.date||0).getTime()-new Date(a.date||0).getTime()).map((r,i)=><tr key={r.id||i}><td>{fmtDate(r.date)}</td><td>{r.invoiceNo||r.saleId}</td><td>{r.customerName||"—"}</td><td>{r.branchName||"—"}</td><td>{r.productName||"—"}</td><td>{r.qty}</td><td>{money(r.creditAmount??r.refund)}</td><td>{money(r.cashRefund)}</td><td>{r.reason||"—"}</td></tr>)}{!returns.length&&<tr><td colSpan={9} className="empty-cell">No sales returns recorded.</td></tr>}</tbody></table></div></div></div>;
 }
