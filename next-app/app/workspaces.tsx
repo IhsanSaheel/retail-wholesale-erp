@@ -293,7 +293,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     const reason=window.prompt("Enter the reason for cancelling invoice "+String(sale.invoiceNo||saleId)+":");
     if(reason===null) return;
     if(reason.trim().length<3) { setMessage("Please enter a cancellation reason of at least 3 characters."); return; }
-    if(!window.confirm("Cancel this invoice? Its stock will be restored. The cash-paid portion will be recorded as a refund, while any fully reconciled customer advance will be returned to the customer’s credit balance (not paid out as cash). Invoices with unreconciled advances, later advance usage, previous returns, prior-balance settlements or staff tips will be blocked. This action cannot be undone.")) return;
+    if(!window.confirm("Cancel this invoice? Its stock will be restored. The cash-paid portion will be recorded as a refund, while any fully reconciled customer advance will be returned to the customer’s credit balance (not paid out as cash). Invoices with unreconciled advances, later advance usage, previous returns or staff tips will be blocked. Any prior-balance settlement payments will be reversed and refunded separately using their original payment methods. This action cannot be undone.")) return;
     setSaleActionBusy(saleId);setMessage("");
     const {data,error}=await supabase.rpc("etihad_cancel_sale",{p_org_id:orgId,p_sale_id:saleId,p_reason:reason.trim()});
     setSaleActionBusy("");
