@@ -104,13 +104,13 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
   const taxAmount=selectedTax?(selectedTax.type==="inclusive"?subtotal*taxRate/(100+taxRate):subtotal*taxRate/100):0;
   const baseTotal=selectedTax&&selectedTax.type!=="inclusive"?subtotal+taxAmount:subtotal;
   const loyaltyCustomerSales=customerPhone.trim()?sales.filter(s=>String(s.customerPhone||"").trim()===customerPhone.trim()&&String(s.status||"").toLowerCase()!=="cancelled"):[];
-  const customerLoyaltyPoints=Math.max(0,loyaltyCustomerSales.reduce((sum,s)=>sum+n(s.loyaltyPointsEarned)-n(s.loyaltyPointsRedeemed),0));
+  const customerLoyaltyPoints=Math.max(0,loyaltyCustomerSales.reduce((sum,s)=>{const original=Math.max(0,n(s.loyaltyEligibleTotal)||n(s.total));const ratio=original>0?Math.min(1,Math.max(0,n(s.total)/original)):1;return sum+Math.floor(n(s.loyaltyPointsEarned)*ratio)-Math.floor(n(s.loyaltyPointsRedeemed)*ratio);},0));
   const redeemRatePoints=Math.max(1,n(loyaltyConfig.redeemPoints)||1000),redeemRateValue=Math.max(0,n(loyaltyConfig.redeemValue)||1);
   const requestedRedeem=Math.max(0,Math.floor(n(loyaltyRedeemPoints)));
   const loyaltyPointsRedeemed=Math.min(customerLoyaltyPoints,requestedRedeem,Math.floor(baseTotal*redeemRatePoints/Math.max(0.01,redeemRateValue)));
   const loyaltyDiscount=loyaltyConfig.enabled!==false?Math.min(baseTotal,loyaltyPointsRedeemed/redeemRatePoints*redeemRateValue):0;
   const total=Math.max(0,baseTotal-loyaltyDiscount);
-  const loyaltyPointsEarned=loyaltyConfig.enabled!==false&&n(loyaltyConfig.earnAmount)>0?Math.floor(total/Math.max(0.01,n(loyaltyConfig.earnAmount))*Math.max(0,n(loyaltyConfig.earnPoints))):0;
+  const loyaltyPointsEarned=customerPhone.trim()&&customerName!=="Walk-in Customer"&&loyaltyConfig.enabled!==false&&n(loyaltyConfig.earnAmount)>0?Math.floor(total/Math.max(0.01,n(loyaltyConfig.earnAmount))*Math.max(0,n(loyaltyConfig.earnPoints))):0;
   const customerOutstanding = customerPhone.trim() ? sales.filter(s => String(s.customerPhone || "").trim() === customerPhone.trim() && String(s.status || "").toLowerCase() !== "cancelled").reduce((sum, s) => sum + n(s.balance), 0) : 0;
   const availableAdvance = customerOutstanding > 0 ? 0 : customerCredits.filter(r => String(r.data.customerPhone || "").trim() === customerPhone.trim() && n(r.data.balance) > 0).reduce((sum, r) => sum + n(r.data.balance), 0);
   const advanceUsed = useAdvance ? Math.min(total, availableAdvance) : 0;
@@ -348,7 +348,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
       items: cart.map(x => ({ productId: x.product.id, name: x.product.name, sku: x.product.sku || "", qty: x.qty, cost: n(x.product.cost), price: n(x.product.price), unit: x.product.unit || "piece" })),
       subtotal, taxId:selectedTax?.id||null, taxName:selectedTax?.name||"", taxRate, taxType:selectedTax?.type||null, taxAmount, total, paid: applied, balance, receivedAmount, cashReceived, advanceUsed,
       priorOutstandingApplied, changeReturned, customerAdvance, staffTip, overpaymentResolution: over ? resolution : "none",
-      loyaltyPointsRedeemed, loyaltyDiscount, loyaltyPointsEarned,
+      loyaltyPointsRedeemed, loyaltyDiscount, loyaltyPointsEarned, loyaltyEligibleTotal:total,
       paymentMethod: method, note
     };
     const rpcArgs = {
