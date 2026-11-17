@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   if (priorError) return json("Could not check the email delivery record: " + priorError.message, 500);
   if (prior?.data?.status === "sent") return json("This closing report was already emailed. Duplicate delivery prevented.");
 
-  const logData = { kind: "cash_register_closing", sessionId, status: "sending", recipient, updatedAt: new Date().toISOString() };
+  const logData = { kind: "cash_register_closing", sessionId, branchId, branchName: String(s.branchName || ""), status: "sending", recipient, updatedAt: new Date().toISOString() };
   if (prior) {
     const { error } = await db.from("etihad_records").update({ data: logData, updated_by: auth.user.id, updated_at: new Date().toISOString() }).eq("org_id", orgId).eq("collection", "mberp_email_delivery").eq("record_id", recordId);
     if (error) return json("Could not prepare the email delivery record: " + error.message, 500);
