@@ -349,7 +349,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     const staffTip = over > 0 && resolution === "tip" ? over : 0;
     const sale = {
       id, date, invoiceNo, branchId, branchName: branch?.name || "",
-      customerName: customerName.trim() || "Walk-in Customer", customerPhone: customerPhone.trim(), cashier: cashier || userId,
+      customerName: customerName.trim() || "Walk-in Customer", customerPhone: customerPhone.trim(), cashier: cashier || userId, cashierId: userId,
       items: cart.map(x => {const originalPrice=n(x.product.price),netPrice=originalPrice*loyaltyFactor;return {productId:x.product.id,name:x.product.name,sku:x.product.sku||"",qty:x.qty,cost:n(x.product.cost),price:netPrice,originalPrice,loyaltyDiscountPerUnit:Math.max(0,originalPrice-netPrice),unit:x.product.unit||"piece"};}),
       subtotal:saleSubtotal, originalSubtotal:subtotal, taxId:selectedTax?.id||null, taxName:selectedTax?.name||"", taxRate, taxType:selectedTax?.type||null, taxAmount:saleTaxAmount, originalTaxAmount:taxAmount, total, paid: applied, balance, receivedAmount, cashReceived, advanceUsed,
       priorOutstandingApplied, changeReturned, customerAdvance, staffTip, overpaymentResolution: over ? resolution : "none",
