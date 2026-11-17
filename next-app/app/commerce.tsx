@@ -99,7 +99,7 @@ export function TransferWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Pro
 export function PaymentWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Props){
  const db=useMemo(()=>getSupabase(),[]);
  const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data).filter(s=>role==="owner"||branchIds.includes(String(s.branchId))).filter(s=>num(s.balance)>0);
- const payments=rows.filter(r=>r.collection==="mberp_payments").map(r=>r.data).filter(p=>p.type!=="staff_tip");
+ const payments=rows.filter(r=>r.collection==="mberp_payments").map(r=>r.data).filter(p=>p.type!=="staff_tip"&&(role==="owner"||branchIds.includes(String(p.branchId||""))));
  const customerKey=(s:any)=>s.customerPhone?"phone:"+String(s.customerPhone):"name:"+String(s.customerName||"").trim().toLowerCase();const customers=Array.from(new Map(sales.map(s=>[customerKey(s),{key:customerKey(s),name:s.customerName||"Walk-in Customer",phone:s.customerPhone||""}])).values());const [selectedCustomer,setSelectedCustomer]=useState(customerKey(sales[0]||{}));const customerSales=sales.filter(s=>customerKey(s)===selectedCustomer);const [saleId,setSaleId]=useState(sales.find(s=>customerKey(s)===customerKey(sales[0]||{}))?.id||"");const [amount,setAmount]=useState("");const [method,setMethod]=useState("Cash");const [note,setNote]=useState("");
  const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");const pendingPayment=useRef<{id:string;key:string}|null>(null);
  const sale=customerSales.find(s=>String(s.id)===String(saleId));
