@@ -203,6 +203,9 @@ export async function POST(request: NextRequest) {
     if (col === 1 || i === summaryPairs.length - 1) y += 33;
   }
   y += 5;
+  textAt("Expenses and supplier payments appear here only when recorded as a shift-linked cash movement.", 38, y, 6.2, muted);
+  textAt("Standalone ledger entries are excluded to prevent double-counting.", 38, y + 9, 6.2, muted);
+  y += 22;
   textAt("TRANSACTION DETAILS", 38, y, 9, navy, true);
   textAt(entries.length + " RECORDS", 492, y + 1, 7, muted, true);
   y += 18;
