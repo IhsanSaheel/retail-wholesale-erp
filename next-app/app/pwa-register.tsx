@@ -33,7 +33,7 @@ export function PWARegister() {
     window.addEventListener("appinstalled",onInstalled);
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("controllerchange",onControllerChange);
-      navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(registration => {
+      navigator.serviceWorker.register("/sw.js?release=20261118-2",{updateViaCache:"none"}).then(registration => {
         const activateWaitingWorker = () => {
           if (registration.waiting && navigator.serviceWorker.controller) {
             registration.waiting.postMessage({type:"SKIP_WAITING"});
@@ -41,6 +41,7 @@ export function PWARegister() {
         };
         activateWaitingWorker();
         void registration.update();
+        const updateCheck = window.setInterval(() => { if (document.visibilityState === "visible") void registration.update(); }, 60_000);
         registration.addEventListener("updatefound",() => {
           const worker = registration.installing;
           if(worker) worker.addEventListener("statechange",() => {
