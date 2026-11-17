@@ -263,18 +263,20 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
 
   async function saveEditedSale() {
     if(!editingSale||!cart.length) { setMessage("Add at least one product before saving the edited invoice."); return; }
-    if(!window.confirm("Save these product and quantity changes to "+(editingSale.invoiceNo||"this invoice")+"? Stock and batch quantities will be recalculated.")) return;
-    setSaving(true);setMessage("");
     const items=cart.map(x=>({productId:String(x.product.id),name:String(x.product.name||""),sku:String(x.product.sku||""),qty:x.qty,cost:n(x.product.cost),price:n(x.product.price),unit:String(x.product.unit||"piece")}));
     const editDiscount=n(editingSale.discount);
     const editTaxRate=n(editingSale.taxRate),editTaxType=String(editingSale.taxType||"none");
     const taxableSubtotal=Math.max(0,subtotal-editDiscount);
     const editTaxAmount=editTaxType==="inclusive"?(editTaxRate>0?taxableSubtotal*editTaxRate/(100+editTaxRate):0):editTaxType==="exclusive"?taxableSubtotal*editTaxRate/100:0;
     const editTotal=editTaxType==="exclusive"?taxableSubtotal+editTaxAmount:taxableSubtotal;
+    const expectedRefund=Math.max(0,n(editingSale.paid)-editTotal);
+    const confirmText="Save these changes to "+(editingSale.invoiceNo||"this invoice")+"? Stock and batch quantities will be recalculated."+(expectedRefund>0?" A refund of "+cash(expectedRefund)+" will also be recorded against the original payment method(s).":"");
+    if(!window.confirm(confirmText)) return;
+    setSaving(true);setMessage("");
     const {data,error}=await supabase.rpc("etihad_edit_sale",{p_org_id:orgId,p_sale_id:String(editingSale.id),p_items:items,p_subtotal:subtotal,p_discount:editDiscount,p_tax_id:String(editingSale.taxId||""),p_tax_name:String(editingSale.taxName||""),p_tax_rate:editTaxRate,p_tax_type:editTaxType,p_tax_amount:editTaxAmount,p_total:editTotal,p_note:String(editingSale.note||"")});
     setSaving(false);
     if(error||!data?.success) { setMessage("Invoice was not changed: "+(error?.message||"The server did not confirm the edit.")); return; }
-    setMessage("Invoice "+(data.invoiceNo||editingSale.invoiceNo)+" updated. Stock, batch movements, balance and edit audit were saved.");
+    setMessage("Invoice "+(data.invoiceNo||editingSale.invoiceNo)+" updated. Stock, batch movements, balance and edit audit were saved."+(n(data.refundAmount)>0?" Refund recorded: "+cash(n(data.refundAmount))+".":""));
     setEditingSale(null);setCart([]);setReceived("");setUseAdvance(false);setTab("history");onSaved();
   }
 
