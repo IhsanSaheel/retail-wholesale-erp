@@ -270,13 +270,13 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     const editTaxAmount=editTaxType==="inclusive"?(editTaxRate>0?taxableSubtotal*editTaxRate/(100+editTaxRate):0):editTaxType==="exclusive"?taxableSubtotal*editTaxRate/100:0;
     const editTotal=editTaxType==="exclusive"?taxableSubtotal+editTaxAmount:taxableSubtotal;
     const expectedRefund=Math.max(0,n(editingSale.paid)-editTotal);
-    const confirmText="Save these changes to "+(editingSale.invoiceNo||"this invoice")+"? Stock and batch quantities will be recalculated."+(expectedRefund>0?" A refund of "+cash(expectedRefund)+" will also be recorded against the original payment method(s).":"");
+    const confirmText="Save these changes to "+(editingSale.invoiceNo||"this invoice")+"? Stock and batch quantities will be recalculated."+(expectedRefund>0?" Up to "+cash(expectedRefund)+" will be reconciled: any available customer advance is restored first, then the remaining amount is refunded through the original cash payment method.":"");
     if(!window.confirm(confirmText)) return;
     setSaving(true);setMessage("");
     const {data,error}=await supabase.rpc("etihad_edit_sale",{p_org_id:orgId,p_sale_id:String(editingSale.id),p_items:items,p_subtotal:subtotal,p_discount:editDiscount,p_tax_id:String(editingSale.taxId||""),p_tax_name:String(editingSale.taxName||""),p_tax_rate:editTaxRate,p_tax_type:editTaxType,p_tax_amount:editTaxAmount,p_total:editTotal,p_note:String(editingSale.note||"")});
     setSaving(false);
     if(error||!data?.success) { setMessage("Invoice was not changed: "+(error?.message||"The server did not confirm the edit.")); return; }
-    setMessage("Invoice "+(data.invoiceNo||editingSale.invoiceNo)+" updated. Stock, batch movements, balance and edit audit were saved."+(n(data.refundAmount)>0?" Refund recorded: "+cash(n(data.refundAmount))+".":""));
+    setMessage("Invoice "+(data.invoiceNo||editingSale.invoiceNo)+" updated. Stock, batch movements, balance and edit audit were saved."+(n(data.advanceRestored)>0?" Customer advance restored: "+cash(n(data.advanceRestored))+".":"")+(n(data.refundAmount)>0?" Cash refund recorded: "+cash(n(data.refundAmount))+".":""));
     setEditingSale(null);setCart([]);setReceived("");setUseAdvance(false);setTab("history");onSaved();
   }
 
