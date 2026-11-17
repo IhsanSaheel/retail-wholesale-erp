@@ -114,11 +114,23 @@ export async function POST(request: NextRequest) {
     }
   }
   entries.sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime());
+  // Calculate the emailed reconciliation from verified database transaction rows.
+  // Never trust cash totals supplied by the browser for an owner-facing financial report.
+  const amountFor = (predicate: (entry: typeof entries[number]) => boolean) =>
+    entries.filter(predicate).reduce((total, entry) => total + Number(entry.amount || 0), 0);
+  const isCash = (entry: typeof entries[number]) => /\\bCash$/i.test(entry.type);
+  const cashSales = amountFor(entry => isCash(entry) &&
+    (/^Sale payment/i.test(entry.type) || /^Customer balance payment/i.test(entry.type) || /^Sale ·/i.test(entry.type)));
+  const cashTips = amountFor(entry => /^Staff tip · Cash$/i.test(entry.type));
+  const cashAdvances = amountFor(entry => /^Customer advance · Cash$/i.test(entry.type));
+  const cashRefunds = amountFor(entry => /^Sales return refund · Cash$/i.test(entry.type));
+  const cashIn = amountFor(entry => /^Cash in$/i.test(entry.type));
+  const cashOut = amountFor(entry => /^Cash out$/i.test(entry.type));
   const expected = Number(s.expectedCash || 0), actual = Number(s.actualCash || 0), variance = Number(s.variance ?? (actual - expected));
   const summaryRows: [string, unknown][] = [
-    ["Opening float", s.openingFloat], ["Cash sales", summary.cashSales], ["Cash tips", s.cashTips ?? summary.cashTips],
-    ["Customer cash advances", s.cashAdvances ?? summary.cashAdvances], ["Cash refunds", summary.cashRefunds],
-    ["Cash in", summary.cashIn], ["Cash out", summary.cashOut], ["Expected cash", expected],
+    ["Opening float", s.openingFloat], ["Cash sales", cashSales], ["Cash tips", s.cashTips ?? cashTips],
+    ["Customer cash advances", s.cashAdvances ?? cashAdvances], ["Cash refunds", cashRefunds],
+    ["Cash in", cashIn], ["Cash out", cashOut], ["Expected cash", expected],
     ["Actual counted cash", actual], ["Variance", variance]
   ];
   const pdfText = (v: unknown) => String(v ?? "—").normalize("NFKD").replace(/[^\x20-\x7E]/g, " ").replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
