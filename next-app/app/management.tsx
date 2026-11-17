@@ -127,6 +127,9 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data);
  const payments=rows.filter(r=>r.collection==="mberp_payments").map(r=>r.data);
  const returns=rows.filter(r=>r.collection==="mberp_sales_returns").map(r=>r.data);
+ const returnedQtyBySaleProduct=new Map<string,number>();
+ for(const returned of returns){const key=String(returned.saleId||"")+"::"+String(returned.productId||"");if(!returned.saleId||!returned.productId)continue;returnedQtyBySaleProduct.set(key,(returnedQtyBySaleProduct.get(key)||0)+Math.max(0,Number(returned.qty||0)));}
+ const netItemQty=(sale:any,item:any)=>Math.max(0,Number(item.qty||0)-(returnedQtyBySaleProduct.get(String(sale.id||"")+"::"+String(item.productId||""))||0));
  const expenses=rows.filter(r=>r.collection==="mberp_expenses").map(r=>r.data);
  const purchases=rows.filter(r=>r.collection==="mberp_purchases").map(r=>r.data);
  const supplierPayments=rows.filter(r=>r.collection==="mberp_supplier_payments").map(r=>r.data);
@@ -161,10 +164,10 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  for(const s of active){
   if(["supplier","purchaseProduct","expenseCategory","profitProduct","payment"].includes(report))continue;
   const d=new Date(s.date||"");let key="",label="";
-  if(report==="brand"||report==="category"||report==="salesperson"||report==="tax"){const salesperson=String(s.salespersonName||s.cashierName||s.cashier||s.staffName||s.createdByName||"Unassigned");if(report==="salesperson"){add(salesperson,salesperson,Number(s.total||0));continue;}if(report==="tax"){const tax=Number(s.taxAmount??s.tax??(s.items||[]).reduce((a:any,it:any)=>a+Number(it.taxAmount||0),0));add("Tax", "Tax collected",tax);continue;}for(const it of s.items||[]){const product=productById.get(String(it.productId||""));const label=report==="brand"?String(it.brand||product?.brand||"Unbranded"):String(it.category||product?.category||"Uncategorised");add(label,label,Number(it.price||0)*Number(it.qty||0));}continue;}
+  if(report==="brand"||report==="category"||report==="salesperson"||report==="tax"){const salesperson=String(s.salespersonName||s.cashierName||s.cashier||s.staffName||s.createdByName||"Unassigned");if(report==="salesperson"){add(salesperson,salesperson,Number(s.total||0));continue;}if(report==="tax"){const tax=Number(s.taxAmount??s.tax??(s.items||[]).reduce((a:any,it:any)=>a+Number(it.taxAmount||0),0));add("Tax", "Tax collected",tax);continue;}for(const it of s.items||[]){const qty=netItemQty(s,it);if(qty<=0)continue;const product=productById.get(String(it.productId||""));const label=report==="brand"?String(it.brand||product?.brand||"Unbranded"):String(it.category||product?.category||"Uncategorised");add(label,label,Number(it.price||0)*qty);}continue;}
   if(report==="hourly"){key=String(d.getHours()).padStart(2,"0");label=key+":00";}
   else if(report==="weekday"){key=String(d.getDay());label=d.toLocaleDateString("en-PK",{weekday:"long"});}
-  else if(report==="product"){for(const it of s.items||[])add(String(it.name||"Unnamed"),String(it.name||"Unnamed"),Number(it.price||0)*Number(it.qty||0));continue;}
+  else if(report==="product"){for(const it of s.items||[]){const qty=netItemQty(s,it);if(qty>0)add(String(it.name||"Unnamed"),String(it.name||"Unnamed"),Number(it.price||0)*qty);}continue;}
   else if(report==="customer"){key=String(s.customerName||"Walk-in");label=key;}
   else if(report==="payment"){key=String(s.paymentMethod||s.method||"Unspecified");label=key;}
   else {key=iso(d);label=d.toLocaleDateString("en-PK",{day:"2-digit",month:"short",year:"numeric"});}
