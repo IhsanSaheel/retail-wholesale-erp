@@ -8,6 +8,9 @@ declare
 begin
  select pg_get_functiondef('private.etihad_record_cash_movement(uuid,text,text,text,numeric,text)'::regprocedure)
  into v_definition;
+ if position(v_new in v_definition)>0 then
+  return;
+ end if;
  if position(v_old in v_definition)=0 then
   raise exception 'Expected sale-payment fallback clause was not found; migration stopped without changing the function';
  end if;
