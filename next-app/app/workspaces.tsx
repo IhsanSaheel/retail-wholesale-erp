@@ -266,7 +266,11 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     if(!window.confirm("Save these product and quantity changes to "+(editingSale.invoiceNo||"this invoice")+"? Stock and batch quantities will be recalculated.")) return;
     setSaving(true);setMessage("");
     const items=cart.map(x=>({productId:String(x.product.id),name:String(x.product.name||""),sku:String(x.product.sku||""),qty:x.qty,cost:n(x.product.cost),price:n(x.product.price),unit:String(x.product.unit||"piece")}));
-    const {data,error}=await supabase.rpc("etihad_edit_sale",{p_org_id:orgId,p_sale_id:String(editingSale.id),p_items:items});
+    if(n(editingSale.discount)>0) { setSaving(false);setMessage("This invoice has a discount. It needs specialist reconciliation before editing; no changes were made.");return; }
+    const editTaxRate=n(editingSale.taxRate),editTaxType=String(editingSale.taxType||"none");
+    const editTaxAmount=editTaxType==="inclusive"?(editTaxRate>0?subtotal*editTaxRate/(100+editTaxRate):0):editTaxType==="exclusive"?subtotal*editTaxRate/100:0;
+    const editTotal=editTaxType==="exclusive"?subtotal+editTaxAmount:subtotal;
+    const {data,error}=await supabase.rpc("etihad_edit_sale",{p_org_id:orgId,p_sale_id:String(editingSale.id),p_items:items,p_subtotal:subtotal,p_tax_id:String(editingSale.taxId||""),p_tax_name:String(editingSale.taxName||""),p_tax_rate:editTaxRate,p_tax_type:editTaxType,p_tax_amount:editTaxAmount,p_total:editTotal,p_note:String(editingSale.note||"")});
     setSaving(false);
     if(error||!data?.success) { setMessage("Invoice was not changed: "+(error?.message||"The server did not confirm the edit.")); return; }
     setMessage("Invoice "+(data.invoiceNo||editingSale.invoiceNo)+" updated. Stock, batch movements, balance and edit audit were saved.");
