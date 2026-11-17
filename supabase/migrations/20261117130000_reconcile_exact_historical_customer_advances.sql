@@ -26,7 +26,7 @@ exact_groups as (
        and s.record_id=c.sale_id and s.data->>'customerPhone'=c.customer_phone)
 ),
 new_rows as (
-  select c.org_id,c.record_id source_credit_id,c.data credit_data,
+  select c.org_id,c.record_id source_credit_id,c.data credit_data,c.updated_by credit_updated_by,
          g.sale_id,g.customer_phone,g.invoice_no,s.data sale_data,
          pg_catalog.gen_random_uuid() allocation_id
   from exact_groups g
@@ -55,7 +55,7 @@ inserted as (
       'branchId',credit_data->>'branchId','invoiceNo',invoice_no,
       'status','active',
       'note','Historical allocation reconciled from exact source-credit lastAppliedSaleId, customer match, and matching aggregate advance_applied payment total.'
-    ),null
+    ),credit_updated_by
   from new_rows returning record_id
 )
 update public.etihad_records created
