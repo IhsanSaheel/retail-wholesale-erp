@@ -53,7 +53,7 @@ export default function Home() {
     const membership = memberships[0];
     setOrgId(membership.org_id);
     setBranchIds(Array.isArray(membership.branch_ids) ? membership.branch_ids : []);
-    setRole(String(membership.role || "staff"));
+    setRole(String(membership.role || "staff").trim().toLowerCase());
     setPermissions((membership.permissions && typeof membership.permissions==="object") ? membership.permissions : {});
     const {data:org} = await supabase.from("etihad_organizations").select("name").eq("id",membership.org_id).maybeSingle();
     if(org?.name) setOrgName(org.name);
@@ -112,7 +112,7 @@ export default function Home() {
   const records = (name:string) => rows.filter(r=>r.collection===name).map(r=>r.data || {});
   const roleDefaults:Record<string,string[]>={owner:["cashregister","sales","returns","products","customers","purchases","suppliers","expenses","branches","payments","transfers","reports","employees","settings"],manager:["cashregister","sales","returns","products","customers","purchases","suppliers","expenses","branches","payments","transfers","reports","employees"],cashier:["cashregister","sales","returns","customers","payments"],stockkeeper:["products","transfers","purchases"],accountant:["cashregister","sales","returns","customers","suppliers","payments","expenses","reports"]};
   const permissionAliases:Record<string,string[]>={cashregister:["cashregister","payments","reports"],customers:["customers","customer_balances"],returns:["returns","sales_returns"],transfers:["transfers","stock"],products:["products"],sales:["sales"],purchases:["purchases"],suppliers:["suppliers"],payments:["payments"],expenses:["expenses"],reports:["reports"],employees:["employees"]};
-  const permitted=(id:ModuleKey)=>{if(role==="owner")return true;if(id==="overview")return true;if(id==="branches")return false;if(id==="settings")return true;const hasExplicit=Object.keys(permissions).length>0;return hasExplicit?(permissionAliases[id]||[id]).some(key=>permissions[key]===true):(roleDefaults[role]||[]).includes(id);};
+  const permitted=(id:ModuleKey)=>{if(String(role).trim().toLowerCase()==="owner")return true;if(id==="overview")return true;if(id==="branches")return false;if(id==="settings")return true;const hasExplicit=Object.keys(permissions).length>0;return hasExplicit?(permissionAliases[id]||[id]).some(key=>permissions[key]===true):(roleDefaults[role]||[]).includes(id);};
   const visibleNav=NAV.map(group=>({...group,items:group.items.filter(item=>permitted(item.id))})).filter(group=>group.items.length>0);
   useEffect(()=>{if(session&&!permitted(module))setModule("overview");},[role,permissions,module,session]);
 
