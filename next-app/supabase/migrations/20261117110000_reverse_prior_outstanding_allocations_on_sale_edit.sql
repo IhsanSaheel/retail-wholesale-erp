@@ -12,8 +12,6 @@ declare
  v_batch_count integer; v_item_total numeric:=0; v_expected_tax numeric:=0; v_expected_total numeric; v_discount numeric:=0;
  v_paid numeric; v_new_paid numeric; v_refund numeric:=0; v_cash_refund numeric:=0; v_advance_total numeric:=0; v_advance_to_restore numeric:=0; v_advance_restored numeric:=0; v_remaining_advance numeric:=0; v_payment_count integer; v_payment_total numeric; v_payment_method_count integer; v_refund_method text; v_advance_alloc record; v_credit record; v_advance_payment record;
  v_mov text; v_audit jsonb; v_now timestamptz:=pg_catalog.now();
- v_settlement_alloc record; v_settlement_payment record; v_settled_sale record;
- v_settlement_total numeric:=0; v_settlement_remaining numeric:=0; v_settlement_reversed numeric:=0; v_settlement_amount numeric:=0;
 begin
  if v_user is null then raise exception 'Authentication required'; end if;
  if p_org_id is null or coalesce(p_sale_id,'')='' or jsonb_typeof(p_items)<>'array' or jsonb_array_length(p_items)=0 then
@@ -39,30 +37,10 @@ begin
  if exists(select 1 from public.etihad_records r where r.org_id=p_org_id and r.collection='mberp_sales_returns' and r.data->>'saleId'=p_sale_id) then
   raise exception 'This invoice has previous returns and cannot be edited. Use the return workflow for returned goods.';
  end if;
- if coalesce(nullif(v_sale.data->>'customerAdvance','')::numeric,0)>0
+ if coalesce(nullif(v_sale.data->>'priorOutstandingApplied','')::numeric,0)>0
+  or coalesce(nullif(v_sale.data->>'customerAdvance','')::numeric,0)>0
   or coalesce(nullif(v_sale.data->>'staffTip','')::numeric,0)>0 then
-  raise exception 'This invoice includes an unused customer advance or staff tip. Those allocations still require reconciliation before editing.';
- end if;
- -- A sale that received a previous-balance settlement cannot be edited independently:
- -- its originating checkout must be reversed first so the settlement can be traced.
- if exists(select 1 from public.etihad_records a
-  where a.org_id=p_org_id and a.collection='mberp_customer_credit_allocations'
-   and a.data->>'type'='prior_balance_settlement'
-   and a.data->>'settledSaleId'=p_sale_id
-   and coalesce(a.data->>'status','active')='active') then
-  raise exception 'This invoice received a previous-balance settlement. Edit or reconcile the originating checkout first.';
- end if;
- v_settlement_total:=coalesce(nullif(v_sale.data->>'priorOutstandingApplied','')::numeric,0);
- if v_settlement_total>0 then
-  select coalesce(sum(coalesce(nullif(a.data->>'amount','')::numeric,0)),0)
-   into v_settlement_remaining
-  from public.etihad_records a
-  where a.org_id=p_org_id and a.collection='mberp_customer_credit_allocations'
-   and a.data->>'saleId'=p_sale_id and a.data->>'type'='prior_balance_settlement'
-   and coalesce(a.data->>'status','active')='active';
-  if abs(v_settlement_remaining-v_settlement_total)>0.01 then
-   raise exception 'This invoice has no complete source history for its previous-balance settlements. It is protected until the allocation history is reconciled.';
-  end if;
+  raise exception 'This invoice includes a previous-balance settlement, unused customer advance or staff tip. Those allocations still require reconciliation before editing.';
  end if;
  v_advance_total:=coalesce(nullif(v_sale.data->>'advanceUsed','')::numeric,0);
  if v_advance_total>0 then
@@ -109,83 +87,6 @@ begin
   and r.data->>'saleId'=p_sale_id and r.data->>'type' in ('sale_payment','advance_applied','sales_return_refund');
  if abs(v_payment_total-v_paid)>0.01 then
   raise exception 'Recorded payments do not add up to the invoice paid amount. Reconcile its payment history before editing.';
- end if;
- -- Reverse exact previous-outstanding allocations made by this checkout.
- -- This restores each target invoice's balance and neutralizes only its linked
- -- settlement payment; it does not create a cash movement or a second refund.
- if v_settlement_total>0 then
-  v_settlement_remaining:=v_settlement_total;
-  for v_settlement_alloc in
-   select a.record_id,a.data from public.etihad_records a
-   where a.org_id=p_org_id and a.collection='mberp_customer_credit_allocations'
-    and a.data->>'saleId'=p_sale_id and a.data->>'type'='prior_balance_settlement'
-    and coalesce(a.data->>'status','active')='active'
-   order by coalesce(a.data->>'date',''),a.record_id for update
-  loop
-   exit when v_settlement_remaining<=0.000001;
-   v_settlement_amount:=coalesce(nullif(v_settlement_alloc.data->>'amount','')::numeric,0);
-   if v_settlement_amount<=0 then raise exception 'A previous-balance allocation has an invalid amount. No changes were made.'; end if;
-   select record_id,data,branch_ids into v_settled_sale
-   from public.etihad_records
-   where org_id=p_org_id and collection='mberp_sales'
-    and record_id=v_settlement_alloc.data->>'settledSaleId' for update;
-   if not found or coalesce(v_settled_sale.data->>'status','')='cancelled' then
-    raise exception 'A settled invoice is missing or cancelled. Reconcile the linked invoice before editing this checkout.';
-   end if;
-   if coalesce(v_settled_sale.data->>'customerPhone','')<>coalesce(v_sale.data->>'customerPhone','') then
-    raise exception 'The settlement customer does not match the originating checkout. No changes were made.';
-   end if;
-   select record_id,data into v_settlement_payment
-   from public.etihad_records
-   where org_id=p_org_id and collection='mberp_payments'
-    and record_id=v_settlement_alloc.data->>'paymentId' for update;
-   if not found or v_settlement_payment.data->>'type'<>'sale_payment'
-    or v_settlement_payment.data->>'saleId'<>v_settled_sale.record_id
-    or abs(coalesce(nullif(v_settlement_payment.data->>'amount','')::numeric,0)-v_settlement_amount)>0.01 then
-    raise exception 'The exact settlement payment record is missing or has changed. No changes were made.';
-   end if;
-   if coalesce(nullif(v_settled_sale.data->>'paid','')::numeric,0)+0.000001<v_settlement_amount then
-    raise exception 'The settled invoice paid amount is smaller than its allocation. Reconcile its payment history first.';
-   end if;
-   update public.etihad_records set data=v_settled_sale.data||pg_catalog.jsonb_build_object(
-    'paid',greatest(0,coalesce(nullif(v_settled_sale.data->>'paid','')::numeric,0)-v_settlement_amount),
-    'balance',coalesce(nullif(v_settled_sale.data->>'balance','')::numeric,0)+v_settlement_amount,
-    'lastSettlementReversedAt',v_now,'lastSettlementReversedBySaleId',p_sale_id,
-    'settlementReversalAudit',coalesce(v_settled_sale.data->'settlementReversalAudit','[]'::jsonb)||
-      pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
-       'at',v_now,'sourceSaleId',p_sale_id,'allocationId',v_settlement_alloc.record_id,
-       'amount',v_settlement_amount,'reason','Originating invoice edited'))
-   ),updated_by=v_user,updated_at=v_now
-   where org_id=p_org_id and collection='mberp_sales' and record_id=v_settled_sale.record_id;
-   update public.etihad_records set data=v_settlement_payment.data||pg_catalog.jsonb_build_object(
-    'type','prior_balance_settlement_reversed','originalType','sale_payment',
-    'originalAmount',v_settlement_amount,'amount',0,'reversedAmount',v_settlement_amount,
-    'reversedAt',v_now,'reversedBySaleId',p_sale_id,
-    'note',coalesce(v_settlement_payment.data->>'note','')||' Reversed because originating invoice was edited.'
-   ),updated_by=v_user,updated_at=v_now
-   where org_id=p_org_id and collection='mberp_payments' and record_id=v_settlement_payment.record_id;
-   update public.etihad_records set data=v_settlement_alloc.data||pg_catalog.jsonb_build_object(
-    'status','reversed','originalAmount',v_settlement_amount,'amount',0,
-    'reversedAmount',v_settlement_amount,'reversedAt',v_now,
-    'reversalReason','Originating invoice edited')
-   ,updated_by=v_user,updated_at=v_now
-   where org_id=p_org_id and collection='mberp_customer_credit_allocations' and record_id=v_settlement_alloc.record_id;
-   v_mov:=pg_catalog.gen_random_uuid()::text;
-   insert into public.etihad_records(org_id,collection,record_id,branch_ids,data,updated_by)
-   values(p_org_id,'mberp_customer_credit_allocations',v_mov,array[]::text[],
-    pg_catalog.jsonb_build_object('id',v_mov,'type','prior_balance_settlement_reversal','date',v_now,
-     'saleId',p_sale_id,'settledSaleId',v_settled_sale.record_id,
-     'originalAllocationId',v_settlement_alloc.record_id,
-     'paymentId',v_settlement_payment.record_id,'amount',v_settlement_amount,
-     'customerName',v_sale.data->>'customerName','customerPhone',v_sale.data->>'customerPhone',
-     'branchId',v_branch,'invoiceNo',v_sale.data->>'invoiceNo','status','reversed',
-     'note','Previous outstanding restored to the original invoice after editing the originating checkout.'),v_user);
-   v_settlement_reversed:=v_settlement_reversed+v_settlement_amount;
-   v_settlement_remaining:=v_settlement_remaining-v_settlement_amount;
-  end loop;
-  if v_settlement_remaining>0.000001 then
-   raise exception 'Previous outstanding reversal could not be fully allocated. No changes were made.';
-  end if;
  end if;
  -- Restore the original stock and exact original batch allocations first.
  for v_old_item in
@@ -385,8 +286,7 @@ begin
   updated_by=v_user,updated_at=v_now
  where org_id=p_org_id and collection='mberp_sales' and record_id=p_sale_id;
  return pg_catalog.jsonb_build_object('success',true,'saleId',p_sale_id,'invoiceNo',v_sale.data->>'invoiceNo',
-  'newTotal',p_total,'paid',v_new_paid,'balance',greatest(0,p_total-v_new_paid),'refundAmount',v_cash_refund,
-  'advanceRestored',v_advance_restored,'previousOutstandingReversed',v_settlement_reversed,'stockAdjusted',true);
+  'newTotal',p_total,'paid',v_new_paid,'balance',greatest(0,p_total-v_new_paid),'refundAmount',v_cash_refund,'advanceRestored',v_advance_restored,'stockAdjusted',true);
 end;
 $function$
 ;
