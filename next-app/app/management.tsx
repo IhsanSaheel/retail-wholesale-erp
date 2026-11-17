@@ -167,10 +167,11 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const saleProfit=(sale:any)=>{const items=sale.items||[];const discountFactor=saleDiscountFactor(sale);return items.reduce((n:number,it:any)=>n+(Number(it.price||0)*discountFactor-Number(it.cost||0))*Number(it.qty||0),0);};
  const returnProfit=(r:any)=>Number(r.unitCost??r.cost??0)*Number(r.qty||0)-returnValue(r);
  const saleDiscountFactor=(sale:any)=>{const itemGross=(sale.items||[]).reduce((n:number,it:any)=>n+Number(it.price||0)*Number(it.qty||0),0);const returnedCredit=returns.filter(r=>String(r.saleId||"")===String(sale.id||"")).reduce((n:number,r:any)=>n+returnValue(r),0);const originalSubtotal=Number(sale.subtotal??itemGross)+returnedCredit;return itemGross>0?Math.min(1,Math.max(0,originalSubtotal/itemGross)):1;};
+ const saleRevenue=(sale:any)=>{const itemGross=(sale.items||[]).reduce((n:number,it:any)=>n+Number(it.price||0)*Number(it.qty||0),0);if(itemGross<=0)return Number(sale.subtotal??(Number(sale.total||0)-Number(sale.taxAmount||0)))+returns.filter(r=>String(r.saleId||"")===String(sale.id||"")).reduce((n:number,r:any)=>n+returnValue(r),0);return itemGross*saleDiscountFactor(sale);};
  for(const s of active){
   if(["supplier","purchaseProduct","expenseCategory","profitProduct","payment"].includes(report))continue;
   const d=new Date(s.date||"");let key="",label="";
-  if(report==="brand"||report==="category"||report==="salesperson"||report==="tax"){const salesperson=String(s.salespersonName||s.cashierName||s.cashier||s.staffName||s.createdByName||"Unassigned");if(report==="salesperson"){add(salesperson,salesperson,Number(s.subtotal??(Number(s.total||0)-Number(s.taxAmount||0))),saleProfit(s));continue;}if(report==="tax"){const tax=Number(s.taxAmount??s.tax??(s.items||[]).reduce((a:any,it:any)=>a+Number(it.taxAmount||0),0));add("Tax", "Tax collected",tax);continue;}for(const it of s.items||[]){const qty=Number(it.qty||0);if(qty<=0)continue;const product=productById.get(String(it.productId||""));const label=report==="brand"?String(it.brand||product?.brand||"Unbranded"):String(it.category||product?.category||"Uncategorised");const lineProfit=(Number(it.price||0)*saleDiscountFactor(s)-Number(it.cost||0))*qty;add(label,label,Number(it.price||0)*saleDiscountFactor(s)*qty,lineProfit);}continue;}
+  if(report==="brand"||report==="category"||report==="salesperson"||report==="tax"){const salesperson=String(s.salespersonName||s.cashierName||s.cashier||s.staffName||s.createdByName||"Unassigned");if(report==="salesperson"){add(salesperson,salesperson,saleRevenue(s),saleProfit(s));continue;}if(report==="tax"){const tax=Number(s.taxAmount??s.tax??(s.items||[]).reduce((a:any,it:any)=>a+Number(it.taxAmount||0),0));add("Tax", "Tax collected",tax);continue;}for(const it of s.items||[]){const qty=Number(it.qty||0);if(qty<=0)continue;const product=productById.get(String(it.productId||""));const label=report==="brand"?String(it.brand||product?.brand||"Unbranded"):String(it.category||product?.category||"Uncategorised");const lineProfit=(Number(it.price||0)*saleDiscountFactor(s)-Number(it.cost||0))*qty;add(label,label,Number(it.price||0)*saleDiscountFactor(s)*qty,lineProfit);}continue;}
   if(report==="weekly"){const monday=new Date(d);monday.setDate(d.getDate()-((d.getDay()+6)%7));key=iso(monday);label="Week of "+monday.toLocaleDateString("en-PK",{day:"2-digit",month:"short",year:"numeric"});}
   else if(report==="monthly"){key=iso(d).slice(0,7);label=d.toLocaleDateString("en-PK",{month:"long",year:"numeric"});}
   else if(report==="hourly"){key=String(d.getHours()).padStart(2,"0");label=key+":00";}
@@ -179,7 +180,7 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
   else if(report==="customer"){key=String(s.customerName||"Walk-in");label=key;}
   else if(report==="payment"){key=String(s.paymentMethod||s.method||"Unspecified");label=key;}
   else {key=iso(d);label=d.toLocaleDateString("en-PK",{day:"2-digit",month:"short",year:"numeric"});}
-  add(key,label,Number(s.subtotal??(Number(s.total||0)-Number(s.taxAmount||0))),saleProfit(s));
+  add(key,label,saleRevenue(s),saleProfit(s));
  }
  if(report==="payment"){
   const paymentSaleIds=new Set(payments.filter(p=>!["advance_applied","sales_return_refund"].includes(String(p.type||""))).map(p=>String(p.saleId||"")));
