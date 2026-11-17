@@ -147,8 +147,7 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const returnCredit=periodReturns.reduce((sum,r)=>sum+returnValue(r),0);
  const activeSaleIds=new Set(active.map(s=>String(s.id||"")));
  const returnsForActiveSales=returns.filter(r=>activeSaleIds.has(String(r.saleId||"")));
- const originalSalesRevenue=active.reduce((sum,s)=>sum+Number(s.subtotal??(Number(s.total||0)-Number(s.taxAmount||0))),0)+returnsForActiveSales.reduce((sum,r)=>sum+returnValue(r),0);
- const grossSales=originalSalesRevenue;
+ const grossSales=active.reduce((sum,s)=>sum+Number(s.subtotal??(Number(s.total||0)-Number(s.taxAmount||0))),0);
  const netSales=grossSales-returnCredit;
  const paymentInRange=payments.filter(p=>{const sale=saleById.get(String(p.saleId||""));const paymentBranch=p.branchId||sale?.branchId;return inRange(p.date)&&(branch==="all"||String(paymentBranch||"")===branch);});
  const collectedPayments=paymentInRange.filter(p=>!["advance_applied","sales_return_refund"].includes(String(p.type||"")));
@@ -167,7 +166,7 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const add=(key:string,label:string,value:number,profit=0)=>{const x=group.get(key)||{key,label,count:0,total:0,profit:0};x.count++;x.total+=value;x.profit+=profit;group.set(key,x);};
  const saleProfit=(sale:any)=>{const items=sale.items||[];const itemGross=items.reduce((n:number,it:any)=>n+Number(it.price||0)*Number(it.qty||0),0);const discountFactor=itemGross>0?Math.min(1,Math.max(0,Number(sale.subtotal??itemGross)/itemGross)):1;return items.reduce((n:number,it:any)=>n+(Number(it.price||0)*discountFactor-Number(it.cost||0))*Number(it.qty||0),0);};
  const returnProfit=(r:any)=>Number(r.unitCost??r.cost??0)*Number(r.qty||0)-returnValue(r);
- const saleDiscountFactor=(sale:any)=>{const itemGross=(sale.items||[]).reduce((n:number,it:any)=>n+Number(it.price||0)*Number(it.qty||0),0);const returnedCredit=returns.filter(r=>String(r.saleId||"")===String(sale.id||"")).reduce((n:number,r:any)=>n+returnValue(r),0);const originalSubtotal=Number(sale.subtotal??itemGross)+returnedCredit;return itemGross>0?Math.min(1,Math.max(0,originalSubtotal/itemGross)):1;};
+ const saleDiscountFactor=(sale:any)=>{const itemGross=(sale.items||[]).reduce((n:number,it:any)=>n+Number(it.price||0)*Number(it.qty||0),0);const recordedSubtotal=Number(sale.subtotal??itemGross);return itemGross>0?Math.min(1,Math.max(0,recordedSubtotal/itemGross)):1;};
  for(const s of active){
   if(["supplier","purchaseProduct","expenseCategory","profitProduct","payment"].includes(report))continue;
   const d=new Date(s.date||"");let key="",label="";
