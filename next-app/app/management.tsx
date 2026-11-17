@@ -147,8 +147,6 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const returnCredit=periodReturns.reduce((sum,r)=>sum+returnValue(r),0);
  const activeSaleIds=new Set(active.map(s=>String(s.id||"")));
  const returnsForActiveSales=returns.filter(r=>activeSaleIds.has(String(r.saleId||"")));
- const activeSaleIds=new Set(active.map(s=>String(s.id||"")));
- const returnsForActiveSales=returns.filter(r=>activeSaleIds.has(String(r.saleId||"")));
  const grossSales=active.reduce((sum,s)=>sum+Number(s.subtotal??(Number(s.total||0)-Number(s.taxAmount||0))),0)+returnsForActiveSales.reduce((sum,r)=>sum+returnValue(r),0);
  const netSales=grossSales-returnCredit;
  const paymentInRange=payments.filter(p=>{const sale=saleById.get(String(p.saleId||""));const paymentBranch=p.branchId||sale?.branchId;return inRange(p.date)&&(branch==="all"||String(paymentBranch||"")===branch);});
