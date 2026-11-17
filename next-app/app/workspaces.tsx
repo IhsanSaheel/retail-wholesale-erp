@@ -210,7 +210,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
           const { data, error } = await supabase.rpc("etihad_create_sale", item.rpcArgs);
           if (error || !data?.success) {
             const detail = error?.message || "The server could not confirm this sale.";
-            const transient = !error?.code && /fetch|network|timeout|offline|load failed/i.test(detail);
+            const transient = !error?.code && /fetch|network|timeout|offline|load failed|connection|request failed|temporarily unavailable/i.test(detail);
             await updatePendingSale({ ...item, status: transient ? "pending" : "failed", lastError: detail });
             if (transient) break;
           } else {
@@ -235,12 +235,15 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     };
     const handleOnline = () => { setIsOnline(true); void syncQueue(); };
     const handleOffline = () => setIsOnline(false);
+    const handleResume = () => { if (document.visibilityState === "visible" && navigator.onLine) void syncQueue(); };
     setIsOnline(navigator.onLine);
     void refreshQueue();
     if (navigator.onLine) void syncQueue();
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-    return () => { active = false; window.removeEventListener("online", handleOnline); window.removeEventListener("offline", handleOffline); };
+    window.addEventListener("focus", handleResume);
+    document.addEventListener("visibilitychange", handleResume);
+    return () => { active = false; window.removeEventListener("online", handleOnline); window.removeEventListener("offline", handleOffline); window.removeEventListener("focus", handleResume); document.removeEventListener("visibilitychange", handleResume); };
   }, [orgId, userId, supabase, syncTrigger]);
 
   async function retryPendingSales() {
