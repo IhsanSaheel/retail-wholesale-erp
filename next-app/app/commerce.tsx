@@ -8,7 +8,7 @@ const num=(v:any)=>Number(v||0), money=(v:any)=>new Intl.NumberFormat("en-PK",{s
 const htmlEscape=(v:any)=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 export function CustomerWorkspace({orgId,userId,role,rows,onSaved}:Props){
  const db=useMemo(()=>getSupabase(),[]);
- const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>({...r.data,_updatedBy:r.updated_by,_branchIds:(r as any).branch_ids||[]}));
+ const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data);
  const payments=rows.filter(r=>r.collection==="mberp_payments").map(r=>r.data);
  const limits=rows.filter(r=>r.collection==="mberp_customer_credit_limits").map(r=>r.data);
  const credits=rows.filter(r=>r.collection==="mberp_customer_account_credits").map(r=>r.data);
@@ -204,7 +204,7 @@ export function BranchWorkspace({orgId,userId,role,rows,onSaved}:Props){
 export function CashRegisterWorkspace({orgId,userId,role,branchIds,rows,onSaved,cashier}:Props){
  const db=useMemo(()=>getSupabase(),[]);
  const branches:Record<string,any>[]=rows.filter(r=>r.collection==="mberp_branches").map(r=>({...r.data,id:r.record_id} as Record<string,any>)).filter(b=>b.active!==false&&(!branchIds.length||branchIds.includes(String(b.id))));
- const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data);
+ const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>({...r.data,_updatedBy:r.updated_by,_branchIds:(r as any).branch_ids||[]}));
  const payments:Record<string,any>[]=rows.filter(r=>r.collection==="mberp_payments").map(r=>({...r.data,_recordId:r.record_id,_updatedBy:r.updated_by,_branchIds:(r as any).branch_ids||[]} as Record<string,any>));
  const sessions:Record<string,any>[]=rows.filter(r=>r.collection==="mberp_cash_registers").map(r=>({...r.data,_recordId:r.record_id} as Record<string,any>));
  const movements=rows.filter(r=>r.collection==="mberp_cash_movements").map(r=>r.data);
