@@ -8,8 +8,12 @@ export function PWARegister() {
   const [ios,setIos] = useState(false);
   const [showIosHelp,setShowIosHelp] = useState(false);
   const [installed,setInstalled] = useState(false);
+  const [officialHost,setOfficialHost] = useState<boolean|null>(null);
 
   useEffect(() => {
+    const isOfficialHost = window.location.hostname === "etihad-traders-saheel5.vercel.app";
+    setOfficialHost(isOfficialHost);
+    if (!isOfficialHost) return;
     const ua = window.navigator.userAgent;
     setIos(/iPhone|iPad|iPod/i.test(ua) && !(window.navigator as Navigator & {standalone?:boolean}).standalone);
     const onPrompt = (event:Event) => { event.preventDefault(); setInstallEvent(event as InstallPromptEvent); };
@@ -74,6 +78,8 @@ export function PWARegister() {
     } else if(ios) setShowIosHelp(value=>!value);
   }
 
+  if(officialHost === null) return null;
+  if(!officialHost) return <div className="pwa-install-wrap"><a className="pwa-install-button" href="https://etihad-traders-saheel5.vercel.app/">Open official Etihad Traders app</a></div>;
   if(installed) return null;
   if(!installEvent && !ios) return null;
   return <div className="pwa-install-wrap">
