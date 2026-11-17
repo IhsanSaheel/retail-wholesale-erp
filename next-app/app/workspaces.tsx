@@ -110,6 +110,9 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
   const loyaltyPointsRedeemed=Math.min(customerLoyaltyPoints,requestedRedeem,Math.floor(baseTotal*redeemRatePoints/Math.max(0.01,redeemRateValue)));
   const loyaltyDiscount=loyaltyConfig.enabled!==false?Math.min(baseTotal,loyaltyPointsRedeemed/redeemRatePoints*redeemRateValue):0;
   const total=Math.max(0,baseTotal-loyaltyDiscount);
+  const loyaltyFactor=baseTotal>0?total/baseTotal:1;
+  const saleSubtotal=subtotal*loyaltyFactor;
+  const saleTaxAmount=taxAmount*loyaltyFactor;
   const loyaltyPointsEarned=customerPhone.trim()&&customerName!=="Walk-in Customer"&&loyaltyConfig.enabled!==false&&n(loyaltyConfig.earnAmount)>0?Math.floor(total/Math.max(0.01,n(loyaltyConfig.earnAmount))*Math.max(0,n(loyaltyConfig.earnPoints))):0;
   const customerOutstanding = customerPhone.trim() ? sales.filter(s => String(s.customerPhone || "").trim() === customerPhone.trim() && String(s.status || "").toLowerCase() !== "cancelled").reduce((sum, s) => sum + n(s.balance), 0) : 0;
   const availableAdvance = customerOutstanding > 0 ? 0 : customerCredits.filter(r => String(r.data.customerPhone || "").trim() === customerPhone.trim() && n(r.data.balance) > 0).reduce((sum, r) => sum + n(r.data.balance), 0);
@@ -347,8 +350,8 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     const sale = {
       id, date, invoiceNo, branchId, branchName: branch?.name || "",
       customerName: customerName.trim() || "Walk-in Customer", customerPhone: customerPhone.trim(), cashier: cashier || userId,
-      items: cart.map(x => {const originalPrice=n(x.product.price),netPrice=subtotal>0?originalPrice*total/subtotal:originalPrice;return {productId:x.product.id,name:x.product.name,sku:x.product.sku||"",qty:x.qty,cost:n(x.product.cost),price:netPrice,originalPrice,loyaltyDiscountPerUnit:Math.max(0,originalPrice-netPrice),unit:x.product.unit||"piece"};}),
-      subtotal, taxId:selectedTax?.id||null, taxName:selectedTax?.name||"", taxRate, taxType:selectedTax?.type||null, taxAmount, total, paid: applied, balance, receivedAmount, cashReceived, advanceUsed,
+      items: cart.map(x => {const originalPrice=n(x.product.price),netPrice=originalPrice*loyaltyFactor;return {productId:x.product.id,name:x.product.name,sku:x.product.sku||"",qty:x.qty,cost:n(x.product.cost),price:netPrice,originalPrice,loyaltyDiscountPerUnit:Math.max(0,originalPrice-netPrice),unit:x.product.unit||"piece"};}),
+      subtotal:saleSubtotal, originalSubtotal:subtotal, taxId:selectedTax?.id||null, taxName:selectedTax?.name||"", taxRate, taxType:selectedTax?.type||null, taxAmount:saleTaxAmount, originalTaxAmount:taxAmount, total, paid: applied, balance, receivedAmount, cashReceived, advanceUsed,
       priorOutstandingApplied, changeReturned, customerAdvance, staffTip, overpaymentResolution: over ? resolution : "none",
       loyaltyPointsRedeemed, loyaltyDiscount, loyaltyPointsEarned, loyaltyEligibleTotal:total,
       paymentMethod: method, note
