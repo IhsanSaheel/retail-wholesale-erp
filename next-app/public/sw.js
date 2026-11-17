@@ -1,4 +1,4 @@
-const CACHE="etihad-traders-shell-v8";
+const CACHE="etihad-traders-shell-v9";
 const OFFLINE="/offline";
 const SHELL=[OFFLINE,"/","/icon.svg","/brand-logo.svg","/receipt-logo.svg","/manifest.webmanifest"];
 self.addEventListener("install",event=>{
