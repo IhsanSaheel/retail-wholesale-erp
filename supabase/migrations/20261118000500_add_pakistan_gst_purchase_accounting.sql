@@ -120,3 +120,12 @@ end;$function$;
 revoke all on function private.etihad_create_purchase(uuid,text,jsonb,numeric,text) from public,anon,authenticated;
 revoke all on function private.etihad_create_purchase_idempotent(uuid,text,jsonb,numeric,text) from public,anon,authenticated;
 grant execute on function public.etihad_create_purchase(uuid,text,jsonb,numeric,text) to authenticated;
+
+-- The public API wrapper must run with its owner privileges to invoke private helpers.
+create or replace function public.etihad_create_purchase(
+ p_org_id uuid,p_branch_id text,p_purchase jsonb,p_paid numeric,p_method text
+) returns jsonb language sql security definer set search_path = '' as $function$
+ select private.etihad_create_purchase_idempotent(p_org_id,p_branch_id,p_purchase,p_paid,p_method);
+$function$;
+revoke all on function public.etihad_create_purchase(uuid,text,jsonb,numeric,text) from public,anon;
+grant execute on function public.etihad_create_purchase(uuid,text,jsonb,numeric,text) to authenticated;
