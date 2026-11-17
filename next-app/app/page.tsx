@@ -88,18 +88,25 @@ export default function Home() {
   },[supabase]);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({data}) => {
-      setSession(data.session);
-      setUserEmail(data.session?.user.email || "");
-      if(data.session?.user.id) void loadBusiness(data.session.user.id); else setLoading(false);
-    });
+    // Supabase emits INITIAL_SESSION after it has restored the persisted login.
+    // Use this single auth event as the source of truth. Calling getSession()
+    // alongside the auth listener can race the auth lock and leave the ERP
+    // waiting forever before membership and records are fetched.
     const {data:{subscription}} = supabase.auth.onAuthStateChange((_event,next) => {
-      setSession(next); setUserEmail(next?.user.email || "");
-      // Do not call Supabase queries while the auth callback holds its internal
-      // lock. Defer membership and record loading until the callback returns.
+      setSession(next);
+      setUserEmail(next?.user.email || "");
+      setLoading(Boolean(next?.user.id));
       window.setTimeout(() => {
-        if(next?.user.id) void loadBusiness(next.user.id);
-        else { setRows([]); setRole(""); setPermissions({}); setLoading(false); }
+        if(next?.user.id) {
+          void loadBusiness(next.user.id);
+        } else {
+          setRows([]);
+          setOrgId("");
+          setBranchIds([]);
+          setRole("");
+          setPermissions({});
+          setLoading(false);
+        }
       },0);
     });
     return () => subscription.unsubscribe();
