@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
   const gold = "0.82 0.70 0.43";
   const ink = "0.13 0.17 0.23";
   const muted = "0.40 0.45 0.52";
-  const pages: string[][] = [];
+  const pages: string[] = [];
   let commands: string[] = [];
   let pageNumber = 0;
   let y = 0;
