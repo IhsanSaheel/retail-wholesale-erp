@@ -176,7 +176,7 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
   else if(report==="monthly"){key=iso(d).slice(0,7);label=d.toLocaleDateString("en-PK",{month:"long",year:"numeric"});}
   else if(report==="hourly"){key=String(d.getHours()).padStart(2,"0");label=key+":00";}
   else if(report==="weekday"){key=String(d.getDay());label=d.toLocaleDateString("en-PK",{weekday:"long"});}
-  else if(report==="product"){for(const it of s.items||[]){const qty=Number(it.qty||0);if(qty>0)add(String(it.name||"Unnamed"),String(it.name||"Unnamed"),Number(it.price||0)*saleDiscountFactor(s)*qty,(Number(it.price||0)*saleDiscountFactor(s)-Number(it.cost||0))*qty);}continue;}
+  else if(report==="product"){for(const it of s.items||[]){const qty=Number(it.qty||0);if(qty>0)add(String(it.name||"Unnamed"),String(it.name||"Unnamed"),Number(it.price||0)*saleDiscountFactor(s)*qty,(Number(it.price||0)*saleDiscountFactor(s)-saleItemCost(s,it))*qty);}continue;}
   else if(report==="customer"){key=String(s.customerName||"Walk-in");label=key;}
   else if(report==="payment"){key=String(s.paymentMethod||s.method||"Unspecified");label=key;}
   else {key=iso(d);label=d.toLocaleDateString("en-PK",{day:"2-digit",month:"short",year:"numeric"});}
