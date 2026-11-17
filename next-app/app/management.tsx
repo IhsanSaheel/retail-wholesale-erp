@@ -142,7 +142,6 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const dateFrom=period==="custom"?from:iso(startDate),dateTo=period==="custom"?to:iso(today);
  const inRange=(v:any)=>{const d=new Date(v||"");if(!Number.isFinite(d.getTime()))return false;const k=iso(d);return k>=dateFrom&&k<=dateTo;};
  const active=sales.filter(s=>String(s.status||"").toLowerCase()!=="cancelled"&&inRange(s.date)&& (branch==="all"||String(s.branchId)===branch));
- const netSales=active.reduce((sum,s)=>sum+Number(s.total||0),0);
  const periodReturns=returns.filter(r=>inRange(r.date)&&(branch==="all"||String(r.branchId)===branch));
  const returnValue=(r:any)=>Number(r.creditAmount??r.refund??r.amount??0);
  const returnCredit=periodReturns.reduce((sum,r)=>sum+returnValue(r),0);
