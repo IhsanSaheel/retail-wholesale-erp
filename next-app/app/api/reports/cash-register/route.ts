@@ -22,11 +22,24 @@ export async function POST(request: NextRequest) {
   let body: any;
   try { body = await request.json(); } catch { return json("Invalid report request.", 400); }
   const orgId = String(body?.orgId || "");
-  const s = body?.session || {};
+  const requestedSession = body?.session || {};
   const summary = body?.summary || {};
-  const sessionId = String(s.id || "");
-  const branchId = String(s.branchId || "");
-  if (!orgId || !sessionId || !branchId || s.status !== "closed" || !s.closedAt) return json("A successfully closed register session is required.", 400);
+  const sessionId = String(requestedSession.id || "");
+  if (!orgId || !sessionId) return json("A valid closed register reference is required.", 400);
+
+  // Resolve branch/session details from the saved register record, not the browser payload.
+  // This prevents an incomplete client object from creating a branchless delivery log.
+  const { data: savedSession, error: sessionLookupError } = await db.from("etihad_records")
+    .select("record_id,data,branch_ids")
+    .eq("org_id", orgId).eq("collection", "mberp_cash_registers").eq("record_id", sessionId).maybeSingle();
+  if (sessionLookupError || !savedSession) return json("Could not verify the saved cash register session: " + (sessionLookupError?.message || "session not found"), 404);
+  const s = savedSession.data || {};
+  const branchId = String(s.branchId || s.branch_id || savedSession.branch_ids?.[0] || requestedSession.branchId || requestedSession.branch_id || "");
+  if (s.status !== "closed" || !s.closedAt) return json("A successfully closed register session is required.", 400);
+  if (!branchId) return json("The saved register session has no branch reference; email was not attempted.", 422);
+  const { data: savedBranch, error: branchLookupError } = await db.from("etihad_records")
+    .select("record_id").eq("org_id", orgId).eq("collection", "mberp_branches").eq("record_id", branchId).maybeSingle();
+  if (branchLookupError || !savedBranch) return json("The saved register references a branch that could not be verified; email was not attempted.", 422);
 
   const { data: membership, error: membershipError } = await db.from("etihad_memberships").select("role,active,branch_ids").eq("org_id", orgId).eq("user_id", auth.user.id).eq("active", true).maybeSingle();
   if (membershipError || !membership) return json("Active business membership required.", 403);
