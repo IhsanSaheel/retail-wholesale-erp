@@ -151,7 +151,7 @@ export function ReturnsWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Prop
    </style></head><body><h1>ETIHAD TRADERS</h1><h2>Sales Return Register</h2>
    <div class="meta"><span>Generated: ${esc(new Date().toLocaleString())}</span><span>Records: ${ordered.length}</span></div>
    <div class="stats"><div class="stat">Total return credits<b>${esc(money(totalCredit))}</b></div><div class="stat">Balance adjusted<b>${esc(money(totalApplied))}</b></div><div class="stat">Cash refunds<b>${esc(money(totalCash))}</b></div><div class="stat">Customer advances<b>${esc(money(totalAdvance))}</b></div></div>
-   <table><thead><tr><th>Date & time</th><th>Invoice</th><th>Customer</th><th>Product</th><th>Qty</th><th>Invoice credit</th><th>Cash refund</th><th>Reason</th></tr></thead><tbody>${body||'<tr><td class="empty" colspan="8">No sales returns recorded.</td></tr>'}</tbody></table>
+   <table><thead><tr><th>Date & time</th><th>Invoice</th><th>Customer</th><th>Product</th><th>Qty</th><th>Return credit</th><th>Balance applied</th><th>Cash refund</th><th>Advance retained</th><th>Reason</th></tr></thead><tbody>${body||'<tr><td class="empty" colspan="10">No sales returns recorded.</td></tr>'}</tbody></table>
    <div class="foot">This report includes sales returns accessible to the signed-in user's permitted branches.</div><script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
  }
