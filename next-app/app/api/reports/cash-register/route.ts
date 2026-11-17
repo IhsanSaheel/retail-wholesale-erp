@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
   pushLine("CASH REGISTER CLOSING REPORT");
   pushLine("Branch: " + pdfText(s.branchName || "—") + "    Cashier: " + pdfText(s.cashierName || s.cashierId));
   pushLine("Session: " + pdfText(sessionId));
-  pushLine("Opened: " + pdfText(new Date(s.openedAt).toLocaleString("en-PK")) + "    Closed: " + pdfText(new Date(s.closedAt).toLocaleString("en-PK")));
+  pushLine("Opened: " + pdfText(new Date(s.openedAt).toLocaleString("en-PK",{timeZone:"Asia/Karachi",dateStyle:"medium",timeStyle:"short"})) + "    Closed: " + pdfText(new Date(s.closedAt).toLocaleString("en-PK",{timeZone:"Asia/Karachi",dateStyle:"medium",timeStyle:"short"})));
   pushLine("--------------------------------------------------------------------------");
   for (const [label, value] of summaryRows) pushLine(label + ": " + (["Opening float","Cash sales","Cash tips","Customer cash advances","Cash refunds","Cash in","Cash out","Expected cash","Actual counted cash","Variance"].includes(label) ? pdfMoney(value) : pdfText(value)));
   pushLine("--------------------------------------------------------------------------");
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
   pushLine("--------------------------------------------------------------------------");
   if (!entries.length) pushLine("No transactions recorded in this shift.");
   for (const e of entries) {
-    const line = new Date(e.date || 0).toLocaleString("en-PK") + " | " + e.type + " | " + e.reference + " / " + e.detail + " | " + pdfMoney(e.amount);
+    const line = new Date(e.date || 0).toLocaleString("en-PK",{timeZone:"Asia/Karachi",dateStyle:"medium",timeStyle:"short"}) + " | " + e.type + " | " + e.reference + " / " + e.detail + " | " + pdfMoney(e.amount);
     const clean = pdfText(line);
     for (let i = 0; i < clean.length; i += 92) pushLine(clean.slice(i, i + 92));
   }
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const transport = nodemailer.createTransport({ host: process.env.ETIHAD_SMTP_HOST, port: Number(process.env.ETIHAD_SMTP_PORT || 465), secure: process.env.ETIHAD_SMTP_SECURE !== "false", auth: { user: sender, pass: password } });
-    const sent = await transport.sendMail({ from: { name: "Etihad Traders ERP", address: sender }, to: recipient, subject: "Cash Register Closing Report — " + String(s.branchName || "Branch") + " — " + sessionId, html, attachments: [{ filename: "Etihad-Traders-Cash-Closing-" + sessionId + ".pdf", content: attachment, contentType: "application/pdf" }] });
+    const sent = await transport.sendMail({ from: { name: "Etihad Traders ERP", address: sender }, to: recipient, subject: "Cash Register Closing Report — " + String(s.branchName || "Branch") + " — " + sessionId, html, attachments: [{ filename: "Etihad-Traders-Cash-Closing-" + sessionId + ".pdf", content: attachment.toString("base64"), encoding: "base64", contentType: "application/pdf" }] });
     const sentData = { ...logData, status: "sent", sentAt: new Date().toISOString(), messageId: sent.messageId };
     const { error: updateError } = await db.from("etihad_records").update({ data: sentData, updated_by: auth.user.id, updated_at: new Date().toISOString() }).eq("org_id", orgId).eq("collection", "mberp_email_delivery").eq("record_id", recordId);
     if (updateError) return json("Email was sent, but the delivery log could not be updated. Do not resend until checked.", 200);
