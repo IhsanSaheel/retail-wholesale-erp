@@ -152,7 +152,7 @@ export function CashRegisterWorkspace({orgId,userId,role,branchIds,rows,onSaved,
  const db=useMemo(()=>getSupabase(),[]);
  const branches:Record<string,any>[]=rows.filter(r=>r.collection==="mberp_branches").map(r=>({...r.data,id:r.record_id} as Record<string,any>)).filter(b=>b.active!==false&&(!branchIds.length||branchIds.includes(String(b.id))));
  const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data);
- const payments:Record<string,any>[]=rows.filter(r=>r.collection==="mberp_payments").map(r=>({...r.data,_recordId:r.record_id,_updatedBy:r.updated_by,_branchIds:r.branch_ids||[]} as Record<string,any>));
+ const payments:Record<string,any>[]=rows.filter(r=>r.collection==="mberp_payments").map(r=>({...r.data,_recordId:r.record_id,_updatedBy:r.updated_by,_branchIds:(r as any).branch_ids||[]} as Record<string,any>));
  const sessions:Record<string,any>[]=rows.filter(r=>r.collection==="mberp_cash_registers").map(r=>({...r.data,_recordId:r.record_id} as Record<string,any>));
  const movements=rows.filter(r=>r.collection==="mberp_cash_movements").map(r=>r.data);
  const [branchId,setBranchId]=useState(branches[0]?.id||"");
@@ -189,9 +189,9 @@ export function CashRegisterWorkspace({orgId,userId,role,branchIds,rows,onSaved,
  const branch=branches.find(b=>String(b.id)===String(branchId));
  async function openRegister(){
   if(!branch||num(opening)<0){setMessage("Select a branch and enter a valid opening float.");return;}
-  if(sessions.some(s=>s.status==="open"&&String(s.branchId)===String(branchId)&&String(s.cashierId)===String(userId))){setMessage("You already have an open register for this branch.");return;}
+  if(sessions.some(s=>s.status==="open"&&String(s.branchId)===String(branchId)&&String(s.cashierId)===String(targetCashierId))){setMessage("You already have an open register for this branch.");return;}
   setBusy(true);const sid=id(),openedAt=new Date().toISOString();
-  const data={id:sid,branchId:String(branchId),branchName:branch.name||"",cashierId:userId,cashierName:cashier||userId,openedAt,openingFloat:num(opening),status:"open"};
+  const data={id:sid,branchId:String(branchId),branchName:branch.name||"",cashierId:targetCashierId,cashierName:targetCashier.name,openedAt,openingFloat:num(opening),status:"open"};
   const {data:result,error}=await db.rpc("etihad_open_cash_register",{p_org_id:orgId,p_branch_id:String(branchId),p_opening_float:num(opening),p_session_id:sid,p_cashier_name:targetCashier.name,p_cashier_id:targetCashierId});
   setMessage(error?"Register could not be opened: "+error.message:result?.success?"Cash register opened. Record your cash movements and close it after counting the drawer.":"Register could not be opened.");setBusy(false);if(!error&&result?.success){setSelectedSession(sid);onSaved();}
  }
