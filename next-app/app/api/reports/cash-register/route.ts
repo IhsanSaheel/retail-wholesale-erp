@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
   // Never trust cash totals supplied by the browser for an owner-facing financial report.
   const amountFor = (predicate: (entry: typeof entries[number]) => boolean) =>
     entries.filter(predicate).reduce((total, entry) => total + Number(entry.amount || 0), 0);
-  const isCash = (entry: typeof entries[number]) => /\\bCash$/i.test(entry.type);
+  const isCash = (entry: typeof entries[number]) => entry.type.toLowerCase().endsWith("cash");
   const cashSales = amountFor(entry => isCash(entry) &&
     (/^Sale payment/i.test(entry.type) || /^Customer balance payment/i.test(entry.type) || /^Sale ·/i.test(entry.type)));
   const cashTips = amountFor(entry => /^Staff tip · Cash$/i.test(entry.type));
