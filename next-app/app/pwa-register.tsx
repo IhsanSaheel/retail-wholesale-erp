@@ -29,6 +29,7 @@ export function PWARegister() {
         void navigator.serviceWorker?.getRegistration().then(registration => registration?.update());
       }
     };
+    let updateCheck:number|undefined;
     window.addEventListener("beforeinstallprompt",onPrompt);
     window.addEventListener("appinstalled",onInstalled);
     if ("serviceWorker" in navigator) {
@@ -41,7 +42,7 @@ export function PWARegister() {
         };
         activateWaitingWorker();
         void registration.update();
-        const updateCheck = window.setInterval(() => { if (document.visibilityState === "visible") void registration.update(); }, 60_000);
+        updateCheck = window.setInterval(() => { if (document.visibilityState === "visible") void registration.update(); }, 60_000);
         registration.addEventListener("updatefound",() => {
           const worker = registration.installing;
           if(worker) worker.addEventListener("statechange",() => {
@@ -55,6 +56,7 @@ export function PWARegister() {
       }).catch(()=>{});
     }
     return () => {
+      if(updateCheck!==undefined) window.clearInterval(updateCheck);
       window.removeEventListener("beforeinstallprompt",onPrompt);
       window.removeEventListener("appinstalled",onInstalled);
       window.removeEventListener("focus",onAppVisible);
