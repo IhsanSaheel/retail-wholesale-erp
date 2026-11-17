@@ -123,46 +123,118 @@ export async function POST(request: NextRequest) {
   ];
   const pdfText = (v: unknown) => String(v ?? "—").normalize("NFKD").replace(/[^\x20-\x7E]/g, " ").replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
   const pdfMoney = (v: unknown) => "Rs " + Number(v || 0).toLocaleString("en-PK", { maximumFractionDigits: 0 });
-  const pageLines: string[][] = [];
-  let page: string[] = [];
-  const pushLine = (line: string) => { page.push(line); if (page.length >= 43) { pageLines.push(page); page = []; } };
-  pushLine("ETIHAD TRADERS");
-  pushLine("CASH REGISTER CLOSING REPORT");
-  pushLine("Branch: " + pdfText(s.branchName || "—") + "    Cashier: " + pdfText(s.cashierName || s.cashierId));
-  pushLine("Session: " + pdfText(sessionId));
-  pushLine("Opened: " + pdfText(new Date(s.openedAt).toLocaleString("en-PK",{timeZone:"Asia/Karachi",dateStyle:"medium",timeStyle:"short"})) + "    Closed: " + pdfText(new Date(s.closedAt).toLocaleString("en-PK",{timeZone:"Asia/Karachi",dateStyle:"medium",timeStyle:"short"})));
-  pushLine("--------------------------------------------------------------------------");
-  for (const [label, value] of summaryRows) pushLine(label + ": " + (["Opening float","Cash sales","Cash tips","Customer cash advances","Cash refunds","Cash in","Cash out","Expected cash","Actual counted cash","Variance"].includes(label) ? pdfMoney(value) : pdfText(value)));
-  pushLine("--------------------------------------------------------------------------");
-  pushLine("TRANSACTION DETAILS (" + entries.length + " records)");
-  pushLine("DATE / TIME | TYPE | REFERENCE / DETAILS | AMOUNT");
-  pushLine("--------------------------------------------------------------------------");
-  if (!entries.length) pushLine("No transactions recorded in this shift.");
-  for (const e of entries) {
-    const line = new Date(e.date || 0).toLocaleString("en-PK",{timeZone:"Asia/Karachi",dateStyle:"medium",timeStyle:"short"}) + " | " + e.type + " | " + e.reference + " / " + e.detail + " | " + pdfMoney(e.amount);
-    const clean = pdfText(line);
-    for (let i = 0; i < clean.length; i += 92) pushLine(clean.slice(i, i + 92));
+  const pdfDate = (v: unknown) => {
+    const date = new Date(String(v || ""));
+    return Number.isFinite(date.getTime()) ? date.toLocaleString("en-PK", { timeZone: "Asia/Karachi", dateStyle: "medium", timeStyle: "short" }) : "—";
+  };
+  const navy = "0.08 0.16 0.29";
+  const gold = "0.82 0.70 0.43";
+  const ink = "0.13 0.17 0.23";
+  const muted = "0.40 0.45 0.52";
+  const pages: string[][] = [];
+  let commands: string[] = [];
+  let pageNumber = 0;
+  let y = 0;
+  const rect = (x: number, top: number, w: number, h: number, color: string) => {
+    commands.push("q", color + " rg", x + " " + (842 - top - h) + " " + w + " " + h + " re f", "Q");
+  };
+  const line = (x1: number, top: number, x2: number, color: string, width = 0.6) => {
+    commands.push("q", color + " RG", width + " w", x1 + " " + (842 - top) + " m " + x2 + " " + (842 - top) + " l S", "Q");
+  };
+  const textAt = (value: unknown, x: number, top: number, size = 8, color = ink, bold = false) => {
+    commands.push("BT", bold ? "/F2 " + size + " Tf" : "/F1 " + size + " Tf", color + " rg", x + " " + (842 - top - size) + " Td", "(" + pdfText(value).slice(0, 105) + ") Tj", "ET");
+  };
+  const startPage = () => {
+    pageNumber++;
+    commands = [];
+    commands.push("q", "1 1 1 rg", "0 0 595 842 re f", "Q");
+    rect(0, 0, 595, 104, navy);
+    rect(0, 101, 595, 3, gold);
+    textAt("ETIHAD TRADERS", 38, 25, 19, "1 1 1", true);
+    textAt("RETAIL & WHOLESALE MANAGEMENT", 39, 51, 7, "0.88 0.91 0.95", false);
+    textAt("CASH REGISTER", 405, 28, 9, gold, true);
+    textAt("CLOSING REPORT", 405, 43, 9, "1 1 1", true);
+    textAt("BRANDED SHIFT STATEMENT", 405, 62, 6.5, "0.88 0.91 0.95", false);
+    textAt("Branch: " + (s.branchName || "—"), 38, 119, 9, navy, true);
+    textAt("Cashier: " + (s.cashierName || s.cashierId || "—"), 310, 119, 9, navy, true);
+    textAt("Session: " + sessionId, 38, 137, 7.5, muted);
+    textAt("Opened: " + pdfDate(s.openedAt), 38, 153, 7.5, muted);
+    textAt("Closed: " + pdfDate(s.closedAt), 310, 153, 7.5, muted);
+    line(38, 171, 557, gold, 1);
+    y = 187;
+  };
+  const finishPage = () => {
+    line(38, 808, 557, gold, 0.7);
+    textAt("ETIHAD TRADERS ERP  |  CONFIDENTIAL BUSINESS RECORD", 38, 817, 6.5, muted);
+    textAt("PAGE " + pageNumber, 510, 817, 6.5, muted, true);
+    pages.push(commands.join("\n"));
+  };
+  startPage();
+  textAt("CASH RECONCILIATION SUMMARY", 38, y, 9, navy, true);
+  y += 19;
+  const summaryPairs: [string, unknown][] = [
+    ["Opening float", s.openingFloat], ["Cash sales", summary.cashSales],
+    ["Cash tips", s.cashTips ?? summary.cashTips], ["Customer cash advances", s.cashAdvances ?? summary.cashAdvances],
+    ["Cash refunds", summary.cashRefunds], ["Cash in", summary.cashIn],
+    ["Cash out", summary.cashOut], ["Expected cash", expected],
+    ["Actual counted cash", actual], ["Variance", variance]
+  ];
+  const cardW = 250;
+  for (let i = 0; i < summaryPairs.length; i++) {
+    const col = i % 2;
+    const x = col === 0 ? 38 : 307;
+    if (col === 0) rect(x, y, cardW, 27, "0.96 0.97 0.98");
+    else rect(x, y, cardW, 27, "0.96 0.97 0.98");
+    textAt(summaryPairs[i][0], x + 9, y + 5, 7, muted);
+    textAt(pdfMoney(summaryPairs[i][1]), x + 145, y + 5, 8, navy, true);
+    if (col === 1 || i === summaryPairs.length - 1) y += 33;
   }
-  if (page.length) pageLines.push(page);
+  y += 5;
+  textAt("TRANSACTION DETAILS", 38, y, 9, navy, true);
+  textAt(entries.length + " RECORDS", 492, y + 1, 7, muted, true);
+  y += 18;
+  const drawTableHeader = () => {
+    rect(38, y, 519, 22, navy);
+    textAt("DATE / TIME", 45, y + 7, 6.5, "1 1 1", true);
+    textAt("TRANSACTION", 150, y + 7, 6.5, "1 1 1", true);
+    textAt("REFERENCE / DETAILS", 280, y + 7, 6.5, "1 1 1", true);
+    textAt("AMOUNT", 493, y + 7, 6.5, gold, true);
+    y += 22;
+  };
+  drawTableHeader();
+  if (!entries.length) {
+    textAt("No transactions recorded in this shift.", 46, y + 9, 7.5, muted);
+    y += 26;
+  }
+  for (let i = 0; i < entries.length; i++) {
+    if (y > 775) {
+      finishPage();
+      startPage();
+      textAt("TRANSACTION DETAILS (CONTINUED)", 38, y, 9, navy, true);
+      y += 18;
+      drawTableHeader();
+    }
+    const entry = entries[i];
+    if (i % 2 === 0) rect(38, y, 519, 27, "0.97 0.98 0.99");
+    textAt(pdfDate(entry.date), 45, y + 8, 6.2, ink);
+    textAt(entry.type, 150, y + 8, 6.2, ink);
+    textAt(String(entry.reference || "—") + " / " + String(entry.detail || "—"), 280, y + 8, 6.0, ink);
+    textAt(pdfMoney(entry.amount), 493, y + 8, 6.5, entry.amount < 0 ? "0.65 0.18 0.18" : navy, true);
+    line(38, y + 27, 557, "0.88 0.90 0.93", 0.35);
+    y += 27;
+  }
+  finishPage();
   const pdfObjects: string[] = [];
-  const addObj = (v: string) => { pdfObjects.push(v); return pdfObjects.length; };
+  const addObj = (value: string) => { pdfObjects.push(value); return pdfObjects.length; };
   const catalogId = addObj("");
   const pagesId = addObj("");
-  const fontId = addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  const regularFontId = addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  const boldFontId = addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
   const pageIds: number[] = [];
-  for (let p = 0; p < pageLines.length; p++) {
-    const commands = ["q", "0.08 0.16 0.29 rg", "40 790 515 32 re f", "Q", "BT", "/F1 15 Tf", "1 1 1 rg", "52 801 Td", "(ETIHAD TRADERS) Tj", "ET", "BT", "/F1 9 Tf", "0.08 0.16 0.29 rg", "52 775 Td", "(CASH REGISTER CLOSING REPORT) Tj", "ET"];
-    let y = 752;
-    for (let i = 0; i < pageLines[p].length; i++) {
-      const line = pageLines[p][i];
-      const isTitle = i === 0 || i === 1 || line.startsWith("TRANSACTION DETAILS");
-      commands.push("BT", isTitle ? "/F1 10 Tf" : "/F1 7 Tf", isTitle ? "0.08 0.16 0.29 rg" : "0.16 0.20 0.26 rg", "52 " + y + " Td", "(" + pdfText(line).slice(0, 110) + ") Tj", "ET");
-      y -= isTitle ? 16 : 13;
-    }
-    commands.push("BT", "/F1 7 Tf", "0.4 0.43 0.48 rg", "52 28 Td", "(Etihad Traders ERP  |  Confidential business record  |  Page " + (p + 1) + " of " + pageLines.length + ") Tj", "ET");
-    const stream = commands.join("\n");
+  for (const pageCommands of pages) {
+    const stream = pageCommands;
     const contentId = addObj("<< /Length " + Buffer.byteLength(stream, "ascii") + " >>\nstream\n" + stream + "\nendstream");
-    const pageId = addObj("<< /Type /Page /Parent " + pagesId + " 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 " + fontId + " 0 R >> >> /Contents " + contentId + " 0 R >>");
+    const pageId = addObj("<< /Type /Page /Parent " + pagesId + " 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 " + regularFontId + " 0 R /F2 " + boldFontId + " 0 R >> >> /Contents " + contentId + " 0 R >>");
     pageIds.push(pageId);
   }
   pdfObjects[catalogId - 1] = "<< /Type /Catalog /Pages " + pagesId + " 0 R >>";
