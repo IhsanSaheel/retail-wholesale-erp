@@ -1,4 +1,4 @@
-const CACHE="etihad-traders-shell-v9";
+const CACHE="etihad-traders-shell-v10";
 const OFFLINE="/offline";
 const SHELL=[OFFLINE,"/","/icon.svg","/brand-logo.svg","/receipt-logo.svg","/manifest.webmanifest"];
 self.addEventListener("install",event=>{
@@ -14,7 +14,7 @@ self.addEventListener("fetch",event=>{
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
   if(request.mode==="navigate"){
-    event.respondWith(fetch(request).then(response=>{
+    event.respondWith(fetch(new Request(request,{cache:"no-store"})).then(response=>{
       if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(request,copy));}
       return response;
     }).catch(async()=>await caches.match(request)||await caches.match(OFFLINE)));
@@ -22,7 +22,7 @@ self.addEventListener("fetch",event=>{
   }
   if(url.pathname.startsWith("/_next/static/")||["/icon.svg","/brand-logo.svg","/receipt-logo.svg","/manifest.webmanifest"].includes(url.pathname)){
     // Prefer the current deployment's assets; use cached files only while offline.
-    event.respondWith(fetch(request).then(response=>{
+    event.respondWith(fetch(new Request(request,{cache:"no-store"})).then(response=>{
       if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(request,copy));}
       return response;
     }).catch(async()=>await caches.match(request)||Response.error()));
