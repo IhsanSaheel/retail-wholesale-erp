@@ -151,7 +151,8 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
       setMessage("No product found. Check the name, SKU or barcode.");
     }
   };
-  const customers = Array.from(new Map(sales.filter(s => s.customerName && s.customerName !== "Walk-in Customer").map(s => [s.customerPhone || s.customerName, { name: s.customerName, phone: s.customerPhone || "" }])).values()).filter(c => (c.name + " " + c.phone).toLowerCase().includes(customerSearch.toLowerCase())).slice(0, 6);
+  const savedCustomers=rows.filter(r=>r.collection==="mberp_customers").map(r=>r.data);
+  const customers = Array.from(new Map([...sales.filter(s => s.customerName && s.customerName !== "Walk-in Customer").map(s => [s.customerPhone || s.customerName, { name: s.customerName, phone: s.customerPhone || "" }]),...savedCustomers.map(c=>[c.phone||c.id,{name:c.name,phone:c.phone||""}] as [string,{name:string;phone:string}])]).values()).filter(c => (c.name + " " + c.phone).toLowerCase().includes(customerSearch.toLowerCase())).slice(0, 6);
   const recent = [...sales].sort((a,b)=>new Date(b.date||0).getTime()-new Date(a.date||0).getTime()).slice(0,30);
   const add = (p: Product) => setCart(prev => { const found = prev.find(x => x.product.id === p.id); const nextQty = (found?.qty || 0) + 1; if (nextQty > effectiveStock(p)) { setMessage("Only " + effectiveStock(p) + " units of " + p.name + " are available for this edit."); return prev; } setMessage(""); return found ? prev.map(x => x.product.id === p.id ? { ...x, qty: nextQty } : x) : [...prev, { product: p, qty: 1 }]; });
   const changeQty = (id: string, qty: number) => setCart(prev => prev.map(x => x.product.id === id ? { ...x, qty: Math.min(effectiveStock(x.product), Math.max(0, qty)) } : x).filter(x => x.qty > 0));
