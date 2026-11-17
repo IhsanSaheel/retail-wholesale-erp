@@ -95,7 +95,12 @@ export default function Home() {
     });
     const {data:{subscription}} = supabase.auth.onAuthStateChange((_event,next) => {
       setSession(next); setUserEmail(next?.user.email || "");
-      if(next?.user.id) void loadBusiness(next.user.id); else { setRows([]); setLoading(false); }
+      // Do not call Supabase queries while the auth callback holds its internal
+      // lock. Defer membership and record loading until the callback returns.
+      window.setTimeout(() => {
+        if(next?.user.id) void loadBusiness(next.user.id);
+        else { setRows([]); setRole(""); setPermissions({}); setLoading(false); }
+      },0);
     });
     return () => subscription.unsubscribe();
   },[supabase,loadBusiness]);
