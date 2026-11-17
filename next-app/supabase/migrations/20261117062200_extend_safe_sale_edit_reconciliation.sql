@@ -77,9 +77,10 @@ begin
  end if;
  -- Restore the original stock and exact original batch allocations first.
  for v_old_item in
-  select value->>'productId' product_id,coalesce(nullif(value->>'qty','')::numeric,0) qty,
-   coalesce(value->>'name','Product') product_name
+  select value->>'productId' product_id,sum(coalesce(nullif(value->>'qty','')::numeric,0)) qty,
+   min(coalesce(value->>'name','Product')) product_name
   from pg_catalog.jsonb_array_elements(v_sale.data->'items')
+  group by value->>'productId'
  loop
   if v_old_item.qty<=0 then raise exception 'Original invoice contains an invalid quantity'; end if;
   select record_id,data,branch_ids into v_product from public.etihad_records
