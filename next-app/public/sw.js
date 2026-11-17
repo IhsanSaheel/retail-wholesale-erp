@@ -1,4 +1,4 @@
-const CACHE="etihad-traders-shell-v6";
+const CACHE="etihad-traders-shell-v7";
 const OFFLINE="/offline";
 const SHELL=[OFFLINE,"/","/icon.svg","/brand-logo.svg","/receipt-logo.svg","/manifest.webmanifest"];
 self.addEventListener("install",event=>{
@@ -21,9 +21,10 @@ self.addEventListener("fetch",event=>{
     return;
   }
   if(url.pathname.startsWith("/_next/static/")||["/icon.svg","/brand-logo.svg","/receipt-logo.svg","/manifest.webmanifest"].includes(url.pathname)){
-    event.respondWith(caches.match(request).then(cached=>cached||fetch(request).then(response=>{
+    // Prefer the current deployment's assets; use cached files only while offline.
+    event.respondWith(fetch(request).then(response=>{
       if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(request,copy));}
       return response;
-    })));
+    }).catch(async()=>await caches.match(request)||Response.error()));
   }
 });
