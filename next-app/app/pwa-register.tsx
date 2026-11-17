@@ -14,20 +14,52 @@ export function PWARegister() {
     setIos(/iPhone|iPad|iPod/i.test(ua) && !(window.navigator as Navigator & {standalone?:boolean}).standalone);
     const onPrompt = (event:Event) => { event.preventDefault(); setInstallEvent(event as InstallPromptEvent); };
     const onInstalled = () => { setInstalled(true); setInstallEvent(null); setShowIosHelp(false); };
+    let reloadingForUpdate = false;
+    const refreshToUpdatedApp = () => {
+      if (reloadingForUpdate) return;
+      reloadingForUpdate = true;
+      window.location.reload();
+    };
+    const onControllerChange = () => {
+      // A new worker now controls this installed app. Reload once to fetch its new UI.
+      refreshToUpdatedApp();
+    };
+    const onAppVisible = () => {
+      if (document.visibilityState === "visible") {
+        void navigator.serviceWorker?.getRegistration().then(registration => registration?.update());
+      }
+    };
     window.addEventListener("beforeinstallprompt",onPrompt);
     window.addEventListener("appinstalled",onInstalled);
     if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("controllerchange",onControllerChange);
       navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(registration => {
+        const activateWaitingWorker = () => {
+          if (registration.waiting && navigator.serviceWorker.controller) {
+            registration.waiting.postMessage({type:"SKIP_WAITING"});
+          }
+        };
+        activateWaitingWorker();
         void registration.update();
         registration.addEventListener("updatefound",() => {
           const worker = registration.installing;
           if(worker) worker.addEventListener("statechange",() => {
-            if(worker.state==="installed" && navigator.serviceWorker.controller) worker.postMessage({type:"SKIP_WAITING"});
+            if(worker.state === "installed" && navigator.serviceWorker.controller) {
+              worker.postMessage({type:"SKIP_WAITING"});
+            }
           });
         });
+        window.addEventListener("focus",onAppVisible);
+        document.addEventListener("visibilitychange",onAppVisible);
       }).catch(()=>{});
     }
-    return () => { window.removeEventListener("beforeinstallprompt",onPrompt); window.removeEventListener("appinstalled",onInstalled); };
+    return () => {
+      window.removeEventListener("beforeinstallprompt",onPrompt);
+      window.removeEventListener("appinstalled",onInstalled);
+      window.removeEventListener("focus",onAppVisible);
+      document.removeEventListener("visibilitychange",onAppVisible);
+      if ("serviceWorker" in navigator) navigator.serviceWorker.removeEventListener("controllerchange",onControllerChange);
+    };
   },[]);
 
   async function install() {
