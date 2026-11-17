@@ -158,24 +158,26 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const balance=active.reduce((sum,s)=>sum+Number(s.balance||0),0);
  const cost=active.reduce((sum,s)=>sum+(s.items||[]).reduce((a:any,it:any)=>a+Number(it.cost||0)*Number(it.qty||0),0),0);
  const returnedCost=periodReturns.reduce((sum,r)=>sum+Number(r.unitCost??r.cost??0)*Number(r.qty||0),0);
- const netCost=Math.max(0,cost-returnedCost),filteredExpenses=expenses.filter(x=>inRange(x.date)&&(branch==="all"||String(x.branchId)===branch)),expense=filteredExpenses.reduce((sum,x)=>sum+Number(x.amount||0),0),gross=netSales-netCost;
+ const netCost=cost-returnedCost,filteredExpenses=expenses.filter(x=>inRange(x.date)&&(branch==="all"||String(x.branchId)===branch)),expense=filteredExpenses.reduce((sum,x)=>sum+Number(x.amount||0),0),gross=netSales-netCost;
  const filteredPurchases=purchases.filter(p=>inRange(p.date)&&(branch==="all"||String(p.branchId)===branch));
  const purchaseTotal=filteredPurchases.reduce((sum,p)=>sum+Number(p.total||0),0);
  const supplierPaid=supplierPayments.filter(p=>inRange(p.date)&&(branch==="all"||String(p.branchId)===branch)).reduce((sum,p)=>sum+Number(p.amount||0),0);
  const supplierBalance=filteredPurchases.reduce((sum,p)=>sum+Number(p.balance||0),0);
- const group=new Map<string,{key:string;label:string;count:number;total:number}>();
- const add=(key:string,label:string,value:number)=>{const x=group.get(key)||{key,label,count:0,total:0};x.count++;x.total+=value;group.set(key,x);};
+ const group=new Map<string,{key:string;label:string;count:number;total:number;profit:number}>();
+ const add=(key:string,label:string,value:number,profit=0)=>{const x=group.get(key)||{key,label,count:0,total:0,profit:0};x.count++;x.total+=value;x.profit+=profit;group.set(key,x);};
+ const saleProfit=(sale:any)=>{const items=sale.items||[];const itemGross=items.reduce((n:number,it:any)=>n+Number(it.price||0)*Number(it.qty||0),0);const discountFactor=itemGross>0?Math.min(1,Math.max(0,Number(sale.subtotal??itemGross)/itemGross)):1;return items.reduce((n:number,it:any)=>n+(Number(it.price||0)*discountFactor-Number(it.cost||0))*Number(it.qty||0),0);};
+ const returnProfit=(r:any)=>Number(r.unitCost??r.cost??0)*Number(r.qty||0)-returnValue(r);
  for(const s of active){
   if(["supplier","purchaseProduct","expenseCategory","profitProduct","payment"].includes(report))continue;
   const d=new Date(s.date||"");let key="",label="";
-  if(report==="brand"||report==="category"||report==="salesperson"||report==="tax"){const salesperson=String(s.salespersonName||s.cashierName||s.cashier||s.staffName||s.createdByName||"Unassigned");if(report==="salesperson"){add(salesperson,salesperson,Number(s.total||0));continue;}if(report==="tax"){const tax=Number(s.taxAmount??s.tax??(s.items||[]).reduce((a:any,it:any)=>a+Number(it.taxAmount||0),0));add("Tax", "Tax collected",tax);continue;}for(const it of s.items||[]){const qty=netItemQty(s,it);if(qty<=0)continue;const product=productById.get(String(it.productId||""));const label=report==="brand"?String(it.brand||product?.brand||"Unbranded"):String(it.category||product?.category||"Uncategorised");add(label,label,Number(it.price||0)*qty);}continue;}
+  if(report==="brand"||report==="category"||report==="salesperson"||report==="tax"){const salesperson=String(s.salespersonName||s.cashierName||s.cashier||s.staffName||s.createdByName||"Unassigned");if(report==="salesperson"){add(salesperson,salesperson,Number(s.total||0),saleProfit(s));continue;}if(report==="tax"){const tax=Number(s.taxAmount??s.tax??(s.items||[]).reduce((a:any,it:any)=>a+Number(it.taxAmount||0),0));add("Tax", "Tax collected",tax);continue;}for(const it of s.items||[]){const qty=netItemQty(s,it);if(qty<=0)continue;const product=productById.get(String(it.productId||""));const label=report==="brand"?String(it.brand||product?.brand||"Unbranded"):String(it.category||product?.category||"Uncategorised");add(label,label,Number(it.price||0)*qty,(Number(it.price||0)-Number(it.cost||0))*qty);}continue;}
   if(report==="hourly"){key=String(d.getHours()).padStart(2,"0");label=key+":00";}
   else if(report==="weekday"){key=String(d.getDay());label=d.toLocaleDateString("en-PK",{weekday:"long"});}
-  else if(report==="product"){for(const it of s.items||[]){const qty=netItemQty(s,it);if(qty>0)add(String(it.name||"Unnamed"),String(it.name||"Unnamed"),Number(it.price||0)*qty);}continue;}
+  else if(report==="product"){for(const it of s.items||[]){const qty=Number(it.qty||0);if(qty>0)add(String(it.name||"Unnamed"),String(it.name||"Unnamed"),Number(it.price||0)*qty,(Number(it.price||0)-Number(it.cost||0))*qty);}continue;}
   else if(report==="customer"){key=String(s.customerName||"Walk-in");label=key;}
   else if(report==="payment"){key=String(s.paymentMethod||s.method||"Unspecified");label=key;}
   else {key=iso(d);label=d.toLocaleDateString("en-PK",{day:"2-digit",month:"short",year:"numeric"});}
-  add(key,label,Number(s.total||0));
+  add(key,label,Number(s.total||0),saleProfit(s));
  }
  if(report==="payment"){
   const paymentSaleIds=new Set(payments.filter(p=>!["advance_applied","sales_return_refund"].includes(String(p.type||""))).map(p=>String(p.saleId||"")));
@@ -185,7 +187,7 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  if(report==="supplier")for(const p of filteredPurchases){const label=String(p.supplierName||"Unassigned supplier");add(String(p.supplierId||label),label,Number(p.total||0));}
  if(report==="purchaseProduct")for(const p of filteredPurchases){const label=String(p.productName||"Unnamed product");add(String(p.productId||label),label,Number(p.cost||0)*Number(p.qty||0));}
  if(report==="expenseCategory")for(const x of filteredExpenses){const label=String(x.category||x.type||"Uncategorised");add(label,label,Number(x.amount||0));}
- if(report==="profitProduct"){for(const sale of active)for(const item of sale.items||[]){const qty=Math.max(0,Number(item.qty||0));if(qty<=0)continue;const label=String(item.name||"Unnamed product");add(String(item.productId||label),label,(Number(item.price||0)-Number(item.cost||0))*qty);}for(const r of periodReturns){const label=String(r.productName||"Returned product");const qty=Number(r.qty||0);const returnedRevenue=returnValue(r);const returnedCostValue=Number(r.unitCost??r.cost??0)*qty;add(String(r.productId||label),label,returnedCostValue-returnedRevenue);}}
+ if(report==="profitProduct"){for(const sale of active)for(const item of sale.items||[]){const qty=Number(item.qty||0);if(qty<=0)continue;const label=String(item.name||"Unnamed product");const margin=(Number(item.price||0)-Number(item.cost||0))*qty;add(String(item.productId||label),label,margin,margin);}for(const r of periodReturns){const label=String(r.productName||"Returned product");const qty=Number(r.qty||0);const returnedRevenue=returnValue(r);const returnedCostValue=Number(r.unitCost??r.cost??0)*qty;add(String(r.productId||label),label,-returnedRevenue,returnedCostValue-returnedRevenue);}}
  const weekdayOrder=[1,2,3,4,5,6,0];
  const reportRows=[...group.values()].sort((a,b)=>report==="hourly"?a.key.localeCompare(b.key):report==="weekday"?weekdayOrder.indexOf(Number(a.key))-weekdayOrder.indexOf(Number(b.key)):report==="daily"?a.key.localeCompare(b.key):b.total-a.total);
  const print=()=>window.print();
