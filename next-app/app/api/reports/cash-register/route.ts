@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       const cashierMatch = String(d.receivedBy || r.updated_by || "") === String(s.cashierId || "");
       const time = new Date(String(date || "")).getTime();
       if (branch === branchId && cashierMatch && Number.isFinite(time) && time >= from && time <= to) {
-        if (d.type === "overpayment_advance") entries.push({ date, type: "Customer advance · " + String(d.method || "Unknown"), reference: d.invoiceNo || r.record_id, detail: d.customerName || "Customer advance", amount: Number(d.amount || 0) });
+        if (d.type === "overpayment_advance") { const sourceSale = records.find(x => x.collection === "mberp_sales" && String(x.record_id) === String(d.sourceSaleId)); const method = String(d.method || sourceSale?.data?.paymentMethod || "Unknown"); entries.push({ date, type: "Customer advance · " + method, reference: d.invoiceNo || r.record_id, detail: d.customerName || "Customer advance", amount: Number(d.amount || 0) }); }
         if (d.type === "return_advance") entries.push({ date, type: "Return credit retained · Non-cash", reference: d.invoiceNo || r.record_id, detail: d.customerName || "Customer return credit", amount: Number(d.amount || 0) });
       }
     }
