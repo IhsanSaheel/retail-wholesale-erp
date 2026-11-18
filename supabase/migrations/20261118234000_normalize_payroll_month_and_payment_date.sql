@@ -9,7 +9,7 @@ begin
  if pg_catalog.strpos(v_create,'if p_period_month is null')=0 then
   v_create:=pg_catalog.replace(v_create,
    'if coalesce(p_allowances,0)<0',
-   'if p_period_month is null then raise exception ''Payroll month is required'';end if;\n if coalesce(p_allowances,0)<0');
+   'if p_period_month is null then raise exception ''Payroll month is required'';end if; if coalesce(p_allowances,0)<0');
  end if;
  execute v_create;
  v_paid:=pg_catalog.pg_get_functiondef('private.etihad_mark_payroll_paid(uuid,uuid,text)'::regprocedure);
