@@ -8,7 +8,7 @@ type Props = { orgId:string; userId:string; role:string; rows:Row[]; onRefresh:(
 const fmt=(v:any)=>new Intl.NumberFormat("en-PK",{style:"currency",currency:"PKR",maximumFractionDigits:0}).format(Number(v||0));
 const day=()=>{const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Karachi",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const get=(type:string)=>parts.find(part=>part.type===type)?.value||"";return `${get("year")}-${get("month")}-${get("day")}`;};
 const uid=()=>crypto.randomUUID();
-const dateText=(v:any)=>v?new Date(v).toLocaleDateString("en-PK",{day:"2-digit",month:"short",year:"numeric"}):"—";
+const dateText=(v:any)=>v?new Date(v).toLocaleDateString("en-PK",{timeZone:"Asia/Karachi",day:"2-digit",month:"short",year:"numeric"}):"—";
 
 export function PeopleWorkspace({orgId,userId,role,rows,onRefresh}:Props){
  const db=useMemo(()=>getSupabase(),[]);
@@ -138,10 +138,11 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const productById=new Map(products.map(p=>[String(p.id||""),p]));
  const saleById=new Map(sales.map(s=>[String(s.id||""),s]));
  const branches=rows.filter(r=>r.collection==="mberp_branches").map(r=>r.data);
- const today=new Date(); const iso=(d:Date)=>{const x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10);};
- const startDate=new Date(); if(period==="7")startDate.setDate(today.getDate()-6);else if(period==="30")startDate.setDate(today.getDate()-29);else if(period==="month")startDate.setDate(1);else if(period==="all")startDate.setFullYear(2000);
- const dateFrom=period==="custom"?from:iso(startDate),dateTo=period==="custom"?to:iso(today);
- const inRange=(v:any)=>{const d=new Date(v||"");if(!Number.isFinite(d.getTime()))return false;const k=iso(d);return k>=dateFrom&&k<=dateTo;};
+ const today=new Date(); const iso=(d:Date)=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Karachi",year:"numeric",month:"2-digit",day:"2-digit"}).format(d);
+ const todayKey=iso(today); const shiftDate=(key:string,days:number)=>{const d=new Date(`${key}T12:00:00Z`);d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);};
+ const dateFrom=period==="custom"?from:period==="7"?shiftDate(todayKey,-6):period==="30"?shiftDate(todayKey,-29):period==="month"?todayKey.slice(0,7)+"-01":period==="all"?"2000-01-01":todayKey,dateTo=period==="custom"?to:todayKey;
+ const dateKey=(v:any)=>{if(!v)return "";const raw=String(v);if(raw.length===10&&raw[4]==="-"&&raw[7]==="-")return raw;const d=new Date(v);return Number.isNaN(d.getTime())?"":iso(d);};
+ const inRange=(v:any)=>{const k=dateKey(v);return !!k&&k>=dateFrom&&k<=dateTo;};
  const active=sales.filter(s=>String(s.status||"").toLowerCase()!=="cancelled"&&inRange(s.date)&& (branch==="all"||String(s.branchId)===branch));
  const periodReturns=returns.filter(r=>inRange(r.createdAt||r.date)&&(branch==="all"||String(r.branchId||saleById.get(String(r.saleId||""))?.branchId||"")===branch));
  const returnValue=(r:any)=>Number(r.creditAmount??r.refund??r.amount??0);
