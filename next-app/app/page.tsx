@@ -17,7 +17,7 @@ const NAV: { group: string; items: { id: ModuleKey; label: string; icon: string 
 ];
 const COLLECTION: Partial<Record<ModuleKey,string>> = {sales:"mberp_sales",returns:"mberp_sales_returns",products:"mberp_products",branches:"mberp_branches",payments:"mberp_payments",transfers:"mberp_transfers",purchases:"mberp_purchases",suppliers:"mberp_suppliers"};
 const money = (v:number) => new Intl.NumberFormat("en-PK",{style:"currency",currency:"PKR",maximumFractionDigits:0}).format(Number.isFinite(v)?v:0);
-const dateLabel = (v:any) => { const d = new Date(v); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-PK",{day:"2-digit",month:"short",year:"numeric"}); };
+const dateLabel = (v:any) => { const d = new Date(v); return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-PK",{timeZone:"Asia/Karachi",day:"2-digit",month:"short",year:"numeric"}); };
 const pakistanDateKey=(v:any)=>{if(!v)return "";const raw=String(v);if(/^\d{4}-\d{2}-\d{2}$/.test(raw))return raw;const d=new Date(v);return Number.isNaN(d.getTime())?"":new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Karachi",year:"numeric",month:"2-digit",day:"2-digit"}).format(d);};
 const shiftPakistanDate=(key:string,days:number)=>{const d=new Date(key+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);};
 const pakistanDateLabel=(key:string,options:Intl.DateTimeFormatOptions)=>new Intl.DateTimeFormat("en-PK",{timeZone:"Asia/Karachi",...options}).format(new Date(key+"T12:00:00Z"));
