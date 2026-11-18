@@ -153,13 +153,13 @@ export function ReturnsWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Prop
  const remainingQty=item?Math.max(0,num(item.qty)-alreadyReturned):0;
  const originalTotal=sale?num(sale.total)+returnsForSale.reduce((sum,r)=>sum+num(r.creditAmount??r.refund),0):0;
  const retainedAdvance=Math.max(0,num(refund)-num(cashRefund)-num(balanceAdjustment));
- const fmtDate=(value:any)=>{const d=new Date(value||"");return Number.isNaN(d.getTime())?"—":d.toLocaleString();};
+ const fmtDate=(value:any)=>{const d=new Date(value||"");return Number.isNaN(d.getTime())?"—":d.toLocaleString("en-PK",{timeZone:"Asia/Karachi",day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:true});};
  const esc=(value:any)=>String(value??"—").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]||ch));
  function printReturnRegister(){
   const ordered=[...returns].sort((a,b)=>new Date(b.date||0).getTime()-new Date(a.date||0).getTime());
   const totalCredit=ordered.reduce((sum,r)=>sum+num(r.creditAmount??r.refund),0);
   const totalCash=ordered.reduce((sum,r)=>sum+num(r.cashRefund),0);const totalAdvance=ordered.reduce((sum,r)=>sum+num(r.advanceCreated),0);const totalApplied=ordered.reduce((sum,r)=>sum+num(r.balanceApplied),0);
-  const body=ordered.map(r=>`<tr><td>${esc(fmtDate(r.date))}</td><td>${esc(r.invoiceNo||r.saleId)}</td><td>${esc(r.customerName)}</td><td>${esc(r.productName)}</td><td class="num">${esc(r.qty)}</td><td class="num">${esc(money(r.creditAmount??r.refund))}</td><td class="num">${esc(money(r.balanceApplied))}</td><td class="num">${esc(money(r.cashRefund))}</td><td class="num">${esc(money(r.advanceCreated))}</td><td>${esc(r.reason||"—")}</td></tr>`).join("");
+  const body=ordered.map(r=>`<tr><td>${esc(fmtDate(r.date))}</td><td>${esc(r.invoiceNo||r.saleId)}</td><td>${esc(r.customerName)}</td><td>${esc(r.branchName||"—")}</td><td>${esc(r.productName)}</td><td class="num">${esc(r.qty)}</td><td class="num">${esc(money(r.creditAmount??r.refund))}</td><td class="num">${esc(money(r.balanceApplied))}</td><td class="num">${esc(money(r.cashRefund))}</td><td class="num">${esc(money(r.advanceCreated))}</td><td>${esc(r.reason||"—")}</td></tr>`).join("");
   const w=window.open("","_blank","width=1100,height=800");
   if(!w){setMessage("Allow pop-ups to print or save the Return Register as PDF.");return;}
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Etihad Traders — Return Register</title><style>
@@ -170,9 +170,9 @@ export function ReturnsWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Prop
    table{width:100%;border-collapse:collapse;font-size:10px}th{background:#f2f4f7;text-align:left}th,td{border:1px solid #d0d5dd;padding:7px;vertical-align:top}.num{text-align:right;white-space:nowrap}
    .empty{text-align:center;padding:24px;color:#667085}.foot{margin-top:18px;font-size:10px;color:#667085}
    </style></head><body><h1>ETIHAD TRADERS</h1><h2>Sales Return Register</h2>
-   <div class="meta"><span>Generated: ${esc(new Date().toLocaleString())}</span><span>Records: ${ordered.length}</span></div>
+   <div class="meta"><span>Generated: ${esc(new Date().toLocaleString("en-PK",{timeZone:"Asia/Karachi"})}</span><span>Records: ${ordered.length}</span></div>
    <div class="stats"><div class="stat">Total return credits<b>${esc(money(totalCredit))}</b></div><div class="stat">Balance adjusted<b>${esc(money(totalApplied))}</b></div><div class="stat">Cash refunds<b>${esc(money(totalCash))}</b></div><div class="stat">Customer advances<b>${esc(money(totalAdvance))}</b></div></div>
-   <table><thead><tr><th>Date & time</th><th>Invoice</th><th>Customer</th><th>Product</th><th>Qty</th><th>Return credit</th><th>Balance applied</th><th>Cash refund</th><th>Advance retained</th><th>Reason</th></tr></thead><tbody>${body||'<tr><td class="empty" colspan="10">No sales returns recorded.</td></tr>'}</tbody></table>
+   <table><thead><tr><th>Date & time</th><th>Invoice</th><th>Customer</th><th>Branch</th><th>Product</th><th>Qty</th><th>Return credit</th><th>Balance applied</th><th>Cash refund</th><th>Advance retained</th><th>Reason</th></tr></thead><tbody>${body||'<tr><td class="empty" colspan="11">No sales returns recorded.</td></tr>'}</tbody></table>
    <div class="foot">This report includes sales returns accessible to the signed-in user's permitted branches.</div><script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
  }
