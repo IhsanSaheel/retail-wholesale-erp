@@ -512,7 +512,8 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, onSaved }
  const [labelSelection,setLabelSelection]=useState<string[]>([]),[labelCopies,setLabelCopies]=useState<Record<string,string>>({});
  const [labelTemplate,setLabelTemplate]=useState("standard"),[labelShowBrand,setLabelShowBrand]=useState(true),[labelShowBranch,setLabelShowBranch]=useState(false),[labelShowName,setLabelShowName]=useState(true),[labelShowPrice,setLabelShowPrice]=useState(true);
  const [historyProduct,setHistoryProduct]=useState("");
- const batches=rows.filter(r=>r.collection==="mberp_stock_batches").map(r=>r.data).filter(b=>role==="owner"||branchIds.includes(String(b.branchId))).sort((a,b)=>String(a.expiryDate||"").localeCompare(String(b.expiryDate||"")));\n  const adjustmentBatches=batches.filter(b=>String(b.productId)===adjustProduct&&String(b.status||"active")!=="cancelled");
+ const batches=rows.filter(r=>r.collection==="mberp_stock_batches").map(r=>r.data).filter(b=>role==="owner"||branchIds.includes(String(b.branchId))).sort((a,b)=>String(a.expiryDate||"").localeCompare(String(b.expiryDate||"")));
+  const adjustmentBatches=batches.filter(b=>String(b.productId)===adjustProduct&&String(b.status||"active")!=="cancelled");
  const batchMovements=rows.filter(r=>r.collection==="mberp_stock_batch_movements").map(r=>r.data).filter(m=>role==="owner"||branchIds.includes(String(m.branchId))).sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
  const productHistory=historyProduct?[
  ...rows.filter(r=>r.collection==="mberp_sales").flatMap(r=>{const s=r.data;return (s.items||[]).filter((it:any)=>String(it.productId)===historyProduct).map((it:any)=>({date:s.createdAt||s.date,type:"Sale",reference:s.invoiceNo||s.id,customer:s.customerName||"Walk-in Customer",supplier:"",branch:s.branchName||"",product:it.name||products.find(p=>String(p.id)===historyProduct)?.name||"",qty:n(it.qty),detail:"Customer: "+(s.customerPhone||"—")}));}),
