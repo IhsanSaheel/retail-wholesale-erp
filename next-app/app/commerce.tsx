@@ -93,7 +93,8 @@ export function TransferWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Pro
  const sourceProducts=products.filter(p=>String(p.branchId)===String(from));
  const product=sourceProducts.find(p=>String(p.id)===String(productId));
   const sourceBatches=rows.filter(r=>r.collection==="mberp_stock_batches").map(r=>r.data).filter(b=>String(b.productId)===String(productId)&&String(b.branchId)===String(from)&&String(b.status||"active")!=="cancelled");
-  const selectedBatch=sourceBatches.find(b=>String(b.id)===String(transferBatch));\n  const transferLimit=sourceBatches.length?Math.min(num(product?.qty),num(selectedBatch?.remainingQty??selectedBatch?.qty)):num(product?.qty);
+  const selectedBatch=sourceBatches.find(b=>String(b.id)===String(transferBatch));
+  const transferLimit=sourceBatches.length?Math.min(num(product?.qty),num(selectedBatch?.remainingQty??selectedBatch?.qty)):num(product?.qty);
  async function save(){
   if(!from||!to||from===to||!product||num(qty)<=0||num(qty)>num(product.qty)||(sourceBatches.length>0&&(!selectedBatch||num(qty)>num(selectedBatch.remainingQty??selectedBatch.qty)))){setMessage("Choose two different branches, a product and a valid batch if batch-tracked; quantity must be within available stock.");return;}
   const key=JSON.stringify([from,to,product.id,transferBatch||null,num(qty),note.trim()]);
