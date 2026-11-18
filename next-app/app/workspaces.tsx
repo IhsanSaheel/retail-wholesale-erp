@@ -15,7 +15,7 @@ const cash = (v: number) => new Intl.NumberFormat("en-PK", { style: "currency", 
 const makeId = () => crypto.randomUUID().replaceAll("-", "").slice(0, 13);
 const pakistanDate = (date:Date=new Date()) => new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Karachi",year:"numeric",month:"2-digit",day:"2-digit"}).format(date);
 const addPakistanDays = (days:number) => {const [year,month,day]=pakistanDate().split("-").map(Number);const date=new Date(Date.UTC(year,month-1,day+days,12));return date.toISOString().slice(0,10);};
-const daysUntilPakistanDate = (value:any) => {const raw=String(value||"");if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(raw))return null;const [y,m,d]=raw.split("-").map(Number);const [ty,tm,td]=pakistanDate().split("-").map(Number);const target=Date.UTC(y,m-1,d),today=Date.UTC(ty,tm-1,td);return Number.isFinite(target)&&Number.isFinite(today)?Math.round((target-today)/86400000):null;};
+const daysUntilPakistanDate = (value:any) => {const raw=String(value||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(raw))return null;const [y,m,d]=raw.split("-").map(Number);const [ty,tm,td]=pakistanDate().split("-").map(Number);const target=Date.UTC(y,m-1,d),today=Date.UTC(ty,tm-1,td);return Number.isFinite(target)&&Number.isFinite(today)?Math.round((target-today)/86400000):null;};
 const esc = (v: any) => String(v ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
 function buildReceiptDocument(data: Record<string, any>) {
   const itemRows = (Array.isArray(data.items) ? data.items : []).map((item: Product) => {
