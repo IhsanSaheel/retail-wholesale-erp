@@ -151,7 +151,7 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const periodReturns=returns.filter(r=>inRange(r.createdAt||r.date)&&(branch==="all"||String(r.branchId||saleById.get(String(r.saleId||""))?.branchId||"")===branch));
  const returnValue=(r:any)=>Number(r.creditAmount??r.refund??r.amount??0);
  const returnCredit=periodReturns.reduce((sum,r)=>sum+returnValue(r),0);
- const grossSales=active.reduce((sum,s)=>sum+Number(s.subtotal??(Number(s.total||0)-Number(s.taxAmount||0))),0);
+ const grossSales=active.reduce((sum,s)=>sum+Number(s.subtotal??(Number(s.total||0)-Number(s.taxAmount||0)))+returns.filter(r=>String(r.saleId||"")===String(s.id||"")).reduce((n,r)=>n+returnValue(r),0),0);
  const netSales=grossSales-returnCredit;
  const paymentInRange=payments.filter(p=>{const sale=saleById.get(String(p.saleId||""));const paymentBranch=p.branchId||sale?.branchId;return inRange(p.date)&&(branch==="all"||String(paymentBranch||"")===branch);});
  const collectedPayments=paymentInRange.filter(p=>!["advance_applied","sales_return_refund"].includes(String(p.type||"")));
