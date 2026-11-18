@@ -24,7 +24,7 @@ declare
   ) then 'returned' else 'partially_returned' end$new$;
 begin
   v_definition := pg_catalog.pg_get_functiondef(v_signature);
-  if pg_catalog.position(v_old in v_definition)=0 then
+  if pg_catalog.strpos(v_definition,v_old)=0 then
     raise exception 'Expected sales-return status expression not found; migration stopped without changing the function';
   end if;
   v_definition := pg_catalog.replace(v_definition,v_old,v_new);
