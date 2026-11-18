@@ -170,7 +170,7 @@ export function ReturnsWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Prop
    table{width:100%;border-collapse:collapse;font-size:10px}th{background:#f2f4f7;text-align:left}th,td{border:1px solid #d0d5dd;padding:7px;vertical-align:top}.num{text-align:right;white-space:nowrap}
    .empty{text-align:center;padding:24px;color:#667085}.foot{margin-top:18px;font-size:10px;color:#667085}
    </style></head><body><h1>ETIHAD TRADERS</h1><h2>Sales Return Register</h2>
-   <div class="meta"><span>Generated: ${esc(new Date().toLocaleString("en-PK",{timeZone:"Asia/Karachi"})}</span><span>Records: ${ordered.length}</span></div>
+   <div class="meta"><span>Generated: ${esc(new Date().toLocaleString("en-PK",{timeZone:"Asia/Karachi"}))}</span><span>Records: ${ordered.length}</span></div>
    <div class="stats"><div class="stat">Total return credits<b>${esc(money(totalCredit))}</b></div><div class="stat">Balance adjusted<b>${esc(money(totalApplied))}</b></div><div class="stat">Cash refunds<b>${esc(money(totalCash))}</b></div><div class="stat">Customer advances<b>${esc(money(totalAdvance))}</b></div></div>
    <table><thead><tr><th>Date & time</th><th>Invoice</th><th>Customer</th><th>Branch</th><th>Product</th><th>Qty</th><th>Return credit</th><th>Balance applied</th><th>Cash refund</th><th>Advance retained</th><th>Reason</th></tr></thead><tbody>${body||'<tr><td class="empty" colspan="11">No sales returns recorded.</td></tr>'}</tbody></table>
    <div class="foot">This report includes sales returns accessible to the signed-in user's permitted branches.</div><script>window.onload=()=>window.print()<\/script></body></html>`);
