@@ -91,7 +91,8 @@ export function TransferWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Pro
  const [productId,setProductId]=useState("");const [transferBatch,setTransferBatch]=useState("");const [qty,setQty]=useState("1");const [note,setNote]=useState("");
  const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");const pendingTransfer=useRef<{id:string;key:string}|null>(null);
  const sourceProducts=products.filter(p=>String(p.branchId)===String(from));
- const product=sourceProducts.find(p=>String(p.id)===String(productId));\n  const sourceBatches=rows.filter(r=>r.collection==="mberp_stock_batches").map(r=>r.data).filter(b=>String(b.productId)===String(productId)&&String(b.branchId)===String(from)&&String(b.status||"active")!=="cancelled");
+ const product=sourceProducts.find(p=>String(p.id)===String(productId));
+  const sourceBatches=rows.filter(r=>r.collection==="mberp_stock_batches").map(r=>r.data).filter(b=>String(b.productId)===String(productId)&&String(b.branchId)===String(from)&&String(b.status||"active")!=="cancelled");
   const selectedBatch=sourceBatches.find(b=>String(b.id)===String(transferBatch));\n  const transferLimit=sourceBatches.length?Math.min(num(product?.qty),num(selectedBatch?.remainingQty??selectedBatch?.qty)):num(product?.qty);
  async function save(){
   if(!from||!to||from===to||!product||num(qty)<=0||num(qty)>num(product.qty)||(sourceBatches.length>0&&(!selectedBatch||num(qty)>num(selectedBatch.remainingQty??selectedBatch.qty)))){setMessage("Choose two different branches, a product and a valid batch if batch-tracked; quantity must be within available stock.");return;}
