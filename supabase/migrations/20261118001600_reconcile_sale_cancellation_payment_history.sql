@@ -26,11 +26,10 @@ declare
 begin
   select pg_catalog.pg_get_functiondef('private.etihad_cancel_sale(uuid,text,text)'::regprocedure)
     into v_definition;
-  if pg_catalog.position(v_old in v_definition)=0 then
+  if pg_catalog.strpos(v_definition,v_old)=0 then
     raise exception 'Expected cancellation payment block was not found; migration stopped.';
   end if;
-  if pg_catalog.position(v_old in v_definition)>0
-     and pg_catalog.position(v_old in v_definition) <> pg_catalog.length(v_definition)-pg_catalog.length(pg_catalog.replace(v_definition,v_old,''))+1 then
+  if pg_catalog.length(v_definition)-pg_catalog.length(pg_catalog.replace(v_definition,v_old,'')) <> pg_catalog.length(v_old) then
     raise exception 'Cancellation payment block is not unique; migration stopped.';
   end if;
   execute pg_catalog.replace(v_definition,v_old,v_new);
