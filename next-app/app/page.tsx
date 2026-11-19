@@ -66,15 +66,17 @@ export default function Home() {
       } catch { return false; }
     };
     if (!navigator.onLine) {
+      setOfflineMode(true);
       if (!(await restoreOfflineSnapshot())) setError("You are offline and this device has no recent Etihad Traders data. Connect once to load and prepare offline POS.");
       setLoading(false); return;
     }
+    setOfflineMode(false);
     const {data: memberships,error: memberError} = await supabase.from("etihad_memberships").select("org_id,role,active,branch_ids,permissions").eq("user_id",userId).eq("active",true);
     if(memberError) {
       if (isNetworkFailure(memberError) && await restoreOfflineSnapshot()) return;
       setError("Your account could not load its business membership. Please reconnect and try again."); setLoading(false); return;
     }
-    if(!memberships?.length) { setError("This login is not linked to an active Etihad Traders employee account."); setRows([]); setLoading(false); return; }
+    if(!memberships?.length) { setError("This login is not linked to an active Etihad Traders employee account."); setRows([]); setOrgId(""); setBranchIds([]); setRole(""); setPermissions({}); setOfflineMode(false); setLoading(false); return; }
     const membership = memberships[0];
     setOrgId(membership.org_id);
     setBranchIds(Array.isArray(membership.branch_ids) ? membership.branch_ids : []);
@@ -190,7 +192,7 @@ export default function Home() {
     <aside className={"sidebar "+(mobileNav?"sidebar-open":"")}><div className="side-brand"><img className="brand-mark" src="/brand-logo.svg?v=2" alt="Etihad Traders — Shop Sell Grow"/><button className="mobile-close" onClick={()=>setMobileNav(false)}>×</button></div>
       <div className="workspace-switch"><span className="workspace-dot"></span><div><small>WORKSPACE</small><strong>{orgName}</strong></div><span className="switch-caret">⌄</span></div>
       <nav>{visibleNav.map(group=><div className="nav-group" key={group.group}><div className="nav-caption">{group.group}</div>{group.items.map(item=><button key={item.id} className={"nav-item "+(module===item.id?"active":"")} onClick={()=>{if(item.id==="sales")setSalesStartTab("new");setModule(item.id);setMobileNav(false);setQuery("");}}><span className="nav-icon">{item.icon}</span><span>{item.label}</span>{item.id==="sales"&&<small className="nav-tag">POS</small>}</button>)}</div>)}</nav>
-      <div className="sidebar-bottom"><div className="sync-state"><span className="sync-dot"></span><div><b>Cloud connected</b><small>Supabase live data</small></div></div><div className="user-card"><div className="avatar">{(userEmail[0]||"E").toUpperCase()}</div><div className="user-meta"><b>{userEmail.split("@")[0]||"Team member"}</b><small>{role||"Staff"}</small></div><button title="Sign out" onClick={signOut}>↗</button></div></div>
+      <div className="sidebar-bottom"><div className="sync-state"><span className={offlineMode?"sync-dot sync-dot-offline":"sync-dot"}></span><div><b>{offlineMode?"Offline POS mode":"Cloud connected"}</b><small>{offlineMode?"Pending sales sync when online":"Supabase live data"}</small></div></div><div className="user-card"><div className="avatar">{(userEmail[0]||"E").toUpperCase()}</div><div className="user-meta"><b>{userEmail.split("@")[0]||"Team member"}</b><small>{role||"Staff"}</small></div><button title="Sign out" onClick={signOut}>↗</button></div></div>
     </aside>
     {mobileNav&&<button className="mobile-scrim" onClick={()=>setMobileNav(false)} aria-label="Close navigation"/>}
     <section className="main-area"><header className="topbar"><div className="top-left"><button className="hamburger" onClick={()=>setMobileNav(true)}>☰</button><div className="crumb">Workspace <span>/</span> <b>{title}</b></div></div><div className="top-actions"><div className="live-pill"><span></span> Live data</div><div className="top-date">{now.toLocaleDateString("en-PK",{timeZone:"Asia/Karachi",weekday:"short",day:"2-digit",month:"short",year:"numeric"})} <b className="digital-clock">{now.toLocaleTimeString("en-PK",{timeZone:"Asia/Karachi",hour12:true})}</b></div><button className="top-avatar" title={userEmail}>{(userEmail[0]||"E").toUpperCase()}</button></div></header>
