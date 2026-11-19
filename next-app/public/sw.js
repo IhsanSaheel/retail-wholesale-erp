@@ -1,6 +1,6 @@
-const CACHE="etihad-traders-shell-v10";
+const CACHE="etihad-traders-shell-v11";
 const OFFLINE="/offline";
-const SHELL=[OFFLINE,"/","/icon.svg","/brand-logo.svg","/receipt-logo.svg","/manifest.webmanifest"];
+const SHELL=["/",OFFLINE,"/icon.svg","/brand-logo.svg","/receipt-logo.svg","/manifest.webmanifest"];
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
 });
@@ -15,16 +15,25 @@ self.addEventListener("fetch",event=>{
   if(url.origin!==self.location.origin)return;
   if(request.mode==="navigate"){
     event.respondWith(fetch(new Request(request,{cache:"no-store"})).then(response=>{
-      if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(request,copy));}
+      if(response.ok&&response.type==="basic"){
+        const copy=response.clone();
+        event.waitUntil(caches.open(CACHE).then(cache=>cache.put(request,copy)));
+      }
       return response;
-    }).catch(async()=>await caches.match(request)||await caches.match(OFFLINE)));
+    }).catch(async()=>{
+      return await caches.match(request,{ignoreSearch:true})
+        || await caches.match("/")
+        || await caches.match(OFFLINE);
+    }));
     return;
   }
   if(url.pathname.startsWith("/_next/static/")||["/icon.svg","/brand-logo.svg","/receipt-logo.svg","/manifest.webmanifest"].includes(url.pathname)){
-    // Prefer the current deployment's assets; use cached files only while offline.
     event.respondWith(fetch(new Request(request,{cache:"no-store"})).then(response=>{
-      if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(request,copy));}
+      if(response.ok&&response.type==="basic"){
+        const copy=response.clone();
+        event.waitUntil(caches.open(CACHE).then(cache=>cache.put(request,copy)));
+      }
       return response;
-    }).catch(async()=>await caches.match(request)||Response.error()));
+    }).catch(async()=>await caches.match(request,{ignoreSearch:true})||Response.error()));
   }
 });
