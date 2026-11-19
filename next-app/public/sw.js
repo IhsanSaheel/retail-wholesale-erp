@@ -1,4 +1,4 @@
-const CACHE = "etihad-traders-shell-v14";
+const CACHE = "etihad-prime-shell-v15";
 const OFFLINE = "/offline";
 const SHELL = ["/", OFFLINE, "/icon.svg", "/brand-logo.svg", "/receipt-logo.svg", "/manifest.webmanifest"];
 
@@ -55,7 +55,7 @@ self.addEventListener("fetch", event => {
         return await caches.match(request, { ignoreSearch: true })
           || await caches.match(new Request(new URL("/", self.location.origin)))
           || await caches.match(OFFLINE)
-          || new Response("Etihad Traders is not yet prepared for offline use on this device. Connect once, sign in, and open Sales & POS.", {
+          || new Response("Etihad Prime Supplies is not yet prepared for offline use on this device. Connect once, sign in, and open Sales & POS.", {
             status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" }
           });
       }
