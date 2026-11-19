@@ -162,8 +162,6 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
       setSearch("");
       setMessage(product.name + " added to the bill.");
       requestAnimationFrame(() => searchInput.current?.focus());
-    } else if (product) {
-      setMessage(product.name + " could not be added to the bill.");
     } else if (matches.length > 1) {
       setMessage("More than one product matches. Select the correct product from the results.");
     } else {
