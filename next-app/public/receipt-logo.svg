@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Etihad Prime Supplies — General Trading and Wholesale">
+<defs><linearGradient id="g" x2="0" y2="1"><stop stop-color="#075c2b"/><stop offset="1" stop-color="#003719"/></linearGradient><linearGradient id="gold" x2="0" y2="1"><stop stop-color="#ffe08a"/><stop offset=".5" stop-color="#d69a16"/><stop offset="1" stop-color="#9e6500"/></linearGradient></defs>
+<rect width="1200" height="800" rx="28" fill="#fff"/>
+<g transform="translate(600 175)"><path d="M-180 5C-170-125-40-190 95-145" fill="none" stroke="url(#gold)" stroke-width="28"/><path d="M-100-20L170-95 110-20H-60L90 25H-115" fill="none" stroke="url(#g)" stroke-width="42" stroke-linejoin="round"/><path d="M145-105q85-48 95-125 9 100-75 150" fill="#08742d"/><path d="M-220 20q-100-65-120-155 8 120 100 185" fill="none" stroke="url(#gold)" stroke-width="18"/><path d="M-240 0q-55-30-70-90m70 90q-30-65-20-120m20 120q-4-75 28-125" fill="none" stroke="#d9a72a" stroke-width="9"/></g>
+<text x="600" y="390" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="142" font-weight="900" letter-spacing="2" fill="#064b25">ETIHAD</text>
+<rect x="100" y="420" width="1000" height="105" rx="48" fill="url(#g)" stroke="url(#gold)" stroke-width="12"/>
+<text x="600" y="493" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="76" font-weight="900" letter-spacing="9" fill="#fff">PRIME SUPPLIES</text>
+<text x="600" y="595" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="54" font-weight="800" fill="#064b25">اتحاد پرائم سپلائیز</text>
+<rect x="210" y="630" width="780" height="76" rx="38" fill="url(#gold)"/>
+<text x="600" y="682" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="39" font-weight="800" font-style="italic" fill="#073b1d">General Trading &amp; Wholesale</text>
+</svg>

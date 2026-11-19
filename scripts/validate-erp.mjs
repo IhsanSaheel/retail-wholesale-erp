@@ -106,7 +106,7 @@ const securityChecks = [
   ['automatic sync verifies the signed-in user', cloudSecurityCode.includes('user.id!==syncUser.id')],
   ['initial full-company upload is owner-only', html.includes("if(m.role!=='owner')throw new Error('Only the company owner")],
   ['cloud uploads use the signed-in user as updater', cloudSecurityCode.includes('updated_by:user.id')],
-  ['deletion sync limitation is disclosed', cloudSecurityCode.includes('Deletions are not synchronized yet')]
+  ['deletion audit events are uploaded without deleting cloud business rows', cloudSecurityCode.includes("const auditKey='etihad_deletion_audit_v1'") && cloudSecurityCode.includes("from('etihad_deletion_events').insert(payload)") && cloudSecurityCode.includes('Cloud business records are never physically deleted by this process.')]
 ];
 for (const [name, ok] of securityChecks) ok ? pass('cloud safeguard: ' + name) : fail('missing cloud safeguard: ' + name);
 
