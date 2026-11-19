@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
+import { getOfflineBusinessSnapshot, saveOfflineBusinessSnapshot, OFFLINE_SNAPSHOT_MAX_AGE_MS, type OfflineBusinessRow } from "@/lib/offline-business";
 import { POSWorkspace, ProductManager } from "./workspaces";
 import { PeopleWorkspace, ReportsWorkspace, SettingsWorkspace } from "./management";
 import { CustomerWorkspace, SupplierWorkspace, PurchaseWorkspace, ReturnsWorkspace, PaymentWorkspace, TransferWorkspace, ExpenseWorkspace, BranchWorkspace, CashRegisterWorkspace } from "./commerce";
@@ -22,6 +23,8 @@ const pakistanDateKey=(v:any)=>{if(!v)return "";const raw=String(v);if(/^\d{4}-\
 const shiftPakistanDate=(key:string,days:number)=>{const d=new Date(key+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);};
 const pakistanDateLabel=(key:string,options:Intl.DateTimeFormatOptions)=>new Intl.DateTimeFormat("en-PK",{timeZone:"Asia/Karachi",...options}).format(new Date(key+"T12:00:00Z"));
 const amount = (v:any) => Number(v || 0);
+const OFFLINE_POS_COLLECTIONS = new Set(["mberp_sales","mberp_products","mberp_branches","mberp_customers","mberp_customer_account_credits","mberp_loyalty_settings","mberp_product_taxes"]);
+const isNetworkFailure = (error:any) => !navigator.onLine || /fetch|network|timeout|offline|load failed|connection|request failed|temporarily unavailable/i.test(String(error?.message||error||""));
 
 export default function Home() {
   const supabase = useMemo(() => getSupabase(), []);
@@ -33,6 +36,7 @@ export default function Home() {
   const [error,setError] = useState("");
   const [resetNotice,setResetNotice] = useState("");
   const [rows,setRows] = useState<RecordRow[]>([]);
+  const [offlineMode,setOfflineMode] = useState(false);
   const [module,setModule] = useState<ModuleKey>("overview");
   const [orgName,setOrgName] = useState("Etihad Traders");
   const [orgId,setOrgId] = useState("");
@@ -50,8 +54,26 @@ export default function Home() {
 
   const loadBusiness = useCallback(async (userId:string) => {
     setLoading(true); setError("");
+    const restoreOfflineSnapshot = async () => {
+      try {
+        const snapshot = await getOfflineBusinessSnapshot(userId);
+        if (!snapshot || !snapshot.orgId || Date.now()-snapshot.cachedAt>OFFLINE_SNAPSHOT_MAX_AGE_MS) return false;
+        setOrgId(snapshot.orgId); setOrgName(snapshot.orgName||"Etihad Traders"); setBranchIds(snapshot.branchIds||[]);
+        setRole(String(snapshot.role||"staff").trim().toLowerCase()); setPermissions(snapshot.permissions||{});
+        setRows(snapshot.rows as RecordRow[]); setOfflineMode(true); setModule("sales"); setSalesStartTab("new");
+        setError("OFFLINE MODE · Using this device’s saved POS data from "+new Date(snapshot.cachedAt).toLocaleString()+". New sales will remain pending until synchronised.");
+        setLoading(false); return true;
+      } catch { return false; }
+    };
+    if (!navigator.onLine) {
+      if (!(await restoreOfflineSnapshot())) setError("You are offline and this device has no recent Etihad Traders data. Connect once to load and prepare offline POS.");
+      setLoading(false); return;
+    }
     const {data: memberships,error: memberError} = await supabase.from("etihad_memberships").select("org_id,role,active,branch_ids,permissions").eq("user_id",userId).eq("active",true);
-    if(memberError) { setError("Your account could not load its business membership. Please contact the owner."); setLoading(false); return; }
+    if(memberError) {
+      if (isNetworkFailure(memberError) && await restoreOfflineSnapshot()) return;
+      setError("Your account could not load its business membership. Please reconnect and try again."); setLoading(false); return;
+    }
     if(!memberships?.length) { setError("This login is not linked to an active Etihad Traders employee account."); setRows([]); setLoading(false); return; }
     const membership = memberships[0];
     setOrgId(membership.org_id);
@@ -83,9 +105,13 @@ export default function Home() {
       offset += pageSize;
     }
     if(recordsError) {
-      setError("Your account is signed in, but all business records could not be loaded. Existing screen data has been kept; refresh or contact the owner.");
+      if (isNetworkFailure(recordsError) && await restoreOfflineSnapshot()) return;
+      setError("Your account is signed in, but business records could not be loaded. Reconnect and refresh; existing screen data has been kept.");
     } else {
-      setRows(allRecords);
+      setRows(allRecords); setOfflineMode(false);
+      const snapshotRows = allRecords.filter(row=>OFFLINE_POS_COLLECTIONS.has(row.collection)) as OfflineBusinessRow[];
+      try { await saveOfflineBusinessSnapshot({userId,orgId:membership.org_id,orgName:org?.name||"Etihad Traders",branchIds:Array.isArray(membership.branch_ids)?membership.branch_ids:[],role:String(membership.role||"staff").trim().toLowerCase(),permissions:(membership.permissions&&typeof membership.permissions==="object")?membership.permissions:{},cachedAt:Date.now(),rows:snapshotRows}); }
+      catch { setError("Business data loaded online, but this device could not refresh its offline POS cache. Check available device storage."); }
     }
     setLoading(false);
   },[supabase]);
@@ -122,12 +148,19 @@ export default function Home() {
     setBusy(false);
   }
   async function sendPasswordReset(){if(!email.trim()){setError("Enter your employee email address first.");return;}setBusy(true);setError("");setResetNotice("");const {error}=await supabase.auth.resetPasswordForEmail(email.trim(),{redirectTo:window.location.origin});if(error)setError(error.message);else setResetNotice("If this email belongs to an active account, a password reset link has been sent. Open it on this device, then change your password in Settings.");setBusy(false);}
-  async function signOut() { await supabase.auth.signOut(); setModule("overview"); setPermissions({}); setRole(""); }
+  useEffect(()=>{
+    const handleOffline=()=>setOfflineMode(true);
+    const handleOnline=()=>{if(session?.user.id) void loadBusiness(session.user.id); else setOfflineMode(false);};
+    window.addEventListener("offline",handleOffline); window.addEventListener("online",handleOnline);
+    return ()=>{window.removeEventListener("offline",handleOffline);window.removeEventListener("online",handleOnline);};
+  },[session,loadBusiness]);
+
+  async function signOut() { await supabase.auth.signOut(); setModule("overview"); setPermissions({}); setRole(""); setOfflineMode(false); }
 
   const records = (name:string) => rows.filter(r=>r.collection===name).map(r=>r.data || {});
   const roleDefaults:Record<string,string[]>={owner:["cashregister","sales","returns","products","customers","purchases","suppliers","expenses","branches","payments","transfers","reports","employees","settings"],manager:["cashregister","sales","returns","products","customers","purchases","suppliers","expenses","branches","payments","transfers","reports","employees"],cashier:["cashregister","sales","returns","customers","payments"],stockkeeper:["products","transfers","purchases"],accountant:["cashregister","sales","returns","customers","suppliers","payments","expenses","reports"]};
   const permissionAliases:Record<string,string[]>={cashregister:["cashregister","payments","reports"],customers:["customers","customer_balances"],returns:["returns","sales_returns"],transfers:["transfers","stock"],products:["products"],sales:["sales"],purchases:["purchases"],suppliers:["suppliers"],payments:["payments"],expenses:["expenses"],reports:["reports"],employees:["employees"]};
-  const permitted=(id:ModuleKey)=>{if(String(role).trim().toLowerCase()==="owner")return true;if(id==="overview")return true;if(id==="branches")return false;if(id==="settings")return true;const hasExplicit=Object.keys(permissions).length>0;return hasExplicit?(permissionAliases[id]||[id]).some(key=>permissions[key]===true):(roleDefaults[role]||[]).includes(id);};
+  const permitted=(id:ModuleKey)=>{if(offlineMode)return id==="sales"||id==="overview";if(String(role).trim().toLowerCase()==="owner")return true;if(id==="overview")return true;if(id==="branches")return false;if(id==="settings")return true;const hasExplicit=Object.keys(permissions).length>0;return hasExplicit?(permissionAliases[id]||[id]).some(key=>permissions[key]===true):(roleDefaults[role]||[]).includes(id);};
   const visibleNav=NAV.map(group=>({...group,items:group.items.filter(item=>permitted(item.id))})).filter(group=>group.items.length>0);
   useEffect(()=>{if(session&&!permitted(module))setModule("overview");},[role,permissions,module,session]);
 
@@ -162,13 +195,14 @@ export default function Home() {
     {mobileNav&&<button className="mobile-scrim" onClick={()=>setMobileNav(false)} aria-label="Close navigation"/>}
     <section className="main-area"><header className="topbar"><div className="top-left"><button className="hamburger" onClick={()=>setMobileNav(true)}>☰</button><div className="crumb">Workspace <span>/</span> <b>{title}</b></div></div><div className="top-actions"><div className="live-pill"><span></span> Live data</div><div className="top-date">{now.toLocaleDateString("en-PK",{timeZone:"Asia/Karachi",weekday:"short",day:"2-digit",month:"short",year:"numeric"})} <b className="digital-clock">{now.toLocaleTimeString("en-PK",{timeZone:"Asia/Karachi",hour12:true})}</b></div><button className="top-avatar" title={userEmail}>{(userEmail[0]||"E").toUpperCase()}</button></div></header>
       <div className="page-content">
-        {error&&<div className="notice-error">{error}</div>}
+        {offlineMode&&<div className="offline-mode-banner" role="status">OFFLINE POS MODE · Sales are saved on this device and will sync when internet returns. Cloud balances and stock are not confirmed until sync.</div>}
+        {error&&<div className={offlineMode?"offline-mode-notice":"notice-error"}>{error}</div>}
         {module==="overview"?<><div className="welcome-row"><div><div className="section-kicker">BUSINESS OVERVIEW</div><h1>Good {Number(new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Karachi",hour:"2-digit",hourCycle:"h23"}).format(now))<12?"morning":Number(new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Karachi",hour:"2-digit",hourCycle:"h23"}).format(now))<18?"afternoon":"evening"} <span>👋</span></h1><p>Here’s what’s happening across {orgName} today.</p></div><button className="outline-btn" onClick={()=>session.user.id&&loadBusiness(session.user.id)}>↻ <span>Refresh data</span></button></div>
           {loading?<div className="loading-panel">Loading your live business data…</div>:<><div className="metrics-grid"><Metric label="Sales this month" value={money(monthTotal)} icon="↗" tone="gold" note={monthSales.length+" recorded invoices"}/><Metric label="Outstanding balance" value={money(outstanding)} icon="◷" tone="blue" note="Across recorded invoices"/><Metric label="Products in catalogue" value={String(products.length)} icon="▤" tone="violet" note={lowStock.length+" at or below alert level"}/><Metric label="Active branches" value={String(branches.filter(b=>b.active!==false).length)} icon="⌖" tone="green" note={branches.length+" total branches"}/></div>
           <div className="dashboard-grid"><section className="panel chart-panel"><div className="panel-head"><div><h3>Sales activity</h3><p>Daily invoice totals · last 7 days</p></div><span className="panel-badge">THIS WEEK</span></div><div className="chart-total">{money(daily.reduce((n,d)=>n+d.total,0))}<small>Recorded sales</small></div><div className="bar-chart">{daily.map(d=>{const key=d.key;return <button type="button" className={"bar-col bar-select "+(selectedActivityDate===key?"active":"")} key={key} onClick={()=>setSelectedActivityDate(selectedActivityDate===key?"":key)} title={"View sales for "+pakistanDateLabel(key,{day:"2-digit",month:"short",year:"numeric"})+" · "+money(d.total)}><div className="bar-track"><div className="bar-fill" style={{height:Math.max(4,d.total/maxDaily*100)+"%"}}></div></div><small>{d.label}</small></button>;})}</div>{selectedActivityDate&&<div className="activity-drilldown"><div className="panel-head"><div><h4>Sales on {pakistanDateLabel(selectedActivityDate,{day:"2-digit",month:"short",year:"numeric"})}</h4><p>{selectedDaySales.length} invoices · {money(selectedDaySales.reduce((sum,s)=>sum+amount(s.total),0))}</p></div><button className="text-action" onClick={()=>setSelectedActivityDate("")}>Close</button></div>{selectedDaySales.map((s,i)=><div className="activity-sale-row" key={s.id||i}><span><b>{s.invoiceNo||"Invoice"}</b><small>{s.customerName||"Walk-in"} · {s.branchName||"—"} · {s.date?new Date(s.date).toLocaleTimeString("en-PK",{timeZone:"Asia/Karachi"}):"—"}</small></span><strong>{money(amount(s.total))}</strong></div>)}{!selectedDaySales.length&&<div className="empty-inline">No sales were recorded on this date.</div>}</div>}</section>
           <section className="panel stock-panel"><div className="panel-head"><div><h3>Stock attention</h3><p>Low stock and batches expiring within 30 days</p></div><button className="text-action" onClick={()=>setModule("products")}>View stock →</button></div><div className="stock-summary"><div className="stock-number">{(lowStock.length+expiryAlerts.length).toString().padStart(2,"0")}</div><div><b>{lowStock.length||expiryAlerts.length?"Needs a look":"All clear"}</b><small>{lowStock.length||expiryAlerts.length?`${lowStock.length} low-stock items · ${expiredBatchCount} expired · ${expiringWithin7DaysCount} due within 7 days · ${expiring8To30DaysCount} due in 8–30 days`:"No low-stock or near-expiry batches currently need attention"}</small></div></div><div className="stock-list">{lowStock.slice(0,3).map((p,i)=><div className="stock-row" key={p.id||i}><span className="stock-avatar">{String(p.name||"P").slice(0,1).toUpperCase()}</span><div className="stock-name"><b>{p.name||"Unnamed product"}</b><small>Low stock · {p.sku||"No SKU"}</small></div><span className="stock-qty">{amount(p.qty)} <small>{p.unit||"units"}</small></span></div>)}{expiryAlerts.slice(0,4).map((b,i)=><div className="stock-row expiry-attention" key={String((b as any).id||(b as any).batchNo||i)}><span className="stock-avatar">!</span><div className="stock-name"><b>{b.productName||b.name||"Product batch"}</b><small>{(b as any).batchNo||"Batch"} · {b.daysToExpiry<0?"Expired":b.daysToExpiry===0?"Expires today":"Expires in "+b.daysToExpiry+" days"}</small></div><span className="stock-qty">{amount(b.remainingQty??b.qty)} <small>{b.unit||"units"}</small></span></div>)}{!lowStock.length&&!expiryAlerts.length&&<div className="empty-inline">No low-stock or near-expiry batches currently need attention.</div>}</div></section></div>
           <section className="panel recent-panel"><div className="panel-head"><div><h3>Recent sales</h3><p>Latest recorded invoices from your business</p></div><button className="text-action" onClick={()=>{setSalesStartTab("history");setModule("sales");}}>All sales →</button></div><div className="table-wrap"><table><thead><tr><th>INVOICE</th><th>CUSTOMER</th><th>DATE</th><th>PAYMENT STATUS</th><th className="align-right">TOTAL</th></tr></thead><tbody>{recent.map((s,i)=><tr key={s.id||i}><td><b className="invoice-id">{s.invoiceNo||"Invoice"}</b></td><td>{s.customerName||"Walk-in Customer"}</td><td>{dateLabel(s.date)}</td><td><span className={"status "+(amount(s.balance)>0?"pending":"paid")}>{amount(s.balance)>0?"Balance due":"Settled"}</span></td><td className="align-right amount-cell">{money(amount(s.total))}</td></tr>)}{!recent.length&&<tr><td colSpan={5} className="empty-cell">No sales have been recorded yet.</td></tr>}</tbody></table></div></section></>}</>
-        :<><div className="welcome-row"><div><div className="section-kicker">ETIHAD TRADERS / WORKSPACE</div><h1>{title}</h1><p>{module==="sales"?"Create sales, manage invoice history, restore open orders and convert quotations.":module==="employees"?"Employee profiles, attendance, leave and payroll records.":module==="reports"?"Business reporting built from your existing records.":"Browse your existing business records securely."}</p></div>{COLLECTION[module]&&<span className="record-count">{moduleRows.length} records</span>}</div>
+        :<><div className="welcome-row"><div><div className="section-kicker">ETIHAD TRADERS / WORKSPACE</div><h1>{title}</h1><p>{offlineMode?"Create POS sales from the last saved catalogue. Sales remain pending until cloud synchronisation.":module==="sales"?"Create sales, manage invoice history, restore open orders and convert quotations.":module==="employees"?"Employee profiles, attendance, leave and payroll records.":module==="reports"?"Business reporting built from your existing records.":"Browse your existing business records securely."}</p></div>{COLLECTION[module]&&<span className="record-count">{moduleRows.length} records</span>}</div>
           {module==="cashregister" ? <CashRegisterWorkspace orgId={orgId} userId={session.user.id} cashier={userEmail||session.user.id} role={role} branchIds={branchIds} rows={rows} onSaved={()=>loadBusiness(session.user.id)}/> : module==="sales" ? <POSWorkspace key={salesStartTab} initialTab={salesStartTab} orgId={orgId} userId={session.user.id} cashier={userEmail || session.user.id} role={role} branchIds={branchIds} rows={rows} onSaved={()=>loadBusiness(session.user.id)}/> : module==="products" ? <ProductManager orgId={orgId} userId={session.user.id} role={role} branchIds={branchIds} rows={rows} onSaved={()=>loadBusiness(session.user.id)}/> : module==="customers" ? <CustomerWorkspace orgId={orgId} userId={session.user.id} role={role} branchIds={branchIds} rows={rows} onSaved={()=>loadBusiness(session.user.id)}/> : module==="transfers" ? <TransferWorkspace orgId={orgId} userId={session.user.id} role={role} branchIds={branchIds} rows={rows} onSaved={()=>loadBusiness(session.user.id)}/> : module==="payments" ? <PaymentWorkspace orgId={orgId} userId={session.user.id} role={role} branchIds={branchIds} rows={rows} onSaved={()=>loadBusiness(session.user.id)}/> : module==="returns" ? <ReturnsWorkspace orgId={orgId} userId={session.user.id} role={role} branchIds={branchIds} rows={rows} onSaved={()=>loadBusiness(session.user.id)}/> : module==="purchases" ? <PurchaseWorkspace orgId={orgId} userId={session.user.id} role={role} branchIds={branchIds} rows={rows} onSaved={()=>loadBusiness(session.user.id)}/> : module==="suppliers" ? <SupplierWorkspace orgId={orgId} userId={session.user.id} role={role} branchIds={branchIds} rows={rows} onSaved={()=>loadBusiness(session.user.id)}/> : module==="expenses" ? <ExpenseWorkspace orgId={orgId} userId={session.user.id} role={role} branchIds={branchIds} rows={rows} onSaved={()=>loadBusiness(session.user.id)}/> : module==="branches" ? <BranchWorkspace orgId={orgId} userId={session.user.id} role={role} branchIds={branchIds} rows={rows} onSaved={()=>loadBusiness(session.user.id)}/> : module==="employees" ? <PeopleWorkspace orgId={orgId} userId={session.user.id} role={role} rows={rows} onRefresh={()=>loadBusiness(session.user.id)}/> : module==="reports" ? <ReportsWorkspace rows={rows}/> : module==="settings" ? <SettingsWorkspace rows={rows} orgName={orgName} orgId={orgId} userId={session.user.id} role={role} onRefresh={()=>loadBusiness(session.user.id)}/> : COLLECTION[module]?<section className="panel data-panel"><div className="data-toolbar"><div><h3>{title}</h3><p>Live records from your existing Etihad Traders database</p></div><input className="search-input" placeholder="Search records…" value={query} onChange={e=>setQuery(e.target.value)}/></div><div className="table-wrap"><table><thead><tr>{(module==="payments"?["RECEIPT","CUSTOMER","DATE","METHOD","AMOUNT"]:module==="transfers"?["TRANSFER","PRODUCT","FROM","TO","QUANTITY"]:["RECORD","DETAILS","DATE"]).map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{filteredRows.map((r,i)=><RecordTableRow key={r.id||r.invoiceNo||r.sku||i} module={module} row={r}/>) }{!filteredRows.length&&<tr><td colSpan={6} className="empty-cell">{query?"No matching records.":"No records in this section yet."}</td></tr>}</tbody></table></div></section>:<section className="module-placeholder"><div className="placeholder-icon">▤</div><div className="section-kicker">MODULE FOUNDATION</div><h2>{title} workspace</h2><p>This section is part of the new Etihad Traders application. Its existing database and permission model have been retained. The full create, edit and approval workflows are being implemented in the next development stage.</p><div className="placeholder-chips"><span>Existing Supabase</span><span>Role-aware access</span><span>Responsive workspace</span></div></section>}</>}
       </div><footer className="app-footer"><span>ETIHAD TRADERS</span><span>Secure business workspace · Powered by Vercel + Supabase</span></footer>
     </section>
