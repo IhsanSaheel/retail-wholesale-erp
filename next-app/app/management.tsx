@@ -154,7 +154,7 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const grossSales=active.reduce((sum,s)=>sum+Number(s.subtotal??(Number(s.total||0)-Number(s.taxAmount||0)))+returns.filter(r=>String(r.saleId||"")===String(s.id||"")).reduce((n,r)=>n+returnValue(r),0),0);
  const netSales=grossSales-returnCredit;
  const paymentInRange=payments.filter(p=>{const sale=saleById.get(String(p.saleId||""));const paymentBranch=p.branchId||sale?.branchId;return inRange(p.date)&&(branch==="all"||String(paymentBranch||"")===branch);});
- const collectedPayments=paymentInRange.filter(p=>!["advance_applied","sales_return_refund"].includes(String(p.type||"")));
+ const collectedPayments=paymentInRange.filter(p=>!["advance_applied","sales_return_refund","staff_tip"].includes(String(p.type||"")));
  const paymentRefunds=paymentInRange.filter(p=>p.type==="sales_return_refund").reduce((sum,p)=>sum+Number(p.amount||0),0);
  const returnCashRefunds=periodReturns.reduce((sum,r)=>sum+Number(r.cashRefund||0),0);
  const received=collectedPayments.reduce((sum,p)=>sum+Number(p.amount||0),0)-Math.max(paymentRefunds,returnCashRefunds);
@@ -197,7 +197,7 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
   add("indicative-gst","Indicative difference before sales-return adjustments",outputTax-inputTax);
  }
  if(report==="payment"){
-  const paymentSaleIds=new Set(payments.filter(p=>!["advance_applied","sales_return_refund"].includes(String(p.type||""))).map(p=>String(p.saleId||"")));
+  const paymentSaleIds=new Set(payments.filter(p=>!["advance_applied","sales_return_refund","staff_tip"].includes(String(p.type||""))).map(p=>String(p.saleId||"")));
   for(const p of collectedPayments){const label=String(p.method||"Unspecified");add(label,label,Number(p.amount||0));}
   for(const sale of active){if(paymentSaleIds.has(String(sale.id||"")))continue;const legacyAmount=Math.max(0,Number(sale.paid||0)-Number(sale.advanceUsed||0));if(legacyAmount>0){const label=String(sale.paymentMethod||"Unspecified");add(label,label,legacyAmount);}}
  }
