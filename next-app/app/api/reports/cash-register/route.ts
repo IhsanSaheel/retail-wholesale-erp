@@ -88,7 +88,8 @@ export async function POST(request: NextRequest) {
   const entries: { date: string; type: string; reference: string; detail: string; amount: number }[] = [];
   for (const r of records) {
     const d = r.data || {};
-    if (r.collection === "mberp_payments" && inSession(r, d.date)) {
+    if (r.collection === "mberp_payments" && inSession(r, d.date, false) &&
+      String(d.type === "sales_return_refund" ? (d.processedBy || r.updated_by || "") : (r.updated_by || "")) === String(s.cashierId || "")) {
       if (d.type === "sales_return_refund") entries.push({ date: d.date, type: "Sales return refund · " + String(d.method || "—"), reference: d.invoiceNo || r.record_id, detail: d.customerName || d.note || "Sales return", amount: -Number(d.amount || 0) });
       else if (d.type === "staff_tip" && String(d.method || "").toLowerCase() === "cash") entries.push({ date: d.date, type: "Staff tip · Cash", reference: d.receiptNo || d.invoiceNo || r.record_id, detail: d.customerName || "Staff tip", amount: Number(d.amount || 0) });
       else if (d.type === "sale_payment" || (!d.type && String(d.note || "").includes("Bulk customer payment"))) entries.push({ date: d.date, type: (d.type === "sale_payment" ? "Sale payment · " : "Customer balance payment · ") + String(d.method || "—"), reference: d.invoiceNo || r.record_id, detail: d.customerName || "Customer payment", amount: Number(d.amount || 0) });
@@ -103,7 +104,10 @@ export async function POST(request: NextRequest) {
         if (d.type === "return_advance") entries.push({ date, type: "Return credit retained · Non-cash", reference: d.invoiceNo || r.record_id, detail: d.customerName || "Customer return credit", amount: Number(d.amount || 0) });
       }
     }
-    if (r.collection === "mberp_sales" && inSession(r, d.date || d.createdAt)) {
+    if (r.collection === "mberp_sales" && inSession(r, d.date || d.createdAt, false) &&
+      ((String(d.cashierId || "") !== "" && String(d.cashierId) === String(s.cashierId || "")) ||
+       (String(d.cashier || d.cashierName || "").trim() !== "" &&
+        String(d.cashier || d.cashierName || "").trim().toLowerCase() === String(s.cashierName || "").trim().toLowerCase()))) {
       const hasPayment = records.some(p => p.collection === "mberp_payments" && p.data?.saleId && String(p.data.saleId) === String(d.id || ""));
       if (!hasPayment && String(d.status || "").toLowerCase() !== "cancelled") {
         const cash = String(d.paymentMethod || "").toLowerCase() === "cash";
