@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'etihad-traders-v92';
+const CACHE_NAME = 'etihad-prime-supplies-v93';
 // Derive the base path from the registered scope so the same PWA works on
 // GitHub Pages (/retail-wholesale-erp/) and Vercel (/) without path rewrites.
 const APP_PREFIX = new URL('./', self.registration.scope).pathname;
@@ -11,7 +11,8 @@ const APP_FILES = [
   `${APP_PREFIX}manifest.json`,
   `${APP_PREFIX}icon.svg`,
   `${APP_PREFIX}etihad-icon-192.jpg`,
-  `${APP_PREFIX}etihad-brand-192-v3.jpg`
+  `${APP_PREFIX}etihad-brand-192-v3.jpg`,
+  `${APP_PREFIX}etihad-prime-logo.svg`
 ];
 
 // Install the new application cache.
