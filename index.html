@@ -4,13 +4,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" sizes="192x192" href="etihad-icon-192.jpg">
 
-<meta name="theme-color" content="#102a43">
+<meta name="theme-color" content="#000000">
 
 <meta name="mobile-web-app-capable" content="yes">
 
 <meta name="apple-mobile-web-app-capable" content="yes">
 
-<meta name="apple-mobile-web-app-title" content="Etihad Prime Supplies"> 
+<meta name="apple-mobile-web-app-title" content="EPS"> 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Etihad Prime Supplies</title>
@@ -472,6 +472,35 @@ body.etihad-dark #dashboard .et-dashboard-welcome,body.etihad-blackgold #dashboa
 @media(max-width:900px){#pos .pos-pro-layout{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"bill" "products"!important}#pos .pos-pro-side{position:static!important;max-height:none!important;order:0}#pos .pos-pro-main{order:1}#pos #etihadPosProducts{max-height:360px}}
 @media(max-width:560px){#pos .pos-pro-layout{display:flex!important;flex-direction:column!important}#pos .pos-pro-side,#pos .pos-pro-main{width:100%!important;margin:0!important}#pos #etihadPosPaymentHost{grid-template-columns:1fr}#pos #etihadPosShortcutBar button{min-width:0;flex-basis:calc(50% - 5px)}}
 </style>
+<style id="etihad-prime-brand-theme">
+:root{color-scheme:light;--brand-black:#000000;--brand-gold:#D4AF37;--brand-white:#F5F5F5;--brand-gold-antique:#936511;--brand-gold-deep:#BF8516;--brand-gold-rich:#ECAD21;--brand-gold-bright:#F8D14E;--brand-gold-champagne:#FAEB8B;--brand-black-gold:#161002;--navy:#000000;--blue:#D4AF37;--bg:#F5F5F5;--line:#e7dfca;--muted:#766b55;--surface:#ffffff;--ink:#17130b;--shadow:0 8px 28px rgba(22,16,2,.08)}
+body{background:var(--bg)!important;color:var(--ink)!important}
+header{background:linear-gradient(115deg,#000000 0%,#161002 72%,#30220b 100%)!important;color:#F5F5F5!important;border-bottom:1px solid #D4AF37!important}
+header h2{color:#D4AF37!important;letter-spacing:.015em}
+header small,#today{color:#F5F5F5!important}
+#etihadMainNav{background:#000000!important;border-right:1px solid #936511!important}
+#etihadMainNav .et-brand-mark{background:linear-gradient(145deg,#FAEB8B,#D4AF37 55%,#936511)!important;color:#000000!important}
+#etihadMainNav .et-sidebar-brand strong{color:#D4AF37!important}
+#etihadMainNav .et-sidebar-brand small,#etihadMainNav .et-nav-label{color:#c8b98e!important}
+#etihadMainNav button{color:#F5F5F5!important}
+#etihadMainNav button:hover{background:#161002!important;color:#FAEB8B!important}
+#etihadMainNav button.active{background:#D4AF37!important;color:#000000!important;box-shadow:inset 3px 0 #FAEB8B!important}
+#etihadMainNav button.active .et-nav-icon{color:#000000!important}
+.panel,.card{border-color:#e7dfca!important}
+.card strong,.total,h3,.page>h3{color:#4b3710!important}
+.btn{background:#D4AF37!important;color:#000000!important;box-shadow:0 4px 10px #93651122!important}
+.btn:hover{background:#BF8516!important;color:#000000!important}
+.btn.green,.green{background:#0f9f6e!important;color:#fff!important}
+.btn.red,.red{background:#c0392b!important;color:#fff!important}
+.btn.gray,.gray{background:#64748b!important;color:#fff!important}
+.btn.light,.light{background:#f7f1e4!important;color:#4b3710!important;border:1px solid #e4d2a7!important;box-shadow:none!important}
+input:focus,select:focus{border-color:#D4AF37!important;box-shadow:0 0 0 3px #D4AF3728!important}
+#etihadMainNav .et-sidebar-footer{border-color:#936511!important;color:#d8c99f!important}
+.et-menu-toggle{border-color:#D4AF37!important;color:#D4AF37!important}
+.et-sidebar-backdrop{background:#00000099!important}
+footer{color:#766b55!important}
+@media(max-width:760px){#etihadMainNav{background:#000000!important}nav#etihadMainNav{border-right:1px solid #936511!important}}
+</style>
 </head>
 <body>
 <style>
@@ -576,7 +605,7 @@ body.etihad-dark #dashboard .et-dashboard-welcome,body.etihad-blackgold #dashboa
 #etihadSplash .et-logo-fallback b{font:800 13px/1.4 Inter,Arial,sans-serif;letter-spacing:.24em}
 </style>
 <div id="etihadSplash" role="status" aria-live="polite">
-  <img class="et-logo" src="etihad-brand-192-v3.jpg" alt="Etihad Prime Supplies company logo" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'et-logo-fallback',innerHTML:'<span>ET</span><b>ETIHAD PRIME SUPPLIES</b>'}))">
+  <img class="et-logo" src="etihad-prime-logo.svg" alt="Etihad Prime Supplies company logo" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'et-logo-fallback',innerHTML:'<span>EPS</span><b>ETIHAD PRIME SUPPLIES</b>'}))">
   <span class="et-loading" aria-label="Loading"></span>
 </div>
 
@@ -585,7 +614,7 @@ body.etihad-dark #dashboard .et-dashboard-welcome,body.etihad-blackgold #dashboa
   const splash = document.getElementById('etihadSplash');
   const logo = splash && splash.querySelector('.et-logo');
   try {
-    const savedLogo = localStorage.getItem('etihad_business_logo');
+    const savedLogo = localStorage.getItem('etihad_business_logo') || 'etihad-prime-logo.svg';
     if (logo && savedLogo && /^data:image\/(png|jpeg|webp);base64,/i.test(savedLogo)) logo.src = savedLogo;
   } catch (_) {}
   window.setTimeout(function() {
@@ -603,7 +632,7 @@ body.etihad-dark #dashboard .et-dashboard-welcome,body.etihad-blackgold #dashboa
 <button id="etihadMenuToggle" class="et-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
 <div id="etihadSidebarBackdrop" class="et-sidebar-backdrop"></div>
 <nav id="etihadMainNav" aria-label="Main navigation">
-  <div class="et-sidebar-brand"><span class="et-brand-mark">ET</span><span><strong>ETIHAD PRIME SUPPLIES</strong><small>BUSINESS MANAGEMENT</small></span></div>
+  <div class="et-sidebar-brand"><span class="et-brand-mark">EPS</span><span><strong>ETIHAD PRIME SUPPLIES</strong><small>BUSINESS MANAGEMENT</small></span></div>
   <div class="et-nav-group"><div class="et-nav-label">WORKSPACE</div>
     <button class="active" data-tab="dashboard"><span class="et-nav-icon">▦</span><span>Dashboard</span></button>
   </div>
@@ -1478,7 +1507,7 @@ function printInvoice(sid){
  try{businessLogo=localStorage.getItem('etihad_business_logo')||'';}catch(_){businessLogo='';}
  const invoiceBrand=businessLogo
   ? `<img src="${businessLogo}" alt="Etihad Prime Supplies logo" style="width:76px;height:66px;object-fit:contain;background:#fff;padding:4px;border-radius:8px;border:1px solid #e5e7eb">`
-  : `<div style="width:76px;height:66px;display:grid;place-items:center;background:#172635;color:#d8bd79;border-radius:8px;font-weight:900;font-size:22px">ET</div>`;
+  : `<div style="width:76px;height:66px;display:grid;place-items:center;background:#172635;color:#d8bd79;border-radius:8px;font-weight:900;font-size:22px">EPS</div>`;
  const html=`<!DOCTYPE html>
  <html>
  <head>
@@ -5130,7 +5159,7 @@ if ('serviceWorker' in navigator) {
   const img=$('etihadHeaderLogo'),preview=$('etihadLogoPreview');
   [img,preview].forEach(el=>{if(!el)return;if(data){el.src=data;el.classList.add('has-logo')}else{el.removeAttribute('src');el.classList.remove('has-logo')}});
  }
- let logo='';try{logo=localStorage.getItem('etihad_business_logo')||''}catch(e){}
+ let logo='';try{logo=localStorage.getItem('etihad_business_logo')||''}catch(e){};if(!logo)logo='etihad-prime-logo.svg';
  setLogo(logo);
  const file=$('etihadLogoFile');
  if(file)file.addEventListener('change',()=>{
@@ -6231,7 +6260,7 @@ body.etihad-dark #employees .hr-tabs button.active{background:#c49a45;color:#171
    }
   }
   let logo='';try{logo=localStorage.getItem('etihad_business_logo')||'';}catch(_){}
-  const logoHtml=logo?`<img class="id-logo" src="${logo}" alt="Etihad Prime Supplies logo">`:'<div class="id-logo-text">ET</div>';
+  const logoHtml=logo?`<img class="id-logo" src="${logo}" alt="Etihad Prime Supplies logo">`:'<div class="id-logo-text">EPS</div>';
   const photoHtml=photo?`<img class="id-photo" src="${photo}" alt="Employee photo">`:`<div class="id-photo id-placeholder">${esc((p?.full_name||'E').split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase())}</div>`;
   const name=esc(p?.full_name||'Employee');
   const body=`<style>
@@ -6259,7 +6288,7 @@ body.etihad-dark #employees .hr-tabs button.active{background:#c49a45;color:#171
  function renderPayroll(){const owner=membership?.role==='owner';$('hrPayrollRows').innerHTML=payroll.map(x=>`<tr><td>${esc(String(x.period_month).slice(0,7))}</td><td><strong>${esc(x.employee_name)}</strong><small class="hr-sub">${esc(x.employee_code)}</small></td><td>${money(x.net_salary)}</td><td><span class="hr-pill ${x.payment_status==='paid'?'on':'off'}">${x.payment_status==='paid'?'Paid':'Unpaid'}</span></td><td><div class="hr-actions"><button data-pay-action="print" data-pay-id="${x.id}">Payslip / PDF</button>${owner&&x.payment_status!=='paid'?`<button data-pay-action="paid" data-pay-id="${x.id}">Mark paid</button>`:''}</div></td></tr>`).join('')||'<tr><td colspan="5">No payroll records yet.</td></tr>';const paid=payroll.filter(x=>x.payment_status==='paid').reduce((n,x)=>n+Number(x.net_salary||0),0),due=payroll.filter(x=>x.payment_status!=='paid').reduce((n,x)=>n+Number(x.net_salary||0),0);$('hrPayrollCount').textContent=payroll.length;$('hrPaidTotal').textContent=money(paid);$('hrDueTotal').textContent=money(due);}
  function printSlip(x){
   let logo='';try{logo=localStorage.getItem('etihad_business_logo')||'';}catch(_){}
-  const logoHtml=logo?`<img src="${logo}" alt="Etihad Prime Supplies logo" style="width:62px;height:52px;object-fit:contain">`:'<div style="width:62px;height:52px;display:grid;place-items:center;background:#172635;color:#d8b86a;font-size:22px;font-weight:900;border-radius:8px">ET</div>';
+  const logoHtml=logo?`<img src="${logo}" alt="Etihad Prime Supplies logo" style="width:62px;height:52px;object-fit:contain">`:'<div style="width:62px;height:52px;display:grid;place-items:center;background:#172635;color:#d8b86a;font-size:22px;font-weight:900;border-radius:8px">EPS</div>';
   const period=esc(String(x.period_month).slice(0,7));
   const status=String(x.payment_status||'unpaid').toUpperCase();
   printDocument('Etihad Prime Supplies — Payslip '+x.employee_code,`<style>
