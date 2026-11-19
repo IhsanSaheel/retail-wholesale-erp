@@ -92,3 +92,66 @@
 .sync-dot-offline{background:#d59b42;box-shadow:0 0 0 4px #d59b4220}
 .offline-mode-banner{position:sticky;top:66px;z-index:4;margin:0 0 12px;padding:12px 15px;border:1px solid #d8b66b;border-radius:9px;background:#fff7e7;color:#72551e;font-size:11px;font-weight:800;line-height:1.6}
 .offline-mode-notice{margin:0 0 14px;padding:10px 13px;border:1px solid #e7d7b4;border-radius:8px;background:#fffaf0;color:#755b2d;font-size:11px;line-height:1.6}
+
+
+/* ETIHAD PRIME SUPPLIES — official black & metallic-gold visual system */
+:root{
+ --navy:#080807;--navy2:#15120b;--gold:#d6a928;--gold2:#ffe08a;
+ --ink:#f5f0e4;--muted:#b7ad98;--line:#3a3020;--paper:#0d0c09;
+ --white:#17140e;--green:#d6a928;--red:#e16b62;
+ color-scheme:dark
+}
+html,body{background:#0d0c09!important;color:#f5f0e4!important}
+.app-shell,.main-area{background:#0d0c09!important}
+.sidebar{background:linear-gradient(180deg,#050505 0%,#171208 100%);border-right:1px solid #6d531b}
+.topbar,.app-footer{background:#12100b!important;border-color:#493817!important;color:#e8dcc0!important}
+.crumb,.crumb b,.panel-head h3,.data-toolbar h3,.pos-catalog-head h3,.bill-title h3,.product-editor h3{color:#f4e7c5!important}
+.page-content{color:#f5f0e4}
+.welcome-row h1,.pos-heading h2,.login-form-wrap h2{color:#f6d77e!important}
+.welcome-row p,.crumb,.top-date,.panel-head p,.data-toolbar p{color:#b9ad94!important}
+.metric-card,.panel,.pos-catalog,.pos-bill,.module-placeholder,.loading-panel,
+.login-side,.customer-box,.workspace-switch,.stock-summary,.product-editor,
+table,.data-panel{background:#17140e!important;border-color:#49391c!important;color:#f5f0e4!important}
+.metric-card>strong,.chart-total,.stock-summary b,.stock-list b,.stock-name b,
+.pos-product b,.amount-cell,.invoice-id{color:#fff0c5!important}
+.metric-top,.metric-card>small,.panel-head p,.stock-name small,.stock-summary small,
+td,.muted{color:#c0b59f!important}
+.metric-icon.gold,.metric-icon.blue,.metric-icon.violet,.metric-icon.green,
+.stock-avatar,.placeholder-icon,.product-initial{background:#35280e!important;color:#f3c84e!important}
+.bar-track{background:#282116!important}.bar-fill{background:linear-gradient(180deg,#ffe08a,#b77d0b)!important}
+.outline-btn,.pos-branch-select,.search-input,.pos-search,.login-form input,
+.pos-tabs,.pos-product,.placeholder-chips span{background:#100f0b!important;color:#f5eddb!important;border-color:#5a4722!important}
+.outline-btn:hover,.pos-product:hover{border-color:#e4b93e!important;box-shadow:0 4px 16px #0008}
+.primary-btn{background:linear-gradient(135deg,#f5d36b,#a9770c)!important;color:#100d06!important;box-shadow:0 7px 20px #0008}
+.primary-btn:hover{background:linear-gradient(135deg,#ffe69a,#c38c13)!important}
+.nav-item{color:#c7bda8}.nav-item:hover{background:#ffffff10;color:#fff}
+.nav-item.active{background:linear-gradient(90deg,#d6a92832,#d6a9280b)!important;color:#ffe08a!important;box-shadow:inset 2px 0 #e3b633!important}
+.nav-item.active .nav-icon,.nav-icon{color:#d6ad42}
+.workspace-switch{background:#ffffff08!important}
+.workspace-switch strong,.sync-state b,.user-meta b{color:#f4e5c2}
+.live-pill{background:#30250e!important;color:#f4cf67!important}.live-pill span,.workspace-dot,.sync-dot{background:#e0b536!important;box-shadow:0 0 0 4px #e0b53625}
+.status.paid{background:#34290e!important;color:#f4d26c!important}.status.pending{background:#3a2410!important;color:#f4bc70!important}
+th{color:#e3c777!important;border-color:#4b3a1b!important}
+td{border-color:#342a19!important}
+.record-count,.panel-badge{background:#33270f!important;color:#f3d27b!important}
+.app-footer span:first-child{color:#e4bd57!important}
+.login-page{background:#090806!important}
+.login-art{background:radial-gradient(ellipse at 70% 55%,#4b3710 0%,#171106 48%,#050505 100%)!important}
+.login-art:after{border-color:#e0b53655!important}
+.art-copy h1 em,.login-brand b,.side-brand b,.mobile-brand b{color:#ffe08a!important}
+.art-copy p,.art-foot{color:#d2c39d!important}
+.login-side{background:#100e09!important}
+.login-form-wrap h2{color:#ffe08a!important}
+.login-form-wrap>p,.login-form label,.login-help{color:#c4b89e!important}
+.login-security{background:#211a0d!important;color:#e1d2ad!important}
+.login-security span{color:#e7bd42!important}
+.login-reset-link,.form-kicker,.eyebrow,.section-kicker{color:#e6bd4f!important}
+.brand-mark{background:#080705!important;border-color:#c69a2c!important;box-shadow:0 4px 22px #0009!important}
+.pos-tabs button.selected{background:#3a2b0d!important;color:#ffe08a!important}
+.pos-tabs button{color:#c9b991}
+.stock-qty,.stock-number,.text-action{color:#f0c65a!important}
+.error-box,.notice-error{background:#351616!important;border-color:#783838!important;color:#ffc1b9!important}
+@media(max-width:760px){
+ .sidebar{background:linear-gradient(180deg,#050505,#171208)!important}
+ .topbar{background:#12100b!important}
+}
