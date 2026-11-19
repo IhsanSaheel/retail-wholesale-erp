@@ -1,4 +1,4 @@
-const CACHE = "etihad-traders-shell-v13";
+const CACHE = "etihad-traders-shell-v14";
 const OFFLINE = "/offline";
 const SHELL = ["/", OFFLINE, "/icon.svg", "/brand-logo.svg", "/receipt-logo.svg", "/manifest.webmanifest"];
 
