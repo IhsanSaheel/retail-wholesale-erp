@@ -17,7 +17,7 @@ self.addEventListener("fetch",event=>{
     event.respondWith(fetch(new Request(request,{cache:"no-store"})).then(response=>{
       if(response.ok&&response.type==="basic"){
         const copy=response.clone();
-        event.waitUntil(caches.open(CACHE).then(cache=>cache.put(request,copy)));
+        void caches.open(CACHE).then(cache=>cache.put(request,copy));
       }
       return response;
     }).catch(async()=>{
@@ -31,7 +31,7 @@ self.addEventListener("fetch",event=>{
     event.respondWith(fetch(new Request(request,{cache:"no-store"})).then(response=>{
       if(response.ok&&response.type==="basic"){
         const copy=response.clone();
-        event.waitUntil(caches.open(CACHE).then(cache=>cache.put(request,copy)));
+        void caches.open(CACHE).then(cache=>cache.put(request,copy));
       }
       return response;
     }).catch(async()=>await caches.match(request,{ignoreSearch:true})||Response.error()));
