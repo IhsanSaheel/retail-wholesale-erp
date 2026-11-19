@@ -562,11 +562,19 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, onSaved }
    const name=String(item.name||"").trim(),skuValue=String(item.sku||"").trim(),barcodeValue=String(item.barcode||"").trim();
    if(!name){issues.push("Row "+item.__row+": product name is required.");continue;}
    const keys=[skuValue&&"sku:"+searchText(skuValue),barcodeValue&&"barcode:"+searchText(barcodeValue)].filter(Boolean) as string[];
-   if(keys.some(k=>seen.has(k))){issues.push("Row "+item.__row+": duplicate SKU or barcode in this file.");continue;}keys.forEach(k=>seen.add(k));
-   const match=existing.find(p=>(skuValue&&searchText(p.sku)===searchText(skuValue))||(barcodeValue&&searchText(p.barcode)===searchText(barcodeValue)));
    const branchName=String(item.branch||"").trim();
-   const targetBranch=branchName?branches.find(b=>searchText(b.name)===searchText(branchName)):branches.find(b=>String(b.id)===String(match?.branchId))||branches[0];
+   const explicitBranch=branchName?branches.find(b=>searchText(b.name)===searchText(branchName)):undefined;
+   if(branchName&&!explicitBranch){issues.push("Row "+item.__row+": branch '"+branchName+"' is missing or not accessible.");continue;}
+   const candidates=existing.filter(p=>(skuValue&&searchText(p.sku)===searchText(skuValue))||(barcodeValue&&searchText(p.barcode)===searchText(barcodeValue)));
+   const candidateBranches=Array.from(new Set(candidates.map(p=>String(p.branchId||""))));
+   if(!explicitBranch&&candidateBranches.length>1){issues.push("Row "+item.__row+": this SKU or barcode exists in multiple branches. Specify the branch column to avoid updating the wrong product.");continue;}
+   const targetBranch=explicitBranch||branches.find(b=>String(b.id)===String(candidateBranches[0]))||branches[0];
    if(!targetBranch){issues.push("Row "+item.__row+": branch is missing or not accessible.");continue;}
+   const branchMatch=candidates.filter(p=>String(p.branchId||"")===String(targetBranch.id));
+   if(branchMatch.length>1){issues.push("Row "+item.__row+": duplicate matching products already exist in branch "+targetBranch.name+". Resolve the duplicate before importing.");continue;}
+   const match=branchMatch[0];
+   const branchKeys=keys.map(k=>String(targetBranch.id)+"|"+k);
+   if(branchKeys.some(k=>seen.has(k))){issues.push("Row "+item.__row+": duplicate SKU or barcode in this file for branch "+targetBranch.name+".");continue;}branchKeys.forEach(k=>seen.add(k));
    const numeric=(key:string,alt?:string)=>{const raw=item[key]??(alt?item[alt]:"");if(raw==="")return undefined;const v=Number(raw);return Number.isFinite(v)&&v>=0?v:NaN;};
    const costValue=numeric("cost"),priceValue=numeric("price"),alertValue=numeric("alert","lowstockalert"),qtyValue=numeric("qty","quantity");
    if([costValue,priceValue,alertValue,qtyValue].some(v=>Number.isNaN(v))){issues.push("Row "+item.__row+": cost, price, quantity and alert must be non-negative numbers.");continue;}
