@@ -27,7 +27,7 @@ export default function DownloadPage() {
   return <main style={{minHeight:"100vh",background:"#101d35",color:"#fff",fontFamily:"Arial,sans-serif",padding:"clamp(24px,6vw,72px)",display:"grid",alignItems:"center"}}>
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(structuredData)}} />
     <section style={{maxWidth:850,margin:"0 auto",width:"100%"}}>
-      <img src="/brand-logo.svg?v=3" alt="Etihad Prime Supplies" style={{width:220,maxWidth:"70%",height:110,objectFit:"contain",background:"#fff",borderRadius:12,padding:8}}/>
+      <img src="/brand-logo.svg?v=5" alt="Etihad Prime Supplies" style={{width:220,maxWidth:"70%",height:110,objectFit:"contain",background:"#050505",borderRadius:12,padding:8}}/>
       <p style={{color:"#dfc58e",fontWeight:800,letterSpacing:3,fontSize:12,marginTop:36}}>RETAIL & WHOLESALE BUSINESS MANAGEMENT</p>
       <h1 style={{fontSize:"clamp(38px,7vw,66px)",lineHeight:1.08,margin:"14px 0",letterSpacing:-2}}>Etihad Prime Supplies</h1>
       <p style={{fontSize:"clamp(17px,2.5vw,21px)",lineHeight:1.7,color:"#c5d0df",maxWidth:680}}>Your sales, products, customers and business reports in one installable point-of-sale workspace.</p>
