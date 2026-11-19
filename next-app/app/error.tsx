@@ -24,7 +24,7 @@ export default function Error({
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24, fontFamily: "Arial, sans-serif", color: "#172b4d" }}>
       <section style={{ maxWidth: 440, textAlign: "center" }}>
         <h1>Something went wrong</h1>
-        <p>Etihad Traders could not display this section. Your saved business records have not been changed by this screen error.</p>
+        <p>Etihad Prime Supplies could not display this section. Your saved business records have not been changed by this screen error.</p>
         <button onClick={() => reset()} style={{ padding: "12px 20px", border: 0, borderRadius: 8, background: "#172b4d", color: "white", fontWeight: 600 }}>
           Try again
         </button>
