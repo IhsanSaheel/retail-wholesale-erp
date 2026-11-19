@@ -472,7 +472,35 @@ body.etihad-dark #dashboard .et-dashboard-welcome,body.etihad-blackgold #dashboa
 @media(max-width:900px){#pos .pos-pro-layout{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"bill" "products"!important}#pos .pos-pro-side{position:static!important;max-height:none!important;order:0}#pos .pos-pro-main{order:1}#pos #etihadPosProducts{max-height:360px}}
 @media(max-width:560px){#pos .pos-pro-layout{display:flex!important;flex-direction:column!important}#pos .pos-pro-side,#pos .pos-pro-main{width:100%!important;margin:0!important}#pos #etihadPosPaymentHost{grid-template-columns:1fr}#pos #etihadPosShortcutBar button{min-width:0;flex-basis:calc(50% - 5px)}}
 </style>
-<style id="etihad-prime-brand-theme">\n:root{color-scheme:light;--brand-black:#000000;--brand-gold:#D4AF37;--brand-white:#F5F5F5;--brand-gold-antique:#936511;--brand-gold-deep:#BF8516;--brand-gold-rich:#ECAD21;--brand-gold-bright:#F8D14E;--brand-gold-champagne:#FAEB8B;--brand-black-gold:#161002;--navy:#000000;--blue:#D4AF37;--bg:#F5F5F5;--line:#e7dfca;--muted:#766b55;--surface:#ffffff;--ink:#17130b;--shadow:0 8px 28px rgba(22,16,2,.08)}\nbody{background:var(--bg)!important;color:var(--ink)!important}\nheader{background:linear-gradient(115deg,#000000 0%,#161002 72%,#30220b 100%)!important;color:#F5F5F5!important;border-bottom:1px solid #D4AF37!important}\nheader h2{color:#D4AF37!important;letter-spacing:.015em}\nheader small,#today{color:#F5F5F5!important}\n#etihadMainNav{background:#000000!important;border-right:1px solid #936511!important}\n#etihadMainNav .et-brand-mark{background:linear-gradient(145deg,#FAEB8B,#D4AF37 55%,#936511)!important;color:#000000!important}\n#etihadMainNav .et-sidebar-brand strong{color:#D4AF37!important}\n#etihadMainNav .et-sidebar-brand small,#etihadMainNav .et-nav-label{color:#c8b98e!important}\n#etihadMainNav button{color:#F5F5F5!important}\n#etihadMainNav button:hover{background:#161002!important;color:#FAEB8B!important}\n#etihadMainNav button.active{background:#D4AF37!important;color:#000000!important;box-shadow:inset 3px 0 #FAEB8B!important}\n#etihadMainNav button.active .et-nav-icon{color:#000000!important}\n.panel,.card{border-color:#e7dfca!important}\n.card strong,.total,h3,.page>h3{color:#4b3710!important}\n.btn{background:#D4AF37!important;color:#000000!important;box-shadow:0 4px 10px #93651122!important}\n.btn:hover{background:#BF8516!important;color:#000000!important}\n.btn.green,.green{background:#0f9f6e!important;color:#fff!important}\n.btn.red,.red{background:#c0392b!important;color:#fff!important}\n.btn.gray,.gray{background:#64748b!important;color:#fff!important}\n.btn.light,.light{background:#f7f1e4!important;color:#4b3710!important;border:1px solid #e4d2a7!important;box-shadow:none!important}\ninput:focus,select:focus{border-color:#D4AF37!important;box-shadow:0 0 0 3px #D4AF3728!important}\n#etihadMainNav .et-sidebar-footer{border-color:#936511!important;color:#d8c99f!important}\n.et-menu-toggle{border-color:#D4AF37!important;color:#D4AF37!important}\n.et-sidebar-backdrop{background:#00000099!important}\nfooter{color:#766b55!important}\n@media(max-width:760px){#etihadMainNav{background:#000000!important}nav#etihadMainNav{border-right:1px solid #936511!important}}\n</style>\n</head>
+<style id="etihad-prime-brand-theme">
+:root{color-scheme:light;--brand-black:#000000;--brand-gold:#D4AF37;--brand-white:#F5F5F5;--brand-gold-antique:#936511;--brand-gold-deep:#BF8516;--brand-gold-rich:#ECAD21;--brand-gold-bright:#F8D14E;--brand-gold-champagne:#FAEB8B;--brand-black-gold:#161002;--navy:#000000;--blue:#D4AF37;--bg:#F5F5F5;--line:#e7dfca;--muted:#766b55;--surface:#ffffff;--ink:#17130b;--shadow:0 8px 28px rgba(22,16,2,.08)}
+body{background:var(--bg)!important;color:var(--ink)!important}
+header{background:linear-gradient(115deg,#000000 0%,#161002 72%,#30220b 100%)!important;color:#F5F5F5!important;border-bottom:1px solid #D4AF37!important}
+header h2{color:#D4AF37!important;letter-spacing:.015em}
+header small,#today{color:#F5F5F5!important}
+#etihadMainNav{background:#000000!important;border-right:1px solid #936511!important}
+#etihadMainNav .et-brand-mark{background:linear-gradient(145deg,#FAEB8B,#D4AF37 55%,#936511)!important;color:#000000!important}
+#etihadMainNav .et-sidebar-brand strong{color:#D4AF37!important}
+#etihadMainNav .et-sidebar-brand small,#etihadMainNav .et-nav-label{color:#c8b98e!important}
+#etihadMainNav button{color:#F5F5F5!important}
+#etihadMainNav button:hover{background:#161002!important;color:#FAEB8B!important}
+#etihadMainNav button.active{background:#D4AF37!important;color:#000000!important;box-shadow:inset 3px 0 #FAEB8B!important}
+#etihadMainNav button.active .et-nav-icon{color:#000000!important}
+.panel,.card{border-color:#e7dfca!important}
+.card strong,.total,h3,.page>h3{color:#4b3710!important}
+.btn{background:#D4AF37!important;color:#000000!important;box-shadow:0 4px 10px #93651122!important}
+.btn:hover{background:#BF8516!important;color:#000000!important}
+.btn.green,.green{background:#0f9f6e!important;color:#fff!important}
+.btn.red,.red{background:#c0392b!important;color:#fff!important}
+.btn.gray,.gray{background:#64748b!important;color:#fff!important}
+.btn.light,.light{background:#f7f1e4!important;color:#4b3710!important;border:1px solid #e4d2a7!important;box-shadow:none!important}
+input:focus,select:focus{border-color:#D4AF37!important;box-shadow:0 0 0 3px #D4AF3728!important}
+#etihadMainNav .et-sidebar-footer{border-color:#936511!important;color:#d8c99f!important}
+.et-menu-toggle{border-color:#D4AF37!important;color:#D4AF37!important}
+.et-sidebar-backdrop{background:#00000099!important}
+footer{color:#766b55!important}
+@media(max-width:760px){#etihadMainNav{background:#000000!important}nav#etihadMainNav{border-right:1px solid #936511!important}}
+</style>\n</head>
 <body>
 <style>
 #etihadSplash {
