@@ -117,3 +117,12 @@ input,select,textarea,.search-input,.pos-search,.login-form input{background:#10
 .status.paid,.record-count,.panel-badge{background:#33270f!important;color:#f3d27b!important}
 .customer-advance{color:#f0c65a!important}
 .offline-mode-banner,.offline-mode-notice{background:#211a0d!important;color:#f3d27b!important;border-color:#8c6b28!important}
+
+/* Official logo presentation: use the supplied black-and-gold artwork without a white tile */
+.brand-mark{background:#050505!important;padding:0!important;border:1px solid #c69a2c!important;border-radius:10px!important;object-fit:contain!important;object-position:center!important}
+.login-brand .brand-mark{width:176px!important;height:116px!important}
+.side-brand .brand-mark{width:150px!important;height:100px!important}
+.mobile-brand .brand-mark{width:150px!important;height:100px!important}
+.login-side .brand-mark{box-shadow:0 4px 20px #0009!important}
+.side-brand{display:flex;align-items:center;justify-content:flex-start}
+.mobile-brand{display:flex;align-items:center;gap:12px}
