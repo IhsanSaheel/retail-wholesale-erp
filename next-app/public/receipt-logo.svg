@@ -1,18 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Etihad Traders — Shop Sell Grow">
-<rect width="1200" height="800" rx="24" fill="#fff"/>
-<g transform="translate(0 4)">
-<g fill="none" stroke="#082967" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
-<path d="M330 82h75l65 230h370l65-180H450"/>
-<path d="M515 170h330M535 220h275M555 270h230"/>
-<path d="M510 315h350"/>
-<circle cx="535" cy="360" r="31" fill="#082967" stroke="none"/><circle cx="790" cy="360" r="31" fill="#082967" stroke="none"/>
-</g>
-<path d="M235 185h155M215 235h175M195 285h175" stroke="#d69a00" stroke-width="24" stroke-linecap="round"/>
-<path d="M405 335C650 365 850 245 1030 42l-78 4 110-105 18 155-43-48C865 280 650 415 420 390" fill="#e0a000"/>
-</g>
-<text x="600" y="555" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="160" font-weight="900" letter-spacing="3" fill="#082967">ETIHAD</text>
-<path d="M55 635H270M930 635h215" stroke="#d69a00" stroke-width="10"/>
-<text x="600" y="675" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="92" font-weight="900" letter-spacing="14" fill="#d69a00">TRADERS</text>
-<rect x="220" y="710" width="760" height="72" rx="36" fill="#082967"/>
-<text x="600" y="761" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="43" font-weight="800" letter-spacing="8" fill="#fff">SHOP  •  SELL  •  GROW</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Etihad Prime Supplies — General Trading and Wholesale">
+<defs><linearGradient id="g" x2="0" y2="1"><stop stop-color="#075c2b"/><stop offset="1" stop-color="#003719"/></linearGradient><linearGradient id="gold" x2="0" y2="1"><stop stop-color="#ffe08a"/><stop offset=".5" stop-color="#d69a16"/><stop offset="1" stop-color="#9e6500"/></linearGradient></defs>
+<rect width="1200" height="800" rx="28" fill="#fff"/>
+<g transform="translate(600 175)"><path d="M-180 5C-170-125-40-190 95-145" fill="none" stroke="url(#gold)" stroke-width="28"/><path d="M-100-20L170-95 110-20H-60L90 25H-115" fill="none" stroke="url(#g)" stroke-width="42" stroke-linejoin="round"/><path d="M145-105q85-48 95-125 9 100-75 150" fill="#08742d"/><path d="M-220 20q-100-65-120-155 8 120 100 185" fill="none" stroke="url(#gold)" stroke-width="18"/><path d="M-240 0q-55-30-70-90m70 90q-30-65-20-120m20 120q-4-75 28-125" fill="none" stroke="#d9a72a" stroke-width="9"/></g>
+<text x="600" y="390" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="142" font-weight="900" letter-spacing="2" fill="#064b25">ETIHAD</text>
+<rect x="100" y="420" width="1000" height="105" rx="48" fill="url(#g)" stroke="url(#gold)" stroke-width="12"/>
+<text x="600" y="493" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="76" font-weight="900" letter-spacing="9" fill="#fff">PRIME SUPPLIES</text>
+<text x="600" y="595" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="54" font-weight="800" fill="#064b25">اتحاد پرائم سپلائیز</text>
+<rect x="210" y="630" width="780" height="76" rx="38" fill="url(#gold)"/>
+<text x="600" y="682" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="39" font-weight="800" font-style="italic" fill="#073b1d">General Trading &amp; Wholesale</text>
 </svg>
