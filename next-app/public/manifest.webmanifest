@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Etihad Traders",
-  "short_name": "Etihad",
-  "description": "Etihad Traders retail and wholesale business management system.",
+  "name": "Etihad Prime Supplies",
+  "short_name": "Etihad Prime",
+  "description": "Etihad Prime Supplies retail and wholesale business management system.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
