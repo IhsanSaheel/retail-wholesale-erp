@@ -644,7 +644,7 @@ footer{color:#766b55!important}
 <button id="etihadMenuToggle" class="et-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
 <div id="etihadSidebarBackdrop" class="et-sidebar-backdrop"></div>
 <nav id="etihadMainNav" aria-label="Main navigation">
-  <div class="et-sidebar-brand"><span class="et-brand-mark">ET</span><span><strong>ETIHAD PRIME SUPPLIES</strong><small>BUSINESS MANAGEMENT</small></span></div>
+  <div class="et-sidebar-brand"><span class="et-brand-mark">EPS</span><span><strong>ETIHAD PRIME SUPPLIES</strong><small>BUSINESS MANAGEMENT</small></span></div>
   <div class="et-nav-group"><div class="et-nav-label">WORKSPACE</div>
     <button class="active" data-tab="dashboard"><span class="et-nav-icon">▦</span><span>Dashboard</span></button>
   </div>
@@ -1519,7 +1519,7 @@ function printInvoice(sid){
  try{businessLogo=localStorage.getItem('etihad_business_logo')||'';}catch(_){businessLogo='';}
  const invoiceBrand=businessLogo
   ? `<img src="${businessLogo}" alt="Etihad Prime Supplies logo" style="width:76px;height:66px;object-fit:contain;background:#fff;padding:4px;border-radius:8px;border:1px solid #e5e7eb">`
-  : `<div style="width:76px;height:66px;display:grid;place-items:center;background:#172635;color:#d8bd79;border-radius:8px;font-weight:900;font-size:22px">ET</div>`;
+  : `<div style="width:76px;height:66px;display:grid;place-items:center;background:#172635;color:#d8bd79;border-radius:8px;font-weight:900;font-size:22px">EPS</div>`;
  const html=`<!DOCTYPE html>
  <html>
  <head>
@@ -6272,7 +6272,7 @@ body.etihad-dark #employees .hr-tabs button.active{background:#c49a45;color:#171
    }
   }
   let logo='';try{logo=localStorage.getItem('etihad_business_logo')||'';}catch(_){}
-  const logoHtml=logo?`<img class="id-logo" src="${logo}" alt="Etihad Prime Supplies logo">`:'<div class="id-logo-text">ET</div>';
+  const logoHtml=logo?`<img class="id-logo" src="${logo}" alt="Etihad Prime Supplies logo">`:'<div class="id-logo-text">EPS</div>';
   const photoHtml=photo?`<img class="id-photo" src="${photo}" alt="Employee photo">`:`<div class="id-photo id-placeholder">${esc((p?.full_name||'E').split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase())}</div>`;
   const name=esc(p?.full_name||'Employee');
   const body=`<style>
@@ -6300,7 +6300,7 @@ body.etihad-dark #employees .hr-tabs button.active{background:#c49a45;color:#171
  function renderPayroll(){const owner=membership?.role==='owner';$('hrPayrollRows').innerHTML=payroll.map(x=>`<tr><td>${esc(String(x.period_month).slice(0,7))}</td><td><strong>${esc(x.employee_name)}</strong><small class="hr-sub">${esc(x.employee_code)}</small></td><td>${money(x.net_salary)}</td><td><span class="hr-pill ${x.payment_status==='paid'?'on':'off'}">${x.payment_status==='paid'?'Paid':'Unpaid'}</span></td><td><div class="hr-actions"><button data-pay-action="print" data-pay-id="${x.id}">Payslip / PDF</button>${owner&&x.payment_status!=='paid'?`<button data-pay-action="paid" data-pay-id="${x.id}">Mark paid</button>`:''}</div></td></tr>`).join('')||'<tr><td colspan="5">No payroll records yet.</td></tr>';const paid=payroll.filter(x=>x.payment_status==='paid').reduce((n,x)=>n+Number(x.net_salary||0),0),due=payroll.filter(x=>x.payment_status!=='paid').reduce((n,x)=>n+Number(x.net_salary||0),0);$('hrPayrollCount').textContent=payroll.length;$('hrPaidTotal').textContent=money(paid);$('hrDueTotal').textContent=money(due);}
  function printSlip(x){
   let logo='';try{logo=localStorage.getItem('etihad_business_logo')||'';}catch(_){}
-  const logoHtml=logo?`<img src="${logo}" alt="Etihad Prime Supplies logo" style="width:62px;height:52px;object-fit:contain">`:'<div style="width:62px;height:52px;display:grid;place-items:center;background:#172635;color:#d8b86a;font-size:22px;font-weight:900;border-radius:8px">ET</div>';
+  const logoHtml=logo?`<img src="${logo}" alt="Etihad Prime Supplies logo" style="width:62px;height:52px;object-fit:contain">`:'<div style="width:62px;height:52px;display:grid;place-items:center;background:#172635;color:#d8b86a;font-size:22px;font-weight:900;border-radius:8px">EPS</div>';
   const period=esc(String(x.period_month).slice(0,7));
   const status=String(x.payment_status||'unpaid').toUpperCase();
   printDocument('Etihad Prime Supplies — Payslip '+x.employee_code,`<style>
