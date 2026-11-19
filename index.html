@@ -617,7 +617,7 @@ footer{color:#766b55!important}
 #etihadSplash .et-logo-fallback b{font:800 13px/1.4 Inter,Arial,sans-serif;letter-spacing:.24em}
 </style>
 <div id="etihadSplash" role="status" aria-live="polite">
-  <img class="et-logo" src="etihad-brand-192-v3.jpg" alt="Etihad Prime Supplies company logo" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'et-logo-fallback',innerHTML:'<span>EPS</span><b>ETIHAD PRIME SUPPLIES</b>'}))">
+  <img class="et-logo" src="etihad-prime-logo.svg" alt="Etihad Prime Supplies company logo" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'et-logo-fallback',innerHTML:'<span>EPS</span><b>ETIHAD PRIME SUPPLIES</b>'}))">
   <span class="et-loading" aria-label="Loading"></span>
 </div>
 
@@ -5171,7 +5171,7 @@ if ('serviceWorker' in navigator) {
   const img=$('etihadHeaderLogo'),preview=$('etihadLogoPreview');
   [img,preview].forEach(el=>{if(!el)return;if(data){el.src=data;el.classList.add('has-logo')}else{el.removeAttribute('src');el.classList.remove('has-logo')}});
  }
- let logo='';try{logo=localStorage.getItem('etihad_business_logo')||''}catch(e){}
+ let logo='';try{logo=localStorage.getItem('etihad_business_logo')||''}catch(e){};if(!logo)logo='etihad-prime-logo.svg';
  setLogo(logo);
  const file=$('etihadLogoFile');
  if(file)file.addEventListener('change',()=>{
