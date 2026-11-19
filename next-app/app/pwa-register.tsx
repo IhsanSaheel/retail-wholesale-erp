@@ -11,7 +11,7 @@ export function PWARegister() {
   const [officialHost,setOfficialHost] = useState<boolean|null>(null);
 
   useEffect(() => {
-    const isOfficialHost = window.location.hostname === "etihad-traders-saheel5.vercel.app";
+    const isOfficialHost = window.location.hostname === "etihad-prime-supplies-saheel5.vercel.app";
     setOfficialHost(isOfficialHost);
     if (!isOfficialHost) return;
     const ua = window.navigator.userAgent;
@@ -79,11 +79,11 @@ export function PWARegister() {
   }
 
   if(officialHost === null) return null;
-  if(!officialHost) return <div className="pwa-install-wrap"><a className="pwa-install-button" href="https://etihad-traders-saheel5.vercel.app/">Open official Etihad Traders app</a></div>;
+  if(!officialHost) return <div className="pwa-install-wrap"><a className="pwa-install-button" href="https://etihad-prime-supplies-saheel5.vercel.app/">Open official Etihad Prime Supplies app</a></div>;
   if(installed) return null;
   if(!installEvent && !ios) return null;
   return <div className="pwa-install-wrap">
-    <button className="pwa-install-button" onClick={install} aria-label="Install Etihad Traders app">
+    <button className="pwa-install-button" onClick={install} aria-label="Install Etihad Prime Supplies app">
       <span aria-hidden="true">⇩</span>{installEvent?"Install app":"Add to Home Screen"}
     </button>
     {showIosHelp && <div className="pwa-install-help">In Safari, tap the <b>Share</b> button, then choose <b>Add to Home Screen</b>.</div>}
