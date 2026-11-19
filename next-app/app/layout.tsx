@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Etihad Prime" },
 };
-export const viewport: Viewport = { themeColor: "#101d35", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#080807", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en"><body><PWARegister />{children}</body></html>;
