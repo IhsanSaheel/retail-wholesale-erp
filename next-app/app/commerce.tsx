@@ -11,7 +11,7 @@ const pakistanDate=(date:Date=new Date())=>{const parts=new Intl.DateTimeFormat(
 export function CustomerWorkspace({orgId,userId,role,rows,onSaved}:Props){
  const db=useMemo(()=>getSupabase(),[]);
  const sales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data);
- const payments=rows.filter(r=>r.collection==="mberp_payments").map(r=>r.data);
+ const payments=rows.filter(r=>r.collection==="mberp_payments"&&r.data.type!=="staff_tip").map(r=>r.data);
  const limits=rows.filter(r=>r.collection==="mberp_customer_credit_limits").map(r=>r.data);
  const credits=rows.filter(r=>r.collection==="mberp_customer_account_credits").map(r=>r.data);
  const loyaltySetting=rows.find(r=>r.collection==="mberp_loyalty_settings")?.data||{enabled:true,earnAmount:1,earnPoints:1,redeemPoints:1000,redeemValue:1};
