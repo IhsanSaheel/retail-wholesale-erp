@@ -24,7 +24,7 @@ export default function GlobalError({
     <html lang="en">
       <body style={{ margin: 0, minHeight: "100vh", display: "grid", placeItems: "center", padding: 24, fontFamily: "Arial, sans-serif", color: "#172b4d" }}>
         <main style={{ maxWidth: 440, textAlign: "center" }}>
-          <h1>Etihad Traders</h1>
+          <h1>Etihad Prime Supplies</h1>
           <h2>Something went wrong</h2>
           <p>The application could not start this screen. Please try again.</p>
           <button onClick={() => reset()} style={{ padding: "12px 20px", border: 0, borderRadius: 8, background: "#172b4d", color: "white", fontWeight: 600 }}>
