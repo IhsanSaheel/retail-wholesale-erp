@@ -110,7 +110,7 @@ input,select,textarea,.search-input,.pos-search,.login-form input{background:#10
 .outline-btn,.text-action{background:#17140e!important;color:#f0c65a!important;border-color:#8c6b28!important}
 .nav-item{color:#c7bda8!important}.nav-item.active{background:#d6a92825!important;color:#ffe08a!important;box-shadow:inset 2px 0 #e3b633!important}
 .nav-icon,.nav-item.active .nav-icon,.eyebrow,.form-kicker,.section-kicker{color:#e6bd4f!important}
-.brand-mark{background:#080807;border:1px solid #c69a2c!important}object-fit:contain;display:block;opacity:1;max-width:100%;
+.brand-mark{background:#080807;border:1px solid #c69a2c!important}
 .workspace-switch,.login-security{background:#211a0d!important;border-color:#49391c!important;color:#e1d2ad!important}
 .pos-product,.pos-tabs{background:#100f0b!important;color:#f5eddb!important;border-color:#5a4722!important}
 .pos-tabs button.selected{background:#3a2b0d!important;color:#ffe08a!important}
@@ -119,11 +119,11 @@ input,select,textarea,.search-input,.pos-search,.login-form input{background:#10
 .offline-mode-banner,.offline-mode-notice{background:#211a0d!important;color:#f3d27b!important;border-color:#8c6b28!important}
 
 /* Official logo presentation: use the supplied black-and-gold artwork without a white tile */
-.brand-mark{background:#080807;padding:0!important;border:1px solid #c69a2c!important;border-radius:8px;object-position:center!important}object-fit:contain;display:block;opacity:1;max-width:100%;
-.login-brand .brand-mark{width:176px!important;height:116px!important}object-fit:contain;display:block;opacity:1;max-width:100%;
-.side-brand .brand-mark{width:150px!important;height:100px!important}object-fit:contain;display:block;opacity:1;max-width:100%;
-.mobile-brand .brand-mark{width:150px!important;height:100px!important}object-fit:contain;display:block;opacity:1;max-width:100%;
-.login-side .brand-mark{box-shadow:0 4px 20px #0009!important}object-fit:contain;display:block;opacity:1;max-width:100%;
+.brand-mark{background:#080807;padding:0!important;border:1px solid #c69a2c!important;border-radius:8px;object-position:center!important}
+.login-brand .brand-mark{width:176px!important;height:116px!important}
+.side-brand .brand-mark{width:150px!important;height:100px!important}
+.mobile-brand .brand-mark{width:150px!important;height:100px!important}
+.login-side .brand-mark{box-shadow:0 4px 20px #0009!important}
 .side-brand{display:flex;align-items:center;justify-content:flex-start}
 .mobile-brand{display:flex;align-items:center;gap:12px}
 
@@ -186,4 +186,164 @@ table tbody tr:hover{background:#fbf9f4}
   .page-content{padding-top:20px}
   .metric-card,.panel{border-radius:12px}
   .welcome-row h1{letter-spacing:-.6px}
+}
+
+
+/* ETIHAD PRIME SUPPLIES — premium executive theme
+   Warm ivory workspace, crisp white surfaces, charcoal navigation and restrained metallic gold.
+   Visual-only overrides: preserve existing modules, data, workflows and responsive behaviour. */
+:root{
+  --navy:#171612 !important;
+  --navy2:#24221c !important;
+  --gold:#a77b27 !important;
+  --gold2:#d8b56a !important;
+  --ink:#25241f !important;
+  --muted:#77756e !important;
+  --line:#e7e3d9 !important;
+  --paper:#f4f3ef !important;
+  --white:#ffffff !important;
+  --green:#247a5c !important;
+  --red:#bd4141 !important;
+  color-scheme:light;
+}
+html,body,.app-shell,.main-area,.page-content{background:#f4f3ef!important;color:#25241f!important}
+body{font-family:'DM Sans',sans-serif;letter-spacing:0}
+.login-page{background:#11100d!important}
+.login-art{background:radial-gradient(ellipse at 72% 48%,#493a1e 0%,#211d14 47%,#11100d 100%)!important}
+.login-art:before,.login-art:after{border-color:#d8b56a30!important}
+.art-copy h1{color:#fff!important}
+.art-copy h1 em{color:#e3c47e!important}
+.art-copy p{color:#d2cbbb!important}
+.art-foot{color:#a99f89!important}
+.login-side{background:#fbfaf7!important;color:#25241f!important}
+.login-form-wrap h2{color:#201e18!important}
+.login-form-wrap>p,.muted{color:#77756e!important}
+.form-kicker,.eyebrow,.section-kicker{color:#a77b27!important}
+.login-form label{color:#514d43!important}
+.login-form input,.search-input,.pos-search,.customer-box>input,.customer-fields input,.payment-box>input,.payment-row select,.payment-box textarea,.product-form-grid input,.product-form-grid select,.hr-form-grid input,.hr-form-grid select,.single-field input,.statement-filters input,.statement-filters select{
+  background:#fff!important;color:#29271f!important;border:1px solid #ded9ce!important;border-radius:8px!important;
+}
+.login-form input:focus,.search-input:focus,.pos-search:focus{border-color:#b58b3e!important;box-shadow:0 0 0 3px #b58b3e20!important}
+.primary-btn,.checkout-btn{background:linear-gradient(135deg,#d8b56a,#a77b27)!important;color:#17140e!important;border:1px solid #a77b27!important;border-radius:9px!important;box-shadow:0 5px 14px #6b501a20!important}
+.primary-btn:hover,.checkout-btn:hover{background:linear-gradient(135deg,#e5c982,#b38735)!important}
+.login-security{background:#f2efe7!important;border:1px solid #e5ddca!important;color:#6b6250!important}
+.login-security span{color:#247a5c!important}
+.sidebar{background:linear-gradient(180deg,#191813 0%,#100f0c 100%)!important;border-right:1px solid #393326!important;color:#f5f1e8!important}
+.side-brand .brand-mark,.login-brand .brand-mark,.mobile-brand .brand-mark{
+  background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;object-fit:contain!important;
+}
+.side-brand .brand-mark{width:158px!important;height:86px!important}
+.login-brand .brand-mark{width:min(290px,85%)!important;height:auto!important;max-height:180px!important}
+.mobile-brand .brand-mark{width:68px!important;height:48px!important}
+.workspace-switch{background:#ffffff0a!important;border:1px solid #ffffff20!important;border-radius:10px!important}
+.workspace-switch small{color:#aaa18d!important}
+.nav-caption{color:#938b78!important}
+.nav-item{color:#c9c4b7!important;border-radius:8px!important;font-size:11px!important}
+.nav-item:hover{background:#ffffff10!important;color:#fff!important}
+.nav-item.active{background:linear-gradient(90deg,#c49a4930,#c49a490c)!important;color:#f2d99f!important;box-shadow:inset 3px 0 #d8b56a!important}
+.nav-icon,.nav-item.active .nav-icon{color:#d8b56a!important}
+.sidebar-bottom{border-color:#ffffff20!important}
+.user-card{border-color:#ffffff20!important}
+.topbar{background:#fff!important;border-color:#e7e3d9!important;box-shadow:0 2px 12px #29251a08!important}
+.crumb,.top-date{color:#858176!important}
+.crumb b{color:#28261f!important}
+.live-pill{background:#eaf4ee!important;color:#287454!important}
+.page-content{max-width:1560px!important}
+.welcome-row h1{color:#211f19!important;letter-spacing:-.8px!important}
+.welcome-row p{color:#77756e!important}
+.metric-card,.panel,.data-panel,.pos-catalog,.pos-bill,.hr-form,.settings-card,.product-editor,.module-placeholder,.loading-panel{
+  background:#fff!important;color:#29271f!important;border:1px solid #e7e3d9!important;border-radius:12px!important;box-shadow:0 3px 14px #28231908!important;
+}
+.metric-card,.panel{transition:box-shadow .18s ease,border-color .18s ease!important}
+.metric-card:hover,.panel:hover{border-color:#d7c59f!important;box-shadow:0 8px 22px #28231910!important}
+.metric-top,.metric-card>small{color:#817d72!important}
+.metric-card>strong{color:#24221c!important}
+.metric-icon.gold{background:#f5efdf!important;color:#9c742c!important}
+.metric-icon.blue{background:#edf1f3!important;color:#536b78!important}
+.metric-icon.violet{background:#f1eff3!important;color:#74677f!important}
+.metric-icon.green{background:#eaf3ed!important;color:#287454!important}
+.panel-head h3,.data-toolbar h3,.hr-form h3,.settings-card h3,.pos-catalog-head h3,.bill-title h3,.product-editor h3{color:#29271f!important}
+.panel-head p,.data-toolbar p,.hr-form>p,.settings-card>p{color:#858176!important}
+.panel-badge,.record-count{background:#f5efdf!important;color:#8e6926!important}
+.chart-total{color:#25231d!important}
+.bar-track{background:#f1f0eb!important}
+.bar-fill{background:linear-gradient(180deg,#d8b56a,#a77b27)!important}
+.stock-summary{border-color:#e9e5dc!important}
+.stock-number{color:#a77b27!important}
+.stock-avatar,.product-initial,.placeholder-icon{background:#f5efdf!important;color:#96702c!important}
+.stock-name b,.pos-product b{color:#29271f!important}
+.stock-name small,.pos-product small{color:#858176!important}
+.stock-qty{color:#9b7228!important}
+.table-wrap{border-radius:9px!important}
+table{background:#fff!important}
+th{background:#f7f6f2!important;color:#777368!important;border-color:#e9e5dc!important}
+td{background:#fff!important;color:#514e45!important;border-color:#eeebe4!important}
+tbody tr:hover td{background:#fbf9f4!important}
+.invoice-id,.amount-cell{color:#29271f!important}
+.empty-cell{color:#8d887c!important}
+.app-footer{background:#fff!important;border-color:#e7e3d9!important;color:#8b867b!important}
+.app-footer span:first-child{color:#8d692a!important}
+.outline-btn,.text-action{background:#fff!important;color:#625538!important;border:1px solid #ded8ca!important;border-radius:8px!important}
+.outline-btn:hover,.text-action:hover{background:#f8f4eb!important;border-color:#c8a65e!important}
+.pos-tabs,.hr-tabs{background:#efede7!important;border-radius:9px!important}
+.pos-tabs button,.hr-tabs button{color:#716d63!important}
+.pos-tabs button.selected,.hr-tabs button.selected{background:#fff!important;color:#29271f!important;box-shadow:0 1px 5px #28231912!important}
+.pos-product{background:#fff!important;border-color:#ebe7de!important;border-radius:9px!important}
+.pos-product:hover{border-color:#c9a65e!important;box-shadow:0 5px 14px #28231910!important}
+.pos-branch-select{background:#fff!important;color:#39362d!important;border-color:#ded9ce!important}
+.customer-box{background:#f8f7f3!important;border-color:#e8e4da!important}
+.customer-results{background:#fff!important;border-color:#e7e3d9!important}
+.customer-results button{background:#fff!important;color:#39362d!important;border-color:#eeeae2!important}
+.customer-results button:hover{background:#f8f6f0!important}
+.bill-item,.bill-summary,.payment-box,.settlement-preview{border-color:#e9e5dc!important}
+.bill-product b,.bill-summary b,.settlement-preview b{color:#29271f!important}
+.qty-control button{background:#fff!important;color:#514d43!important;border-color:#ded9ce!important}
+.payment-box>label,.customer-box>label,.payment-method-row label{color:#625e53!important}
+.payment-summary b{color:#29271f!important}
+.overpayment-box{background:#fbf6e9!important;border-color:#eadbb9!important}
+.overpayment-box>b{color:#866322!important}
+.resolution-options label{color:#514d43!important}
+.pos-category-bar>button{background:#fff!important;color:#625e53!important;border-color:#e2ded5!important}
+.pos-category-bar>button.active{background:#24221c!important;color:#f3dfb2!important;border-color:#24221c!important}
+.status.paid{background:#eaf4ee!important;color:#287454!important}
+.status.pending,.status.partially-returned{background:#fbf2e4!important;color:#936a25!important}
+.status.returned{background:#eaf4ee!important;color:#287454!important}
+.customer-outstanding{color:#bd4141!important}
+.customer-advance{color:#247a5c!important}
+.statement-summary{background:#f8f7f3!important;border-color:#e8e4da!important}
+.statement-summary b{color:#29271f!important}
+.statement-filters label,.product-form-grid label,.hr-form-grid label,.single-field{color:#625e53!important}
+.report-lines>div{border-color:#e9e5dc!important;color:#716d63!important}
+.report-lines>div b{color:#29271f!important}
+.report-lines .report-final b{color:#9b7228!important}
+.empty-inline,.bill-empty{color:#898477!important}
+.module-placeholder{border-style:dashed!important}
+.module-placeholder h2{color:#29271f!important}
+.module-placeholder p{color:#77756e!important}
+.placeholder-chips span{background:#f1f0eb!important;color:#625e53!important}
+.offline-mode-banner,.offline-mode-notice,.offline-queue-banner{background:#fbf6e9!important;color:#74591f!important;border-color:#e4d3a9!important}
+.offline-queue-banner p,.offline-queue-banner small{color:#74591f!important}
+.offline-queue-banner .secondary-btn{background:#fff!important;color:#74591f!important;border-color:#d6bd82!important}
+.pwa-install-button{background:#201e18!important;color:#f3dfb2!important;border:1px solid #b58b3e!important;box-shadow:0 8px 24px #17140e25!important}
+.pwa-install-button span{background:#d8b56a!important;color:#17140e!important}
+.pwa-install-help{background:#fff!important;color:#39362d!important;border-color:#e7e3d9!important}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #b58b3e!important;outline-offset:2px!important}
+.digital-clock{color:#8f6a27!important}
+.activity-drilldown{background:#faf9f6!important;border-color:#e7e3d9!important}
+.activity-drilldown h4{color:#29271f!important}
+.activity-sale-row{border-color:#e9e5dc!important}
+.shift-report-actions{border-color:#e9e5dc!important}
+.shift-report-actions .text-action{background:#fff!important;border-color:#e2ded5!important}
+.shift-report-actions .retry-closing-email{background:#fbf6e9!important;color:#74591f!important;border-color:#d6bd82!important}
+@media(max-width:760px){
+  .topbar{background:#fff!important}
+  .sidebar{background:linear-gradient(180deg,#191813 0%,#100f0c 100%)!important}
+  .page-content{padding-top:20px!important}
+  .metric-card,.panel{border-radius:11px!important}
+}
+@media print{
+  html,body,.app-shell,.main-area,.page-content,.panel,.metric-card{background:#fff!important;color:#111!important}
+  .sidebar,.topbar,.app-footer,.pwa-install-wrap{display:none!important}
+  .customer-outstanding{color:#bd2525!important}
+  .customer-advance{color:#18764e!important}
 }
