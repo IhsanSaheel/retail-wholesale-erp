@@ -26,7 +26,7 @@ function buildReceiptDocument(data: Record<string, any>) {
   const totalRows = (Array.isArray(data.rows) ? data.rows : []).map(([label, amount]: [string, any]) =>
     `<tr><td>${esc(label)}</td><td class="r">${cash(n(amount))}</td></tr>`
   ).join("");
-  const logoUrl = String(data.logoUrl || `${data.origin || ""}/receipt-logo.svg?v=6`);
+  const logoUrl = String(data.logoUrl || "https://njzhtxrmrqhuxhytxaay.supabase.co/storage/v1/object/public/etihad-branding/d343ea3c-6c19-48f8-bf06-d47f883debcb/logo.png?v=1795278776451");
   return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(data.invoiceNo || "Sales receipt")}</title>
   <style>
     *{box-sizing:border-box}html{background:#fff}body{font:12px/1.45 Arial,Helvetica,sans-serif;color:#17243a;width:100%;max-width:420px;margin:18px auto;padding:14px}
