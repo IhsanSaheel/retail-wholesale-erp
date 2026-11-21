@@ -347,3 +347,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   .customer-outstanding{color:#bd2525!important}
   .customer-advance{color:#18764e!important}
 }
+
+
+/* New Sale: make product selection the first step before bill and payment details. */
+.pos-layout{display:flex!important;flex-direction:column!important;gap:16px!important}
+.pos-catalog{order:1!important;width:100%!important}
+.pos-bill{order:2!important;width:100%!important}
+.pos-catalog-head{position:relative}
+.pos-catalog .pos-search{width:100%!important}
