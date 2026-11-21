@@ -26,7 +26,7 @@ function buildReceiptDocument(data: Record<string, any>) {
   const totalRows = (Array.isArray(data.rows) ? data.rows : []).map(([label, amount]: [string, any]) =>
     `<tr><td>${esc(label)}</td><td class="r">${cash(n(amount))}</td></tr>`
   ).join("");
-  const logoUrl = `${data.origin || ""}/receipt-logo.svg?v=6`;
+  const logoUrl = String(data.logoUrl || `${data.origin || ""}/receipt-logo.svg?v=6`);
   return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(data.invoiceNo || "Sales receipt")}</title>
   <style>
     *{box-sizing:border-box}html{background:#fff}body{font:12px/1.45 Arial,Helvetica,sans-serif;color:#17243a;width:100%;max-width:420px;margin:18px auto;padding:14px}
@@ -269,7 +269,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     ];
     popup.document.open();
     popup.document.write(buildReceiptDocument({
-      origin: window.location.origin, title: "SALES RECEIPT · REPRINT",
+      origin: window.location.origin, logoUrl: String(rows.find(r=>r.collection==="mberp_brand_settings"&&r.record_id==="default")?.data?.logoUrl || ""), title: "SALES RECEIPT · REPRINT",
       invoiceNo: s.invoiceNo, date: s.date, customerName: s.customerName,
       customerPhone: s.customerPhone, branchName: s.branchName, cashier: s.cashier || cashier || userId,
       items: s.items, rows: rowsHtml, paymentMethod: s.paymentMethod, note: s.note
@@ -386,7 +386,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
       if (receiptWindow) {
         receiptWindow.document.open();
         receiptWindow.document.write(buildReceiptDocument({
-          origin: window.location.origin, title: "OFFLINE SALES SLIP",
+          origin: window.location.origin, logoUrl: String(rows.find(r=>r.collection==="mberp_brand_settings"&&r.record_id==="default")?.data?.logoUrl || ""), title: "OFFLINE SALES SLIP",
           status: "PENDING CLOUD SYNC — NOT A CONFIRMED SALES RECEIPT",
           invoiceNo, date, customerName: sale.customerName, customerPhone: sale.customerPhone,
           branchName: sale.branchName, cashier: cashier || userId, items: sale.items,
@@ -447,7 +447,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     if (receiptWindow) {
       receiptWindow.document.open();
       receiptWindow.document.write(buildReceiptDocument({
-        origin: window.location.origin, title: "SALES RECEIPT",
+        origin: window.location.origin, logoUrl: String(rows.find(r=>r.collection==="mberp_brand_settings"&&r.record_id==="default")?.data?.logoUrl || ""), title: "SALES RECEIPT",
         invoiceNo, date, customerName: sale.customerName, customerPhone: sale.customerPhone,
         branchName: sale.branchName, cashier: cashier || userId, items: sale.items,
         rows: [["Subtotal after loyalty", saleSubtotal], ...(saleTaxAmount>0?[[selectedTax?.name||"Tax",saleTaxAmount] as [string,any]]:[]), ["Total bill", total], ...(loyaltyDiscount>0?[["Loyalty savings (included above)",loyaltyDiscount] as [string,any]]:[]), ["Amount received (" + method + ")", cashReceived],
