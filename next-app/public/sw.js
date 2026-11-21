@@ -1,4 +1,4 @@
-const CACHE = "etihad-prime-shell-v16";
+const CACHE = "etihad-prime-shell-v17";
 const OFFLINE = "/offline";
 const SHELL = ["/", OFFLINE, "/icon.svg", "/brand-logo.svg", "/receipt-logo.svg", "/manifest.webmanifest"];
 
@@ -26,7 +26,7 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(key => key.startsWith("etihad-traders-shell-") && key !== CACHE).map(key => caches.delete(key)));
+    await Promise.all(keys.filter(key => (key.startsWith("etihad-traders-shell-") || key.startsWith("etihad-prime-shell-") || key === "etihad-traders-v1") && key !== CACHE).map(key => caches.delete(key)));
     await self.clients.claim();
   })());
 });
