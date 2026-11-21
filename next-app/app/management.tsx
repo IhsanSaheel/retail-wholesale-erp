@@ -13,32 +13,6 @@ const dateText=(v:any)=>v?new Date(v).toLocaleDateString("en-PK",{timeZone:"Asia
 export function PeopleWorkspace({orgId,userId,role,rows,onRefresh}:Props){
  const db=useMemo(()=>getSupabase(),[]);
  const owner=role==="owner";
- const [logoUrl,setLogoUrl]=useState("");
- const [logoPreview,setLogoPreview]=useState("");
- const [logoBusy,setLogoBusy]=useState(false);
- const savedBrand=rows.find(r=>r.collection==="mberp_brand_settings"&&r.record_id==="default")?.data;
- useEffect(()=>{if(savedBrand?.logoUrl){setLogoUrl(String(savedBrand.logoUrl));setLogoPreview("");}},[savedBrand?.logoUrl]);
- async function uploadBusinessLogo(file:File|null){
-  if(!file)return;
-  if(!owner){setNotice("Only the organisation owner can change the business logo.");return;}
-  if(!["image/png","image/jpeg","image/webp"].includes(file.type)){setNotice("Choose a PNG, JPG or WebP image.");return;}
-  if(file.size>5*1024*1024){setNotice("Logo file must be 5 MB or smaller.");return;}
-  setLogoBusy(true);setNotice("Uploading your business logo…");
-  try{
-   const db=getSupabase();
-   const ext=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg";
-   const objectPath=orgId+"/logo."+ext;
-   const {error:uploadError}=await db.storage.from("etihad-branding").upload(objectPath,file,{upsert:true,contentType:file.type,cacheControl:"3600"});
-   if(uploadError)throw uploadError;
-   const {data:publicData}=db.storage.from("etihad-branding").getPublicUrl(objectPath);
-   const publicUrl=publicData.publicUrl+"?v="+Date.now();
-   const {error:saveError}=await db.from("etihad_records").upsert({org_id:orgId,collection:"mberp_brand_settings",record_id:"default",branch_ids:[],updated_by:userId,data:{logoUrl:publicUrl,logoPath:objectPath,updatedAt:new Date().toISOString()}},{onConflict:"org_id,collection,record_id"});
-   if(saveError)throw saveError;
-   setLogoUrl(publicUrl);setLogoPreview("");setNotice("Business logo uploaded and saved to your organisation. It is now available across devices.");
-   await onRefresh();
-  }catch(error:any){setNotice("Logo upload failed: "+(error?.message||"Please try again."));}
-  finally{setLogoBusy(false);}
- }
  const [tab,setTab]=useState("employees");
  const [profiles,setProfiles]=useState<HRRow[]>([]);
  const [attendance,setAttendance]=useState<HRRow[]>([]);
@@ -251,6 +225,32 @@ export function SettingsWorkspace({rows,orgName,orgId,userId,role,onRefresh}:{ro
  const [newPassword,setNewPassword]=useState("");const [confirmPassword,setConfirmPassword]=useState("");const [savingPassword,setSavingPassword]=useState(false);
  const [restoreFile,setRestoreFile]=useState<File|null>(null);const [restoreRecords,setRestoreRecords]=useState<any[]>([]);const [restoreError,setRestoreError]=useState("");const [restoreBusy,setRestoreBusy]=useState(false);const [restoreHrRecords,setRestoreHrRecords]=useState<Record<string,any[]>>({});
  const owner=role==="owner";
+ const [logoUrl,setLogoUrl]=useState("");
+ const [logoPreview,setLogoPreview]=useState("");
+ const [logoBusy,setLogoBusy]=useState(false);
+ const savedBrand=rows.find(r=>r.collection==="mberp_brand_settings"&&r.record_id==="default")?.data;
+ useEffect(()=>{if(savedBrand?.logoUrl){setLogoUrl(String(savedBrand.logoUrl));setLogoPreview("");}},[savedBrand?.logoUrl]);
+ async function uploadBusinessLogo(file:File|null){
+  if(!file)return;
+  if(!owner){setNotice("Only the organisation owner can change the business logo.");return;}
+  if(!["image/png","image/jpeg","image/webp"].includes(file.type)){setNotice("Choose a PNG, JPG or WebP image.");return;}
+  if(file.size>5*1024*1024){setNotice("Logo file must be 5 MB or smaller.");return;}
+  setLogoBusy(true);setNotice("Uploading your business logo…");
+  try{
+   const db=getSupabase();
+   const ext=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg";
+   const objectPath=orgId+"/logo."+ext;
+   const {error:uploadError}=await db.storage.from("etihad-branding").upload(objectPath,file,{upsert:true,contentType:file.type,cacheControl:"3600"});
+   if(uploadError)throw uploadError;
+   const {data:publicData}=db.storage.from("etihad-branding").getPublicUrl(objectPath);
+   const publicUrl=publicData.publicUrl+"?v="+Date.now();
+   const {error:saveError}=await db.from("etihad_records").upsert({org_id:orgId,collection:"mberp_brand_settings",record_id:"default",branch_ids:[],updated_by:userId,data:{logoUrl:publicUrl,logoPath:objectPath,updatedAt:new Date().toISOString()}},{onConflict:"org_id,collection,record_id"});
+   if(saveError)throw saveError;
+   setLogoUrl(publicUrl);setLogoPreview("");setNotice("Business logo uploaded and saved to your organisation. It is now available across devices.");
+   await onRefresh();
+  }catch(error:any){setNotice("Logo upload failed: "+(error?.message||"Please try again."));}
+  finally{setLogoBusy(false);}
+ }
  const allowedCollections=new Set(["etihad_backup_snapshots","mberp_branches","mberp_cash_movements","mberp_cash_registers","mberp_customer_account_credits","mberp_customer_credit_allocations","mberp_customer_credit_limits","mberp_customers","mberp_loyalty_settings","mberp_email_delivery","mberp_expenses","mberp_open_orders","mberp_orders","mberp_payments","mberp_products","mberp_product_suppliers","mberp_product_taxes","mberp_purchases","mberp_quotations","mberp_sales","mberp_sales_returns","mberp_stock_adjustments","mberp_stock_batch_movements","mberp_stock_batches","mberp_supplier_payments","mberp_supplier_returns","mberp_suppliers","mberp_transfers"]);
  const hrBackupSpecs=[
   {key:"employeeProfiles",table:"etihad_employee_profiles",conflict:"org_id,user_id",returnField:"user_id",fields:["org_id","user_id","employee_code","full_name","email","phone","designation","joining_date","base_salary","pay_frequency","payment_method","notes","created_at","updated_at"]},
