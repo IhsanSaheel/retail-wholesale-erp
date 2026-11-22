@@ -56,7 +56,7 @@ export default function Home() {
 
   useEffect(()=>{const timer=window.setInterval(()=>setClockTime(new Date()),1000);return ()=>window.clearInterval(timer);},[]);
 
-  const loadBusiness = useCallback(async (userId:string) => {
+  const loadBusiness = useCallback(async (userId:string, forceOffline=false) => {
     setLoading(true); setError("");
     const restoreOfflineSnapshot = async () => {
       try {
@@ -69,9 +69,12 @@ export default function Home() {
         setLoading(false); return true;
       } catch { return false; }
     };
-    if (!navigator.onLine) {
+    // A browser can report navigator.onLine=true even when its network cannot
+    // reach Supabase. A missing auth session must therefore be able to restore
+    // only the previously authenticated device's encrypted local POS snapshot.
+    if (forceOffline || !navigator.onLine) {
       setOfflineMode(true);
-      if (!(await restoreOfflineSnapshot())) setError("You are offline and this device has no recent Etihad Prime Supplies data. Connect once to load and prepare offline POS.");
+      if (!(await restoreOfflineSnapshot())) setError("Offline POS is not prepared on this device yet. Connect, sign in, and open Sales & POS once.");
       setLoading(false); return;
     }
     setOfflineMode(false);
@@ -134,7 +137,21 @@ export default function Home() {
     // Use this single auth event as the source of truth. Calling getSession()
     // alongside the auth listener can race the auth lock and leave the ERP
     // waiting forever before membership and records are fetched.
+    let authEventSeen = false;
+    let startupFallbackTimer: number | undefined;
+    const restoreRememberedDevice = () => {
+      const cachedUserId=localStorage.getItem(OFFLINE_LAST_USER_KEY)||"";
+      if(cachedUserId) {
+        setOfflineUserId(cachedUserId);
+        setUserEmail(localStorage.getItem(OFFLINE_LAST_EMAIL_KEY)||"");
+        void loadBusiness(cachedUserId,true);
+      } else {
+        setRows([]); setOrgId(""); setBranchIds([]); setRole(""); setPermissions({}); setLoading(false);
+      }
+    };
     const {data:{subscription}} = supabase.auth.onAuthStateChange((_event,next) => {
+      authEventSeen = true;
+      if(startupFallbackTimer!==undefined) window.clearTimeout(startupFallbackTimer);
       setSession(next);
       setUserEmail(next?.user.email || "");
       setLoading(Boolean(next?.user.id));
@@ -144,29 +161,23 @@ export default function Home() {
           localStorage.setItem(OFFLINE_LAST_EMAIL_KEY,next.user.email || "");
           setOfflineUserId("");
           void loadBusiness(next.user.id);
-        } else if(!navigator.onLine) {
-          // A previously signed-in device may reopen without a network. Restore
-          // only its encrypted, device-local POS snapshot; never unlock cloud APIs.
-          const cachedUserId=localStorage.getItem(OFFLINE_LAST_USER_KEY)||"";
-          if(cachedUserId) {
-            setOfflineUserId(cachedUserId);
-            setUserEmail(localStorage.getItem(OFFLINE_LAST_EMAIL_KEY)||"");
-            void loadBusiness(cachedUserId);
-          } else {
-            setRows([]); setOrgId(""); setBranchIds([]); setRole(""); setPermissions({}); setLoading(false);
-          }
         } else {
-          setRows([]);
-          setOrgId("");
-          setBranchIds([]);
-          setRole("");
-          setPermissions({});
-          setOfflineUserId("");
-          setLoading(false);
+          // Supabase may have no restorable session offline (or the browser may
+          // report itself online while the auth service is unreachable). Only
+          // the encrypted, previously saved device snapshot is available here.
+          restoreRememberedDevice();
         }
       },0);
     });
-    return () => subscription.unsubscribe();
+    // If auth initialisation itself stalls, do not strand the installed POS on
+    // a secure-startup screen. Fall back to local encrypted data only.
+    startupFallbackTimer = window.setTimeout(() => {
+      if(!authEventSeen) restoreRememberedDevice();
+    },3000);
+    return () => {
+      if(startupFallbackTimer!==undefined) window.clearTimeout(startupFallbackTimer);
+      subscription.unsubscribe();
+    };
   },[supabase,loadBusiness]);
 
   async function signIn(e:FormEvent) {
