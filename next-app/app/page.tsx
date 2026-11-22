@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { getOfflineBusinessSnapshot, saveOfflineBusinessSnapshot, OFFLINE_SNAPSHOT_MAX_AGE_MS, type OfflineBusinessRow } from "@/lib/offline-business";
+import { listPendingRecordMutations, removePendingRecordMutation } from "@/lib/offline-records";
 import { POSWorkspace, ProductManager } from "./workspaces";
 import { PeopleWorkspace, ReportsWorkspace, SettingsWorkspace } from "./management";
 import { CustomerWorkspace, SupplierWorkspace, PurchaseWorkspace, ReturnsWorkspace, PaymentWorkspace, TransferWorkspace, ExpenseWorkspace, BranchWorkspace, CashRegisterWorkspace } from "./commerce";
@@ -64,7 +65,14 @@ export default function Home() {
         if (!snapshot || !snapshot.orgId || Date.now()-snapshot.cachedAt>OFFLINE_SNAPSHOT_MAX_AGE_MS) return false;
         setOrgId(snapshot.orgId); setOrgName(snapshot.orgName||"Etihad Prime Supplies"); setBranchIds(snapshot.branchIds||[]);
         setRole(String(snapshot.role||"staff").trim().toLowerCase()); setPermissions(snapshot.permissions||{});
-        setRows(snapshot.rows as RecordRow[]); setOfflineMode(true); setModule("sales"); setSalesStartTab("new");
+        const restoredRows=[...(snapshot.rows as RecordRow[])];
+        const queuedMutations=await listPendingRecordMutations(snapshot.orgId,userId);
+        for(const mutation of queuedMutations){
+          const row:RecordRow={collection:mutation.collection,record_id:mutation.recordId,branch_ids:mutation.branchIds,data:mutation.data,updated_at:new Date(mutation.createdAt).toISOString(),updated_by:mutation.updatedBy};
+          const index=restoredRows.findIndex(item=>item.collection===row.collection&&item.record_id===row.record_id);
+          if(index>=0)restoredRows[index]=row;else restoredRows.push(row);
+        }
+        setRows(restoredRows); setOfflineMode(true); setModule("sales"); setSalesStartTab("new");
         setError("OFFLINE MODE · Using this device’s saved POS data from "+new Date(snapshot.cachedAt).toLocaleString()+". New sales will remain pending until synchronised.");
         setLoading(false); return true;
       } catch { return false; }
@@ -85,6 +93,18 @@ export default function Home() {
     }
     if(!memberships?.length) { setError("This login is not linked to an active Etihad Prime Supplies employee account."); setRows([]); setOrgId(""); setBranchIds([]); setRole(""); setPermissions({}); setOfflineMode(false); setLoading(false); return; }
     const membership = memberships[0];
+    // Reconcile authorised local product changes before downloading the latest
+    // catalogue. Upserts are idempotent by the existing organisation/collection/id key.
+    try{
+      const queuedMutations=await listPendingRecordMutations(membership.org_id,userId);
+      for(const mutation of queuedMutations){
+        const {error:syncError}=await supabase.from("etihad_records").upsert({
+          org_id:membership.org_id,collection:mutation.collection,record_id:mutation.recordId,
+          branch_ids:mutation.branchIds,data:mutation.data,updated_by:userId
+        },{onConflict:"org_id,collection,record_id"});
+        if(!syncError)await removePendingRecordMutation(mutation.id);
+      }
+    }catch(syncQueueError){console.warn("Offline product changes remain queued for a later sync.",syncQueueError);}
     setOrgId(membership.org_id);
     setBranchIds(Array.isArray(membership.branch_ids) ? membership.branch_ids : []);
     setRole(String(membership.role || "staff").trim().toLowerCase());
