@@ -415,3 +415,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
     accent-color:#a77b27!important;
   }
 }
+
+
+/* Product & Restock section navigation */
+.product-stock-nav{display:flex;gap:8px;overflow-x:auto;padding:10px 2px 14px;margin:0 0 14px;scrollbar-width:thin;position:sticky;top:0;z-index:8;background:var(--page-bg,#f7f7f5)}
+.product-stock-nav a{flex:0 0 auto;display:inline-flex;align-items:center;min-height:38px;padding:8px 13px;border:1px solid #d8d3c8;border-radius:9px;background:#fff;color:#25334a;text-decoration:none;font-size:13px;font-weight:650;white-space:nowrap}
+.product-stock-nav a:focus-visible{outline:2px solid #a77b27;outline-offset:2px}
+.product-stock-nav a:hover{border-color:#a77b27;background:#fbf8f0}
+.product-manager [id$="-section"]{scroll-margin-top:78px}
+.product-manager [id$="-section"]>.panel:first-of-type{margin-top:10px}
+@media(max-width:640px){.product-stock-nav{margin-left:-2px;margin-right:-2px;padding:8px 2px 12px}.product-stock-nav a{font-size:12px;padding:8px 11px;min-height:40px}}
