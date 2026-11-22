@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { listPendingSales, removePendingSale, savePendingSale, updatePendingSale, type PendingSale } from "@/lib/offline-sales";
 import { getSupabase } from "@/lib/supabase";
+import { saveOfflineRecordMutation } from "@/lib/offline-records";
 
 type Row = { collection: string; record_id: string; data: Record<string, any> };
 type Product = Record<string, any>;
@@ -593,7 +594,29 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, onSaved }
  }
 
  function start(p?:Product){setEditorOpen(true);setEditing(p||null);setName(p?.name||"");setSku(p?.sku||"");setBarcode(p?.barcode||"");setCategory(p?.category||"");setUnit(String(p?.unit||"piece"));setQty(String(p?.qty??0));setCost(String(p?.cost??0));setPrice(String(p?.price??0));setAlertQty(String(p?.alert??p?.lowAt??5));setBranchId(p?.branchId||branches[0]?.id||"");setError("");}
- async function save(){setBusy(true);setError("");const id=editing?.id||makeId();const data={...(editing||{}),id,name:name.trim(),sku:sku.trim(),barcode:barcode.trim(),category:category.trim(),unit:unit.trim()||"piece",...(editing?{}:{qty:n(qty)}),cost:n(cost),price:n(price),alert:n(alertQty),lowAt:n(alertQty),branchId};const payload={org_id:orgId,collection:"mberp_products",record_id:String(id),branch_ids:[String(branchId)],data,updated_by:userId};const q=editing?supabase.from("etihad_records").update({data,branch_ids:[String(branchId)],updated_by:userId}).eq("org_id",orgId).eq("collection","mberp_products").eq("record_id",String(id)):supabase.from("etihad_records").insert(payload);const {error}=await q;if(error)setError(error.message);else{setEditing(null);setEditorOpen(false);onSaved();}setBusy(false);}
+ async function save(){
+  setBusy(true);setError("");
+  const id=editing?.id||makeId();
+  const data={...(editing||{}),id,name:name.trim(),sku:sku.trim(),barcode:barcode.trim(),category:category.trim(),unit:unit.trim()||"piece",...(editing?{}:{qty:n(qty)}),cost:n(cost),price:n(price),alert:n(alertQty),lowAt:n(alertQty),branchId};
+  const branchIdsForRecord=[String(branchId)];
+  if(!navigator.onLine){
+    try{
+      await saveOfflineRecordMutation({orgId,userId,collection:"mberp_products",recordId:String(id),branchIds:branchIdsForRecord,data,updatedBy:userId});
+      setEditing(null);setEditorOpen(false);setError("Product saved securely on this device. It will sync to the cloud when internet returns.");
+      onSaved();
+    }catch(storageError){setError("Product was not saved. Secure offline storage failed: "+(storageError instanceof Error?storageError.message:"Unknown error"));}
+    setBusy(false);return;
+  }
+  const payload={org_id:orgId,collection:"mberp_products",record_id:String(id),branch_ids:branchIdsForRecord,data,updated_by:userId};
+  const q=editing?supabase.from("etihad_records").update({data,branch_ids:branchIdsForRecord,updated_by:userId}).eq("org_id",orgId).eq("collection","mberp_products").eq("record_id",String(id)):supabase.from("etihad_records").insert(payload);
+  const {error}=await q;
+  if(error&&(!error.code&&/fetch|network|timeout|offline|connection|request failed|load failed/i.test(error.message||""))){
+    try{await saveOfflineRecordMutation({orgId,userId,collection:"mberp_products",recordId:String(id),branchIds:branchIdsForRecord,data,updatedBy:userId});setEditing(null);setEditorOpen(false);setError("Connection interrupted. Product saved securely on this device and queued for cloud sync.");onSaved();}
+    catch(storageError){setError("Product was not confirmed and could not be queued offline: "+(storageError instanceof Error?storageError.message:"Unknown error"));}
+  }else if(error)setError(error.message);
+  else{setEditing(null);setEditorOpen(false);onSaved();}
+  setBusy(false);
+}
  function exportStockAdjustmentRegister(){const headers=["Request date","Reviewed date","Request reference","Product","Branch","Batch / lot","Delta quantity","Reason","Status","Review note"];const data=requests.map(x=>[x.requestedAt||x.date||"",x.reviewedAt||"",x.requestNo||x.id,x.productName,x.branchName,x.batchNo||"",x.delta,x.reason,x.status||"pending",x.reviewNote||""]);const csv=[headers,...data].map(row=>row.map(v=>{const raw=String(v??"");const safe=typeof v==="string"&&/^\s*[=+@-]/.test(raw)?"'"+raw:raw;return '"'+safe.replace(/"/g,'""')+'"';}).join(",")).join("\r\n");const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="Etihad-Traders-Stock-Adjustment-Register.csv";a.click();URL.revokeObjectURL(url);}
  function exportBatchExpiryRegister(){const headers=["Status","Product","SKU","Batch","Branch","Received quantity","Available quantity","Received date","Expiry date","Days to expiry"];const data=batches.map(b=>{const days=daysUntilPakistanDate(b.expiryDate);const remaining=n(b.remainingQty??b.qty);const status=remaining<=0?"DEPLETED":days===null?"DATE MISSING":days<0?"EXPIRED":days<=7?"EXPIRES WITHIN 7 DAYS":days<=30?"EXPIRING SOON":"OK";return [status,b.productName,b.sku,b.batchNo,b.branchName,b.qty,remaining,b.receivedDate,b.expiryDate,days??""];});const csv=[headers,...data].map(row=>row.map(v=>{const raw=String(v??"");const safe=typeof v==="string"&&/^\s*[=+@-]/.test(raw)?"'"+raw:raw;return '"'+safe.replace(/"/g,'""')+'"';}).join(",")).join("\r\n");const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="Etihad-Traders-Batch-Expiry-Register.csv";a.click();URL.revokeObjectURL(url);}
  async function requestAdjustment(){if(!adjustProduct||!Number.isFinite(Number(adjustDelta))||Number(adjustDelta)===0||adjustReason.trim().length<4||(adjustmentBatches.length>0&&!adjustBatch)){setError("Choose a product and batch if batch-tracked, enter a non-zero quantity change and provide a reason.");return;}setAdjustBusy(true);setError("");const {data,error}=await supabase.rpc("etihad_request_stock_adjustment_v2",{p_org_id:orgId,p_product_id:String(adjustProduct),p_delta:Number(adjustDelta),p_reason:adjustReason.trim(),p_request_id:makeId(),p_batch_id:adjustBatch||null});setAdjustBusy(false);if(error||!data?.success){setError(error?.message||"Stock adjustment request was not saved.");return;}setAdjustDelta("");setAdjustReason("");setAdjustBatch("");onSaved();}
