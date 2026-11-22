@@ -1,4 +1,4 @@
-const CACHE = "etihad-prime-shell-v18";
+const CACHE = "etihad-prime-shell-v19";
 const OFFLINE = "/offline";
 const SHELL = ["/", OFFLINE, "/icon.svg", "/brand-logo.svg", "/receipt-logo.svg", "/manifest.webmanifest"];
 
@@ -7,11 +7,36 @@ async function cacheResponse(cache, request, response) {
   try { await cache.put(request, response.clone()); } catch {}
 }
 
+async function precacheCurrentAppAssets(cache) {
+  // A newly installed PWA may not yet have cached the JavaScript chunks needed
+  // to boot its first standalone launch. Fetch the current home document and
+  // pre-cache its immutable Next.js build assets before activating this worker.
+  const request = new Request(new URL("/", self.location.origin), { cache: "reload" });
+  try {
+    const response = await fetch(request);
+    if (!response || !response.ok || response.type !== "basic") return;
+    await cacheResponse(cache, request, response);
+    const html = await response.clone().text();
+    const candidates = new Set();
+    for (const match of html.matchAll(/(?:src|href)=["']([^"'#]+)["']/g)) {
+      try {
+        const asset = new URL(match[1], self.location.origin);
+        if (asset.origin === self.location.origin && asset.pathname.startsWith("/_next/static/")) candidates.add(asset.href);
+      } catch {}
+    }
+    await Promise.all([...candidates].map(async href => {
+      const assetRequest = new Request(href, { cache: "reload" });
+      try {
+        const assetResponse = await fetch(assetRequest);
+        await cacheResponse(cache, assetRequest, assetResponse);
+      } catch {}
+    }));
+  } catch {}
+}
+
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    // Cache each shell resource independently: one missing optional asset must
-    // never prevent the service worker itself from installing.
     await Promise.all(SHELL.map(async path => {
       const request = new Request(new URL(path, self.location.origin), { cache: "reload" });
       try {
@@ -19,6 +44,7 @@ self.addEventListener("install", event => {
         await cacheResponse(cache, request, response);
       } catch {}
     }));
+    await precacheCurrentAppAssets(cache);
     await self.skipWaiting();
   })());
 });
@@ -63,14 +89,12 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // Cache the app's compiled JS/CSS, fonts, images and Next.js server-component
-  // payloads needed to reopen the already-loaded POS without a network.
   const isAppAsset = url.pathname.startsWith("/_next/static/")
     || ["script", "style", "font", "image"].includes(request.destination)
     || request.headers.has("RSC")
     || ["/icon.svg", "/brand-logo.svg", "/receipt-logo.svg", "/manifest.webmanifest"].includes(url.pathname);
 
-  // Never cache API/auth endpoints or user-specific Supabase traffic.
+  // Do not cache APIs, authentication endpoints, or Supabase/user data.
   if (!isAppAsset || url.pathname.startsWith("/api/")) return;
 
   event.respondWith((async () => {
@@ -80,7 +104,7 @@ self.addEventListener("fetch", event => {
       await cacheResponse(cache, request, response);
       return response;
     } catch {
-      return await caches.match(request) || Response.error();
+      return await caches.match(request, { ignoreSearch: true }) || Response.error();
     }
   })());
 });
