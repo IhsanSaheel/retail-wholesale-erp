@@ -355,3 +355,63 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .pos-bill{order:2!important;width:100%!important}
 .pos-catalog-head{position:relative}
 .pos-catalog .pos-search{width:100%!important}
+
+
+/* POS mobile layout: keep bill controls readable and prevent label wrapping. */
+@media(max-width:760px){
+  .pos-bill{position:static!important;min-width:0!important}
+  .bill-items{max-height:none!important;overflow:visible!important}
+  .bill-item{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-areas:"product product" "controls controls" "total remove"!important;
+    align-items:center!important;
+    gap:10px 12px!important;
+    padding:14px 0!important;
+  }
+  .bill-product{grid-area:product!important;width:100%!important;min-width:0!important}
+  .bill-product b{font-size:13px!important;white-space:normal!important;overflow-wrap:anywhere!important}
+  .bill-product small{font-size:11px!important}
+  .bill-product label{font-size:12px!important;line-height:1.4!important;color:#514d43!important}
+  .bill-product .amount-entry{width:100%!important;min-height:42px!important;font-size:14px!important}
+  .qty-control{
+    grid-area:controls!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    width:100%!important;
+    gap:10px!important;
+    align-items:end!important;
+  }
+  .qty-control label{display:flex!important;flex-direction:column!important;gap:6px!important;min-width:0!important;font-size:12px!important;line-height:1.35!important;color:#514d43!important}
+  .qty-control input{width:100%!important;min-width:0!important;min-height:44px!important;padding:9px 10px!important;font-size:14px!important}
+  .line-total{grid-area:total!important;min-width:0!important;text-align:left!important;font-size:13px!important;white-space:nowrap!important}
+  .remove-item{grid-area:remove!important;justify-self:end!important;min-width:38px!important;min-height:38px!important;font-size:22px!important}
+  .sale-price-type-options{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:8px!important;
+    margin:9px 0 12px!important;
+  }
+  .sale-price-type-options label{
+    display:flex!important;
+    align-items:center!important;
+    gap:10px!important;
+    min-height:42px!important;
+    padding:9px 11px!important;
+    border:1px solid #ded9ce!important;
+    border-radius:8px!important;
+    background:#fff!important;
+    color:#29271f!important;
+    font-size:13px!important;
+    font-weight:600!important;
+    line-height:1.35!important;
+    white-space:normal!important;
+  }
+  .sale-price-type-options input[type="radio"]{
+    flex:0 0 18px!important;
+    width:18px!important;
+    height:18px!important;
+    margin:0!important;
+    accent-color:#a77b27!important;
+  }
+}
