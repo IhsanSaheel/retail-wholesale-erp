@@ -43,7 +43,10 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(key => (key.startsWith("etihad-traders-shell-") || key.startsWith("etihad-prime-shell-") || key === "etihad-traders-v1") && key !== CACHE).map(key => caches.delete(key)));
+    // This origin is dedicated to Etihad Prime Supplies. Remove every older
+    // Cache Storage entry so stale HTML/JS cannot keep booting an old auth UI.
+    // IndexedDB (encrypted business snapshots and queued sales) is untouched.
+    await Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)));
     await self.clients.claim();
   })());
 });
