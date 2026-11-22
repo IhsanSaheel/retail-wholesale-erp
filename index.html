@@ -4496,7 +4496,31 @@ if ('serviceWorker' in navigator) {
   'use strict';
   // Never leave the user on a blank screen if the secure-auth library cannot start.
   window.setTimeout(function(){
-    if(document.body.classList.contains('etihad-auth-ready')||document.getElementById('etihadCloudPanel'))return;
+    if(document.body.classList.contains('etihad-auth-ready'))return;
+    // The legacy installed PWA can start without the Supabase CDN while offline.
+    // Permit only a recently verified owner on this same device; never grant
+    // offline access to an employee or to a different previously used account.
+    if(!navigator.onLine){
+      let cached=null;
+      try{cached=JSON.parse(localStorage.getItem('etihad_verified_owner_session_v1')||'null');}catch(_){}
+      const activeUser=localStorage.getItem('etihad_active_user_v1')||'';
+      const verifiedAt=Number(cached?.verified_at||0);
+      const trustedOwner= cached?.role==='owner' && typeof cached?.user_id==='string' &&
+        cached.user_id.length>0 && activeUser===cached.user_id &&
+        verifiedAt>0 && Date.now()-verifiedAt<=7*24*60*60*1000;
+      if(trustedOwner){
+        document.body.classList.add('etihad-auth-ready');
+        const cloudPanel=document.getElementById('etihadCloudPanel');
+        if(cloudPanel)cloudPanel.style.display='none';
+        const banner=document.createElement('div');
+        banner.id='etihadOfflineOwnerNotice';
+        banner.textContent='OFFLINE OWNER MODE · Showing records saved on this device. Cloud updates and sync will resume when internet returns.';
+        banner.style.cssText='position:fixed;left:10px;right:10px;bottom:10px;z-index:2147483645;background:#8a5a12;color:#fff;padding:10px 14px;border-radius:10px;font:600 12px Arial,sans-serif;text-align:center;box-shadow:0 3px 15px #0003';
+        document.body.appendChild(banner);
+        return;
+      }
+    }
+    if(document.getElementById('etihadCloudPanel'))return;
     if(document.getElementById('etihadStartupRecovery'))return;
     const panel=document.createElement('div');
     panel.id='etihadStartupRecovery';
@@ -4504,7 +4528,7 @@ if ('serviceWorker' in navigator) {
     panel.innerHTML='<h3 style="margin-top:0">Etihad Prime Supplies — Secure startup</h3><p>The secure sign-in service has not started. Your business records remain locked and have not been changed.</p><p>Check your internet connection, then reload Etihad Prime Supplies. If this message continues, the authentication service could not be reached.</p><button type="button" id="etihadStartupRetry" style="padding:11px 18px;background:#1769aa;color:white;border:0;border-radius:7px">Reload securely</button>';
     document.body.appendChild(panel);
     document.getElementById('etihadStartupRetry').addEventListener('click',function(){window.location.reload();});
-  },15000);
+  },4000);
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2'"></script>
