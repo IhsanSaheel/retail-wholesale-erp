@@ -4788,7 +4788,23 @@ if ('serviceWorker' in navigator) {
   }
   async function authorizeAndOpen(){
     let user;
-    try{ user=await sessionUser(); }catch(e){ showLogin();message('Unable to verify your login session. Connect to the internet and try again. '+(e.message||String(e)));return; }
+    try{ user=await sessionUser(); }catch(e){
+      let cached=null;try{cached=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');}catch(_){}
+      const activeUser=localStorage.getItem(ACTIVE_USER_KEY);
+      const verifiedAt=Number(cached?.verified_at||0);
+      const recentOwner= cached?.role==='owner' && !!cached?.user_id && activeUser===cached.user_id && verifiedAt>0 && (Date.now()-verifiedAt)<=7*24*60*60*1000;
+      if(!navigator.onLine && recentOwner){
+        $('etCloudUser').textContent='Previously verified owner (offline)';
+        $('etCloudRole').textContent='Company role: owner (offline mode)';
+        $('etihadCloudLogin').style.display='none';$('etihadCloudControls').style.display='block';
+        $('etCloudUpload').disabled=true;$('etCloudDownload').disabled=true;
+        $('etCloudUseCompany').disabled=true;$('etCloudSnapshot').disabled=true;
+        $('etCloudLoadSnapshots').disabled=true;$('etCloudRestoreSnapshot').disabled=true;
+        message('Offline owner mode. Showing records saved on this device; cloud changes and employee sign-in require internet.');
+        revealApp();return;
+      }
+      showLogin();message('Unable to verify your login session. Connect to the internet and try again. '+(e.message||String(e)));return;
+    }
     if(!user){showLogin();message('Please log in with your authorized Etihad Prime Supplies account.');return;}
     try{
       message('Verifying your company membership…');
