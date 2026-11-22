@@ -86,8 +86,8 @@ export default function Home() {
     setBranchIds(Array.isArray(membership.branch_ids) ? membership.branch_ids : []);
     setRole(String(membership.role || "staff").trim().toLowerCase());
     setPermissions((membership.permissions && typeof membership.permissions==="object") ? membership.permissions : {});
-    const {data:org} = await supabase.from("etihad_organizations").select("name").eq("id",membership.org_id).maybeSingle();
-    if(org?.name) setOrgName(org.name);
+    // Fetch organisation details alongside the records instead of serially.
+    const orgPromise = supabase.from("etihad_organizations").select("name").eq("id",membership.org_id).maybeSingle();
 
     // Supabase's default row cap can silently truncate a large business.
     // Fetch stable, ordered pages so POS history, customer credits and stock
@@ -110,16 +110,23 @@ export default function Home() {
       if (batch.length < pageSize) break;
       offset += pageSize;
     }
+    const {data:org} = await orgPromise;
+    if(org?.name) setOrgName(org.name);
     if(recordsError) {
       if (isNetworkFailure(recordsError) && await restoreOfflineSnapshot()) return;
       setError("Your account is signed in, but business records could not be loaded. Reconnect and refresh; existing screen data has been kept.");
     } else {
       setRows(allRecords); setOfflineMode(false);
-      const snapshotRows = allRecords.filter(row=>OFFLINE_POS_COLLECTIONS.has(row.collection)) as OfflineBusinessRow[];
-      try { await saveOfflineBusinessSnapshot({userId,orgId:membership.org_id,orgName:org?.name||"Etihad Prime Supplies",branchIds:Array.isArray(membership.branch_ids)?membership.branch_ids:[],role:String(membership.role||"staff").trim().toLowerCase(),permissions:(membership.permissions&&typeof membership.permissions==="object")?membership.permissions:{},cachedAt:Date.now(),rows:snapshotRows}); }
-      catch { setError("Business data loaded online, but this device could not refresh its offline POS cache. Check available device storage."); }
     }
+    // Show the workspace as soon as authorised records are ready. Refresh the
+    // encrypted offline cache in the background so large snapshots do not hold
+    // up every app launch.
     setLoading(false);
+    if(!recordsError) {
+      const snapshotRows = allRecords.filter(row=>OFFLINE_POS_COLLECTIONS.has(row.collection)) as OfflineBusinessRow[];
+      void saveOfflineBusinessSnapshot({userId,orgId:membership.org_id,orgName:org?.name||"Etihad Prime Supplies",branchIds:Array.isArray(membership.branch_ids)?membership.branch_ids:[],role:String(membership.role||"staff").trim().toLowerCase(),permissions:(membership.permissions&&typeof membership.permissions==="object")?membership.permissions:{},cachedAt:Date.now(),rows:snapshotRows})
+        .catch(()=>{ /* Keep the live workspace responsive if offline caching is unavailable. */ });
+    }
   },[supabase]);
 
   useEffect(() => {
