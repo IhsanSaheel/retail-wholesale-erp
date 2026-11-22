@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'etihad-prime-supplies-v93';
+const CACHE_NAME = 'etihad-prime-supplies-v94';
 // Derive the base path from the registered scope so the same PWA works on
 // GitHub Pages (/retail-wholesale-erp/) and Vercel (/) without path rewrites.
 const APP_PREFIX = new URL('./', self.registration.scope).pathname;
@@ -31,7 +31,7 @@ self.addEventListener('activate', event => {
       .then(keys => Promise.all(
         keys
           .filter(key =>
-            key.startsWith('etihad-traders-') &&
+            (key.startsWith('etihad-traders-') || key.startsWith('etihad-prime-supplies-')) &&
             key !== CACHE_NAME
           )
           .map(key => caches.delete(key))
