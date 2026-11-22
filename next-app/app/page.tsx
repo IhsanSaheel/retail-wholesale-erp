@@ -121,15 +121,19 @@ export default function Home() {
     } else {
       setRows(allRecords); setOfflineMode(false);
     }
-    // Show the workspace as soon as authorised records are ready. Refresh the
-    // encrypted offline cache in the background so large snapshots do not hold
-    // up every app launch.
-    setLoading(false);
+    // Do not report the first online load as complete until the encrypted
+    // offline POS snapshot is safely committed to IndexedDB. This prevents a
+    // quick app close from leaving the next offline launch without its data.
     if(!recordsError) {
       const snapshotRows = allRecords.filter(row=>OFFLINE_POS_COLLECTIONS.has(row.collection)) as OfflineBusinessRow[];
-      void saveOfflineBusinessSnapshot({userId,orgId:membership.org_id,orgName:org?.name||"Etihad Prime Supplies",branchIds:Array.isArray(membership.branch_ids)?membership.branch_ids:[],role:String(membership.role||"staff").trim().toLowerCase(),permissions:(membership.permissions&&typeof membership.permissions==="object")?membership.permissions:{},cachedAt:Date.now(),rows:snapshotRows})
-        .catch(()=>{ /* Keep the live workspace responsive if offline caching is unavailable. */ });
+      try {
+        await saveOfflineBusinessSnapshot({userId,orgId:membership.org_id,orgName:org?.name||"Etihad Prime Supplies",branchIds:Array.isArray(membership.branch_ids)?membership.branch_ids:[],role:String(membership.role||"staff").trim().toLowerCase(),permissions:(membership.permissions&&typeof membership.permissions==="object")?membership.permissions:{},cachedAt:Date.now(),rows:snapshotRows});
+        try { if(navigator.storage?.persist) void navigator.storage.persist().catch(()=>false); } catch {}
+      } catch (cacheError:any) {
+        setError("Your business records loaded, but the secure offline copy could not be saved on this device. Keep the app open and reconnect before using offline mode. "+String(cacheError?.message||cacheError||""));
+      }
     }
+    setLoading(false);
   },[supabase]);
 
   useEffect(() => {
