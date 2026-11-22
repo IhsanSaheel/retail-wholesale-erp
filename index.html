@@ -4516,10 +4516,13 @@ if ('serviceWorker' in navigator) {
       try{cached=JSON.parse(localStorage.getItem('etihad_verified_owner_session_v1')||'null');}catch(_){}
       const activeUser=localStorage.getItem('etihad_active_user_v1')||'';
       const verifiedAt=Number(cached?.verified_at||0);
+      // The verified owner marker is written only after cloud membership succeeds.
+      // Older app versions did not always persist the companion active-user key.
       const trustedOwner=cached?.role==='owner' && typeof cached?.user_id==='string' &&
-        cached.user_id.length>0 && activeUser===cached.user_id &&
+        cached.user_id.length>0 && (!activeUser || activeUser===cached.user_id) &&
         verifiedAt>0 && Date.now()-verifiedAt<=7*24*60*60*1000;
       if(trustedOwner){
+        if(!activeUser)localStorage.setItem('etihad_active_user_v1',cached.user_id);
         document.body.classList.add('etihad-auth-ready');
         const cloudPanel=document.getElementById('etihadCloudPanel');
         if(cloudPanel)cloudPanel.style.display='none';
@@ -4790,10 +4793,11 @@ if ('serviceWorker' in navigator) {
     let user;
     try{ user=await sessionUser(); }catch(e){
       let cached=null;try{cached=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');}catch(_){}
-      const activeUser=localStorage.getItem(ACTIVE_USER_KEY);
+      const activeUser=localStorage.getItem(ACTIVE_USER_KEY)||'';
       const verifiedAt=Number(cached?.verified_at||0);
-      const recentOwner= cached?.role==='owner' && !!cached?.user_id && activeUser===cached.user_id && verifiedAt>0 && (Date.now()-verifiedAt)<=7*24*60*60*1000;
+      const recentOwner= cached?.role==='owner' && !!cached?.user_id && (!activeUser||activeUser===cached.user_id) && verifiedAt>0 && (Date.now()-verifiedAt)<=7*24*60*60*1000;
       if(!navigator.onLine && recentOwner){
+        if(!activeUser)localStorage.setItem(ACTIVE_USER_KEY,cached.user_id);
         $('etCloudUser').textContent='Previously verified owner (offline)';
         $('etCloudRole').textContent='Company role: owner (offline mode)';
         $('etihadCloudLogin').style.display='none';$('etihadCloudControls').style.display='block';
@@ -4805,7 +4809,24 @@ if ('serviceWorker' in navigator) {
       }
       showLogin();message('Unable to verify your login session. Connect to the internet and try again. '+(e.message||String(e)));return;
     }
-    if(!user){showLogin();message('Please log in with your authorized Etihad Prime Supplies account.');return;}
+    if(!user){
+      let cached=null;try{cached=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');}catch(_){}
+      const activeUser=localStorage.getItem(ACTIVE_USER_KEY)||'';
+      const verifiedAt=Number(cached?.verified_at||0);
+      const recentOwner=cached?.role==='owner' && !!cached?.user_id && (!activeUser||activeUser===cached.user_id) && verifiedAt>0 && (Date.now()-verifiedAt)<=7*24*60*60*1000;
+      if(!navigator.onLine && recentOwner){
+        if(!activeUser)localStorage.setItem(ACTIVE_USER_KEY,cached.user_id);
+        $('etCloudUser').textContent='Previously verified owner (offline)';
+        $('etCloudRole').textContent='Company role: owner (offline mode)';
+        $('etihadCloudLogin').style.display='none';$('etihadCloudControls').style.display='block';
+        $('etCloudUpload').disabled=true;$('etCloudDownload').disabled=true;
+        $('etCloudUseCompany').disabled=true;$('etCloudSnapshot').disabled=true;
+        $('etCloudLoadSnapshots').disabled=true;$('etCloudRestoreSnapshot').disabled=true;
+        message('Offline owner mode. Showing records saved on this device; cloud changes and employee sign-in require internet.');
+        revealApp();return;
+      }
+      showLogin();message('Please log in with your authorized Etihad Prime Supplies account.');return;
+    }
     try{
       message('Verifying your company membership…');
       let m;
