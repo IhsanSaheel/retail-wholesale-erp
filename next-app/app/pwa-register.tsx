@@ -11,7 +11,11 @@ export function PWARegister() {
   const [officialHost,setOfficialHost] = useState<boolean|null>(null);
 
   useEffect(() => {
-    const isOfficialHost = window.location.hostname === "etihad-traders-saheel5.vercel.app";
+    const hostname = window.location.hostname.toLowerCase();
+    // Support the stable production alias and Vercel's unique deployment aliases.
+    // Each alias has its own origin and must register its own offline worker.
+    const isOfficialHost = hostname === "etihad-traders-saheel5.vercel.app"
+      || (hostname.startsWith("etihad-traders-") && hostname.endsWith(".vercel.app"));
     setOfficialHost(isOfficialHost);
     if (!isOfficialHost) return;
     const ua = window.navigator.userAgent;
@@ -38,7 +42,7 @@ export function PWARegister() {
     window.addEventListener("appinstalled",onInstalled);
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("controllerchange",onControllerChange);
-      navigator.serviceWorker.register("/sw.js?release=20261121-7",{updateViaCache:"none"}).then(registration => {
+      navigator.serviceWorker.register("/sw.js?release=20261122-1",{updateViaCache:"none"}).then(registration => {
         const activateWaitingWorker = () => {
           if (registration.waiting && navigator.serviceWorker.controller) {
             registration.waiting.postMessage({type:"SKIP_WAITING"});
