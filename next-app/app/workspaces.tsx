@@ -613,29 +613,19 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, onSaved, 
   const reason=window.prompt("Reason for setting "+String(product.name||"this product")+" stock to zero (minimum 4 characters):","Physical stock count correction");
   if(reason===null)return;
   if(reason.trim().length<4){setError("Please enter a reason of at least 4 characters.");return;}
-  if(!window.confirm("Set "+String(product.name||"this product")+" stock from "+current+" to 0? This will create approved stock adjustment record(s). Past sales and purchase history will remain unchanged."))return;
+  if(!window.confirm("Set "+String(product.name||"this product")+" stock from "+current+" to 0? All remaining batch quantities will also be set to zero in one atomic adjustment. Full batch movement history will be retained."))return;
   setStockZeroBusy(productId);setError("");
-  const tracked=batches.filter(b=>String(b.productId)===productId&&String(b.branchId)===String(product.branchId)&&String(b.status||"active")!=="cancelled");
-  const batchTotal=tracked.reduce((sum:number,b:any)=>sum+n(b.remainingQty??b.qty),0);
-  if(tracked.length&&Math.abs(batchTotal-current)>0.000001){
-   setStockZeroBusy("");setError("Cannot set stock to zero: batch stock ("+batchTotal+") does not match product stock ("+current+"). Reconcile batches first.");return;
+  const {data,error}=await supabase.rpc("etihad_owner_set_product_stock_zero",{
+   p_org_id:orgId,p_product_id:productId,p_reason:reason.trim(),p_request_id:makeId()
+  });
+  setStockZeroBusy("");
+  if(error||!data?.success){
+   setError("Could not set stock to zero: "+(error?.message||data?.message||"The adjustment was not confirmed."));
+   onSaved();return;
   }
-  const adjustments=tracked.length
-   ? tracked.map((b:any)=>({delta:-n(b.remainingQty??b.qty),batchId:String(b.id)})).filter(x=>Math.abs(x.delta)>0.000001)
-   : [{delta:-current,batchId:null as string|null}];
-  if(!adjustments.length){setStockZeroBusy("");setError("No available batch quantity was found to adjust.");return;}
-  for(let i=0;i<adjustments.length;i++){
-   const adjustment=adjustments[i],requestId=makeId();
-   const request=await supabase.rpc("etihad_request_stock_adjustment_v2",{p_org_id:orgId,p_product_id:productId,p_delta:adjustment.delta,p_reason:"Owner stock set-to-zero: "+reason.trim(),p_request_id:requestId,p_batch_id:adjustment.batchId});
-   if(request.error||!request.data?.success){
-    setStockZeroBusy("");setError("Stock adjustment stopped: "+(request.error?.message||"Request was not confirmed")+(i>0?" Earlier batch adjustment(s) were already approved; refresh to see the remaining stock.":""));onSaved();return;
-   }
-   const review=await supabase.rpc("etihad_review_stock_adjustment",{p_org_id:orgId,p_request_id:requestId,p_decision:"approved",p_note:"Owner direct set-to-zero action"});
-   if(review.error||!review.data?.success){
-    setStockZeroBusy("");setError("Adjustment request was created but approval failed: "+(review.error?.message||"Approval was not confirmed")+". Review the pending request in the Stock register.");onSaved();return;
-   }
-  }
-  setStockZeroBusy("");setError("Stock for "+String(product.name||"product")+" has been adjusted to zero. Adjustment history is retained; previous sales and purchases are unchanged.");onSaved();
+  const mismatch=n(data.reconciliationDifference);
+  setError("Stock for "+String(product.name||"product")+" is now zero. "+n(data.batchCount)+" batch(es) were closed and their movements recorded. "+(Math.abs(mismatch)>0.000001?"The previous batch/product difference of "+mismatch+" was recorded in the adjustment audit. ":"")+"Previous sales and purchase records are unchanged.");
+  onSaved();
  }
  async function deleteProduct(product:Product){
   if(role!=="owner"){window.alert("Only the business owner can delete products.");return;}
