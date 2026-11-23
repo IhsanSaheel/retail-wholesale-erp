@@ -632,15 +632,23 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, onSaved, 
   const productId=String(product.id||"");
   if(!productId){window.alert("This product has no valid record ID. Refresh the page and try again.");return;}
   if(n(product.qty)!==0){window.alert("This product still has stock ("+n(product.qty)+"). Bring its stock to zero through the stock adjustment workflow before deleting it.");return;}
-  const confirmed=window.confirm("Permanently delete “"+String(product.name||"this product")+"”? Past sales and purchase records will be retained, but this product will be removed from the catalogue. This cannot be undone.");
-  if(!confirmed)return;
+  const reason=window.prompt("Why are you deleting “"+String(product.name||"this product")+"”? This reason will be saved in the Recycle Bin.");
+  if(reason===null)return;
+  if(reason.trim().length<3){window.alert("Enter a reason of at least 3 characters.");return;}
+  if(!window.confirm("Move this product to the Recycle Bin? It can be restored later by the owner. Its transaction history will remain unchanged."))return;
+  const source=rows.find(r=>r.collection==="mberp_products"&&String(r.record_id)===productId);
+  if(!source){window.alert("Product record not found. Refresh and try again.");return;}
   setBusy(true);
+  const trashId=makeId(),deletedAt=new Date().toISOString();
+  const archive={id:trashId,recordType:"Product",originalCollection:"mberp_products",originalRecordId:productId,originalData:source.data,originalBranchIds:Array.isArray((source as any).branch_ids)?(source as any).branch_ids:[],itemLabel:String(product.name||productId),reason:reason.trim(),deletedAt,deletedBy:userId,deletedByRole:role};
+  const {error:archiveError}=await supabase.from("etihad_records").insert({org_id:orgId,collection:"mberp_recycle_bin",record_id:trashId,branch_ids:archive.originalBranchIds,data:archive,updated_by:userId});
+  if(archiveError){setBusy(false);window.alert("Product was not moved to the Recycle Bin: "+archiveError.message);return;}
   const {data:deletedRows,error}=await supabase.from("etihad_records").delete().eq("org_id",orgId).eq("collection","mberp_products").eq("record_id",productId).select("record_id");
-  setBusy(false);
-  if(error){window.alert("Product was not deleted: "+error.message);return;}
-  if(!deletedRows||deletedRows.length===0){window.alert("No product record was deleted. Check that you are signed in as the owner and refresh the product list.");return;}
-  window.alert("Product deleted successfully. Previous transaction records have been kept.");
-  onSaved();
+  if(error||!deletedRows||deletedRows.length===0){
+    const {error:cleanupError}=await supabase.from("etihad_records").delete().eq("org_id",orgId).eq("collection","mberp_recycle_bin").eq("record_id",trashId);
+    setBusy(false);window.alert("Product was not removed. "+(error?.message||"The product record was not found.")+(cleanupError?" The archive copy remains safely in the Recycle Bin.":""));return;
+  }
+  setBusy(false);window.alert("Product moved to the Recycle Bin. The deletion reason and time were recorded; the owner can restore it.");onSaved();
  }
  async function save(){
   setBusy(true);setError("");
