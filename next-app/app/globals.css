@@ -618,3 +618,26 @@ html,body,.app-shell,.main-area,.page-content{color:#29271f!important}
   -webkit-text-fill-color:#625e55!important;
   opacity:1!important;
 }
+
+
+/* POS category chips: override the legacy dark theme so every filter remains readable. */
+.app-shell .page-content .pos-category-bar > button{
+  background:#fff!important;
+  color:#29271f!important;
+  border:1px solid #cfc9bd!important;
+  -webkit-text-fill-color:#29271f!important;
+  opacity:1!important;
+  text-shadow:none!important;
+}
+.app-shell .page-content .pos-category-bar > button.active,
+.app-shell .page-content .pos-category-bar > button[aria-pressed="true"]{
+  background:#243651!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  border-color:#243651!important;
+}
+.app-shell .page-content .pos-category-bar > button:hover:not(.active){
+  background:#f1eee7!important;
+  color:#211f1a!important;
+  border-color:#a99f8c!important;
+}
