@@ -357,7 +357,7 @@ export function BranchWorkspace({orgId,userId,role,rows,onSaved}:Props){
  setMessage(result.error?"Branch not saved: "+result.error.message:(editingBranchId?"Branch details updated.":"Branch created."));
  setBusy(false);if(!result.error){resetForm();onSaved();}}
  async function deleteBranch(b:any){if(!owner||busy)return;const bid=String(b.id||"");if(!bid)return;
- if(!window.confirm("Permanently delete branch \""+String(b.name||"")+" ​​\"? Branches linked to staff or business records cannot be deleted. You can edit the branch and mark it inactive instead."))return;
+ if(!window.confirm("Permanently delete branch \""+String(b.name||"")+ "\"? Branches linked to staff or business records cannot be deleted. You can edit the branch and mark it inactive instead."))return;
  setBusy(true);setMessage("");
  const [recordsResult,membersResult]=await Promise.all([
   db.from("etihad_records").select("record_id,collection,branch_ids,data").eq("org_id",orgId),
