@@ -729,3 +729,6 @@ html,body,.app-shell,.main-area,.page-content{color:#29271f!important}
 @media(max-width:340px){
  .app-shell .page-content .purchase-totals{grid-template-columns:1fr}
 }
+
+/* Supplier workspace: independent views matching Product & Restock and Customer & Ledger */
+.supplier-section-nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin:18px 0 20px;padding:8px;background:#eeece6;border:1px solid #ded9ce;border-radius:14px}.supplier-section-nav button{min-height:42px;padding:9px 12px;border:1px solid transparent;border-radius:9px;background:transparent;color:#454238;font-weight:700;font-size:13px;white-space:normal}.supplier-section-nav button.active{background:#fff;color:#172b45;border-color:#d5c9ad;box-shadow:0 2px 8px #1b24300d}.supplier-section-nav button:hover:not(.active){background:#ffffff9c}@media(max-width:900px){.supplier-section-nav{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:520px){.supplier-section-nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:7px}.supplier-section-nav button{font-size:12px;min-height:40px;padding:8px 6px}}
