@@ -547,3 +547,74 @@ html,body,.app-shell,.main-area,.page-content{color:#29271f!important}
 .returns-register-panel{min-width:0}.returns-register-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.returns-register-panel .table-wrap{overflow:auto}.returns-register-panel table{min-width:1050px}
 @media(max-width:900px){.returns-layout{grid-template-columns:1fr}.returns-guide-panel{order:2}}
 @media(max-width:640px){.returns-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.returns-kpi{padding:12px}.returns-kpi strong{font-size:17px}.returns-form-panel,.returns-guide-panel{padding:14px}.returns-invoice-card{grid-template-columns:1fr 1fr;gap:10px;padding:11px}.returns-item-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.returns-input-grid{grid-template-columns:1fr;gap:10px}.returns-settlement{grid-template-columns:1fr;padding:10px 12px}.returns-settlement .returns-settlement-total{grid-column:1}.returns-register-actions{width:100%;justify-content:space-between}}
+
+
+/* Application-wide contrast guard: readable fields and text in every workspace. */
+.app-shell .page-content input:not([type="checkbox"]):not([type="radio"]),
+.app-shell .page-content select,
+.app-shell .page-content textarea,
+.app-shell .page-content input[type="search"],
+.app-shell .page-content input[type="number"],
+.app-shell .page-content input[type="date"],
+.app-shell .page-content input[type="time"],
+.app-shell .page-content input[type="datetime-local"]{
+  background-color:#fff!important;
+  color:#29271f!important;
+  -webkit-text-fill-color:#29271f!important;
+  border-color:#cfc9bd!important;
+  opacity:1!important;
+  caret-color:#29271f!important;
+}
+.app-shell .page-content input::placeholder,
+.app-shell .page-content textarea::placeholder{
+  color:#777267!important;
+  -webkit-text-fill-color:#777267!important;
+  opacity:1!important;
+}
+.app-shell .page-content select option{
+  background:#fff!important;
+  color:#29271f!important;
+}
+.app-shell .page-content :is(label,.field-label,.form-label,.hint,.helper-text,.field-help,.form-hint,.description,.subtext,.secondary-text){
+  color:#514d43!important;
+}
+.app-shell .page-content :is(.search-input,.pos-search,.returns-field input,.returns-field select,.returns-field textarea){
+  background:#fff!important;
+  color:#29271f!important;
+  -webkit-text-fill-color:#29271f!important;
+}
+.app-shell .page-content .returns-workspace,
+.app-shell .page-content .returns-workspace :is(.returns-form-panel,.returns-guide-panel,.returns-register-panel,.returns-kpi){
+  color:#29271f!important;
+}
+.app-shell .page-content .returns-workspace :is(h1,h2,h3,h4,b,strong,label,span,p,small,li,td,th){
+  text-shadow:none!important;
+}
+.app-shell .page-content .returns-workspace :is(.returns-form-panel,.returns-guide-panel,.returns-register-panel,.returns-kpi){
+  background:#fff!important;
+  border-color:#e2ddd2!important;
+}
+.app-shell .page-content .returns-workspace :is(.returns-invoice-card,.returns-item-facts div,.returns-settlement,.returns-guide-note){
+  background:#f7f6f2!important;
+  color:#29271f!important;
+}
+.app-shell .page-content .returns-workspace :is(.returns-invoice-card b,.returns-item-facts b,.returns-settlement b,.returns-guide-note b){
+  color:#29271f!important;
+}
+.app-shell .page-content .returns-workspace :is(.returns-invoice-card small,.returns-item-facts span,.returns-settlement span,.returns-guide-note p){
+  color:#625e55!important;
+}
+.app-shell .page-content :is(.outline-btn,.text-action,.returns-register-actions button){
+  background:#fff!important;
+  color:#514b3e!important;
+  border-color:#d7cfbf!important;
+}
+.app-shell .page-content :is(.primary-btn,.checkout-btn,.returns-submit){
+  color:#17140e!important;
+}
+.app-shell .page-content :is(input,select,textarea):disabled{
+  background:#f0eee8!important;
+  color:#625e55!important;
+  -webkit-text-fill-color:#625e55!important;
+  opacity:1!important;
+}
