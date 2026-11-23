@@ -494,7 +494,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
 
 export function ProductManager({ orgId, userId, role, branchIds, rows, onSaved, onSectionChange }: Props & { onSectionChange?: (section:string)=>void }) {
  const supabase=useMemo(()=>getSupabase(),[]);
- const products=rows.filter(r=>r.collection==="mberp_products").map(r=>r.data);
+ const products=rows.filter(r=>r.collection==="mberp_products").map(r=>({...r.data,id:r.data?.id||r.record_id}));
  const branches=rows.filter(r=>r.collection==="mberp_branches").map(r=>r.data).filter(b=>b.active!==false&&(!branchIds.length||branchIds.includes(String(b.id))));
  const requests=rows.filter(r=>r.collection==="mberp_stock_adjustments").map(r=>r.data).filter(x=>role==="owner"||branchIds.includes(String(x.branchId))).sort((a,b)=>String(b.requestedAt||b.date).localeCompare(String(a.requestedAt||a.date)));
  const canEdit=["owner","manager","stockkeeper"].includes(role);
@@ -604,24 +604,18 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, onSaved, 
 
  function start(p?:Product){setEditorOpen(true);setEditing(p||null);setName(p?.name||"");setSku(p?.sku||"");setBarcode(p?.barcode||"");setCategory(p?.category||"");setUnit(String(p?.unit||"piece"));setQty(String(p?.qty??0));setCost(String(p?.cost??0));setPrice(String(p?.retailerPrice??p?.price??0));setSalesmanPrice(String(p?.salesmanPrice??p?.retailerPrice??p?.price??0));setAlertQty(String(p?.alert??p?.lowAt??5));setBranchId(p?.branchId||branches[0]?.id||"");setProductNote(p?.note||"");setError("");}
  async function deleteProduct(product:Product){
-  if(role!=="owner"){setError("Only the business owner can delete products.");return;}
+  if(role!=="owner"){window.alert("Only the business owner can delete products.");return;}
   const productId=String(product.id||"");
-  if(!productId){setError("This product has no valid record ID and cannot be deleted.");return;}
-  if(n(product.qty)!==0){setError("This product still has stock ("+n(product.qty)+"). Adjust or transfer the stock to zero before deleting it.");return;}
-  const hasHistory=
-   rows.some(r=>r.collection==="mberp_sales"&&(r.data.items||[]).some((it:any)=>String(it.productId)===productId))||
-   rows.some(r=>r.collection==="mberp_purchases"&&String(r.data.productId||"")===productId)||
-   rows.some(r=>r.collection==="mberp_sales_returns"&&String(r.data.productId||"")===productId)||
-   rows.some(r=>r.collection==="mberp_transfers"&&String(r.data.productId||"")===productId)||
-   rows.some(r=>r.collection==="mberp_stock_batches"&&String(r.data.productId||"")===productId)||
-   rows.some(r=>r.collection==="mberp_stock_batch_movements"&&String(r.data.productId||"")===productId)||
-   rows.some(r=>r.collection==="mberp_stock_adjustments"&&String(r.data.productId||"")===productId);
-  if(hasHistory){setError("This product has transaction or stock history. It cannot be permanently deleted; keep it for audit history and stop using it instead.");return;}
-  if(!window.confirm("Permanently delete “"+String(product.name||"this product")+"”? This cannot be undone."))return;
-  setBusy(true);setError("");
-  const {error}=await supabase.from("etihad_records").delete().eq("org_id",orgId).eq("collection","mberp_products").eq("record_id",productId);
+  if(!productId){window.alert("This product has no valid record ID. Refresh the page and try again.");return;}
+  if(n(product.qty)!==0){window.alert("This product still has stock ("+n(product.qty)+"). Bring its stock to zero through the stock adjustment workflow before deleting it.");return;}
+  const confirmed=window.confirm("Permanently delete “"+String(product.name||"this product")+"”? Past sales and purchase records will be retained, but this product will be removed from the catalogue. This cannot be undone.");
+  if(!confirmed)return;
+  setBusy(true);
+  const {data:deletedRows,error}=await supabase.from("etihad_records").delete().eq("org_id",orgId).eq("collection","mberp_products").eq("record_id",productId).select("record_id");
   setBusy(false);
-  if(error){setError("Product was not deleted: "+error.message);return;}
+  if(error){window.alert("Product was not deleted: "+error.message);return;}
+  if(!deletedRows||deletedRows.length===0){window.alert("No product record was deleted. Check that you are signed in as the owner and refresh the product list.");return;}
+  window.alert("Product deleted successfully. Previous transaction records have been kept.");
   onSaved();
  }
  async function save(){
