@@ -18,12 +18,48 @@ export function CustomerWorkspace({orgId,userId,role,rows,onSaved}:Props){
  const loyaltySetting=rows.find(r=>r.collection==="mberp_loyalty_settings")?.data||{enabled:true,earnAmount:1,earnPoints:1,redeemPoints:1000,redeemValue:1};
  const [loyaltyEnabled,setLoyaltyEnabled]=useState(loyaltySetting.enabled!==false);const [earnAmount,setEarnAmount]=useState(String(loyaltySetting.earnAmount??1));const [earnPoints,setEarnPoints]=useState(String(loyaltySetting.earnPoints??1));const [redeemPoints,setRedeemPoints]=useState(String(loyaltySetting.redeemPoints??1000));const [redeemValue,setRedeemValue]=useState(String(loyaltySetting.redeemValue??1));
  const customerRecords:any[]=rows.filter(r=>r.collection==="mberp_customers").map(r=>({...r.data,id:r.data?.id||r.record_id}));
- const customers=Array.from(new Map([...sales.filter(s=>s.customerName&&s.customerName!=="Walk-in Customer").map(s=>({name:s.customerName,phone:s.customerPhone||"",key:s.customerPhone?"phone:"+s.customerPhone:"name:"+String(s.customerName).toLowerCase(),id:"",address:"",email:"",photoUrl:""})),...customerRecords.map(c=>({name:c.name,phone:c.phone||"",key:"phone:"+String(c.phone||""),id:c.id||"",address:c.address||"",email:c.email||"",photoUrl:c.photoUrl||""}))].map(c=>[c.key,c])).values());
+ const customers=Array.from(new Map([...sales.filter(s=>s.customerName&&s.customerName!=="Walk-in Customer").map(s=>({name:s.customerName,phone:s.customerPhone||"",key:s.customerPhone?"phone:"+s.customerPhone:"name:"+String(s.customerName).toLowerCase(),id:"",address:"",email:"",photoUrl:""})),...customerRecords.map(c=>({name:c.name,phone:c.phone||"",key:c.phone?"phone:"+String(c.phone):"name:"+String(c.name||"").toLowerCase(),id:c.id||"",address:c.address||"",email:c.email||"",photoUrl:c.photoUrl||""}))].map(c=>[c.key,c])).values());
  const [search,setSearch]=useState("");const [customer,setCustomer]=useState<any>(null);const [account,setAccount]=useState<any>(null);const [limit,setLimit]=useState("0");const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");const [editingCustomer,setEditingCustomer]=useState<any>(null);const [customerName,setCustomerName]=useState("");const [customerPhone,setCustomerPhone]=useState("");const [customerAddress,setCustomerAddress]=useState("");const [customerEmail,setCustomerEmail]=useState("");const [customerPhoto,setCustomerPhoto]=useState("");const [customerNotes,setCustomerNotes]=useState("");
  const [period,setPeriod]=useState("all");const [fromDate,setFromDate]=useState("");const [toDate,setToDate]=useState("");
  const canEdit=["owner","manager","accountant"].includes(role);
  function beginCustomerEdit(c?:any){setEditingCustomer(c||null);setCustomerName(c?.name||"");setCustomerPhone(c?.phone||"");setCustomerAddress(c?.address||"");setCustomerEmail(c?.email||"");setCustomerPhoto(c?.photoUrl||"");setCustomerNotes(c?.notes||"");}
- async function printCustomerCard(c:any){if(!c?.id){setMessage("Register this customer profile first to generate a permanent ID card.");return;}try{const qr=await QRCode.toDataURL("ETIHAD-CUSTOMER:"+String(c.id),{width:220,margin:1,errorCorrectionLevel:"M"});const w=window.open("","_blank","width=650,height=500");if(!w){setMessage("Allow pop-ups to print customer ID cards.");return;}w.document.write(`<!doctype html><html><head><title>Customer ID Card</title><style>*{box-sizing:border-box}body{font-family:Arial;margin:24px}.card{width:86mm;height:54mm;border:1px solid #c8a45a;border-radius:10px;padding:7mm;display:flex;align-items:center;gap:6mm;color:#17202b}.brand img{display:block;max-width:46mm;max-height:18mm;object-fit:contain}.name{font-size:20px;font-weight:bold;margin:8px 0}.meta{font-size:11px;line-height:1.8}.qr{width:32mm;height:32mm}.id{font-size:10px;color:#666;margin-top:5px}@page{size:90mm 60mm;margin:2mm}</style></head><body><article class="card"><section><div class="brand"><img src="${htmlEscape(businessLogoUrl)}" alt="Etihad Prime Supplies"></div><div class="name">${htmlEscape(c.name)}</div><div class="meta">Phone: ${htmlEscape(c.phone||"—")}</div><div class="meta">${htmlEscape(c.address||"")}</div><div class="id">CUSTOMER ID: ${htmlEscape(c.id)}</div></section><img class="qr" src="${qr}"></article><script>window.onload=()=>window.print()<\\/script></body></html>`);w.document.close();}catch(e){setMessage("Could not generate customer QR card: "+(e instanceof Error?e.message:"Unknown error"));}}
+ async function printCustomerCard(c:any){
+  // Customer rows created from sales history are valid saved customers too.
+  // Give them a permanent profile/ID on first card print instead of blocking them.
+  const w=window.open("","_blank","width=650,height=500");
+  if(!w){setMessage("Allow pop-ups to print customer ID cards.");return;}
+  setBusy(true);
+  try{
+   const phone=String(c?.phone||"").trim();
+   const normalizedPhone=phone.replace(/\\D/g,"");
+   const normalizedName=String(c?.name||"").trim().toLowerCase();
+   const existingProfile=customerRecords.find((profile:any)=>{
+    const profilePhone=String(profile.phone||"").trim().replace(/\\D/g,"");
+    return (normalizedPhone&&profilePhone===normalizedPhone)||(!normalizedPhone&&String(profile.name||"").trim().toLowerCase()===normalizedName);
+   });
+   const customerId=String(c?.id||existingProfile?.id||id());
+   const profileData={
+    ...(existingProfile||{}),id:customerId,name:String(c?.name||existingProfile?.name||"Customer"),
+    phone:phone||String(existingProfile?.phone||""),address:String(c?.address||existingProfile?.address||""),
+    email:String(c?.email||existingProfile?.email||""),photoUrl:String(c?.photoUrl||existingProfile?.photoUrl||""),
+    notes:String(existingProfile?.notes||""),active:true,
+    createdAt:existingProfile?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()
+   };
+   if(!c?.id&&!existingProfile){
+    const {error}=await db.from("etihad_records").upsert({
+     org_id:orgId,collection:"mberp_customers",record_id:customerId,branch_ids:[],updated_by:userId,data:profileData
+    },{onConflict:"org_id,collection,record_id"});
+    if(error){w.close();setMessage("Could not create the permanent customer profile: "+error.message);return;}
+   }
+   const qr=await QRCode.toDataURL("ETIHAD-CUSTOMER:"+customerId,{width:220,margin:1,errorCorrectionLevel:"M"});
+   w.document.open();
+   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Customer ID Card</title><style>*{box-sizing:border-box}body{font-family:Arial;margin:24px}.card{width:86mm;height:54mm;border:1px solid #c8a45a;border-radius:10px;padding:7mm;display:flex;align-items:center;gap:6mm;color:#17202b}.brand img{display:block;max-width:46mm;max-height:18mm;object-fit:contain}.name{font-size:20px;font-weight:bold;margin:8px 0}.meta{font-size:11px;line-height:1.8}.qr{width:32mm;height:32mm}.id{font-size:10px;color:#666;margin-top:5px}@page{size:90mm 60mm;margin:2mm}</style></head><body><article class="card"><section><div class="brand"><img src="${htmlEscape(businessLogoUrl)}" alt="Etihad Prime Supplies"></div><div class="name">${htmlEscape(profileData.name)}</div><div class="meta">Phone: ${htmlEscape(profileData.phone||"—")}</div><div class="meta">${htmlEscape(profileData.address)}</div><div class="id">CUSTOMER ID: ${htmlEscape(customerId)}</div></section><img class="qr" src="${qr}"></article><script>window.onload=()=>window.print()<\\/script></body></html>`);
+   w.document.close();
+   setMessage("Permanent customer ID created and ID card prepared.");
+   if(!c?.id&&!existingProfile)onSaved();
+  }catch(e){w.close();setMessage("Could not generate customer QR card: "+(e instanceof Error?e.message:"Unknown error"));}
+  finally{setBusy(false);}
+ }
  async function saveCustomer(){const name=customerName.trim(),phone=customerPhone.trim();if(!name||!phone){setMessage("Customer name and phone number are compulsory.");return;}if(!/^[+0-9()\\-\\s]{7,20}$/.test(phone)){setMessage("Enter a valid customer phone number.");return;}const duplicate=customers.find(c=>c.phone===phone&&String(c.id||"")!==String(editingCustomer?.id||""));if(duplicate){setMessage("A customer with this phone number already exists.");return;}setBusy(true);const customerId=editingCustomer?.id||id(),data={id:customerId,name,phone,address:customerAddress.trim(),email:customerEmail.trim(),photoUrl:customerPhoto.trim(),notes:customerNotes.trim(),active:true,createdAt:editingCustomer?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};const {error}=await db.from("etihad_records").upsert({org_id:orgId,collection:"mberp_customers",record_id:customerId,branch_ids:[],updated_by:userId,data},{onConflict:"org_id,collection,record_id"});setMessage(error?"Customer not saved: "+error.message:editingCustomer?"Customer profile updated.":"Customer added successfully.");setBusy(false);if(!error){beginCustomerEdit();onSaved();}}
  function readCustomerPhoto(file?:File){if(!file)return;if(file.size>1024*1024){setMessage("Customer photo must be 1 MB or smaller.");return;}const reader=new FileReader();reader.onload=()=>setCustomerPhoto(String(reader.result||""));reader.onerror=()=>setMessage("Could not read the selected customer photo.");reader.readAsDataURL(file);}
  const dateKey=(v:any)=>{if(!v)return "";const raw=String(v);if(raw.length===10&&raw[4]==="-"&&raw[7]==="-")return raw;const d=new Date(v);return Number.isNaN(d.getTime())?"":pakistanDate(d);};const formatCustomerHistoryDate=(v:any)=>{if(!v)return "—";const raw=String(v);if(/^\d{4}-\d{2}-\d{2}$/.test(raw)){const d=new Date(raw+"T12:00:00Z");return Number.isNaN(d.getTime())?"—":d.toLocaleDateString("en-PK",{timeZone:"Asia/Karachi"});}const d=new Date(v);return Number.isNaN(d.getTime())?raw:d.toLocaleString("en-PK",{timeZone:"Asia/Karachi"});};
