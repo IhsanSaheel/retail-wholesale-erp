@@ -668,3 +668,64 @@ html,body,.app-shell,.main-area,.page-content{color:#29271f!important}
 .purchase-summary-stock>b small{font-size:11px;font-weight:700;color:#17633e}
 @media(max-width:900px){.purchase-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.purchase-summary-grid{gap:8px;margin:14px 0}.purchase-summary-item{min-height:78px;padding:10px 11px;border-radius:9px}.purchase-summary-item>b{font-size:16px}.purchase-summary-item>span{font-size:10px}}
+
+
+/* Shared financial and count summaries used across workspaces */
+.app-shell .page-content .purchase-totals{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(155px,1fr));
+ gap:10px;
+ align-items:stretch;
+ margin:16px 0;
+ padding:0;
+}
+.app-shell .page-content .purchase-totals>span{
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ gap:7px;
+ min-width:0;
+ min-height:76px;
+ padding:13px 14px;
+ background:#f7f8fa;
+ border:1px solid #e0e5eb;
+ border-radius:11px;
+ color:#596579;
+ font-size:11px;
+ line-height:1.4;
+ font-weight:700;
+ letter-spacing:.1px;
+ overflow-wrap:anywhere;
+}
+.app-shell .page-content .purchase-totals>span>b{
+ display:block;
+ color:#1e2b3c;
+ font-size:clamp(15px,1.5vw,19px);
+ line-height:1.2;
+ font-weight:800;
+ letter-spacing:0;
+ font-variant-numeric:tabular-nums;
+ overflow-wrap:anywhere;
+}
+.app-shell .page-content .purchase-totals>button{
+ align-self:center;
+ justify-self:start;
+ min-height:40px;
+}
+@media(max-width:600px){
+ .app-shell .page-content .purchase-totals{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin:13px 0;
+ }
+ .app-shell .page-content .purchase-totals>span{
+  min-height:70px;
+  padding:10px 11px;
+  border-radius:9px;
+  font-size:10px;
+ }
+ .app-shell .page-content .purchase-totals>span>b{font-size:15px}
+}
+@media(max-width:340px){
+ .app-shell .page-content .purchase-totals{grid-template-columns:1fr}
+}
