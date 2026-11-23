@@ -468,3 +468,56 @@ html,body,.app-shell,.main-area,.page-content{color:#29271f!important}
   .page-content :is(p,small,label,.muted,.helper-text,.field-help,.form-hint,.description,.subtext){color:#514d44!important}
   .page-content :is(input,select,textarea){font-size:14px}
 }
+
+
+/* POS current-bill contrast: keep price, quantity and amount fields readable in every theme. */
+.page-content .pos-bill,
+.page-content .pos-bill .bill-title h3,
+.page-content .pos-bill .bill-title p,
+.page-content .pos-bill .bill-product b,
+.page-content .pos-bill .bill-product small,
+.page-content .pos-bill .bill-product label,
+.page-content .pos-bill .qty-control label,
+.page-content .pos-bill .line-total,
+.page-content .pos-bill .bill-summary,
+.page-content .pos-bill .bill-summary > div,
+.page-content .pos-bill .bill-summary b,
+.page-content .pos-bill .customer-box label,
+.page-content .pos-bill .payment-box label {
+  color: #29271f !important;
+}
+.page-content .pos-bill .bill-product small,
+.page-content .pos-bill .bill-title p,
+.page-content .pos-bill .bill-summary > div {
+  color: #5b574e !important;
+}
+.page-content .pos-bill input,
+.page-content .pos-bill select,
+.page-content .pos-bill textarea,
+.page-content .pos-bill .amount-entry,
+.page-content .pos-bill .qty-entry {
+  color: #211f1a !important;
+  -webkit-text-fill-color: #211f1a !important;
+  background-color: #ffffff !important;
+  border: 1px solid #bdb7aa !important;
+  opacity: 1 !important;
+}
+.page-content .pos-bill input:read-only,
+.page-content .pos-bill .amount-entry:read-only {
+  color: #39362e !important;
+  -webkit-text-fill-color: #39362e !important;
+  background-color: #f0eee8 !important;
+}
+.page-content .pos-bill input::placeholder,
+.page-content .pos-bill textarea::placeholder {
+  color: #716c62 !important;
+  -webkit-text-fill-color: #716c62 !important;
+  opacity: 1 !important;
+}
+.page-content .pos-bill .bill-summary .bill-grand,
+.page-content .pos-bill .bill-grand strong {
+  color: #172942 !important;
+}
+.page-content .pos-bill .bill-empty {
+  color: #5b574e !important;
+}
