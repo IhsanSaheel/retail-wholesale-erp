@@ -40,17 +40,23 @@ export function PeopleWorkspace({orgId,userId,role,rows,onRefresh}:Props){
    db.from("etihad_records").select("record_id,data").eq("org_id",orgId).eq("collection","mberp_branches")
   ]);
   if(p.error||a.error||l.error||py.error||d.error||r.error){setNotice("Some HR records could not be loaded. Your account's database permissions control which records are visible.");}
-  setProfiles(p.data||[]);setAttendance(a.data||[]);setLeaves(l.data||[]);setPayroll(py.data||[]);setDocuments(d.data||[]);setReviews(r.data||[]);setBranches((b.data||[]).map((x:any)=>({...x.data,id:x.record_id})));
+  setProfiles(p.data||[]);setAttendance(a.data||[]);setLeaves(l.data||[]);setPayroll(py.data||[]);setDocuments(d.data||[]);setReviews(r.data||[]);setBranches((b.data||[]).filter((x:any)=>x.data?.active!==false).map((x:any)=>({...x.data,id:x.record_id})));
  }
  useEffect(()=>{void load();},[orgId,userId]);
  const myProfile=profiles.find(p=>p.user_id===userId);
  const visibleProfiles=owner?profiles:profiles.filter(p=>p.user_id===userId);
  async function saveProfile(){
   if(!owner||!email.trim()||!tempPassword||!name.trim()||!code.trim()){setNotice("Enter employee name, code, email and a temporary password.");return;}
+  const normalizedEmail=email.trim().toLowerCase();
+  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(normalizedEmail)){setNotice("Enter a valid employee email address.");return;}
+  if(code.trim().length<2||code.trim().length>40){setNotice("Employee code must be between 2 and 40 characters.");return;}
+  const salaryValue=Number(salary);
+  if(!Number.isFinite(salaryValue)||salaryValue<0){setNotice("Enter a valid base salary of zero or more.");return;}
+  if(!employeeBranches.length){setNotice("Assign at least one active branch before creating the employee.");return;}
   if(tempPassword.length<12){setNotice("Temporary password must contain at least 12 characters.");return;}
   if(employeeRole==="owner"){setNotice("Owner access cannot be assigned from employee creation.");return;}
   setBusy(true);
-  const {data,error}=await db.functions.invoke("etihad-create-employee",{body:{org_id:orgId,email:email.trim().toLowerCase(),password:tempPassword,full_name:name.trim(),employee_code:code.trim(),phone:phone.trim(),designation:designation.trim(),base_salary:Number(salary)||0,role:employeeRole,branch_ids:employeeBranches,permissions:employeePermissions}});
+  const {data,error}=await db.functions.invoke("etihad-create-employee",{body:{org_id:orgId,email:normalizedEmail,password:tempPassword,full_name:name.trim(),employee_code:code.trim(),phone:phone.trim(),designation:designation.trim(),base_salary:Number(salary)||0,role:employeeRole,branch_ids:employeeBranches,permissions:employeePermissions}});
   if(error||!data?.success){setNotice("Employee account not created: "+(error?.message||data?.error||"Please check the employee details."));setBusy(false);return;}
   setNotice("Employee login created successfully. Share the temporary password securely; ask the employee to change it after first login.");
   setEmployeeId("");setName("");setCode("");setEmail("");setPhone("");setDesignation("");setSalary("0");setTempPassword("");setEmployeeBranches([]);setEmployeePermissions(["sales","customers","products"]);
