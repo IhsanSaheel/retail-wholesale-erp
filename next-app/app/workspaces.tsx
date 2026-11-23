@@ -494,7 +494,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
 
 export function ProductManager({ orgId, userId, role, branchIds, rows, onSaved, onSectionChange }: Props & { onSectionChange?: (section:string)=>void }) {
  const supabase=useMemo(()=>getSupabase(),[]);
- const products=rows.filter(r=>r.collection==="mberp_products").map(r=>({...r.data,id:r.data?.id||r.record_id}));
+ const products:Product[]=rows.filter(r=>r.collection==="mberp_products").map(r=>({...r.data,id:r.data?.id||r.record_id} as Product));
  const branches=rows.filter(r=>r.collection==="mberp_branches").map(r=>r.data).filter(b=>b.active!==false&&(!branchIds.length||branchIds.includes(String(b.id))));
  const requests=rows.filter(r=>r.collection==="mberp_stock_adjustments").map(r=>r.data).filter(x=>role==="owner"||branchIds.includes(String(x.branchId))).sort((a,b)=>String(b.requestedAt||b.date).localeCompare(String(a.requestedAt||a.date)));
  const canEdit=["owner","manager","stockkeeper"].includes(role);
