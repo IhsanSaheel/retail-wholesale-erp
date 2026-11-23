@@ -12,7 +12,7 @@ import { CustomerWorkspace, SupplierWorkspace, PurchaseWorkspace, ReturnsWorkspa
 type RecordRow = { collection: string; record_id: string; branch_ids: string[]; data: Record<string, any>; updated_at: string; updated_by?: string };
 type ModuleKey = "overview" | "cashregister" | "sales" | "returns" | "products" | "customers" | "purchases" | "suppliers" | "expenses" | "branches" | "payments" | "transfers" | "reports" | "employees" | "settings";
 const NAV: { group: string; items: { id: ModuleKey; label: string; icon: string }[] }[] = [
-  { group: "WORKSPACE", items: [{id:"overview",label:"Overview",icon:"⌂"},{id:"cashregister",label:"Cash register",icon:"＄"},{id:"sales",label:"Sales & POS",icon:"▣"},{id:"returns",label:"Sales returns",icon:"↩"},{id:"customers",label:"Customers",icon:"♙"},{id:"purchases",label:"Purchases",icon:"⇩"},{id:"suppliers",label:"Suppliers",icon:"♧"},{id:"expenses",label:"Expenses",icon:"−"}] },
+  { group: "WORKSPACE", items: [{id:"overview",label:"Overview",icon:"⌂"},{id:"cashregister",label:"Cash register",icon:"＄"},{id:"sales",label:"Sales & POS",icon:"▣"},{id:"returns",label:"Sales returns",icon:"↩"},{id:"customers",label:"Customer & Ledger",icon:"♙"},{id:"purchases",label:"Purchases",icon:"⇩"},{id:"suppliers",label:"Suppliers",icon:"♧"},{id:"expenses",label:"Expenses",icon:"−"}] },
   { group: "PRODUCT & RESTOCK", items: [{id:"products",label:"Product & Restock",icon:"▤"}] },
   { group: "MANAGEMENT", items: [{id:"branches",label:"Branches",icon:"⌖"},{id:"payments",label:"Payments",icon:"＄"},{id:"reports",label:"Reports & analytics",icon:"▥"},{id:"employees",label:"Employees & payroll",icon:"♧"}] },
   { group: "SYSTEM", items: [{id:"settings",label:"Settings",icon:"⚙"}] },
