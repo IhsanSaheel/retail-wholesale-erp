@@ -354,7 +354,9 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     const source=rows.find(r=>r.collection==="mberp_sales"&&String(r.record_id)===saleId);
     if(!source){setMessage("Sale record not found. Refresh and try again.");return;}
     const trashId=makeId(),deletedAt=new Date().toISOString();
-    const archive={id:trashId,recordType:"Sale",originalCollection:"mberp_sales",originalRecordId:saleId,originalData:source.data,originalBranchIds:[String((sale as any).branchId||"")].filter(Boolean),itemLabel:String((sale as any).invoiceNo||saleId),reason:reason.trim(),deletedAt,deletedBy:userId,deletedByRole:role};
+    const saleBranchId=String((sale as any).branchId||"").trim();
+    if(!saleBranchId){setMessage("This sale has no branch reference. Its archive was not created; contact the owner to correct the sale record.");return;}
+    const archive={id:trashId,recordType:"Sale",branchId:saleBranchId,originalCollection:"mberp_sales",originalRecordId:saleId,originalData:source.data,originalBranchIds:[saleBranchId],itemLabel:String((sale as any).invoiceNo||saleId),reason:reason.trim(),deletedAt,deletedBy:userId,deletedByRole:role};
     setSaleActionBusy(saleId);setMessage("");
     const {error:archiveError}=await supabase.from("etihad_records").insert({org_id:orgId,collection:"mberp_recycle_bin",record_id:trashId,branch_ids:archive.originalBranchIds,data:archive,updated_by:userId});
     if(archiveError){setSaleActionBusy("");setMessage("Sale was not archived: "+archiveError.message);return;}
@@ -667,7 +669,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, onSaved, 
   if(!validBranchIds.length){setError("This product has no valid linked branch. Open Edit Product, select its correct branch, save, then retry.");return;}
   setBusy(true);setError("");
   const trashId=makeId(),deletedAt=new Date().toISOString();
-  const archive={id:trashId,recordType:"Product",originalCollection:"mberp_products",originalRecordId:productId,originalData:source.data,originalBranchIds:validBranchIds,itemLabel:String(product.name||productId),reason:deleteReason.trim(),deletedAt,deletedBy:userId,deletedByRole:role};
+  const archive={id:trashId,recordType:"Product",branchId:validBranchIds[0],originalCollection:"mberp_products",originalRecordId:productId,originalData:source.data,originalBranchIds:validBranchIds,itemLabel:String(product.name||productId),reason:deleteReason.trim(),deletedAt,deletedBy:userId,deletedByRole:role};
   const {error:archiveError}=await supabase.from("etihad_records").insert({org_id:orgId,collection:"mberp_recycle_bin",record_id:trashId,branch_ids:validBranchIds,data:archive,updated_by:userId});
   if(archiveError){setBusy(false);setError("Product was not moved to the Recycle Bin: "+archiveError.message);return;}
   const {data:deletedRows,error}=await supabase.from("etihad_records").delete().eq("org_id",orgId).eq("collection","mberp_products").eq("record_id",productId).select("record_id");
