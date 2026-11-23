@@ -820,3 +820,46 @@ html,body,.app-shell,.main-area,.page-content{color:#29271f!important}
 .eps-modal .danger-btn{border:1px solid #b42318;background:#b42318;color:#fff}
 .eps-modal .danger-btn:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:480px){.eps-modal{padding:21px 18px;border-radius:17px}.eps-modal-actions{display:grid;grid-template-columns:1fr 1fr}.eps-modal-actions button{padding:0 8px;font-size:13px}}
+
+
+/* Employee payroll: consistent hierarchy, readable salary breakdown and mobile-safe register */
+.payroll-workspace{display:flex;flex-direction:column;gap:15px;min-width:0}
+.payroll-intro{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:2px 2px 4px}
+.payroll-intro h2{font:800 19px Manrope,sans-serif;letter-spacing:-.5px;color:#253650;margin:6px 0 4px}
+.payroll-intro p{font-size:11px;line-height:1.65;color:#858176;margin:0}
+.payroll-period-chip,.payroll-owner-chip{display:inline-flex;align-items:center;white-space:nowrap;border-radius:20px;padding:7px 11px;background:#f8f2e8;color:#94733d;font-size:9px;font-weight:800;letter-spacing:.5px}
+.payroll-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.payroll-summary-card{min-width:0;background:#fff;border:1px solid #e9e4da;border-radius:11px;padding:15px 16px;box-shadow:0 2px 8px #192b4305}
+.payroll-summary-card span,.payroll-summary-card small{display:block;color:#858176;font-size:10px;line-height:1.5}
+.payroll-summary-card strong{display:block;color:#253650;font:800 19px Manrope,sans-serif;letter-spacing:-.4px;margin:8px 0 4px;overflow-wrap:anywhere}
+.payroll-create-panel{padding:20px}
+.payroll-owner-chip{background:#edf5f0;color:#34775e}
+.payroll-fields{grid-template-columns:repeat(4,minmax(0,1fr));margin:18px 0 13px}
+.payroll-fields label small{font-size:9px;color:#9a9589;font-weight:400;line-height:1.4}
+.payroll-fields input,.payroll-fields select{min-height:39px;color:#29271f;background:#fff}
+.payroll-preview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:13px 14px;background:#f8f7f3;border:1px solid #eee9df;border-radius:9px}
+.payroll-preview>div{display:flex;flex-direction:column;gap:5px;min-width:0}
+.payroll-preview span{font-size:9px;color:#777366}
+.payroll-preview b{font-size:12px;color:#293950;font-variant-numeric:tabular-nums}
+.payroll-preview .payroll-net{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between;border-top:1px solid #e4dfd4;padding-top:11px;margin-top:3px}
+.payroll-preview .payroll-net span{font-size:11px;font-weight:700;color:#4d4a40}
+.payroll-preview .payroll-net strong{font:800 18px Manrope,sans-serif;color:#9b7841}
+.payroll-positive{color:#277b5b!important}
+.payroll-negative{color:#b34d47!important}
+.payroll-help{font-size:9px;line-height:1.65;color:#898477;margin:10px 0 0}
+.payroll-create-panel>.primary-btn{margin-top:12px}
+.payroll-register .panel-head{align-items:center}
+.payroll-register .table-wrap{margin-top:12px}
+.payroll-register table{min-width:920px}
+.payroll-register td{vertical-align:middle}
+.payroll-employee-code{display:block;font-size:9px;color:#979184;margin-top:4px}
+.payroll-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.payroll-actions .text-action{white-space:nowrap}
+.payroll-method{max-width:300px;margin-top:15px}
+.payroll-empty{text-align:center!important;padding:30px 15px!important}
+.payroll-empty strong,.payroll-empty span{display:block}
+.payroll-empty strong{font-size:12px;color:#4b493f;margin-bottom:5px}
+.payroll-empty span{font-size:10px;color:#918b7f;white-space:normal}
+.people-workspace>.notice-error,.people-workspace>.pos-success{font-size:11px;line-height:1.6;border-radius:9px;padding:11px 14px}
+@media(max-width:900px){.payroll-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.payroll-intro{align-items:flex-start}.payroll-intro h2{font-size:17px}.payroll-summary-grid{grid-template-columns:1fr 1fr}.payroll-summary-card:last-child{grid-column:1/-1}.payroll-summary-card{padding:12px}.payroll-summary-card strong{font-size:16px}.payroll-fields{grid-template-columns:1fr}.payroll-preview{grid-template-columns:1fr 1fr}.payroll-preview .payroll-net{grid-column:1/-1}.payroll-register{padding:14px}.payroll-period-chip{font-size:8px;padding:6px 8px}}
