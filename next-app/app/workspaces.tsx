@@ -510,7 +510,8 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
         <div className="payment-box">{customerPhone&&availableAdvance>0&&<label className="use-advance"><input type="checkbox" checked={useAdvance} onChange={e=>setUseAdvance(e.target.checked)}/> Use customer advance ({cash(availableAdvance)} available)</label>}<div className="payment-row payment-method-row"><label>Invoice tax<select aria-label="Invoice tax" value={taxId} disabled={!!editingSale} onChange={e=>setTaxId(e.target.value)}><option value="">No tax</option>{taxRates.map(t=><option key={t.id} value={t.id}>{t.name} · {t.rate}% · {t.type==="inclusive"?"Included":"Added"}</option>)}</select></label><label>Payment method<select aria-label="Payment method" value={method} disabled={!!editingSale} onChange={e=>setMethod(e.target.value)}><option>Cash</option><option>Card</option><option>Bank transfer</option><option>Mobile wallet</option><option>Credit</option></select></label></div><label>Amount received now ({method})</label><input type="number" min="0" step="0.01" inputMode="decimal" disabled={!!editingSale} value={received} placeholder={String(Math.max(0,total-advanceUsed))} onChange={e=>setReceived(e.target.value)}/><div className="tender-shortcuts"><button type="button" onClick={()=>setReceived(String(Math.max(0,total-advanceUsed)))}>Exact due</button><button type="button" onClick={()=>setReceived(String(Math.max(0,total-advanceUsed+500)))}>＋ Rs 500</button><button type="button" onClick={()=>setReceived(String(Math.max(0,total-advanceUsed+1000)))}>＋ Rs 1,000</button><button type="button" onClick={()=>setReceived(String(Math.max(0,total-advanceUsed+2000)))}>＋ Rs 2,000</button><button type="button" onClick={()=>setReceived("0")}>No payment</button><button type="button" onClick={()=>setReceived("")}>Reset</button></div><div className="payment-summary settlement-preview"><span>Cash received <b>{cash(cashReceived)}</b></span><span>Advance applied <b>{cash(advanceUsed)}</b></span><span>Applied to bill <b>{cash(applied)}</b></span><span>Balance due <b>{cash(balance)}</b></span>{over>0&&<span>Extra tender <b>{cash(over)}</b></span>}{priorOutstandingApplied>0&&<span>Previous due settled <b>{cash(priorOutstandingApplied)}</b></span>}{over>priorOutstandingApplied&&<span>New advance saved <b>{cash(over-priorOutstandingApplied)}</b></span>}</div>{over>0&&<div className="overpayment-box"><b>Extra received: {cash(over)}</b><p>Choose how to settle the extra amount:</p><div className="resolution-options"><label><input type="radio" checked={resolution==="change"} onChange={()=>setResolution("change")}/> Return as change</label><label><input type="radio" checked={resolution==="advance"} onChange={()=>setResolution("advance")}/> Save customer advance</label><label><input type="radio" checked={resolution==="tip"} onChange={()=>setResolution("tip")}/> Record staff tip</label></div></div>}<textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Sale note (optional)" rows={2}/><button className="primary-btn checkout-btn" disabled={saving||!cart.length} onClick={saveSale}>{saving?(editingSale?"Saving invoice…":"Saving sale…"):(editingSale?"Save invoice changes":"Save sale & print receipt")} <span>→</span></button></div>
       </section>
     </div>}
-  </div>;
+  {deleteTarget&&<div className="eps-modal-backdrop" role="presentation" onClick={()=>{if(!busy)setDeleteTarget(null);}}><section className="eps-modal" role="dialog" aria-modal="true" aria-labelledby="delete-product-title" onClick={e=>e.stopPropagation()}><div className="eps-modal-icon">!</div><h3 id="delete-product-title">Move product to Recycle Bin</h3><p><b>{deleteTarget.name||"Selected product"}</b> will be removed from the active catalogue. Its original details will be saved for owner recovery.</p><label>Reason for deletion<textarea rows={3} value={deleteReason} onChange={e=>setDeleteReason(e.target.value)} placeholder="Enter why this product is being removed…"/></label><div className="eps-modal-actions"><button type="button" className="outline-btn" disabled={busy} onClick={()=>setDeleteTarget(null)}>Cancel</button><button type="button" className="danger-btn" disabled={busy||deleteReason.trim().length<3} onClick={confirmProductDelete}>{busy?"Moving…":"Move to Recycle Bin"}</button></div></section></div>}
+ </div>;
 }
 
 export function ProductManager({ orgId, userId, role, branchIds, rows, onSaved, onSectionChange }: Props & { onSectionChange?: (section:string)=>void }) {
@@ -536,6 +537,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, onSaved, 
  const [labelSelection,setLabelSelection]=useState<string[]>([]),[labelCopies,setLabelCopies]=useState<Record<string,string>>({});
  const [labelTemplate,setLabelTemplate]=useState("standard"),[labelShowBrand,setLabelShowBrand]=useState(true),[labelShowBranch,setLabelShowBranch]=useState(false),[labelShowName,setLabelShowName]=useState(true),[labelShowPrice,setLabelShowPrice]=useState(true);
  const [historyProduct,setHistoryProduct]=useState("");
+ const [deleteTarget,setDeleteTarget]=useState<Product|null>(null),[deleteReason,setDeleteReason]=useState("");
  const [productSearch,setProductSearch]=useState("");
  const [labelProductPicker,setLabelProductPicker]=useState("");
  const batches=rows.filter(r=>r.collection==="mberp_stock_batches").map(r=>r.data).filter(b=>role==="owner"||branchIds.includes(String(b.branchId))).sort((a,b)=>String(a.expiryDate||"").localeCompare(String(b.expiryDate||"")));
@@ -649,28 +651,33 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, onSaved, 
   onSaved();
  }
  async function deleteProduct(product:Product){
-  if(role!=="owner"){window.alert("Only the business owner can delete products.");return;}
-  const productId=String(product.id||"");
-  if(!productId){window.alert("This product has no valid record ID. Refresh the page and try again.");return;}
-  if(n(product.qty)!==0){window.alert("This product still has stock ("+n(product.qty)+"). Bring its stock to zero through the stock adjustment workflow before deleting it.");return;}
-  const reason=window.prompt("Why are you deleting “"+String(product.name||"this product")+"”? This reason will be saved in the Recycle Bin.");
-  if(reason===null)return;
-  if(reason.trim().length<3){window.alert("Enter a reason of at least 3 characters.");return;}
-  if(!window.confirm("Move this product to the Recycle Bin? It can be restored later by the owner. Its transaction history will remain unchanged."))return;
+  if(role!=="owner"){setError("Only the business owner can delete products.");return;}
+  if(!product.id){setError("This product has no valid record ID. Refresh and try again.");return;}
+  if(n(product.qty)!==0){setError("This product still has stock ("+n(product.qty)+"). Bring its stock to zero through the stock adjustment workflow before deleting it.");return;}
+  setDeleteTarget(product);setDeleteReason("");setError("");
+ }
+ async function confirmProductDelete(){
+  const product=deleteTarget;if(!product)return;
+  if(deleteReason.trim().length<3){setError("Enter a deletion reason of at least 3 characters.");return;}
+  const productId=String(product.id);
   const source=rows.find(r=>r.collection==="mberp_products"&&String(r.record_id)===productId);
-  if(!source){window.alert("Product record not found. Refresh and try again.");return;}
-  setBusy(true);
+  if(!source){setError("Product record not found. Refresh and try again.");return;}
+  const candidateIds=[...(Array.isArray((source as any).branch_ids)?(source as any).branch_ids:[]),product.branchId,branchId,...branchIds].map(v=>String(v||"").trim()).filter(Boolean);
+  const validBranchIds=Array.from(new Set(candidateIds)).filter(id=>rows.some(r=>r.collection==="mberp_branches"&&String(r.data?.id||r.record_id)===id));
+  if(!validBranchIds.length){setError("This product has no valid linked branch. Open Edit Product, select its correct branch, save, then retry.");return;}
+  setBusy(true);setError("");
   const trashId=makeId(),deletedAt=new Date().toISOString();
-  const archive={id:trashId,recordType:"Product",originalCollection:"mberp_products",originalRecordId:productId,originalData:source.data,originalBranchIds:Array.isArray((source as any).branch_ids)?(source as any).branch_ids:[],itemLabel:String(product.name||productId),reason:reason.trim(),deletedAt,deletedBy:userId,deletedByRole:role};
-  const {error:archiveError}=await supabase.from("etihad_records").insert({org_id:orgId,collection:"mberp_recycle_bin",record_id:trashId,branch_ids:archive.originalBranchIds,data:archive,updated_by:userId});
-  if(archiveError){setBusy(false);window.alert("Product was not moved to the Recycle Bin: "+archiveError.message);return;}
+  const archive={id:trashId,recordType:"Product",originalCollection:"mberp_products",originalRecordId:productId,originalData:source.data,originalBranchIds:validBranchIds,itemLabel:String(product.name||productId),reason:deleteReason.trim(),deletedAt,deletedBy:userId,deletedByRole:role};
+  const {error:archiveError}=await supabase.from("etihad_records").insert({org_id:orgId,collection:"mberp_recycle_bin",record_id:trashId,branch_ids:validBranchIds,data:archive,updated_by:userId});
+  if(archiveError){setBusy(false);setError("Product was not moved to the Recycle Bin: "+archiveError.message);return;}
   const {data:deletedRows,error}=await supabase.from("etihad_records").delete().eq("org_id",orgId).eq("collection","mberp_products").eq("record_id",productId).select("record_id");
   if(error||!deletedRows||deletedRows.length===0){
-    const {error:cleanupError}=await supabase.from("etihad_records").delete().eq("org_id",orgId).eq("collection","mberp_recycle_bin").eq("record_id",trashId);
-    setBusy(false);window.alert("Product was not removed. "+(error?.message||"The product record was not found.")+(cleanupError?" The archive copy remains safely in the Recycle Bin.":""));return;
+   const {error:cleanupError}=await supabase.from("etihad_records").delete().eq("org_id",orgId).eq("collection","mberp_recycle_bin").eq("record_id",trashId);
+   setBusy(false);setError("Product was not removed. "+(error?.message||"The product record was not found.")+(cleanupError?" The archive copy remains safely in the Recycle Bin.":""));return;
   }
-  setBusy(false);window.alert("Product moved to the Recycle Bin. The deletion reason and time were recorded; the owner can restore it.");onSaved();
+  setBusy(false);setDeleteTarget(null);setDeleteReason("");setError("Product moved to Recycle Bin. Its deletion reason and time have been recorded.");onSaved();
  }
+
  async function save(){
   setBusy(true);setError("");
   const id=editing?.id||makeId();
