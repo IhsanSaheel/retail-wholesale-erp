@@ -343,12 +343,45 @@ export function ExpenseWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Prop
  return <div className="directory-workspace"><div className="welcome-row"><div><div className="section-kicker">CASH CONTROL</div><h1>Expenses</h1><p>Record and review business operating expenses.</p></div><span className="record-count">{money(expenses.reduce((a,e)=>a+num(e.amount),0))} total</span></div>{message&&<div className="pos-success">{message}</div>}{canEdit&&<div className="panel hr-form"><h3>Record an expense</h3><div className="hr-form-grid"><label>Description<input value={title} onChange={e=>setTitle(e.target.value)} placeholder="e.g. shop electricity"/></label><label>Category<select value={category} onChange={e=>setCategory(e.target.value)}>{["General","Rent","Utilities","Transport","Salary","Maintenance","Marketing","Other"].map(x=><option key={x}>{x}</option>)}</select></label><label>Amount (PKR)<input type="number" min="0" value={amount} onChange={e=>setAmount(e.target.value)}/></label><label>Date<input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><label>Branch<select value={branchId} onChange={e=>setBranchId(e.target.value)}>{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label><label>Payment method<select value={method} onChange={e=>setMethod(e.target.value)}>{["Cash","Bank transfer","Card","Mobile wallet"].map(x=><option key={x}>{x}</option>)}</select></label></div><label className="single-field">Note<input value={note} onChange={e=>setNote(e.target.value)}/></label><button className="primary-btn" disabled={busy||!title.trim()||num(amount)<=0||!branchId} onClick={save}>Save expense</button></div>}<div className="panel data-panel"><h3>Expense register</h3><div className="table-wrap"><table><thead><tr><th>DATE</th><th>DESCRIPTION</th><th>CATEGORY</th><th>BRANCH</th><th>METHOD</th><th>AMOUNT</th></tr></thead><tbody>{[...expenses].sort((a,b)=>String(b.date).localeCompare(String(a.date))).map((e,i)=><tr key={e.id||i}><td>{e.date}</td><td><b>{e.title||e.description}</b></td><td>{e.category}</td><td>{e.branchName||"—"}</td><td>{e.method||"—"}</td><td>{money(e.amount)}</td></tr>)}{!expenses.length&&<tr><td colSpan={6} className="empty-cell">No expenses recorded.</td></tr>}</tbody></table></div></div></div>;
 }
 export function BranchWorkspace({orgId,userId,role,rows,onSaved}:Props){
- const db=useMemo(()=>getSupabase(),[]);const branches=rows.filter(r=>r.collection==="mberp_branches").map(r=>r.data);const owner=role==="owner";
- const [name,setName]=useState("");const [address,setAddress]=useState("");const [phone,setPhone]=useState("");const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
- async function save(){if(!owner||!name.trim())return;setBusy(true);const bid=id();const {error}=await db.from("etihad_records").insert({org_id:orgId,collection:"mberp_branches",record_id:bid,branch_ids:[],updated_by:userId,data:{id:bid,name:name.trim(),address:address.trim(),phone:phone.trim(),active:true}});setMessage(error?"Branch not saved: "+error.message:"Branch created.");setBusy(false);if(!error){setName("");setAddress("");setPhone("");onSaved();}}
- return <div className="directory-workspace"><div className="welcome-row"><div><div className="section-kicker">MULTI-BRANCH OPERATIONS</div><h1>Branches</h1><p>Business locations and branch status.</p></div><span className="record-count">{branches.length} branches</span></div>{message&&<div className="pos-success">{message}</div>}{owner&&<div className="panel hr-form"><h3>Add branch</h3><div className="hr-form-grid"><label>Branch name<input value={name} onChange={e=>setName(e.target.value)}/></label><label>Address<input value={address} onChange={e=>setAddress(e.target.value)}/></label><label>Phone<input value={phone} onChange={e=>setPhone(e.target.value)}/></label></div><button className="primary-btn" disabled={busy||!name.trim()} onClick={save}>Create branch</button></div>}<div className="panel data-panel"><h3>Branch directory</h3><div className="table-wrap"><table><thead><tr><th>BRANCH</th><th>ADDRESS</th><th>PHONE</th><th>STATUS</th></tr></thead><tbody>{branches.map((b,i)=><tr key={b.id||i}><td><b>{b.name}</b></td><td>{b.address||"—"}</td><td>{b.phone||"—"}</td><td>{b.active===false?"Inactive":"Active"}</td></tr>)}</tbody></table></div></div></div>;
+ const db=useMemo(()=>getSupabase(),[]);
+ const branches=rows.filter(r=>r.collection==="mberp_branches").map(r=>({...r.data,id:r.record_id||r.data?.id}));
+ const owner=role==="owner";
+ const [name,setName]=useState("");const [address,setAddress]=useState("");const [phone,setPhone]=useState("");const [active,setActive]=useState(true);
+ const [editingBranchId,setEditingBranchId]=useState("");const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
+ function resetForm(){setName("");setAddress("");setPhone("");setActive(true);setEditingBranchId("");}
+ function editBranch(b:any){if(!owner)return;setEditingBranchId(String(b.id));setName(String(b.name||""));setAddress(String(b.address||""));setPhone(String(b.phone||""));setActive(b.active!==false);setMessage("");}
+ async function save(){if(!owner||!name.trim()||busy)return;setBusy(true);setMessage("");const bid=editingBranchId||id();const payload={id:bid,name:name.trim(),address:address.trim(),phone:phone.trim(),active};
+ const result=editingBranchId
+  ?await db.from("etihad_records").update({data:payload,updated_by:userId}).eq("org_id",orgId).eq("collection","mberp_branches").eq("record_id",editingBranchId)
+  :await db.from("etihad_records").insert({org_id:orgId,collection:"mberp_branches",record_id:bid,branch_ids:[],updated_by:userId,data:payload});
+ setMessage(result.error?"Branch not saved: "+result.error.message:(editingBranchId?"Branch details updated.":"Branch created."));
+ setBusy(false);if(!result.error){resetForm();onSaved();}}
+ async function deleteBranch(b:any){if(!owner||busy)return;const bid=String(b.id||"");if(!bid)return;
+ if(!window.confirm("Permanently delete branch \""+String(b.name||"")+" ​​\"? Branches linked to staff or business records cannot be deleted. You can edit the branch and mark it inactive instead."))return;
+ setBusy(true);setMessage("");
+ const [recordsResult,membersResult]=await Promise.all([
+  db.from("etihad_records").select("record_id,collection,branch_ids,data").eq("org_id",orgId),
+  db.from("etihad_memberships").select("user_id,branch_ids").eq("org_id",orgId)
+ ]);
+ if(recordsResult.error||membersResult.error){setMessage("Branch could not be checked before deletion: "+(recordsResult.error?.message||membersResult.error?.message));setBusy(false);return;}
+ const linkedRecord=(recordsResult.data||[]).find((r:any)=>{
+  if(r.collection==="mberp_branches"&&String(r.record_id)===bid)return false;
+  const d=r.data||{};const ids=Array.isArray(r.branch_ids)?r.branch_ids.map(String):[];
+  return ids.includes(bid)||["branchId","fromBranchId","toBranchId","sourceBranchId","destinationBranchId","originBranchId","targetBranchId"].some(k=>String(d[k]??"")===bid);
+ });
+ const linkedMember=(membersResult.data||[]).find((m:any)=>(Array.isArray(m.branch_ids)?m.branch_ids.map(String):[]).includes(bid));
+ if(linkedRecord||linkedMember){setMessage("This branch is linked to staff or business records and cannot be deleted. Edit it and mark it Inactive instead.");setBusy(false);return;}
+ const {error}=await db.from("etihad_records").delete().eq("org_id",orgId).eq("collection","mberp_branches").eq("record_id",bid);
+ setMessage(error?"Branch not deleted: "+error.message:"Branch deleted.");setBusy(false);if(!error){if(editingBranchId===bid)resetForm();onSaved();}}
+ return <div className="directory-workspace"><div className="welcome-row"><div><div className="section-kicker">MULTI-BRANCH OPERATIONS</div><h1>Branches</h1><p>Business locations and branch status.</p></div><span className="record-count">{branches.length} branches</span></div>
+ {message&&<div className="pos-success">{message}</div>}
+ {owner&&<div className="panel hr-form"><h3>{editingBranchId?"Edit branch":"Add branch"}</h3><div className="hr-form-grid"><label>Branch name<input value={name} onChange={e=>setName(e.target.value)} placeholder="Enter branch name"/></label><label>Address<input value={address} onChange={e=>setAddress(e.target.value)} placeholder="Branch address"/></label><label>Phone<input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Contact number"/></label></div>
+ <label className="branch-active-toggle"><input type="checkbox" checked={active} onChange={e=>setActive(e.target.checked)}/> Branch is active</label>
+ <div className="branch-form-actions"><button className="primary-btn" disabled={busy||!name.trim()} onClick={save}>{busy?"Saving…":editingBranchId?"Save changes":"Create branch"}</button>{editingBranchId&&<button className="text-action" disabled={busy} onClick={resetForm}>Cancel edit</button>}</div></div>}
+ <div className="panel data-panel"><h3>Branch directory</h3><div className="table-wrap"><table><thead><tr><th>BRANCH</th><th>ADDRESS</th><th>PHONE</th><th>STATUS</th>{owner&&<th>OWNER ACTIONS</th>}</tr></thead><tbody>{branches.map((b:any,i:number)=><tr key={b.id||i}><td><b>{b.name}</b></td><td>{b.address||"—"}</td><td>{b.phone||"—"}</td><td>{b.active===false?"Inactive":"Active"}</td>{owner&&<td><div className="branch-row-actions"><button type="button" className="text-action" disabled={busy} onClick={()=>editBranch(b)}>Edit</button><button type="button" className="branch-delete-action" disabled={busy} onClick={()=>deleteBranch(b)}>Delete</button></div></td>}</tr>)}
+ {!branches.length&&<tr><td colSpan={owner?5:4} className="empty-cell">No branches created yet.</td></tr>}</tbody></table></div></div>
+ {!owner&&<p className="muted-note">Only the business owner can create, edit or delete branches.</p>}</div>;
 }
-
 
 export function CashRegisterWorkspace({orgId,userId,role,branchIds,rows,onSaved,cashier}:Props){
  const db=useMemo(()=>getSupabase(),[]);
