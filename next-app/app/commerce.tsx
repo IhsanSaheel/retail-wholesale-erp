@@ -514,8 +514,13 @@ export function RecycleBinWorkspace({orgId,userId,role,rows,onSaved}:Props){
  async function permanentlyDelete(entry:any){
   const trashId=String(entry._recordId||entry.id||"");
   if(!window.confirm("Permanently remove this archived "+String(entry.recordType||"record")+"? This cannot be recovered."))return;
-  setBusy(trashId);const {error}=await db.from("etihad_records").delete().eq("org_id",orgId).eq("collection","mberp_recycle_bin").eq("record_id",trashId);setBusy("");
-  setNotice(error?"Permanent deletion failed: "+error.message:"Archived record permanently deleted.");if(!error)onSaved();
+  setBusy(trashId);
+  if(entry.originalCollection==="mberp_sales"){
+   const {error:sourceError}=await db.from("etihad_records").delete().eq("org_id",orgId).eq("collection","mberp_sales").eq("record_id",String(entry.originalRecordId||""));
+   if(sourceError){setBusy("");setNotice("Permanent deletion failed: "+sourceError.message);return;}
+  }
+  const {error}=await db.from("etihad_records").delete().eq("org_id",orgId).eq("collection","mberp_recycle_bin").eq("record_id",trashId);setBusy("");
+  setNotice(error?"The source record was permanently removed, but its Recycle Bin entry could not be cleared: "+error.message:"Archived record permanently deleted.");if(!error)onSaved();
  }
  return <section className="recycle-workspace"><div className="data-toolbar"><div><div className="section-kicker">RECORD RECOVERY</div><h2>Recycle Bin</h2><p>Deleted products and sales, with deletion reasons and full audit details.</p></div><span className="recycle-count">{entries.length} archived</span></div>{notice&&<div className={notice.includes("failed")?"notice-error":"pos-success"}>{notice}</div>}<div className="panel data-panel"><div className="data-toolbar"><div><h3>Archived records</h3><p>Restore records using their original IDs, or permanently remove an archive.</p></div><input className="search-input" placeholder="Search name, type or reason…" value={search} onChange={e=>setSearch(e.target.value)}/></div><div className="table-wrap"><table><thead><tr><th>RECORD</th><th>DELETED AT (PAKISTAN)</th><th>DELETED BY</th><th>REASON</th><th>ACTIONS</th></tr></thead><tbody>{visible.map((entry:any)=><tr key={entry._recordId}><td><b>{entry.itemLabel||"—"}</b><small className="history-subline">{entry.recordType||"Record"} · ID {entry.originalRecordId||"—"}</small></td><td>{entry.deletedAt?new Date(entry.deletedAt).toLocaleString("en-PK",{timeZone:"Asia/Karachi"}):"—"}</td><td>{entry.deletedBy||"—"}</td><td>{entry.reason||"—"}</td><td><button className="text-action" disabled={!!busy} onClick={()=>restore(entry)}>{busy===entry._recordId?"Working…":"Restore"}</button> <button className="text-action danger-action" disabled={!!busy} onClick={()=>permanentlyDelete(entry)}>Delete forever</button></td></tr>)}{!visible.length&&<tr><td colSpan={5} className="empty-cell">{entries.length?"No archived records match your search.":"Recycle Bin is empty. Deleted records will appear here with their reason and timestamp."}</td></tr>}</tbody></table></div></div></section>;
 }
