@@ -650,3 +650,21 @@ html,body,.app-shell,.main-area,.page-content{color:#29271f!important}
 .customer-section-nav button.active{background:#172b4d;border-color:#172b4d;color:#fff;box-shadow:0 2px 6px rgba(23,43,77,.16)}
 .customer-ledger-workspace .data-panel{margin-top:0}
 @media(max-width:640px){.customer-section-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.customer-section-nav button{padding:10px 7px;font-size:12px}}
+
+
+/* Purchase entry financial summary: clear hierarchy and readable responsive cards */
+.purchase-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0 16px;padding:0;align-items:stretch}
+.purchase-summary-item{display:flex;flex-direction:column;justify-content:center;gap:7px;min-width:0;min-height:88px;padding:13px 14px;background:#f7f8fa;border:1px solid #e0e5eb;border-radius:11px;box-shadow:0 1px 2px rgba(22,34,51,.035)}
+.purchase-summary-item>span{font-size:11px;line-height:1.35;font-weight:700;letter-spacing:.15px;color:#596579}
+.purchase-summary-item>b{font-size:clamp(15px,1.5vw,19px);line-height:1.2;font-weight:800;color:#1e2b3c;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.purchase-summary-item>small{font-size:10px;line-height:1.35;color:#778195}
+.purchase-summary-total{background:#172f50;border-color:#172f50}
+.purchase-summary-total>span,.purchase-summary-total>b,.purchase-summary-total>small{color:#fff}
+.purchase-summary-total>b{font-size:clamp(17px,1.7vw,22px)}
+.purchase-summary-balance{background:#fff8ed;border-color:#ead7b5}
+.purchase-summary-balance>b{color:#875c19}
+.purchase-summary-stock{background:#eff8f3;border-color:#cde6d6}
+.purchase-summary-stock>b{color:#17633e}
+.purchase-summary-stock>b small{font-size:11px;font-weight:700;color:#17633e}
+@media(max-width:900px){.purchase-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.purchase-summary-grid{gap:8px;margin:14px 0}.purchase-summary-item{min-height:78px;padding:10px 11px;border-radius:9px}.purchase-summary-item>b{font-size:16px}.purchase-summary-item>span{font-size:10px}}
