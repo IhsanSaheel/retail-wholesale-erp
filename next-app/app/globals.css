@@ -429,3 +429,42 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .product-search input,.product-note-field textarea{width:100%;min-height:42px;padding:10px 12px;border:1px solid #d8dce4;border-radius:9px;background:var(--surface,#fff);color:inherit;font:inherit}
 .product-note-field{display:flex;flex-direction:column;gap:7px;margin-top:14px;font-size:13px;font-weight:650;color:var(--text,#243247)}
 .product-note-field textarea{min-height:82px;resize:vertical;font-weight:400}
+
+
+/* Accessibility: strengthen text contrast throughout the ERP without changing its gold/cream brand theme. */
+:root{
+  --ink:#24221c;
+  --muted:#5f5b51;
+  --line:#d9d4c9;
+  --paper:#f7f6f2;
+}
+html,body,.app-shell,.main-area,.page-content{color:#29271f!important}
+.page-content :is(p,small,label,.muted,.hint,.helper-text,.field-help,.form-hint,.description,.subtext,.secondary-text,.empty-inline,.bill-empty,.stock-name small,.pos-product small,.panel-head p,.data-toolbar p,.welcome-row p,.metric-top,.metric-card>small,.top-date,.crumb){
+  color:#5f5b52!important;
+}
+.page-content :is(th,.table-muted,.text-muted,[data-muted="true"]){color:#5a564d!important}
+.page-content :is(td,.table-cell,.form-label,.product-search,.product-note-field,.product-form-grid label,.single-field,.statement-filters label,.payment-box>label,.customer-box>label){
+  color:#39362e!important;
+}
+.page-content :is(input,select,textarea){color:#29271f!important}
+.page-content :is(input,select,textarea)::placeholder{color:#777267!important;opacity:1!important}
+.page-content :is(button,a){text-shadow:none}
+.page-content button:disabled{opacity:.82!important;color:#5d594f!important}
+.page-content :is(.outline-btn,.text-action,.pos-tabs button,.hr-tabs button,.pos-category-bar>button,.product-stock-nav button){
+  color:#514b3e!important;
+}
+.page-content :is(.pos-tabs button.selected,.hr-tabs button.selected,.pos-category-bar>button.active,.product-stock-nav button.active){
+  color:#211f19!important;font-weight:750!important;
+}
+.page-content :is(.status,.panel-badge,.record-count,.nav-tag){font-weight:750!important}
+.page-content :is(.empty-cell,.module-placeholder p,.placeholder-chips span,.report-lines>div,.stock-summary small,.stock-qty small,.bill-product small){
+  color:#5f5a50!important;
+}
+.page-content :is(.metric-top,.metric-card>small,.panel-head p,.data-toolbar p){font-weight:600!important}
+.page-content :is(.customer-outstanding,.status.pending,.status.partially-returned){color:#963333!important}
+.page-content :is(.customer-advance,.status.paid,.status.returned){color:#176344!important}
+.page-content :is(.offline-mode-banner,.offline-mode-notice,.offline-queue-banner){color:#634813!important}
+@media(max-width:760px){
+  .page-content :is(p,small,label,.muted,.helper-text,.field-help,.form-hint,.description,.subtext){color:#514d44!important}
+  .page-content :is(input,select,textarea){font-size:14px}
+}
