@@ -48,7 +48,7 @@ export function PeopleWorkspace({orgId,userId,role,rows,onRefresh}:Props){
  async function saveProfile(){
   if(!owner||!email.trim()||!tempPassword||!name.trim()||!code.trim()){setNotice("Enter employee name, code, email and a temporary password.");return;}
   const normalizedEmail=email.trim().toLowerCase();
-  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(normalizedEmail)){setNotice("Enter a valid employee email address.");return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)){setNotice("Enter a valid employee email address.");return;}
   if(code.trim().length<2||code.trim().length>40){setNotice("Employee code must be between 2 and 40 characters.");return;}
   const salaryValue=Number(salary);
   if(!Number.isFinite(salaryValue)||salaryValue<0){setNotice("Enter a valid base salary of zero or more.");return;}
