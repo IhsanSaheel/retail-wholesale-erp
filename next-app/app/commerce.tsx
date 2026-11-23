@@ -490,7 +490,7 @@ export function RecycleBinWorkspace({orgId,userId,role,rows,onSaved}:Props){
  const [search,setSearch]=useState("");
  const [busy,setBusy]=useState("");
  const [notice,setNotice]=useState("");
- const entries:any[]=rows.filter(r=>r.collection==="mberp_recycle_bin").map(r=>({...r.data,_recordId:r.record_id})).sort((a,b)=>String(b.deletedAt||"").localeCompare(String(a.deletedAt||"")));
+ const entries:any[]=rows.filter(r=>r.collection==="mberp_recycle_bin").map(r=>({...r.data,_recordId:r.record_id})).sort((a:any,b:any)=>String(b.deletedAt||"").localeCompare(String(a.deletedAt||"")));
  const visible=entries.filter(r=>[r.itemLabel,r.recordType,r.reason,r.originalRecordId,r.deletedBy].some(v=>String(v||"").toLowerCase().includes(search.toLowerCase())));
  if(role!=="owner")return <section className="panel data-panel"><h3>Recycle Bin</h3><p>Only the business owner can view, restore or permanently remove deleted records.</p></section>;
  async function restore(entry:any){
