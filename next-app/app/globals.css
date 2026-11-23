@@ -521,3 +521,29 @@ html,body,.app-shell,.main-area,.page-content{color:#29271f!important}
 .page-content .pos-bill .bill-empty {
   color: #5b574e !important;
 }
+
+
+/* Sales Returns — clear workflow hierarchy and responsive financial review */
+.returns-workspace{gap:18px}.returns-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.returns-kpi{background:var(--surface,#fff);border:1px solid var(--line,#dedbd3);border-radius:13px;padding:15px 17px;min-width:0}
+.returns-kpi span,.returns-kpi small{display:block;color:var(--muted,#625f57);font-size:12px}.returns-kpi strong{display:block;color:var(--ink,#24221c);font-size:clamp(17px,2vw,23px);margin:7px 0 3px;overflow-wrap:anywhere}
+.returns-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(245px,.8fr);gap:16px;align-items:start}
+.returns-form-panel,.returns-guide-panel{padding:20px;min-width:0}.returns-section-heading{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.returns-section-heading h3{margin:5px 0 3px;color:var(--ink,#24221c);font-size:17px}.returns-section-heading p{margin:0;color:var(--muted,#625f57);font-size:12px}
+.returns-step{font-size:10px;font-weight:800;letter-spacing:1px;color:#9a7740}.returns-step-gap{border-top:1px solid var(--line,#dedbd3);padding-top:17px;margin-top:19px}
+.returns-field{display:flex;flex-direction:column;gap:6px;min-width:0;color:var(--ink,#24221c);font-size:12px;font-weight:700}
+.returns-field input,.returns-field select{width:100%;min-width:0;min-height:43px;border:1px solid #c9c4b9;border-radius:8px;background:#fff;color:#24221c;padding:9px 11px;font:inherit;font-weight:500}
+.returns-field input:focus,.returns-field select:focus{outline:2px solid #c6a264;outline-offset:1px}
+.returns-invoice-card{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;background:#f7f6f2;border:1px solid #e5e0d5;border-radius:10px;padding:14px;margin-top:13px}
+.returns-invoice-card div{min-width:0}.returns-invoice-card small{display:block;color:#777166;font-size:9px;font-weight:800;letter-spacing:.7px;margin-bottom:4px}.returns-invoice-card b{display:block;color:#29271f;font-size:12px;overflow-wrap:anywhere}
+.returns-item-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.returns-item-facts div{background:#f7f6f2;border-radius:8px;padding:10px;min-width:0}
+.returns-item-facts span{display:block;color:#706b61;font-size:10px}.returns-item-facts b{display:block;color:#29271f;font-size:13px;margin-top:4px;overflow-wrap:anywhere}.returns-item-facts .returns-available{color:#177245}
+.returns-input-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:10px}.returns-reason-field{margin-top:12px}
+.returns-settlement{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px;margin-top:16px;padding:13px 15px;background:#f7f6f2;border:1px solid #e5e0d5;border-radius:10px}
+.returns-settlement div{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #e8e4dc;font-size:12px}.returns-settlement span{color:#625e55}.returns-settlement b{color:#29271f;text-align:right}.returns-settlement .returns-settlement-total{grid-column:1/-1;border:0;margin-top:4px;padding-top:12px}
+.returns-settlement-total strong{color:#172942;font-size:17px}.returns-helper{font-size:11px;line-height:1.55;color:var(--muted,#625f57);margin:12px 0}.returns-submit{width:100%;min-height:46px}
+.returns-checklist{padding-left:19px;margin:14px 0 20px;color:#49463f;font-size:12px;line-height:1.65}.returns-checklist li{padding:0 0 9px 3px}
+.returns-guide-note{padding:13px;border-radius:9px;background:#f7f6f2;border:1px solid #e5e0d5;margin-top:12px}.returns-guide-note b{font-size:12px;color:#29271f}.returns-guide-note p{font-size:11px;line-height:1.5;color:#625e55;margin:5px 0 0}
+.returns-register-panel{min-width:0}.returns-register-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.returns-register-panel .table-wrap{overflow:auto}.returns-register-panel table{min-width:1050px}
+@media(max-width:900px){.returns-layout{grid-template-columns:1fr}.returns-guide-panel{order:2}}
+@media(max-width:640px){.returns-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.returns-kpi{padding:12px}.returns-kpi strong{font-size:17px}.returns-form-panel,.returns-guide-panel{padding:14px}.returns-invoice-card{grid-template-columns:1fr 1fr;gap:10px;padding:11px}.returns-item-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.returns-input-grid{grid-template-columns:1fr;gap:10px}.returns-settlement{grid-template-columns:1fr;padding:10px 12px}.returns-settlement .returns-settlement-total{grid-column:1}.returns-register-actions{width:100%;justify-content:space-between}}
