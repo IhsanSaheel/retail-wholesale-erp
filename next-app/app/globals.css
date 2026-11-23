@@ -789,3 +789,17 @@ html,body,.app-shell,.main-area,.page-content{color:#29271f!important}
 .supplier-return-reason-cell{white-space:normal;min-width:150px;max-width:240px;line-height:1.4}
 @media(max-width:900px){.supplier-returns-layout{grid-template-columns:1fr}.supplier-return-guide{order:2}}
 @media(max-width:650px){.supplier-returns-heading{align-items:flex-start;flex-direction:column}.supplier-returns-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.supplier-returns-kpis article{padding:11px}.supplier-returns-kpis b{font-size:17px}.supplier-return-form,.supplier-return-guide{padding:14px}.supplier-return-filters,.supplier-return-history-filters,.supplier-return-fields{grid-template-columns:1fr;gap:9px}.supplier-return-invoice-card{gap:9px;padding:10px}.supplier-return-qty-facts{gap:6px}.supplier-return-qty-facts>div{padding:8px}.supplier-return-qty-facts b{font-size:13px}.supplier-return-history-totals{gap:7px}.supplier-return-history-totals>div{padding:9px}.supplier-return-history-totals b{font-size:13px}.supplier-return-history-filters .outline-btn{width:100%}}
+
+
+/* Owner recycle-bin workspace */
+.recycle-workspace{display:grid;gap:16px}
+.recycle-workspace>.data-toolbar{align-items:center;gap:14px}
+.recycle-workspace h2{margin:3px 0 5px;color:#202a38;font-size:24px}
+.recycle-workspace .data-toolbar p{margin:4px 0 0;color:#667085}
+.recycle-count{white-space:nowrap;border:1px solid #d8dee8;background:#f4f6f9;color:#344054;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700}
+.recycle-workspace .data-panel{min-width:0}
+.recycle-workspace .search-input{max-width:320px}
+.recycle-workspace table{min-width:760px}
+.recycle-workspace td{vertical-align:middle}
+.recycle-workspace .danger-action{color:#b42318}
+@media(max-width:640px){.recycle-workspace>.data-toolbar{align-items:flex-start;flex-direction:column}.recycle-workspace .search-input{max-width:none;width:100%}}
