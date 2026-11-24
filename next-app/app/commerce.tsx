@@ -41,7 +41,7 @@ export function CustomerWorkspace({orgId,userId,role,rows,onSaved}:Props){
     const {error}=await db.from("etihad_records").upsert({org_id:orgId,collection:"mberp_customers",record_id:customerId,branch_ids:[],updated_by:userId,data:profileData},{onConflict:"org_id,collection,record_id"});
     if(error){w.close();setMessage("Could not create the permanent customer profile: "+error.message);return;}
    }
-   const qr=await QRCode.toDataURL("ETIHAD-CUSTOMER:"+customerId,{width:320,margin:1,errorCorrectionLevel:"H"});
+   const qr=await QRCode.toDataURL(`${window.location.origin}/scan/customer/${encodeURIComponent(customerId)}`,{width:320,margin:1,errorCorrectionLevel:"H"});
    const logo=htmlEscape(businessLogoUrl),name=htmlEscape(profileData.name),safePhone=htmlEscape(profileData.phone||"—"),address=htmlEscape(profileData.address||"—"),email=htmlEscape(profileData.email||"—"),safeId=htmlEscape(customerId);
    w.document.open();
    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Customer ID Card · Etihad Prime Supplies</title><style>
@@ -95,7 +95,7 @@ export function SupplierWorkspace({orgId,userId,role,rows,onSaved}:Props){
   if(!w){setMessage("Allow pop-ups to print supplier ID cards.");return;}
   try{
    const supplierId=String(s?.id||"");if(!supplierId){w.close();setMessage("This supplier has no permanent ID. Save the supplier profile first.");return;}
-   const qr=await QRCode.toDataURL("ETIHAD-SUPPLIER:"+supplierId,{width:320,margin:1,errorCorrectionLevel:"H"});
+   const qr=await QRCode.toDataURL(`${window.location.origin}/scan/supplier/${encodeURIComponent(supplierId)}`,{width:320,margin:1,errorCorrectionLevel:"H"});
    const logo=htmlEscape(businessLogoUrl),name=htmlEscape(s.name||"Supplier"),phone=htmlEscape(s.phone||"—"),address=htmlEscape(s.address||"—"),safeId=htmlEscape(supplierId);
    w.document.open();
    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Supplier ID Card · Etihad Prime Supplies</title><style>
