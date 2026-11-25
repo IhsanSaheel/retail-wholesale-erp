@@ -346,17 +346,28 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
         const width=900;
         const items=Array.isArray(sale.items)?sale.items:[];
         const rowHeights=items.map((it:any)=>Math.max(76,Math.ceil(String(it.name||"Item").length/34)*34+42));
-        const height=560+rowHeights.reduce((sum:number,h:number)=>sum+h,0)+300;
+        const height=640+rowHeights.reduce((sum:number,h:number)=>sum+h,0)+300;
         canvas.width=width;canvas.height=height;
         const ctx=canvas.getContext("2d");
         if(!ctx)throw new Error("Image canvas is unavailable");
         ctx.fillStyle="#ffffff";ctx.fillRect(0,0,width,height);
-        ctx.fillStyle="#172942";ctx.fillRect(0,0,width,220);
-        ctx.fillStyle="#c6a264";ctx.fillRect(0,214,width,6);
-        ctx.textAlign="center";ctx.fillStyle="#ffffff";ctx.font="bold 42px Arial";ctx.fillText("ETIHAD PRIME SUPPLIES",width/2,82);
-        ctx.fillStyle="#e4c98f";ctx.font="bold 20px Arial";ctx.fillText("GENERAL TRADING  ·  WHOLESALE",width/2,122);
-        ctx.fillStyle="#ffffff";ctx.font="20px Arial";ctx.fillText("Ihsan Saheel  ·  Mob No. 0332-3222125",width/2,166);
-        let y=275;ctx.textAlign="left";ctx.fillStyle="#172942";ctx.font="bold 32px Arial";ctx.fillText("SALES INVOICE",48,y);
+        ctx.fillStyle="#172942";ctx.fillRect(0,0,width,270);
+        ctx.fillStyle="#c6a264";ctx.fillRect(0,264,width,6);
+        let logoLoaded=false;
+        try {
+          const logo=new Image();
+          logo.src="/brand-logo.svg?v=6";
+          await new Promise<void>((resolve,reject)=>{logo.onload=()=>resolve();logo.onerror=()=>reject(new Error("Logo could not be loaded"));});
+          ctx.drawImage(logo,350,8,200,134);
+          logoLoaded=true;
+        } catch {}
+        ctx.textAlign="center";ctx.fillStyle="#ffffff";ctx.font="bold 38px Arial";
+        ctx.fillText("ETIHAD PRIME SUPPLIES",width/2,178);
+        ctx.fillStyle="#e4c98f";ctx.font="bold 19px Arial";
+        ctx.fillText("GENERAL TRADING  ·  WHOLESALE",width/2,211);
+        ctx.fillStyle="#ffffff";ctx.font="19px Arial";
+        ctx.fillText("Ihsan Saheel  ·  Mob No. 0332-3222125",width/2,245);
+        let y=325;ctx.textAlign="left";ctx.fillStyle="#172942";ctx.font="bold 32px Arial";ctx.fillText("SALES INVOICE",48,y);
         y+=62;ctx.fillStyle="#f3f5f8";ctx.fillRect(36,y-34,width-72,142);
         const meta=[["INVOICE",clean(sale.invoiceNo||"—")],["DATE",sale.date?new Date(sale.date).toLocaleString("en-PK",{timeZone:"Asia/Karachi"}):"—"],["CUSTOMER",clean(sale.customerName||"Walk-in Customer")],["PHONE",clean(rawPhone||sale.customerPhone||"—")],["BRANCH",clean(sale.branchName||"—")],["SERVED BY",clean(sale.cashier||cashier||"—")]];
         meta.forEach((entry,i)=>{const col=i%2,row=Math.floor(i/2),x=58+col*410,yy=y+row*43;ctx.fillStyle="#788497";ctx.font="bold 14px Arial";ctx.fillText(entry[0],x,yy);ctx.fillStyle="#26364c";ctx.font="bold 19px Arial";ctx.fillText(entry[1].slice(0,38),x,yy+23);});
@@ -386,11 +397,16 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
         return new File([blob],"Etihad-Invoice-"+clean(sale.invoiceNo||"receipt").replace(/\s+/g,"-")+".jpg",{type:"image/jpeg"});
       };
       createInvoiceImage().then((imageFile)=>{
-        if(typeof navigator!=="undefined"&&typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[imageFile]})){
-          return navigator.share({files:[imageFile],title:shareText,text:shareText+" for "+String(sale.customerName||"customer")});
-        }
-        setMessage("This browser cannot share invoice images directly. Please open Etihad Prime Supplies in Android Chrome.");
-      }).catch((err:any)=>{if(err?.name!=="AbortError")setMessage("Could not create or share the invoice image. Please try again.");});
+        const downloadUrl=URL.createObjectURL(imageFile);
+        const anchor=document.createElement("a");
+        anchor.href=downloadUrl;anchor.download=imageFile.name;
+        document.body.appendChild(anchor);anchor.click();anchor.remove();
+        window.setTimeout(()=>URL.revokeObjectURL(downloadUrl),120000);
+        const chatText="Hello, please find my invoice "+String(sale.invoiceNo||"")+" from Etihad Prime Supplies.";
+        const whatsappUrl="https://wa.me/"+whatsappPhone+"?text="+encodeURIComponent(chatText);
+        setMessage("Invoice JPG downloaded. Opening the saved WhatsApp number for "+String(sale.customerName||"customer")+". Attach the JPG from Downloads before sending.");
+        window.setTimeout(()=>{window.location.href=whatsappUrl;},350);
+      }).catch((err:any)=>{if(err?.name!=="AbortError")setMessage("Could not create the invoice image. Please try again.");});
       return;
     }
     if(typeof navigator!=="undefined"&&typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[file]})){
