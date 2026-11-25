@@ -108,8 +108,8 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     w.document.close();
   }
   function shareQuotation(quote:any){
-    const lines=(quote.items||[]).map((it:any)=>"• "+String(it.name||"Item")+" × "+n(it.qty)+" = "+cash(n(it.price)*n(it.qty))).join("\\n");
-    const message=["ETIHAD PRIME SUPPLIES — QUOTATION", "Reference: "+(quote.reference||"—"),"Customer: "+(quote.customerName||"—"),"Date: "+(quote.date?new Date(quote.date).toLocaleDateString("en-PK",{timeZone:"Asia/Karachi"}):"—"),"Valid until: "+(quote.validUntil||"—"),"",lines,"","Total: "+cash(n(quote.total)),quote.notes?"Notes: "+quote.notes:""].filter(Boolean).join("\\n");
+    const lines=(quote.items||[]).map((it:any)=>"• "+String(it.name||"Item")+" × "+n(it.qty)+" = "+cash(n(it.price)*n(it.qty))).join("\n");
+    const message=["ETIHAD PRIME SUPPLIES — QUOTATION", "Reference: "+(quote.reference||"—"),"Customer: "+(quote.customerName||"—"),"Date: "+(quote.date?new Date(quote.date).toLocaleDateString("en-PK",{timeZone:"Asia/Karachi"}):"—"),"Valid until: "+(quote.validUntil||"—"),"",lines,"","Total: "+cash(n(quote.total)),quote.notes?"Notes: "+quote.notes:""].filter(Boolean).join("\n");
     const phone=String(quote.customerPhone||"").replace(/[^0-9]/g,"");
     window.open("https://wa.me/"+(phone||"")+"?text="+encodeURIComponent(message),"_blank","noopener,noreferrer");
   }
@@ -315,12 +315,12 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     let stream="BT /F1 8 Tf 10 "+(pageH-24)+" Td 12 TL ";
     wrapped.forEach((line,i)=>{if(i)stream+="T* ";stream+="("+escPdf(line)+") Tj ";});
     stream+="ET";
-    const objects:string[]=["<< /Type /Catalog /Pages 2 0 R >>","<< /Type /Pages /Kids [3 0 R] /Count 1 >>",`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>`,"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",`<< /Length ${stream.length} >>\\nstream\\n${stream}\\nendstream`];
-    let pdf="%PDF-1.4\\n",offsets=[0];
-    objects.forEach((obj,i)=>{offsets.push(pdf.length);pdf+=(i+1)+" 0 obj\\n"+obj+"\\nendobj\\n";});
-    const xref=pdf.length;pdf+="xref\\n0 "+(objects.length+1)+"\\n0000000000 65535 f \\n";
-    for(let i=1;i<offsets.length;i++)pdf+=String(offsets[i]).padStart(10,"0")+" 00000 n \\n";
-    pdf+="trailer\\n<< /Size "+(objects.length+1)+" /Root 1 0 R >>\\nstartxref\\n"+xref+"\\n%%EOF";
+    const objects:string[]=["<< /Type /Catalog /Pages 2 0 R >>","<< /Type /Pages /Kids [3 0 R] /Count 1 >>",`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>`,"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`];
+    let pdf="%PDF-1.4\n",offsets=[0];
+    objects.forEach((obj,i)=>{offsets.push(pdf.length);pdf+=(i+1)+" 0 obj\n"+obj+"\nendobj\n";});
+    const xref=pdf.length;pdf+="xref\n0 "+(objects.length+1)+"\n0000000000 65535 f \n";
+    for(let i=1;i<offsets.length;i++)pdf+=String(offsets[i]).padStart(10,"0")+" 00000 n \n";
+    pdf+="trailer\n<< /Size "+(objects.length+1)+" /Root 1 0 R >>\nstartxref\n"+xref+"\n%%EOF";
     const fileName="Etihad-Invoice-"+clean(sale.invoiceNo||"receipt").replace(/\s+/g,"-")+".pdf";
     const file=new File([new Blob([pdf],{type:"application/pdf"})],fileName,{type:"application/pdf"});
     const shareText="Etihad Prime Supplies invoice "+String(sale.invoiceNo||"");
@@ -646,7 +646,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
  function downloadBulkTemplate(){
   const headers=["name","sku","barcode","category","unit","branch","cost","retailerPrice","salesmanPrice","qty","alert","upperUnit","upperQty","lowerUnit","lowerQty"];
   const example=["Fish Nimko","FN-001","","Snacks","Box","","100","120","110","20","5","Carton","18","Piece","20"];
-  const csv=[headers,example].map(line=>line.map(value=>{const text=String(value??"");return /[",\\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;}).join(",")).join("\r\n");
+  const csv=[headers,example].map(line=>line.map(value=>{const text=String(value??"");return /[",\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;}).join(",")).join("\r\n");
   const blob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8;"});
   const url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="etihad-prime-product-import-template.csv";document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
  }
