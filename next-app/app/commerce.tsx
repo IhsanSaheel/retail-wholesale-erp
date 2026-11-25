@@ -387,12 +387,12 @@ export function BranchWorkspace({orgId,userId,role,rows,onSaved}:Props){
  const activeBranches=branches.filter((b:any)=>b.active!==false);
  const inactiveBranches=branches.length-activeBranches.length;
  const branchStats=(b:any)=>{
-  const linkedSales=rows.filter(r=>r.collection==="mberp_sales"&&(String(r.data?.branchId||"")===String(b.id)||(Array.isArray(r.branch_ids)&&r.branch_ids.map(String).includes(String(b.id)))));
+  const linkedSales=rows.filter(r=>r.collection==="mberp_sales"&&(String(r.data?.branchId||"")===String(b.id)||(Array.isArray((r as any).branch_ids)&&(r as any).branch_ids.map(String).includes(String(b.id)))));
   const validSales=linkedSales.filter(r=>String(r.data?.status||"").toLowerCase()!=="cancelled"&&!r.data?.recycleBinId);
   const revenue=validSales.reduce((sum,r)=>sum+Number(r.data?.total||0),0);
   const knownProfit=validSales.every(r=>Array.isArray(r.data?.items)&&r.data.items.every((it:any)=>it.cost!==undefined&&it.cost!==null));
   const profit=knownProfit?validSales.reduce((sum,r)=>sum+(r.data.items||[]).reduce((subtotal:number,it:any)=>subtotal+(Number(it.price||0)-Number(it.cost||0))*Number(it.qty||0),0),0):null;
-  const productCount=rows.filter(r=>r.collection==="mberp_products"&&(String(r.data?.branchId||"")===String(b.id)||(Array.isArray(r.branch_ids)&&r.branch_ids.map(String).includes(String(b.id))))).length;
+  const productCount=rows.filter(r=>r.collection==="mberp_products"&&(String(r.data?.branchId||"")===String(b.id)||(Array.isArray((r as any).branch_ids)&&(r as any).branch_ids.map(String).includes(String(b.id))))).length;
   return {sales:validSales.length,revenue,profit,productCount};
  };
  return <div className="directory-workspace" style={{display:"grid",gap:18}}>
