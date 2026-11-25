@@ -290,25 +290,50 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     popup.document.close();
   }
 
-  function shareSaleInvoice(sale:Product,channel:"whatsapp"|"email") {
+  async function shareSaleInvoice(sale:Product,channel:"whatsapp"|"email") {
     const phoneKey=String(sale.customerPhone||"").replace(/\\D/g,"");
-    const profile=savedCustomers.find((c:any)=>{
-      const candidate=String(c.phone||"").replace(/\\D/g,"");
-      return phoneKey&&candidate===phoneKey;
-    })||savedCustomers.find((c:any)=>searchText(c.name)===searchText(sale.customerName));
+    const profile=savedCustomers.find((c:any)=>{const candidate=String(c.phone||"").replace(/\\D/g,"");return phoneKey&&candidate===phoneKey;})||savedCustomers.find((c:any)=>searchText(c.name)===searchText(sale.customerName));
     const email=String(profile?.email||profile?.emailAddress||profile?.contactEmail||sale.customerEmail||"").trim();
     const rawPhone=String(profile?.whatsapp||profile?.phone||sale.customerPhone||"").trim();
     const digits=rawPhone.replace(/\\D/g,"");
     const whatsappPhone=digits.startsWith("00")?digits.slice(2):digits.startsWith("0")?"92"+digits.slice(1):digits;
-    const lines=(Array.isArray(sale.items)?sale.items:[]).map((it:any)=>"- "+String(it.name||"Item")+" × "+n(it.saleQty??it.qty)+" "+String(it.saleUnit||it.unit||"")+" = "+cash(n(it.unitSalePrice??it.price)*n(it.saleQty??it.qty))).join("\\n");
-    const body=["ETIHAD PRIME SUPPLIES — SALES INVOICE","Invoice: "+String(sale.invoiceNo||"—"),"Customer: "+String(sale.customerName||"Customer"),"Date: "+(sale.date?new Date(sale.date).toLocaleString("en-PK",{timeZone:"Asia/Karachi"}):"—"),"Branch: "+String(sale.branchName||"—"),"","ITEMS",lines,"","Total: "+cash(n(sale.total)),"Paid: "+cash(n(sale.paid)),"Balance due: "+cash(n(sale.balance)),"Payment: "+String(sale.paymentMethod||"—"),"","Thank you for your business!"].join("\\n");
-    if(channel==="whatsapp"){
-      if(!whatsappPhone){setMessage("This customer has no WhatsApp phone number saved in their profile.");return;}
-      window.open("https://wa.me/"+whatsappPhone+"?text="+encodeURIComponent(body),"_blank","noopener,noreferrer");
+    if(channel==="whatsapp"&&!whatsappPhone){setMessage("This customer has no WhatsApp phone number saved in their profile.");return;}
+    if(channel==="email"&&!email){setMessage("This customer has no email address saved in their profile.");return;}
+    const clean=(v:any)=>String(v??"").replace(/[^\\x20-\\x7E]/g," ");
+    const money=(v:any)=>"Rs. "+cash(n(v));
+    const itemLines=(Array.isArray(sale.items)?sale.items:[]).flatMap((it:any)=>{
+      const name=clean(it.name||"Item");
+      const qty=n(it.saleQty??it.qty),unit=clean(it.saleUnit||it.unit||"");
+      const rate=n(it.unitSalePrice??it.price),amount=rate*qty;
+      return [name,qty+" "+unit+" x "+money(rate)+" = "+money(amount)];
+    });
+    const lines=["ETIHAD PRIME SUPPLIES","SALES INVOICE","Invoice: "+clean(sale.invoiceNo||"—"),"Date: "+(sale.date?new Date(sale.date).toLocaleString("en-PK",{timeZone:"Asia/Karachi"}):"—"),"Customer: "+clean(sale.customerName||"Walk-in Customer"),"Phone: "+clean(sale.customerPhone||"—"),"Branch: "+clean(sale.branchName||"—"),"--------------------------------",...itemLines,"--------------------------------","Total: "+money(sale.total),"Paid: "+money(sale.paid),"Balance due: "+money(sale.balance),"Payment: "+clean(sale.paymentMethod||"—"),"","Thank you for your business!"];
+    const escPdf=(v:string)=>v.replace(/\\\\/g,"\\\\\\\\").replace(/\\(/g,"\\\\(").replace(/\\)/g,"\\\\)");
+    const wrapped:string[]=[];
+    for(const line of lines){if(!line){wrapped.push("");continue;}let rest=line;while(rest.length>42){let cut=rest.lastIndexOf(" ",42);if(cut<1)cut=42;wrapped.push(rest.slice(0,cut));rest=rest.slice(cut).trim();}wrapped.push(rest);}
+    const pageW=226.77,pageH=Math.max(360,wrapped.length*12+48);
+    let stream="BT /F1 8 Tf 10 "+(pageH-24)+" Td 12 TL ";
+    wrapped.forEach((line,i)=>{if(i)stream+="T* ";stream+="("+escPdf(line)+") Tj ";});
+    stream+="ET";
+    const objects:string[]=["<< /Type /Catalog /Pages 2 0 R >>","<< /Type /Pages /Kids [3 0 R] /Count 1 >>",`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>`,"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",`<< /Length ${stream.length} >>\\nstream\\n${stream}\\nendstream`];
+    let pdf="%PDF-1.4\\n",offsets=[0];
+    objects.forEach((obj,i)=>{offsets.push(pdf.length);pdf+=(i+1)+" 0 obj\\n"+obj+"\\nendobj\\n";});
+    const xref=pdf.length;pdf+="xref\\n0 "+(objects.length+1)+"\\n0000000000 65535 f \\n";
+    for(let i=1;i<offsets.length;i++)pdf+=String(offsets[i]).padStart(10,"0")+" 00000 n \\n";
+    pdf+="trailer\\n<< /Size "+(objects.length+1)+" /Root 1 0 R >>\\nstartxref\\n"+xref+"\\n%%EOF";
+    const fileName="Etihad-Invoice-"+clean(sale.invoiceNo||"receipt").replace(/\\s+/g,"-")+".pdf";
+    const file=new File([new Blob([pdf],{type:"application/pdf"})],fileName,{type:"application/pdf"});
+    const shareText="Etihad Prime Supplies invoice "+String(sale.invoiceNo||"");
+    if(typeof navigator!=="undefined"&&typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:shareText,text:shareText});}catch(err:any){if(err?.name!=="AbortError")setMessage("Could not open the share menu. Please try again.");}
       return;
     }
-    if(!email){setMessage("This customer has no email address saved in their profile.");return;}
-    window.location.href="mailto:"+encodeURIComponent(email)+"?subject="+encodeURIComponent("Etihad Prime Supplies Invoice "+String(sale.invoiceNo||""))+"&body="+encodeURIComponent(body);
+    const url=URL.createObjectURL(file);
+    const a=document.createElement("a");a.href=url;a.download=fileName;document.body.appendChild(a);a.click();a.remove();
+    window.setTimeout(()=>URL.revokeObjectURL(url),60000);
+    if(channel==="whatsapp")window.open("https://wa.me/"+whatsappPhone,"_blank","noopener,noreferrer");
+    else window.location.href="mailto:"+encodeURIComponent(email)+"?subject="+encodeURIComponent(shareText);
+    setMessage("Invoice PDF downloaded. Attach the downloaded PDF in the WhatsApp or email window.");
   }
 
   function beginEditSale(sale:Product) {
