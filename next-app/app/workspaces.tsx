@@ -341,11 +341,56 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     const file=new File([pdfBytes],fileName,{type:"application/pdf"});
     const shareText="Etihad Prime Supplies invoice "+String(sale.invoiceNo||"");
     if(channel==="whatsapp"){
-      if(typeof navigator!=="undefined"&&typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[file]})){
-        navigator.share({files:[file],title:shareText,text:shareText+" for "+String(sale.customerName||"customer")}).catch((err:any)=>{if(err?.name!=="AbortError")setMessage("Could not open WhatsApp sharing. Please try again.");});
-        return;
-      }
-      setMessage("This browser cannot share PDF files directly. Please use your phone's Chrome browser to share the invoice PDF to WhatsApp.");
+      const createInvoiceImage=async():Promise<File>=>{
+        const canvas=document.createElement("canvas");
+        const width=900;
+        const items=Array.isArray(sale.items)?sale.items:[];
+        const rowHeights=items.map((it:any)=>Math.max(76,Math.ceil(String(it.name||"Item").length/34)*34+42));
+        const height=560+rowHeights.reduce((sum:number,h:number)=>sum+h,0)+300;
+        canvas.width=width;canvas.height=height;
+        const ctx=canvas.getContext("2d");
+        if(!ctx)throw new Error("Image canvas is unavailable");
+        ctx.fillStyle="#ffffff";ctx.fillRect(0,0,width,height);
+        ctx.fillStyle="#172942";ctx.fillRect(0,0,width,220);
+        ctx.fillStyle="#c6a264";ctx.fillRect(0,214,width,6);
+        ctx.textAlign="center";ctx.fillStyle="#ffffff";ctx.font="bold 42px Arial";ctx.fillText("ETIHAD PRIME SUPPLIES",width/2,82);
+        ctx.fillStyle="#e4c98f";ctx.font="bold 20px Arial";ctx.fillText("GENERAL TRADING  ·  WHOLESALE",width/2,122);
+        ctx.fillStyle="#ffffff";ctx.font="20px Arial";ctx.fillText("Ihsan Saheel  ·  Mob No. 0332-3222125",width/2,166);
+        let y=275;ctx.textAlign="left";ctx.fillStyle="#172942";ctx.font="bold 32px Arial";ctx.fillText("SALES INVOICE",48,y);
+        y+=62;ctx.fillStyle="#f3f5f8";ctx.fillRect(36,y-34,width-72,142);
+        const meta=[["INVOICE",clean(sale.invoiceNo||"—")],["DATE",sale.date?new Date(sale.date).toLocaleString("en-PK",{timeZone:"Asia/Karachi"}):"—"],["CUSTOMER",clean(sale.customerName||"Walk-in Customer")],["PHONE",clean(rawPhone||sale.customerPhone||"—")],["BRANCH",clean(sale.branchName||"—")],["SERVED BY",clean(sale.cashier||cashier||"—")]];
+        meta.forEach((entry,i)=>{const col=i%2,row=Math.floor(i/2),x=58+col*410,yy=y+row*43;ctx.fillStyle="#788497";ctx.font="bold 14px Arial";ctx.fillText(entry[0],x,yy);ctx.fillStyle="#26364c";ctx.font="bold 19px Arial";ctx.fillText(entry[1].slice(0,38),x,yy+23);});
+        y+=180;ctx.fillStyle="#9a7841";ctx.font="bold 18px Arial";ctx.fillText("ITEM DETAILS",48,y);
+        y+=28;ctx.fillStyle="#172942";ctx.fillRect(36,y,width-72,48);
+        ctx.fillStyle="#ffffff";ctx.font="bold 16px Arial";ctx.fillText("PRODUCT",55,y+30);ctx.textAlign="right";ctx.fillText("QTY",600,y+30);ctx.fillText("RATE",735,y+30);ctx.fillText("AMOUNT",850,y+30);
+        y+=48;ctx.textAlign="left";
+        items.forEach((it:any,index:number)=>{
+          const qty=n(it.saleQty??it.qty),rate=n(it.unitSalePrice??it.price),name=clean(it.name||"Item"),unit=clean(it.saleUnit||it.unit||"");
+          const lines=name.match(/.{1,34}(?:\s|$)|.{1,34}/g)||[name];const rh=rowHeights[index];
+          ctx.fillStyle=index%2===0?"#f7f8fa":"#ffffff";ctx.fillRect(36,y,width-72,rh);
+          ctx.fillStyle="#26364c";ctx.font="bold 19px Arial";lines.slice(0,3).forEach((line:string,j:number)=>ctx.fillText(line.trim(),55,y+27+j*25));
+          ctx.fillStyle="#687487";ctx.font="16px Arial";ctx.fillText(unit,55,y+rh-12);
+          ctx.textAlign="right";ctx.fillStyle="#26364c";ctx.font="18px Arial";ctx.fillText(String(qty),600,y+36);ctx.fillText(cash(rate),735,y+36);ctx.font="bold 18px Arial";ctx.fillText(cash(qty*rate),850,y+36);ctx.textAlign="left";
+          ctx.strokeStyle="#e7ebf0";ctx.beginPath();ctx.moveTo(36,y+rh);ctx.lineTo(width-36,y+rh);ctx.stroke();y+=rh;
+        });
+        y+=34;ctx.fillStyle="#9a7841";ctx.font="bold 18px Arial";ctx.fillText("PAYMENT SUMMARY",48,y);
+        y+=26;const totals:[string,any][]=[["Subtotal",sale.subtotal??sale.total],["Total bill",sale.total],["Paid",sale.paid],["Balance due",sale.balance]];
+        if(n(sale.advanceUsed)>0)totals.splice(2,0,["Customer advance applied",sale.advanceUsed]);
+        if(n(sale.changeReturned)>0)totals.push(["Change returned",sale.changeReturned]);
+        if(n(sale.customerAdvance)>0)totals.push(["Customer advance saved",sale.customerAdvance]);
+        if(n(sale.staffTip)>0)totals.push(["Staff tip (not sales)",sale.staffTip]);
+        totals.forEach(([label,amount],i)=>{y+=38;ctx.fillStyle=i===1?"#172942":"#f4f6f8";ctx.fillRect(36,y-26,width-72,36);ctx.fillStyle=i===1?"#ffffff":"#4d5b70";ctx.font=i===1?"bold 21px Arial":"18px Arial";ctx.fillText(label,55,y);ctx.textAlign="right";ctx.fillText(cash(n(amount)),850,y);ctx.textAlign="left";});
+        y+=65;ctx.textAlign="center";ctx.fillStyle="#172942";ctx.font="bold 23px Arial";ctx.fillText("Thank you for your business!",width/2,y);
+        ctx.fillStyle="#8993a1";ctx.font="15px Arial";ctx.fillText("ETIHAD PRIME SUPPLIES  ·  QUALITY & TRUST",width/2,y+32);
+        const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error("Could not create invoice image")),"image/jpeg",0.93));
+        return new File([blob],"Etihad-Invoice-"+clean(sale.invoiceNo||"receipt").replace(/\s+/g,"-")+".jpg",{type:"image/jpeg"});
+      };
+      createInvoiceImage().then((imageFile)=>{
+        if(typeof navigator!=="undefined"&&typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[imageFile]})){
+          return navigator.share({files:[imageFile],title:shareText,text:shareText+" for "+String(sale.customerName||"customer")});
+        }
+        setMessage("This browser cannot share invoice images directly. Please open Etihad Prime Supplies in Android Chrome.");
+      }).catch((err:any)=>{if(err?.name!=="AbortError")setMessage("Could not create or share the invoice image. Please try again.");});
       return;
     }
     if(typeof navigator!=="undefined"&&typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[file]})){
