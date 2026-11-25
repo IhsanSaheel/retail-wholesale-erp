@@ -384,14 +384,46 @@ export function BranchWorkspace({orgId,userId,role,rows,onSaved}:Props){
  if(linkedRecord||linkedMember){setMessage("This branch is linked to staff or business records and cannot be deleted. Edit it and mark it Inactive instead.");setBusy(false);return;}
  const {error}=await db.from("etihad_records").delete().eq("org_id",orgId).eq("collection","mberp_branches").eq("record_id",bid);
  setMessage(error?"Branch not deleted: "+error.message:"Branch deleted.");setBusy(false);if(!error){if(editingBranchId===bid)resetForm();onSaved();}}
- return <div className="directory-workspace"><div className="welcome-row"><div><div className="section-kicker">MULTI-BRANCH OPERATIONS</div><h1>Branches</h1><p>Business locations and branch status.</p></div><span className="record-count">{branches.length} branches</span></div>
- {message&&<div className="pos-success">{message}</div>}
- {owner&&<div className="panel hr-form"><h3>{editingBranchId?"Edit branch":"Add branch"}</h3><div className="hr-form-grid"><label>Branch name<input value={name} onChange={e=>setName(e.target.value)} placeholder="Enter branch name"/></label><label>Address<input value={address} onChange={e=>setAddress(e.target.value)} placeholder="Branch address"/></label><label>Phone<input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Contact number"/></label></div>
- <label className="branch-active-toggle"><input type="checkbox" checked={active} onChange={e=>setActive(e.target.checked)}/> Branch is active</label>
- <div className="branch-form-actions"><button className="primary-btn" disabled={busy||!name.trim()} onClick={save}>{busy?"Saving…":editingBranchId?"Save changes":"Create branch"}</button>{editingBranchId&&<button className="text-action" disabled={busy} onClick={resetForm}>Cancel edit</button>}</div></div>}
- <div className="panel data-panel"><h3>Branch directory</h3><div className="table-wrap"><table><thead><tr><th>BRANCH</th><th>ADDRESS</th><th>PHONE</th><th>STATUS</th>{owner&&<th>OWNER ACTIONS</th>}</tr></thead><tbody>{branches.map((b:any,i:number)=><tr key={b.id||i}><td><b>{b.name}</b></td><td>{b.address||"—"}</td><td>{b.phone||"—"}</td><td>{b.active===false?"Inactive":"Active"}</td>{owner&&<td><div className="branch-row-actions"><button type="button" className="text-action" disabled={busy} onClick={()=>editBranch(b)}>Edit</button><button type="button" className="branch-delete-action" disabled={busy} onClick={()=>deleteBranch(b)}>Delete</button></div></td>}</tr>)}
- {!branches.length&&<tr><td colSpan={owner?5:4} className="empty-cell">No branches created yet.</td></tr>}</tbody></table></div></div>
- {!owner&&<p className="muted-note">Only the business owner can create, edit or delete branches.</p>}</div>;
+ const activeBranches=branches.filter((b:any)=>b.active!==false);
+ const inactiveBranches=branches.length-activeBranches.length;
+ const branchStats=(b:any)=>{
+  const linkedSales=rows.filter(r=>r.collection==="mberp_sales"&&(String(r.data?.branchId||"")===String(b.id)||(Array.isArray(r.branch_ids)&&r.branch_ids.map(String).includes(String(b.id)))));
+  const validSales=linkedSales.filter(r=>String(r.data?.status||"").toLowerCase()!=="cancelled"&&!r.data?.recycleBinId);
+  const revenue=validSales.reduce((sum,r)=>sum+Number(r.data?.total||0),0);
+  const knownProfit=validSales.every(r=>Array.isArray(r.data?.items)&&r.data.items.every((it:any)=>it.cost!==undefined&&it.cost!==null));
+  const profit=knownProfit?validSales.reduce((sum,r)=>sum+(r.data.items||[]).reduce((subtotal:number,it:any)=>subtotal+(Number(it.price||0)-Number(it.cost||0))*Number(it.qty||0),0),0):null;
+  const productCount=rows.filter(r=>r.collection==="mberp_products"&&(String(r.data?.branchId||"")===String(b.id)||(Array.isArray(r.branch_ids)&&r.branch_ids.map(String).includes(String(b.id))))).length;
+  return {sales:validSales.length,revenue,profit,productCount};
+ };
+ return <div className="directory-workspace" style={{display:"grid",gap:18}}>
+  <div className="welcome-row"><div><div className="section-kicker">MULTI-BRANCH OPERATIONS</div><h1>Branch management</h1><p>Manage locations, review branch activity and keep your business operations organised.</p></div><span className="record-count">{branches.length} locations</span></div>
+  <div className="summary-grid" style={{margin:0}}>
+   <div className="summary-card"><span>Total branches</span><strong>{branches.length}</strong><small>All registered locations</small></div>
+   <div className="summary-card"><span>Active locations</span><strong className="positive-value">{activeBranches.length}</strong><small>Available for business activity</small></div>
+   <div className="summary-card"><span>Inactive locations</span><strong>{inactiveBranches}</strong><small>Retained for historical records</small></div>
+  </div>
+  {message&&<div className="pos-success" role="status">{message}</div>}
+  {owner&&<div className="panel hr-form"><div className="panel-head"><div><h3>{editingBranchId?"Edit branch details":"Add a new branch"}</h3><p>Keep each location’s contact information and operating status up to date.</p></div><span className="record-count">{editingBranchId?"Editing location":"Owner access"}</span></div><div className="hr-form-grid"><label>Branch name<input value={name} onChange={e=>setName(e.target.value)} placeholder="Enter branch name"/></label><label>Address<input value={address} onChange={e=>setAddress(e.target.value)} placeholder="Street, city or area"/></label><label>Phone<input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Branch contact number"/></label></div>
+   <label className="branch-active-toggle"><input type="checkbox" checked={active} onChange={e=>setActive(e.target.checked)}/> Branch is active and available for operations</label>
+   <div className="branch-form-actions"><button className="primary-btn" disabled={busy||!name.trim()} onClick={save}>{busy?"Saving…":editingBranchId?"Save branch changes":"Create branch"}</button>{editingBranchId&&<button className="text-action" disabled={busy} onClick={resetForm}>Cancel edit</button>}</div></div>}
+  <div><div className="panel-head" style={{marginBottom:12}}><div><h3>Branch directory</h3><p>Branch-level activity and contact details</p></div><span className="record-count">{activeBranches.length} active · {inactiveBranches} inactive</span></div>
+   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,320px),1fr))",gap:14}}>
+    {branches.map((b:any,i:number)=>{const stats=branchStats(b);return <article key={b.id||i} className="panel" style={{padding:18,border:"1px solid #e8e4db",borderTop:"3px solid "+(b.active===false?"#a9afb8":"#b18a4b"),boxShadow:"0 8px 24px rgba(28,39,55,.045)",display:"grid",gap:14}}>
+     <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12}}><div style={{display:"flex",alignItems:"center",gap:11,minWidth:0}}><span style={{width:42,height:42,flex:"0 0 42px",borderRadius:13,display:"grid",placeItems:"center",background:"#f4efe4",color:"#8a6a35",fontWeight:850,fontSize:17}}>⌖</span><div style={{minWidth:0}}><h3 style={{margin:0,fontSize:17,color:"#172942"}}>{b.name||"Unnamed branch"}</h3><small style={{color:"#788292"}}>Branch location</small></div></div><span className={"status "+(b.active===false?"pending":"paid")}>{b.active===false?"Inactive":"Active"}</span></div>
+     <div style={{display:"grid",gap:7,color:"#5f6978",fontSize:13}}><div>⌖ <span>{b.address||"Address not added"}</span></div><div>☎ <span>{b.phone||"Contact number not added"}</span></div></div>
+     <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8}}>
+      <div style={{padding:11,borderRadius:10,background:"#f7f8fa"}}><small style={{display:"block",color:"#778293"}}>Recorded sales</small><b style={{display:"block",fontSize:17,color:"#172942",marginTop:3}}>{stats.sales}</b></div>
+      <div style={{padding:11,borderRadius:10,background:"#f7f8fa"}}><small style={{display:"block",color:"#778293"}}>Sales revenue</small><b style={{display:"block",fontSize:17,color:"#172942",marginTop:3}}>Rs {stats.revenue.toLocaleString("en-PK",{maximumFractionDigits:0})}</b></div>
+      <div style={{padding:11,borderRadius:10,background:"#f7f8fa"}}><small style={{display:"block",color:"#778293"}}>Estimated gross profit</small><b style={{display:"block",fontSize:17,color:stats.profit===null?"#778293":stats.profit>=0?"#23734e":"#b54740",marginTop:3}}>{stats.profit===null?"—":"Rs "+stats.profit.toLocaleString("en-PK",{maximumFractionDigits:0})}</b></div>
+      <div style={{padding:11,borderRadius:10,background:"#f7f8fa"}}><small style={{display:"block",color:"#778293"}}>Catalogue products</small><b style={{display:"block",fontSize:17,color:"#172942",marginTop:3}}>{stats.productCount}</b></div>
+     </div>
+     {owner&&<div style={{display:"flex",gap:8,borderTop:"1px solid #edf0f3",paddingTop:12}}><button type="button" className="outline-btn" disabled={busy} onClick={()=>editBranch(b)}>Edit branch</button><button type="button" className="text-action" disabled={busy} onClick={()=>deleteBranch(b)}>Delete</button></div>}
+    </article>})}
+    {!branches.length&&<div className="panel empty-cell">No branches created yet. Add your first business location above.</div>}
+   </div>
+  </div>
+  {!owner&&<p className="muted-note">Only the business owner can create, edit or delete branches.</p>}
+ </div>;
 }
 
 export function CashRegisterWorkspace({orgId,userId,role,branchIds,rows,onSaved,cashier}:Props){
