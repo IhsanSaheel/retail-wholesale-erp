@@ -382,15 +382,27 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
         const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error("Could not create invoice image")),"image/png"));
         return new File([blob],"Etihad-Invoice-"+clean(sale.invoiceNo||"receipt").replace(/\\s+/g,"-")+".png",{type:"image/png"});
       };
-      createInvoiceImage().then((imageFile)=>{
+      createInvoiceImage().then(async(imageFile)=>{
+        const chatText=lines.join("\n");
+        // Prefer Android's native file-share sheet: the PNG and invoice text are passed together.
+        if(typeof navigator!=="undefined"&&typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[imageFile]})){
+          try{
+            await navigator.share({files:[imageFile],title:"Etihad Prime Supplies · "+String(sale.invoiceNo||"Invoice"),text:chatText});
+            setMessage("Invoice and message shared. Choose the customer's WhatsApp chat and press Send.");
+            return;
+          }catch(err:any){
+            if(err?.name==="AbortError"){setMessage("Invoice sharing cancelled.");return;}
+            // If the native share sheet fails, continue with the previous safe download + customer-chat flow.
+          }
+        }
         const downloadUrl=URL.createObjectURL(imageFile);
         const anchor=document.createElement("a");
         anchor.href=downloadUrl;anchor.download=imageFile.name;
         document.body.appendChild(anchor);anchor.click();anchor.remove();
         window.setTimeout(()=>URL.revokeObjectURL(downloadUrl),120000);
-        const chatText="Hello, please find my invoice "+String(sale.invoiceNo||"")+" from Etihad Prime Supplies.";
-        const whatsappUrl="https://wa.me/"+whatsappPhone+"?text="+encodeURIComponent(chatText);
-        setMessage("Invoice JPG downloaded. Opening the saved WhatsApp number for "+String(sale.customerName||"customer")+". Attach the JPG from Downloads before sending.");
+        const shortText="Hello, please find my invoice "+String(sale.invoiceNo||"")+" from Etihad Prime Supplies.";
+        const whatsappUrl="https://wa.me/"+whatsappPhone+"?text="+encodeURIComponent(shortText);
+        setMessage("This browser does not support sharing invoice files directly. Invoice PNG downloaded; opening the saved WhatsApp chat as before.");
         window.setTimeout(()=>{window.location.href=whatsappUrl;},350);
       }).catch((err:any)=>{if(err?.name!=="AbortError")setMessage("Could not create the invoice image. Please try again.");});
       return;
