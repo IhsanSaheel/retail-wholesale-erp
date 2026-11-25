@@ -341,12 +341,11 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     const file=new File([pdfBytes],fileName,{type:"application/pdf"});
     const shareText="Etihad Prime Supplies invoice "+String(sale.invoiceNo||"");
     if(channel==="whatsapp"){
-      const downloadUrl=URL.createObjectURL(file);
-      const anchor=document.createElement("a");anchor.href=downloadUrl;anchor.download=fileName;document.body.appendChild(anchor);anchor.click();anchor.remove();
-      window.setTimeout(()=>URL.revokeObjectURL(downloadUrl),120000);
-      const message=shareText+" for "+String(sale.customerName||"customer")+". Please find the invoice attached.";
-      window.location.href="https://wa.me/"+whatsappPhone+"?text="+encodeURIComponent(message);
-      setMessage("Opening the saved customer's WhatsApp chat. The invoice PDF is downloading; attach it in that chat before sending.");
+      if(typeof navigator!=="undefined"&&typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:shareText,text:shareText+" for "+String(sale.customerName||"customer")}).catch((err:any)=>{if(err?.name!=="AbortError")setMessage("Could not open WhatsApp sharing. Please try again.");});
+        return;
+      }
+      setMessage("This browser cannot share PDF files directly. Please use your phone's Chrome browser to share the invoice PDF to WhatsApp.");
       return;
     }
     if(typeof navigator!=="undefined"&&typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[file]})){
