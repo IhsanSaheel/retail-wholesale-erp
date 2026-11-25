@@ -298,6 +298,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
       ||savedCustomers.find((c:any)=>salePhone&&[c.phone,c.whatsapp,c.whatsappNumber,c.mobile].some((v:any)=>normalizeDigits(v)===salePhone))
       ||savedCustomers.find((c:any)=>saleName&&searchText(c.name)===saleName);
     const email=String(profile?.email||profile?.emailAddress||profile?.contactEmail||sale.customerEmail||"").trim();
+    const rowsBrandLogo=String(rows.find(r=>r.collection==="mberp_brand_settings"&&r.record_id==="default")?.data?.logoUrl||"https://njzhtxrmrqhuxhytxaay.supabase.co/storage/v1/object/public/etihad-branding/d343ea3c-6c19-48f8-bf06-d47f883debcb/logo.png?v=1795278776451");
     const rawPhone=String(profile?.whatsapp||profile?.whatsappNumber||profile?.phone||profile?.mobile||sale.customerPhone||"").trim();
     let digits=normalizeDigits(rawPhone);
     if(digits.startsWith("00"))digits=digits.slice(2);
@@ -342,57 +343,40 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     const shareText="Etihad Prime Supplies invoice "+String(sale.invoiceNo||"");
     if(channel==="whatsapp"){
       const createInvoiceImage=async():Promise<File>=>{
+        // Render the WhatsApp JPG as a high-resolution 80 mm thermal receipt.
         const canvas=document.createElement("canvas");
-        const width=900;
+        const width=640, pad=34, content=width-pad*2;
         const items=Array.isArray(sale.items)?sale.items:[];
-        const rowHeights=items.map((it:any)=>Math.max(76,Math.ceil(String(it.name||"Item").length/34)*34+42));
-        const height=640+rowHeights.reduce((sum:number,h:number)=>sum+h,0)+300;
-        canvas.width=width;canvas.height=height;
-        const ctx=canvas.getContext("2d");
-        if(!ctx)throw new Error("Image canvas is unavailable");
-        ctx.fillStyle="#ffffff";ctx.fillRect(0,0,width,height);
-        ctx.fillStyle="#172942";ctx.fillRect(0,0,width,270);
-        ctx.fillStyle="#c6a264";ctx.fillRect(0,264,width,6);
-        try {
-          const logo=new Image();
-          logo.src="/brand-logo.svg?v=6";
-          await new Promise<void>((resolve,reject)=>{logo.onload=()=>resolve();logo.onerror=()=>reject(new Error("Logo could not be loaded"));});
-          ctx.drawImage(logo,350,8,200,134);
-        } catch {}
-        ctx.textAlign="center";ctx.fillStyle="#ffffff";ctx.font="bold 38px Arial";
-        ctx.fillText("ETIHAD PRIME SUPPLIES",width/2,178);
-        ctx.fillStyle="#e4c98f";ctx.font="bold 19px Arial";
-        ctx.fillText("GENERAL TRADING  ·  WHOLESALE",width/2,211);
-        ctx.fillStyle="#ffffff";ctx.font="19px Arial";
-        ctx.fillText("Ihsan Saheel  ·  Mob No. 0332-3222125",width/2,245);
-        let y=325;ctx.textAlign="left";ctx.fillStyle="#172942";ctx.font="bold 32px Arial";ctx.fillText("SALES INVOICE",48,y);
-        y+=62;ctx.fillStyle="#f3f5f8";ctx.fillRect(36,y-34,width-72,142);
-        const meta=[["INVOICE",clean(sale.invoiceNo||"—")],["DATE",sale.date?new Date(sale.date).toLocaleString("en-PK",{timeZone:"Asia/Karachi"}):"—"],["CUSTOMER",clean(sale.customerName||"Walk-in Customer")],["PHONE",clean(rawPhone||sale.customerPhone||"—")],["BRANCH",clean(sale.branchName||"—")],["SERVED BY",clean(sale.cashier||cashier||"—")]];
-        meta.forEach((entry,i)=>{const col=i%2,row=Math.floor(i/2),x=58+col*410,yy=y+row*43;ctx.fillStyle="#788497";ctx.font="bold 14px Arial";ctx.fillText(entry[0],x,yy);ctx.fillStyle="#26364c";ctx.font="bold 19px Arial";ctx.fillText(entry[1].slice(0,38),x,yy+23);});
-        y+=180;ctx.fillStyle="#9a7841";ctx.font="bold 18px Arial";ctx.fillText("ITEM DETAILS",48,y);
-        y+=28;ctx.fillStyle="#172942";ctx.fillRect(36,y,width-72,48);
-        ctx.fillStyle="#ffffff";ctx.font="bold 16px Arial";ctx.fillText("PRODUCT",55,y+30);ctx.textAlign="right";ctx.fillText("QTY",600,y+30);ctx.fillText("RATE",735,y+30);ctx.fillText("AMOUNT",850,y+30);
-        y+=48;ctx.textAlign="left";
-        items.forEach((it:any,index:number)=>{
-          const qty=n(it.saleQty??it.qty),rate=n(it.unitSalePrice??it.price),name=clean(it.name||"Item"),unit=clean(it.saleUnit||it.unit||"");
-          const lines=name.match(/.{1,34}(?:\s|$)|.{1,34}/g)||[name];const rh=rowHeights[index];
-          ctx.fillStyle=index%2===0?"#f7f8fa":"#ffffff";ctx.fillRect(36,y,width-72,rh);
-          ctx.fillStyle="#26364c";ctx.font="bold 19px Arial";lines.slice(0,3).forEach((line:string,j:number)=>ctx.fillText(line.trim(),55,y+27+j*25));
-          ctx.fillStyle="#687487";ctx.font="16px Arial";ctx.fillText(unit,55,y+rh-12);
-          ctx.textAlign="right";ctx.fillStyle="#26364c";ctx.font="18px Arial";ctx.fillText(String(qty),600,y+36);ctx.fillText(cash(rate),735,y+36);ctx.font="bold 18px Arial";ctx.fillText(cash(qty*rate),850,y+36);ctx.textAlign="left";
-          ctx.strokeStyle="#e7ebf0";ctx.beginPath();ctx.moveTo(36,y+rh);ctx.lineTo(width-36,y+rh);ctx.stroke();y+=rh;
-        });
-        y+=34;ctx.fillStyle="#9a7841";ctx.font="bold 18px Arial";ctx.fillText("PAYMENT SUMMARY",48,y);
-        y+=26;const totals:[string,any][]=[["Subtotal",sale.subtotal??sale.total],["Total bill",sale.total],["Paid",sale.paid],["Balance due",sale.balance]];
-        if(n(sale.advanceUsed)>0)totals.splice(2,0,["Customer advance applied",sale.advanceUsed]);
+        const wrap=(value:string,max=31)=>{const words=value.split(/\\s+/);const out:string[]=[];let line="";for(const word of words){const next=line?line+" "+word:word;if(next.length>max&&line){out.push(line);line=word;}else line=next;}if(line)out.push(line);return out.length?out:[""];};
+        const rows=items.map((it:any)=>({it,name:wrap(clean(it.name||"Item"),31)}));
+        const totals:[string,any][]=[["Subtotal",sale.subtotal??sale.total],["TOTAL",sale.total],["Paid",sale.paid],["Balance due",sale.balance]];
+        if(n(sale.advanceUsed)>0)totals.splice(2,0,["Advance used",sale.advanceUsed]);
         if(n(sale.changeReturned)>0)totals.push(["Change returned",sale.changeReturned]);
-        if(n(sale.customerAdvance)>0)totals.push(["Customer advance saved",sale.customerAdvance]);
-        if(n(sale.staffTip)>0)totals.push(["Staff tip (not sales)",sale.staffTip]);
-        totals.forEach(([label,amount],i)=>{y+=38;ctx.fillStyle=i===1?"#172942":"#f4f6f8";ctx.fillRect(36,y-26,width-72,36);ctx.fillStyle=i===1?"#ffffff":"#4d5b70";ctx.font=i===1?"bold 21px Arial":"18px Arial";ctx.fillText(label,55,y);ctx.textAlign="right";ctx.fillText(cash(n(amount)),850,y);ctx.textAlign="left";});
-        y+=65;ctx.textAlign="center";ctx.fillStyle="#172942";ctx.font="bold 23px Arial";ctx.fillText("Thank you for your business!",width/2,y);
-        ctx.fillStyle="#8993a1";ctx.font="15px Arial";ctx.fillText("ETIHAD PRIME SUPPLIES  ·  QUALITY & TRUST",width/2,y+32);
-        const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error("Could not create invoice image")),"image/jpeg",0.93));
-        return new File([blob],"Etihad-Invoice-"+clean(sale.invoiceNo||"receipt").replace(/\s+/g,"-")+".jpg",{type:"image/jpeg"});
+        if(n(sale.customerAdvance)>0)totals.push(["Advance saved",sale.customerAdvance]);
+        if(n(sale.staffTip)>0)totals.push(["Staff tip",sale.staffTip]);
+        const logoUrl=String(rowsBrandLogo||"");
+        const headerHeight=logoUrl?260:190;
+        const metaRows=[["INVOICE",clean(sale.invoiceNo||"—")],["DATE",sale.date?new Date(sale.date).toLocaleString("en-PK",{timeZone:"Asia/Karachi"}):"—"],["CUSTOMER",clean(sale.customerName||"Walk-in Customer")],["PHONE",clean(rawPhone||sale.customerPhone||"—")],["BRANCH",clean(sale.branchName||"—")],["SERVED BY",clean(sale.cashier||cashier||"—")]];
+        const height=headerHeight+metaRows.length*54+110+rows.reduce((sum,r)=>sum+58+r.name.length*27,0)+80+totals.length*48+130;
+        canvas.width=width;canvas.height=height;
+        const ctx=canvas.getContext("2d");if(!ctx)throw new Error("Image canvas is unavailable");
+        ctx.fillStyle="#fff";ctx.fillRect(0,0,width,height);
+        let y=0;ctx.fillStyle="#172942";ctx.fillRect(0,0,width,headerHeight);
+        ctx.fillStyle="#c6a264";ctx.fillRect(0,headerHeight-5,width,5);
+        if(logoUrl){try{const logo=new Image();if(!logoUrl.startsWith("data:"))logo.crossOrigin="anonymous";logo.src=logoUrl;await new Promise<void>((resolve,reject)=>{logo.onload=()=>resolve();logo.onerror=()=>reject(new Error("Logo could not be loaded"));});const scale=Math.min(260/logo.width,150/logo.height);const w=logo.width*scale,h=logo.height*scale;ctx.drawImage(logo,(width-w)/2,18,w,h);}catch{}}
+        ctx.textAlign="center";ctx.fillStyle="#fff";ctx.font="bold 25px Arial";ctx.fillText("ETIHAD PRIME SUPPLIES",width/2,logoUrl?198:78);
+        ctx.fillStyle="#e4c98f";ctx.font="bold 15px Arial";ctx.fillText("GENERAL TRADING · WHOLESALE",width/2,logoUrl?225:108);
+        ctx.fillStyle="#fff";ctx.font="14px Arial";ctx.fillText("Ihsan Saheel · Mob No. 0332-3222125",width/2,logoUrl?248:137);
+        y=headerHeight+30;ctx.textAlign="center";ctx.fillStyle="#172942";ctx.font="bold 25px Arial";ctx.fillText("SALES INVOICE",width/2,y);y+=24;
+        ctx.strokeStyle="#c6a264";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(width-pad,y);ctx.stroke();y+=24;
+        metaRows.forEach(([label,value])=>{ctx.textAlign="left";ctx.fillStyle="#788497";ctx.font="bold 13px Arial";ctx.fillText(label,pad,y);ctx.fillStyle="#26364c";ctx.font="bold 17px Arial";const v=String(value||"—");ctx.textAlign="right";ctx.fillText(v.length>40?v.slice(0,37)+"…":v,width-pad,y);y+=54;});
+        y+=4;ctx.fillStyle="#172942";ctx.fillRect(pad,y,content,36);ctx.textAlign="left";ctx.fillStyle="#fff";ctx.font="bold 15px Arial";ctx.fillText("ITEM DETAILS",pad+12,y+24);y+=48;
+        rows.forEach(({it,name},index)=>{const qty=n(it.saleQty??it.qty),rate=n(it.unitSalePrice??it.price),unit=clean(it.saleUnit||it.unit||"");ctx.fillStyle="#26364c";ctx.font="bold 17px Arial";ctx.textAlign="left";name.forEach((line:string)=>{ctx.fillText(line,pad,y);y+=25;});ctx.fillStyle="#687487";ctx.font="14px Arial";ctx.fillText(qty+" "+unit+" × "+cash(rate),pad,y);ctx.textAlign="right";ctx.fillStyle="#172942";ctx.font="bold 17px Arial";ctx.fillText(cash(qty*rate),width-pad,y);y+=19;ctx.strokeStyle="#e7ebf0";ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(width-pad,y);ctx.stroke();y+=18;});
+        y+=12;ctx.fillStyle="#172942";ctx.fillRect(pad,y,content,36);ctx.textAlign="left";ctx.fillStyle="#fff";ctx.font="bold 15px Arial";ctx.fillText("PAYMENT SUMMARY",pad+12,y+24);y+=50;
+        totals.forEach(([label,amount],i)=>{ctx.textAlign="left";ctx.fillStyle=i===1?"#172942":"#4d5b70";ctx.font=i===1?"bold 19px Arial":"16px Arial";ctx.fillText(label,pad,y);ctx.textAlign="right";ctx.fillText(cash(n(amount)),width-pad,y);y+=48;});
+        y+=12;ctx.strokeStyle="#c6a264";ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(width-pad,y);ctx.stroke();y+=50;ctx.textAlign="center";ctx.fillStyle="#172942";ctx.font="bold 20px Arial";ctx.fillText("Thank you for your business!",width/2,y);ctx.fillStyle="#8993a1";ctx.font="13px Arial";ctx.fillText("ETIHAD PRIME SUPPLIES · QUALITY & TRUST",width/2,y+28);
+        const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error("Could not create invoice image")),"image/jpeg",0.94));
+        return new File([blob],"Etihad-Invoice-"+clean(sale.invoiceNo||"receipt").replace(/\\s+/g,"-")+".jpg",{type:"image/jpeg"});
       };
       createInvoiceImage().then((imageFile)=>{
         const downloadUrl=URL.createObjectURL(imageFile);
