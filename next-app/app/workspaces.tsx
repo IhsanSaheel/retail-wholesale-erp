@@ -588,7 +588,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
   for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quoted&&text[i+1]==='"'){cell+='"';i++;}else quoted=!quoted;}else if(c===","&&!quoted){row.push(cell.trim());cell="";}else if((c==="\n"||c==="\r")&&!quoted){if(c==="\r"&&text[i+1]==="\n")i++;row.push(cell.trim());if(row.some(v=>v!==""))lines.push(row);row=[];cell="";}else cell+=c;}
   row.push(cell.trim());if(row.some(v=>v!==""))lines.push(row);
   if(lines.length<2)throw new Error("The CSV must contain a header row and at least one product.");
-  const headers=lines[0].map(h=>h.replace(/^\\uFEFF/,"").toLowerCase().replace(/[ _-]+/g,""));
+  const headers=lines[0].map(h=>h.replace(/^\uFEFF/,"").toLowerCase().replace(/[ _-]+/g,""));
   const allowed=["name","sku","barcode","category","unit","branch","cost","price","retailprice","retailerprice","salesmanprice","qty","quantity","alert","lowstockalert","upperunit","upperqty","lowerunit","lowerqty"];
   const unknown=headers.filter(h=>!allowed.includes(h));if(unknown.length)throw new Error("Unsupported CSV column(s): "+unknown.join(", "));
   if(!headers.includes("name"))throw new Error("A name column is required.");
@@ -597,8 +597,8 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
  function downloadBulkTemplate(){
   const headers=["name","sku","barcode","category","unit","branch","cost","retailerPrice","salesmanPrice","qty","alert","upperUnit","upperQty","lowerUnit","lowerQty"];
   const example=["Fish Nimko","FN-001","","Snacks","Box","","100","120","110","20","5","Carton","18","Piece","20"];
-  const csv=[headers,example].map(line=>line.map(value=>{const text=String(value??"");return /[",\\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;}).join(",")).join("\\r\\n");
-  const blob=new Blob(["\\uFEFF",csv],{type:"text/csv;charset=utf-8;"});
+  const csv=[headers,example].map(line=>line.map(value=>{const text=String(value??"");return /[",\\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text;}).join(",")).join("\r\n");
+  const blob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8;"});
   const url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="etihad-prime-product-import-template.csv";document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
  }
  function readBulkFile(file?:File){setBulkError("");setBulkSummary("");if(!file)return;setBulkName(file.name);const reader=new FileReader();reader.onload=()=>{try{setBulkRows(parseProductCsv(String(reader.result||"")));}catch(e){setBulkRows([]);setBulkError(e instanceof Error?e.message:"Could not read this CSV.");}};reader.onerror=()=>setBulkError("Could not read the selected file.");reader.readAsText(file);}
@@ -626,6 +626,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
    const numeric=(key:string,alt?:string)=>{const raw=item[key]??(alt?item[alt]:"");if(raw==="")return undefined;const v=Number(raw);return Number.isFinite(v)&&v>=0?v:NaN;};
    const costValue=numeric("cost"),retailValue=numeric("retailerprice")??numeric("retailprice")??numeric("price"),salesmanValue=numeric("salesmanprice"),alertValue=numeric("alert","lowstockalert"),qtyValue=numeric("qty","quantity");
    if([costValue,retailValue,salesmanValue,alertValue,qtyValue].some(v=>Number.isNaN(v))){issues.push("Row "+item.__row+": cost, retailer price, salesman price, quantity and alert must be non-negative numbers.");continue;}
+   if(!match&&[costValue,retailValue,salesmanValue].some(v=>v===undefined)){issues.push("Row "+item.__row+": cost, Retailer Price and Salesman Price are required for a new product.");continue;}
    const baseUnit=String(item.unit||match?.unit||"piece").trim();
    const upperName=String(item.upperunit||"").trim(),upperRaw=String(item.upperqty||"").trim(),lowerName=String(item.lowerunit||"").trim(),lowerRaw=String(item.lowerqty||"").trim();
    if((upperName&&!upperRaw)||(!upperName&&upperRaw)||(lowerName&&!lowerRaw)||(!lowerName&&lowerRaw)){issues.push("Row "+item.__row+": enter both the upper/lower unit name and its quantity, or leave both blank.");continue;}
@@ -634,8 +635,9 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
    const baseCost=costValue??n(match?.cost),baseRetail=retailValue??n(match?.retailerPrice??match?.price),baseSalesman=salesmanValue??n(match?.salesmanPrice??match?.retailerPrice??match?.price);
    const hasUnitInput=!!(upperName||lowerName);
    const packageUnits:any[]=[{name:baseUnit,conversionToBase:1,costPrice:baseCost,retailerPrice:baseRetail,salesmanPrice:baseSalesman}];
-   if(upperName){packageUnits.push({name:upperName,conversionToBase:upperFactor,costPrice:baseCost*upperFactor,retailerPrice:baseRetail*upperFactor,salesmanPrice:baseSalesman*upperFactor});}
-   if(lowerName){const factor=1/lowerCount;packageUnits.push({name:lowerName,conversionToBase:factor,costPrice:baseCost*factor,retailerPrice:baseRetail*factor,salesmanPrice:baseSalesman*factor});}
+   const roundPrice=(value:number)=>Math.round(value*100)/100;
+   if(upperName){packageUnits.push({name:upperName,conversionToBase:upperFactor,costPrice:roundPrice(baseCost*upperFactor),retailerPrice:roundPrice(baseRetail*upperFactor),salesmanPrice:roundPrice(baseSalesman*upperFactor)});}
+   if(lowerName){const factor=1/lowerCount;packageUnits.push({name:lowerName,conversionToBase:factor,costPrice:roundPrice(baseCost*factor),retailerPrice:roundPrice(baseRetail*factor),salesmanPrice:roundPrice(baseSalesman*factor)});}
    const packagingUnits=hasUnitInput?packageUnits:(match?.packagingUnits||undefined);
    const id=match?.id||makeId();
    const data={...(match||{}),id,name,sku:skuValue,barcode:barcodeValue,category:String(item.category||match?.category||"").trim(),unit:baseUnit,branchId:String(targetBranch.id),...(costValue!==undefined?{cost:costValue}:{}),...(retailValue!==undefined?{price:retailValue,retailerPrice:retailValue}:{}),...(salesmanValue!==undefined?{salesmanPrice:salesmanValue}:{}),...(packagingUnits?{packagingUnits}:{}),...(alertValue!==undefined?{alert:alertValue,lowAt:alertValue}:{}),...(!match&&qtyValue!==undefined?{qty:qtyValue}:{})};
