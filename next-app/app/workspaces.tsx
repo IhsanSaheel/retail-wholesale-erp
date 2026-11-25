@@ -358,8 +358,12 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
         const headerHeight=logoUrl?260:190;
         const metaRows=[["INVOICE",clean(sale.invoiceNo||"—")],["DATE",sale.date?new Date(sale.date).toLocaleString("en-PK",{timeZone:"Asia/Karachi"}):"—"],["CUSTOMER",clean(sale.customerName||"Walk-in Customer")],["PHONE",clean(rawPhone||sale.customerPhone||"—")],["BRANCH",clean(sale.branchName||"—")],["SERVED BY",clean(sale.cashier||cashier||"—")]];
         const height=headerHeight+metaRows.length*54+110+rows.reduce((sum,r)=>sum+58+r.name.length*27,0)+80+totals.length*48+130;
-        canvas.width=width;canvas.height=height;
+        // Render at 2x pixel density and export lossless PNG so small receipt text stays crisp.
+        const pixelRatio=2;
+        canvas.width=width*pixelRatio;canvas.height=height*pixelRatio;
         const ctx=canvas.getContext("2d");if(!ctx)throw new Error("Image canvas is unavailable");
+        ctx.scale(pixelRatio,pixelRatio);
+        ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
         ctx.fillStyle="#fff";ctx.fillRect(0,0,width,height);
         let y=0;ctx.fillStyle="#172942";ctx.fillRect(0,0,width,headerHeight);
         ctx.fillStyle="#c6a264";ctx.fillRect(0,headerHeight-5,width,5);
@@ -375,8 +379,8 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
         y+=12;ctx.fillStyle="#172942";ctx.fillRect(pad,y,content,36);ctx.textAlign="left";ctx.fillStyle="#fff";ctx.font="bold 15px Arial";ctx.fillText("PAYMENT SUMMARY",pad+12,y+24);y+=50;
         totals.forEach(([label,amount],i)=>{ctx.textAlign="left";ctx.fillStyle=i===1?"#172942":"#4d5b70";ctx.font=i===1?"bold 19px Arial":"16px Arial";ctx.fillText(label,pad,y);ctx.textAlign="right";ctx.fillText(cash(n(amount)),width-pad,y);y+=48;});
         y+=12;ctx.strokeStyle="#c6a264";ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(width-pad,y);ctx.stroke();y+=50;ctx.textAlign="center";ctx.fillStyle="#172942";ctx.font="bold 20px Arial";ctx.fillText("Thank you for your business!",width/2,y);ctx.fillStyle="#8993a1";ctx.font="13px Arial";ctx.fillText("ETIHAD PRIME SUPPLIES · QUALITY & TRUST",width/2,y+28);
-        const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error("Could not create invoice image")),"image/jpeg",0.94));
-        return new File([blob],"Etihad-Invoice-"+clean(sale.invoiceNo||"receipt").replace(/\\s+/g,"-")+".jpg",{type:"image/jpeg"});
+        const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error("Could not create invoice image")),"image/png"));
+        return new File([blob],"Etihad-Invoice-"+clean(sale.invoiceNo||"receipt").replace(/\\s+/g,"-")+".png",{type:"image/png"});
       };
       createInvoiceImage().then((imageFile)=>{
         const downloadUrl=URL.createObjectURL(imageFile);
