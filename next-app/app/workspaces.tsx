@@ -353,13 +353,11 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
         ctx.fillStyle="#ffffff";ctx.fillRect(0,0,width,height);
         ctx.fillStyle="#172942";ctx.fillRect(0,0,width,270);
         ctx.fillStyle="#c6a264";ctx.fillRect(0,264,width,6);
-        let logoLoaded=false;
         try {
           const logo=new Image();
           logo.src="/brand-logo.svg?v=6";
           await new Promise<void>((resolve,reject)=>{logo.onload=()=>resolve();logo.onerror=()=>reject(new Error("Logo could not be loaded"));});
           ctx.drawImage(logo,350,8,200,134);
-          logoLoaded=true;
         } catch {}
         ctx.textAlign="center";ctx.fillStyle="#ffffff";ctx.font="bold 38px Arial";
         ctx.fillText("ETIHAD PRIME SUPPLIES",width/2,178);
