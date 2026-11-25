@@ -290,16 +290,23 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     popup.document.close();
   }
 
-  async function shareSaleInvoice(sale:Product,channel:"whatsapp"|"email") {
-    const phoneKey=String(sale.customerPhone||"").replace(/\D/g,"");
-    const profile=savedCustomers.find((c:any)=>{const candidate=String(c.phone||"").replace(/\D/g,"");return phoneKey&&candidate===phoneKey;})||savedCustomers.find((c:any)=>searchText(c.name)===searchText(sale.customerName));
+  function shareSaleInvoice(sale:Product,channel:"whatsapp"|"email") {
+    const normalizeDigits=(value:any)=>String(value??"").replace(/\D/g,"");
+    const salePhone=normalizeDigits(sale.customerPhone);
+    const saleName=searchText(sale.customerName);
+    const profile=savedCustomers.find((c:any)=>sale.customerId&&String(c.id)===String(sale.customerId))
+      ||savedCustomers.find((c:any)=>salePhone&&[c.phone,c.whatsapp,c.whatsappNumber,c.mobile].some((v:any)=>normalizeDigits(v)===salePhone))
+      ||savedCustomers.find((c:any)=>saleName&&searchText(c.name)===saleName);
     const email=String(profile?.email||profile?.emailAddress||profile?.contactEmail||sale.customerEmail||"").trim();
-    const rawPhone=String(profile?.whatsapp||profile?.phone||sale.customerPhone||"").trim();
-    const digits=rawPhone.replace(/\D/g,"");
-    const whatsappPhone=digits.startsWith("00")?digits.slice(2):digits.startsWith("0")?"92"+digits.slice(1):digits;
-    if(channel==="whatsapp"&&!whatsappPhone){setMessage("This customer has no WhatsApp phone number saved in their profile.");return;}
+    const rawPhone=String(profile?.whatsapp||profile?.whatsappNumber||profile?.phone||profile?.mobile||sale.customerPhone||"").trim();
+    let digits=normalizeDigits(rawPhone);
+    if(digits.startsWith("00"))digits=digits.slice(2);
+    if(digits.startsWith("0"))digits="92"+digits.slice(1);
+    else if(digits.length===10&&digits.startsWith("3"))digits="92"+digits;
+    const whatsappPhone=digits;
+    if(channel==="whatsapp"&&(!whatsappPhone||whatsappPhone.length<10||whatsappPhone.length>15)){setMessage("A valid WhatsApp number is not saved for this customer. Update the customer's phone/WhatsApp number in their profile.");return;}
     if(channel==="email"&&!email){setMessage("This customer has no email address saved in their profile.");return;}
-    const clean=(v:any)=>String(v??"").replace(/[^\x20-\x7E]/g," ");
+    const clean=(v:any)=>String(v??"").normalize("NFKD").replace(/[^\x20-\x7E]/g," ").replace(/\s+/g," ").trim();
     const money=(v:any)=>"Rs. "+cash(n(v));
     const itemLines=(Array.isArray(sale.items)?sale.items:[]).flatMap((it:any)=>{
       const name=clean(it.name||"Item");
@@ -307,33 +314,50 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
       const rate=n(it.unitSalePrice??it.price),amount=rate*qty;
       return [name,qty+" "+unit+" x "+money(rate)+" = "+money(amount)];
     });
-    const lines=["ETIHAD PRIME SUPPLIES","SALES INVOICE","Invoice: "+clean(sale.invoiceNo||"—"),"Date: "+(sale.date?new Date(sale.date).toLocaleString("en-PK",{timeZone:"Asia/Karachi"}):"—"),"Customer: "+clean(sale.customerName||"Walk-in Customer"),"Phone: "+clean(sale.customerPhone||"—"),"Branch: "+clean(sale.branchName||"—"),"--------------------------------",...itemLines,"--------------------------------","Total: "+money(sale.total),"Paid: "+money(sale.paid),"Balance due: "+money(sale.balance),"Payment: "+clean(sale.paymentMethod||"—"),"","Thank you for your business!"];
-    const escPdf=(v:string)=>v.replace(/\\/g,"\\\\\\\\").replace(/\(/g,"\\\\(").replace(/\)/g,"\\\\)");
+    const lines=["ETIHAD PRIME SUPPLIES","SALES INVOICE","Invoice: "+clean(sale.invoiceNo||"—"),"Date: "+(sale.date?new Date(sale.date).toLocaleString("en-PK",{timeZone:"Asia/Karachi"}):"—"),"Customer: "+clean(sale.customerName||"Walk-in Customer"),"Phone: "+clean(rawPhone||sale.customerPhone||"—"),"Branch: "+clean(sale.branchName||"—"),"--------------------------------",...itemLines,"--------------------------------","Total: "+money(sale.total),"Paid: "+money(sale.paid),"Balance due: "+money(sale.balance),"Payment: "+clean(sale.paymentMethod||"—"),"","Thank you for your business!"];
+    const escapePdf=(value:string)=>value.replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)");
     const wrapped:string[]=[];
     for(const line of lines){if(!line){wrapped.push("");continue;}let rest=line;while(rest.length>42){let cut=rest.lastIndexOf(" ",42);if(cut<1)cut=42;wrapped.push(rest.slice(0,cut));rest=rest.slice(cut).trim();}wrapped.push(rest);}
     const pageW=226.77,pageH=Math.max(360,wrapped.length*12+48);
     let stream="BT /F1 8 Tf 10 "+(pageH-24)+" Td 12 TL ";
-    wrapped.forEach((line,i)=>{if(i)stream+="T* ";stream+="("+escPdf(line)+") Tj ";});
+    wrapped.forEach((line,i)=>{if(i)stream+="T* ";stream+="("+escapePdf(line)+") Tj ";});
     stream+="ET";
-    const objects:string[]=["<< /Type /Catalog /Pages 2 0 R >>","<< /Type /Pages /Kids [3 0 R] /Count 1 >>",`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>`,"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`];
-    let pdf="%PDF-1.4\n",offsets=[0];
-    objects.forEach((obj,i)=>{offsets.push(pdf.length);pdf+=(i+1)+" 0 obj\n"+obj+"\nendobj\n";});
-    const xref=pdf.length;pdf+="xref\n0 "+(objects.length+1)+"\n0000000000 65535 f \n";
+    const streamBytes=new TextEncoder().encode(stream);
+    const objects:string[]=[
+      "<< /Type /Catalog /Pages 2 0 R >>",
+      "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+pageW+" "+pageH+"] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+      "<< /Length "+streamBytes.length+" >>\nstream\n"+stream+"\nendstream"
+    ];
+    let pdf="%PDF-1.4\n",offsets:number[]=[0];
+    objects.forEach((obj,i)=>{offsets.push(new TextEncoder().encode(pdf).length);pdf+=(i+1)+" 0 obj\n"+obj+"\nendobj\n";});
+    const xref=new TextEncoder().encode(pdf).length;
+    pdf+="xref\n0 "+(objects.length+1)+"\n0000000000 65535 f \n";
     for(let i=1;i<offsets.length;i++)pdf+=String(offsets[i]).padStart(10,"0")+" 00000 n \n";
     pdf+="trailer\n<< /Size "+(objects.length+1)+" /Root 1 0 R >>\nstartxref\n"+xref+"\n%%EOF";
+    const pdfBytes=new TextEncoder().encode(pdf);
     const fileName="Etihad-Invoice-"+clean(sale.invoiceNo||"receipt").replace(/\s+/g,"-")+".pdf";
-    const file=new File([new Blob([pdf],{type:"application/pdf"})],fileName,{type:"application/pdf"});
+    const file=new File([pdfBytes],fileName,{type:"application/pdf"});
     const shareText="Etihad Prime Supplies invoice "+String(sale.invoiceNo||"");
-    if(typeof navigator!=="undefined"&&typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[file]})){
-      try{await navigator.share({files:[file],title:shareText,text:shareText});}catch(err:any){if(err?.name!=="AbortError")setMessage("Could not open the share menu. Please try again.");}
+    if(channel==="whatsapp"){
+      const downloadUrl=URL.createObjectURL(file);
+      const anchor=document.createElement("a");anchor.href=downloadUrl;anchor.download=fileName;document.body.appendChild(anchor);anchor.click();anchor.remove();
+      window.setTimeout(()=>URL.revokeObjectURL(downloadUrl),120000);
+      const message=shareText+" for "+String(sale.customerName||"customer")+". Please find the invoice attached.";
+      window.location.href="https://wa.me/"+whatsappPhone+"?text="+encodeURIComponent(message);
+      setMessage("Opening the saved customer's WhatsApp chat. The invoice PDF is downloading; attach it in that chat before sending.");
       return;
     }
-    const url=URL.createObjectURL(file);
-    const a=document.createElement("a");a.href=url;a.download=fileName;document.body.appendChild(a);a.click();a.remove();
-    window.setTimeout(()=>URL.revokeObjectURL(url),60000);
-    if(channel==="whatsapp")window.open("https://wa.me/"+whatsappPhone,"_blank","noopener,noreferrer");
-    else window.location.href="mailto:"+encodeURIComponent(email)+"?subject="+encodeURIComponent(shareText);
-    setMessage("Invoice PDF downloaded. Attach the downloaded PDF in the WhatsApp or email window.");
+    if(typeof navigator!=="undefined"&&typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[file]})){
+      navigator.share({files:[file],title:shareText,text:shareText}).catch((err:any)=>{if(err?.name!=="AbortError")setMessage("Could not open the share menu. Please try again.");});
+      return;
+    }
+    const downloadUrl=URL.createObjectURL(file);
+    const anchor=document.createElement("a");anchor.href=downloadUrl;anchor.download=fileName;document.body.appendChild(anchor);anchor.click();anchor.remove();
+    window.setTimeout(()=>URL.revokeObjectURL(downloadUrl),120000);
+    window.location.href="mailto:"+encodeURIComponent(email)+"?subject="+encodeURIComponent(shareText);
+    setMessage("Invoice PDF downloaded. Attach it to the email before sending.");
   }
 
   function beginEditSale(sale:Product) {
