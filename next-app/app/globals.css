@@ -1179,3 +1179,12 @@ table td,table th{border-color:#eee9df}
  .pos-product b{font-size:11px!important}
  .payment-summary{grid-template-columns:1fr!important}
 }
+
+
+/* Product catalogue: compact, responsive filtering controls */
+.catalogue-toolbar{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:16px 0 18px;padding:14px;border:1px solid var(--line,#e5e7eb);border-radius:14px;background:var(--surface,#fff)}
+.catalogue-toolbar>label{display:flex;flex-direction:column;gap:6px;min-width:150px;color:var(--muted,#64748b);font-size:12px;font-weight:650}
+.catalogue-toolbar .product-search{flex:1;min-width:min(100%,260px)}
+.catalogue-toolbar input,.catalogue-toolbar select{min-height:42px;width:100%;border:1px solid var(--line,#dbe1e8);border-radius:9px;padding:9px 11px;background:var(--surface,#fff);color:var(--text,#172033);font:inherit}
+.catalogue-result-count{padding:10px 4px;color:var(--muted,#64748b);font-size:12px;font-weight:700;white-space:nowrap}
+@media(max-width:640px){.catalogue-toolbar{align-items:stretch;gap:10px}.catalogue-toolbar>label,.catalogue-toolbar .product-search{min-width:100%;width:100%}.catalogue-result-count{padding:4px 0}}
