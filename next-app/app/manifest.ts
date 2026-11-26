@@ -3,9 +3,9 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Etihad Prime Supplies",
-    short_name: "Etihad Prime",
-    description: "Etihad Prime Supplies retail and wholesale point of sale and business management.",
+    name: "Ihsan Sweets & Supplies",
+    short_name: "Ihsan Sweets",
+    description: "Ihsan Sweets & Supplies retail and wholesale point of sale and business management.",
     start_url: "/",
     scope: "/",
     display: "standalone",
