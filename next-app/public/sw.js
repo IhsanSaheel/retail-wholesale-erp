@@ -1,4 +1,4 @@
-const CACHE = "etihad-prime-shell-v20";
+const CACHE = "etihad-prime-shell-v21";
 const OFFLINE = "/offline";
 const SHELL = ["/", OFFLINE, "/icon.svg", "/brand-logo.svg", "/receipt-logo.svg", "/manifest.webmanifest"];
 
@@ -7,15 +7,16 @@ function cacheKey(input) {
   return new Request(url.origin + url.pathname);
 }
 async function store(cache, input, response) {
-  if (!response || !response.ok || response.type !== "basic") return;
-  try { await cache.put(cacheKey(input), response.clone()); } catch (error) { /* cache quota or unsupported response */ }
+  if (!response || !response.ok || response.type !== "basic") return false;
+  try { await cache.put(cacheKey(input), response.clone()); return true; }
+  catch (error) { return false; }
 }
 async function precacheHome(cache) {
   try {
     const homeRequest = new Request(new URL("/", self.location.origin), { cache: "reload" });
     const response = await fetch(homeRequest);
-    if (!response.ok || response.type !== "basic") return;
-    await store(cache, "/", response);
+    if (!response.ok || response.type !== "basic") return false;
+    const homeStored = await store(cache, "/", response);
     const html = await response.clone().text();
     const assets = new Set();
     for (const match of html.matchAll(/(?:src|href)=["']([^"'#]+)["']/g)) {
@@ -25,10 +26,14 @@ async function precacheHome(cache) {
           (url.pathname.startsWith("/_next/static/") || url.pathname.endsWith(".css") || url.pathname.endsWith(".js"))) assets.add(url.href);
       } catch {}
     }
-    await Promise.all([...assets].map(async href => {
-      try { const req = new Request(href, { cache: "reload" }); await store(cache, href, await fetch(req)); } catch {}
+    const assetResults = await Promise.all([...assets].map(async href => {
+      try {
+        const req = new Request(href, { cache: "reload" });
+        return await store(cache, href, await fetch(req));
+      } catch { return false; }
     }));
-  } catch {}
+    return homeStored && assetResults.every(Boolean) && Boolean(await cache.match(cacheKey("/")));
+  } catch { return false; }
 }
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
@@ -36,7 +41,8 @@ self.addEventListener("install", event => {
     await Promise.all(SHELL.map(async path => {
       try { await store(cache, path, await fetch(new Request(new URL(path, self.location.origin), { cache: "reload" }))); } catch {}
     }));
-    await precacheHome(cache);
+    const shellReady = await precacheHome(cache);
+    if (!shellReady) throw new Error("The new app shell could not be cached completely; keeping the current offline version active.");
     await self.skipWaiting();
   })());
 });
