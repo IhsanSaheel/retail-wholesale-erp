@@ -608,7 +608,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
           origin: window.location.origin, logoUrl: String(rows.find(r=>r.collection==="mberp_brand_settings"&&r.record_id==="default")?.data?.logoUrl || ""), title: "OFFLINE SALES SLIP",
           status: "PENDING CLOUD SYNC — NOT A CONFIRMED SALES RECEIPT",
           invoiceNo, date, customerName: sale.customerName, customerPhone: sale.customerPhone,
-          branchName: sale.branchName, cashier: cashier || userId, items: invoiceLanguage==="ur"?await translateInvoiceItemsToUrdu(sale.items):sale.items, language:invoiceLanguage,
+          branchName: sale.branchName, cashier: cashier || userId, items: invoiceLanguage==="ur"?await translateInvoiceItemsToUrdu(sale.items):sale.items,
           rows: [["Subtotal after loyalty", saleSubtotal], ...(saleTaxAmount>0?[[selectedTax?.name||"Tax",saleTaxAmount] as [string,any]]:[]), ["Total bill", total], ...(loyaltyDiscount>0?[["Loyalty savings (included above)",loyaltyDiscount] as [string,any]]:[]), ["Amount tendered (" + method + ")", cashReceived],
             ...(advanceUsed > 0 ? [["Customer advance applied", advanceUsed] as [string, any]] : []),
             ...(priorOutstandingApplied > 0 ? [["Previous outstanding settled", priorOutstandingApplied] as [string, any]] : []),
