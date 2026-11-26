@@ -18,6 +18,32 @@ const pakistanDate = (date:Date=new Date()) => new Intl.DateTimeFormat("en-CA",{
 const addPakistanDays = (days:number) => {const [year,month,day]=pakistanDate().split("-").map(Number);const date=new Date(Date.UTC(year,month-1,day+days,12));return date.toISOString().slice(0,10);};
 const daysUntilPakistanDate = (value:any) => {const raw=String(value||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(raw))return null;const [y,m,d]=raw.split("-").map(Number);const [ty,tm,td]=pakistanDate().split("-").map(Number);const target=Date.UTC(y,m-1,d),today=Date.UTC(ty,tm-1,td);return Number.isFinite(target)&&Number.isFinite(today)?Math.round((target-today)/86400000):null;};
 const esc = (v: any) => String(v ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+async function translateInvoiceItemsToUrdu(items: any[]) {
+  const cacheKey="ihsan_invoice_urdu_translation_v1";
+  let cache:Record<string,string>={};
+  try { cache=JSON.parse(localStorage.getItem(cacheKey)||"{}"); } catch {}
+  const translated=await Promise.all((items||[]).map(async (item:any)=>{
+    const name=String(item.name||"").trim();
+    if(!name || /[\u0600-\u06FF]/.test(name)) return {...item,urduName:name||item.urduName||""};
+    const existing=String(item.urduName||item.nameUrdu||"").trim();
+    if(existing) return {...item,urduName:existing};
+    const key=name.toLocaleLowerCase();
+    if(cache[key]) return {...item,urduName:cache[key]};
+    try {
+      const url="https://api.mymemory.translated.net/get?"+new URLSearchParams({q:name,langpair:"en|ur"}).toString();
+      const response=await fetch(url,{headers:{Accept:"application/json"}});
+      if(!response.ok) throw new Error("Translation service unavailable");
+      const payload=await response.json();
+      const value=String(payload?.responseData?.translatedText||"").replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&quot;/g,'"').trim();
+      if(!value || value.toLowerCase()===name.toLowerCase()) throw new Error("No Urdu translation returned");
+      cache[key]=value;
+      return {...item,urduName:value};
+    } catch { return {...item,urduName:existing||name}; }
+  }));
+  try { localStorage.setItem(cacheKey,JSON.stringify(cache)); } catch {}
+  return translated;
+}
+
 function buildReceiptDocument(data: Record<string, any>) {
   const itemRows = (Array.isArray(data.items) ? data.items : []).map((item: Product, index:number) => {
     const qty = n(item.saleQty??item.qty), price = n(item.unitSalePrice??item.price);
@@ -267,7 +293,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     setSyncTrigger(value => value + 1);
   }
 
-  function reprintSale(s: Product) {
+  async function reprintSale(s: Product) {
     const invoiceLanguage=invoiceLanguageChoice();
     const popup = window.open("", "_blank", "width=440,height=760");
     if (!popup) { setMessage("Allow pop-ups to reprint this receipt."); return; }
@@ -283,12 +309,14 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
       ...(n(s.staffTip) > 0 ? [["Staff tip (not sales)", s.staffTip] as [string, any]] : []),
       ["Balance due", s.balance]
     ];
+    const receiptItems=(s.items||[]).map((it:any)=>({...it,urduName:it.urduName||it.nameUrdu||products.find(p=>String(p.id)===String(it.productId))?.urduName||products.find(p=>String(p.id)===String(it.productId))?.nameUrdu||""}));
+    const translatedItems=invoiceLanguage==="ur"?await translateInvoiceItemsToUrdu(receiptItems):receiptItems;
     popup.document.open();
     popup.document.write(buildReceiptDocument({
       origin: window.location.origin, language: invoiceLanguage, logoUrl: String(rows.find(r=>r.collection==="mberp_brand_settings"&&r.record_id==="default")?.data?.logoUrl || ""), title: "SALES RECEIPT · REPRINT",
       invoiceNo: s.invoiceNo, date: s.date, customerName: s.customerName,
       customerPhone: s.customerPhone, branchName: s.branchName, cashier: s.cashier || cashier || userId,
-      items: (s.items||[]).map((it:any)=>({...it,urduName:it.urduName||it.nameUrdu||products.find(p=>String(p.id)===String(it.productId))?.urduName||products.find(p=>String(p.id)===String(it.productId))?.nameUrdu||""})), rows: rowsHtml, paymentMethod: s.paymentMethod, note: s.note
+      items: translatedItems, rows: rowsHtml, paymentMethod: s.paymentMethod, note: s.note
     }));
     popup.document.close();
   }
@@ -516,6 +544,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
       setMessage("One or more selected products belong to a different branch. Select the correct branch or transfer stock first.");
       return;
     }
+    const invoiceLanguage=invoiceLanguageChoice();
     setSaving(true);
     const receiptWindow = window.open("", "_blank", "width=420,height=700");
     const id = makeId();
@@ -556,7 +585,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
           origin: window.location.origin, logoUrl: String(rows.find(r=>r.collection==="mberp_brand_settings"&&r.record_id==="default")?.data?.logoUrl || ""), title: "OFFLINE SALES SLIP",
           status: "PENDING CLOUD SYNC — NOT A CONFIRMED SALES RECEIPT",
           invoiceNo, date, customerName: sale.customerName, customerPhone: sale.customerPhone,
-          branchName: sale.branchName, cashier: cashier || userId, items: sale.items,
+          branchName: sale.branchName, cashier: cashier || userId, items: invoiceLanguage==="ur"?await translateInvoiceItemsToUrdu(sale.items):sale.items, language:invoiceLanguage,
           rows: [["Subtotal after loyalty", saleSubtotal], ...(saleTaxAmount>0?[[selectedTax?.name||"Tax",saleTaxAmount] as [string,any]]:[]), ["Total bill", total], ...(loyaltyDiscount>0?[["Loyalty savings (included above)",loyaltyDiscount] as [string,any]]:[]), ["Amount tendered (" + method + ")", cashReceived],
             ...(advanceUsed > 0 ? [["Customer advance applied", advanceUsed] as [string, any]] : []),
             ...(priorOutstandingApplied > 0 ? [["Previous outstanding settled", priorOutstandingApplied] as [string, any]] : []),
@@ -614,9 +643,9 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
     if (receiptWindow) {
       receiptWindow.document.open();
       receiptWindow.document.write(buildReceiptDocument({
-        origin: window.location.origin, language: invoiceLanguageChoice(), logoUrl: String(rows.find(r=>r.collection==="mberp_brand_settings"&&r.record_id==="default")?.data?.logoUrl || ""), title: "SALES RECEIPT",
+        origin: window.location.origin, language: invoiceLanguage, logoUrl: String(rows.find(r=>r.collection==="mberp_brand_settings"&&r.record_id==="default")?.data?.logoUrl || ""), title: "SALES RECEIPT",
         invoiceNo, date, customerName: sale.customerName, customerPhone: sale.customerPhone,
-        branchName: sale.branchName, cashier: cashier || userId, items: sale.items,
+        branchName: sale.branchName, cashier: cashier || userId, items: invoiceLanguage==="ur"?await translateInvoiceItemsToUrdu(sale.items):sale.items, language:invoiceLanguage,
         rows: [["Subtotal after loyalty", saleSubtotal], ...(saleTaxAmount>0?[[selectedTax?.name||"Tax",saleTaxAmount] as [string,any]]:[]), ["Total bill", total], ...(loyaltyDiscount>0?[["Loyalty savings (included above)",loyaltyDiscount] as [string,any]]:[]), ["Amount received (" + method + ")", cashReceived],
           ...(advanceUsed > 0 ? [["Customer advance applied", advanceUsed] as [string, any]] : []),
           ["Total tender applied", receivedAmount], ["Applied to invoice", applied],
