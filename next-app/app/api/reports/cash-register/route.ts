@@ -1,12 +1,79 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import * as nodemailer from "nodemailer";
+import { deflateSync, inflateSync } from "node:zlib";
 
 export const runtime = "nodejs";
 
 const json = (message: string, status = 200) => NextResponse.json({ message }, { status });
 const esc = (value: unknown) => String(value ?? "—").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch] || ch));
 const money = (value: unknown) => new Intl.NumberFormat("en-PK", { style: "currency", currency: "PKR", maximumFractionDigits: 0 }).format(Number(value || 0));
+const BRAND_LOGO_URL = "https://njzhtxrmrqhuxhytxaay.supabase.co/storage/v1/object/public/etihad-branding/d343ea3c-6c19-48f8-bf06-d47f883debcb/logo.png?v=1795698484241";
+
+function pngToPdfRgb(png: Buffer): { bytes: Buffer; width: number; height: number; filter: "FlateDecode" } | null {
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  if (png.length < 33 || !png.subarray(0, 8).equals(signature)) return null;
+  let width = 0, height = 0, bitDepth = 0, colorType = 0, interlace = 0;
+  let palette: Buffer | null = null, transparency: Buffer | null = null;
+  const imageData: Buffer[] = [];
+  for (let offset = 8; offset + 12 <= png.length;) {
+    const length = png.readUInt32BE(offset);
+    const type = png.toString("ascii", offset + 4, offset + 8);
+    const data = png.subarray(offset + 8, offset + 8 + length);
+    if (type === "IHDR") {
+      width = data.readUInt32BE(0); height = data.readUInt32BE(4);
+      bitDepth = data[8]; colorType = data[9]; interlace = data[12];
+    } else if (type === "PLTE") palette = Buffer.from(data);
+    else if (type === "tRNS") transparency = Buffer.from(data);
+    else if (type === "IDAT") imageData.push(Buffer.from(data));
+    else if (type === "IEND") break;
+    offset += length + 12;
+  }
+  const channelsByType: Record<number, number> = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
+  const channels = channelsByType[colorType];
+  if (!width || !height || width * height > 4_000_000 || bitDepth !== 8 || interlace !== 0 || !channels || !imageData.length || (colorType === 3 && !palette)) return null;
+  const stride = width * channels, bpp = channels;
+  const inflated = inflateSync(Buffer.concat(imageData));
+  if (inflated.length < (stride + 1) * height) return null;
+  const rgb = Buffer.alloc(width * height * 3);
+  let previous = Buffer.alloc(stride);
+  const paeth = (a: number, b: number, c: number) => {
+    const p = a + b - c, pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+    return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+  };
+  const background = [20, 41, 74];
+  for (let y = 0; y < height; y++) {
+    const rowStart = y * (stride + 1), filter = inflated[rowStart];
+    const scan = Buffer.alloc(stride);
+    for (let x = 0; x < stride; x++) {
+      const raw = inflated[rowStart + 1 + x], left = x >= bpp ? scan[x - bpp] : 0;
+      const up = previous[x], upperLeft = x >= bpp ? previous[x - bpp] : 0;
+      const predictor = filter === 0 ? 0 : filter === 1 ? left : filter === 2 ? up : filter === 3 ? Math.floor((left + up) / 2) : filter === 4 ? paeth(left, up, upperLeft) : 0;
+      scan[x] = (raw + predictor) & 255;
+    }
+    for (let x = 0; x < width; x++) {
+      let red = 0, green = 0, blue = 0, alpha = 255;
+      const i = x * channels;
+      if (colorType === 6) { red = scan[i]; green = scan[i + 1]; blue = scan[i + 2]; alpha = scan[i + 3]; }
+      else if (colorType === 2) { red = scan[i]; green = scan[i + 1]; blue = scan[i + 2]; }
+      else if (colorType === 0) { red = green = blue = scan[i]; }
+      else if (colorType === 4) { red = green = blue = scan[i]; alpha = scan[i + 1]; }
+      else {
+        const index = scan[i], p = index * 3;
+        if (!palette || p + 2 >= palette.length) continue;
+        red = palette[p]; green = palette[p + 1]; blue = palette[p + 2];
+        alpha = transparency && index < transparency.length ? transparency[index] : 255;
+      }
+      const out = (y * width + x) * 3, a = alpha / 255;
+      rgb[out] = Math.round(red * a + background[0] * (1 - a));
+      rgb[out + 1] = Math.round(green * a + background[1] * (1 - a));
+      rgb[out + 2] = Math.round(blue * a + background[2] * (1 - a));
+    }
+    previous = scan;
+  }
+  return { bytes: deflateSync(rgb), width, height, filter: "FlateDecode" };
+}
+
 
 export async function POST(request: NextRequest) {
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
@@ -152,13 +219,14 @@ export async function POST(request: NextRequest) {
     ["Cash in", cashIn], ["Cash out", cashOut], ["Expected cash", expected],
     ["Actual counted cash", actual], ["Variance", variance]
   ];
-  let logoJpeg: Buffer | null = null;
+  let logoImage: { bytes: Buffer; width: number; height: number; filter: "FlateDecode" | "DCTDecode" } | null = null;
   try {
-    const logoResponse = await fetch(new URL("/brand-logo.svg", request.url));
+    const logoResponse = await fetch(BRAND_LOGO_URL, { cache: "no-store" });
     if (logoResponse.ok) {
-      const logoSvg = await logoResponse.text();
-      const logoMatch = logoSvg.match(/href=["']data:image\/jpeg;base64,([^"']+)["']/);
-      if (logoMatch?.[1]) logoJpeg = Buffer.from(logoMatch[1], "base64");
+      const logoBytes = Buffer.from(await logoResponse.arrayBuffer());
+      const png = pngToPdfRgb(logoBytes);
+      if (png) logoImage = png;
+      else if (logoBytes[0] === 0xff && logoBytes[1] === 0xd8) logoImage = { bytes: logoBytes, width: 240, height: 160, filter: "DCTDecode" };
     }
   } catch { /* Keep the report readable if the logo is temporarily unavailable. */ }
   const pdfText = (v: unknown) => String(v ?? "—").normalize("NFKD").replace(/[^\x20-\x7E]/g, " ").replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
@@ -190,9 +258,10 @@ export async function POST(request: NextRequest) {
     commands.push("q", "1 1 1 rg", "0 0 595 842 re f", "Q");
     rect(0, 0, 595, 104, navy);
     rect(0, 101, 595, 3, gold);
-    if (logoJpeg) commands.push("q", "72 0 0 48 38 772 cm", "/Logo Do", "Q");
-    textAt("IHSAN SWEETS & SUPPLIES", logoJpeg ? 124 : 38, 31, 17, "1 1 1", true);
-    textAt("RETAIL & WHOLESALE MANAGEMENT", logoJpeg ? 125 : 39, 55, 7, "0.88 0.91 0.95", false);
+    const logoWidth = logoImage ? 48 * logoImage.width / logoImage.height : 0;
+    if (logoImage) commands.push("q", logoWidth + " 0 0 48 38 772 cm", "/Logo Do", "Q");
+    textAt("IHSAN SWEETS & SUPPLIES", logoImage ? 38 + logoWidth + 14 : 38, 31, 17, "1 1 1", true);
+    textAt("RETAIL & WHOLESALE MANAGEMENT", logoImage ? 39 + logoWidth + 14 : 39, 55, 7, "0.88 0.91 0.95", false);
     textAt("CASH REGISTER", 405, 28, 9, gold, true);
     textAt("CLOSING REPORT", 405, 43, 9, "1 1 1", true);
     textAt("BRANDED SHIFT STATEMENT", 405, 62, 6.5, "0.88 0.91 0.95", false);
@@ -285,7 +354,7 @@ export async function POST(request: NextRequest) {
   const pagesId = addObj("");
   const regularFontId = addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
   const boldFontId = addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
-  const logoImageId = logoJpeg ? addObj("<< /Type /XObject /Subtype /Image /Width 240 /Height 160 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + logoJpeg.length + " >>\nstream\n" + logoJpeg.toString("binary") + "\nendstream") : 0;
+  const logoImageId = logoImage ? addObj("<< /Type /XObject /Subtype /Image /Width " + logoImage.width + " /Height " + logoImage.height + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /" + logoImage.filter + " /Length " + logoImage.bytes.length + " >>\nstream\n" + logoImage.bytes.toString("binary") + "\nendstream") : 0;
   const pageIds: number[] = [];
   for (const pageCommands of pages) {
     const stream = pageCommands;
@@ -304,7 +373,7 @@ export async function POST(request: NextRequest) {
   for (let i = 1; i < offsets.length; i++) pdf += String(offsets[i]).padStart(10, "0") + " 00000 n \n";
   pdf += "trailer\n<< /Size " + (pdfObjects.length + 1) + " /Root " + catalogId + " 0 R >>\nstartxref\n" + xref + "\n%%EOF";
   const attachment = Buffer.from(pdf, "binary");
-  const logoUrl = new URL("/brand-logo.svg", request.url).toString();
+  const logoUrl = BRAND_LOGO_URL;
   const html = "<!doctype html><html><body style=\"font-family:Arial,sans-serif;color:#172033\"><div style=\"max-width:640px;margin:auto;border:1px solid #d8dee8\"><div style=\"background:#172b4d;color:#fff;padding:22px 26px\"><img src=\""+esc(logoUrl)+"\" alt=\"Ihsan Sweets & Supplies\" style=\"display:block;width:86px;height:54px;object-fit:contain;background:transparent;margin-bottom:8px\"><div style=\"color:#d8bd7a;font-size:12px;letter-spacing:2px;font-weight:bold\">IHSAN SWEETS & SUPPLIES</div><h2 style=\"margin:8px 0 0\">Cash Register Closing Report</h2></div><div style=\"padding:24px 26px\"><p>The register has been closed and reconciled successfully.</p><p><b>Branch:</b> " + esc(s.branchName) + "<br><b>Cashier:</b> " + esc(s.cashierName || s.cashierId) + "<br><b>Session:</b> " + esc(sessionId) + "</p><table style=\"border-collapse:collapse;width:100%\">" + summaryRows.map(([label,value]) => "<tr><td style=\"padding:8px;border-bottom:1px solid #e5e9ef\">" + esc(label) + "</td><td style=\"padding:8px;border-bottom:1px solid #e5e9ef;text-align:right\"><b>" + esc(pdfMoney(value)) + "</b></td></tr>").join("") + "</table><p style=\"margin-top:22px\">The complete branded, multi-page closing report is attached as a PDF, including all " + entries.length + " transaction records.</p><p style=\"font-size:12px;color:#667085\">Automatically generated by Ihsan Sweets & Supplies ERP. This email and attachment do not alter accounting records.</p></div></div></body></html>";
 
   try {
