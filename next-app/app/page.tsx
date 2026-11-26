@@ -265,7 +265,7 @@ export default function Home() {
   // Match the invoice-history profit rule: use only the cost snapshots saved on
   // invoice lines. Never substitute today's product cost for a historical sale.
   const allReturns = records("mberp_sales_returns");
-  const profitEligibleSales = monthSales.filter(s=>String(s.status||"").toLowerCase()!=="cancelled");
+  const profitEligibleSales = monthSales.filter(s=>!["cancelled","returned"].includes(String(s.status||"").toLowerCase()));
   const missingCostSales = profitEligibleSales.filter(s=>!(s.items||[]).every((it:any)=>it.cost!==undefined&&it.cost!==null&&Number.isFinite(Number(it.cost))));
   const invoiceGrossProfit = (sale:any)=>{
     const status=String(sale.status||"").toLowerCase();
