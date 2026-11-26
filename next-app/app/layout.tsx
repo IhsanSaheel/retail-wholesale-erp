@@ -3,11 +3,11 @@ import "./globals.css";
 import { PWARegister } from "./pwa-register";
 
 export const metadata: Metadata = {
-  title: "Etihad Prime Supplies | General Trading & Wholesale",
-  description: "Etihad Prime Supplies general trading and wholesale management system.",
-  applicationName: "Etihad Prime Supplies",
+  title: "Ihsan Sweets & Supplies | General Trading & Wholesale",
+  description: "Ihsan Sweets & Supplies general trading and wholesale management system.",
+  applicationName: "Ihsan Sweets & Supplies",
   icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Etihad Prime" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Ihsan Sweets" },
 };
 export const viewport: Viewport = { themeColor: "#080807", width: "device-width", initialScale: 1 };
 
