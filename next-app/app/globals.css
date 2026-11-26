@@ -49,7 +49,7 @@
 .settlement-preview b{font-size:11px;color:#2d3d55}
 @media(max-width:390px){.settlement-preview{grid-template-columns:1fr 1fr}}
 
-/* Installable Etihad Traders app controls */
+/* Installable Ihsan Sweets & Supplies app controls */
 .pwa-install-wrap{position:fixed;right:18px;bottom:18px;z-index:1200;display:flex;flex-direction:column;align-items:flex-end;gap:8px;max-width:min(92vw,340px)}
 .pwa-install-button{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:#082967;color:#fff;padding:12px 17px;box-shadow:0 10px 30px rgba(8,41,103,.25);font:700 13px/1.2 inherit;cursor:pointer}
 .pwa-install-button span{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#d69a00;color:#082967;font-size:15px}
@@ -95,7 +95,7 @@
 
 
 
-/* Official Etihad Prime Supplies dark black and metallic-gold theme */
+/* Official Ihsan Sweets & Supplies dark black and metallic-gold theme */
 html,body,.app-shell,.main-area,.page-content{background:#0d0c09!important;color:#f5f0e4!important}
 .login-page,.login-side{background:#0d0c09!important;color:#f5f0e4!important}
 .login-art{background:radial-gradient(ellipse at 70% 55%,#49350e 0%,#171106 48%,#050505 100%)!important}
@@ -146,7 +146,7 @@ input,select,textarea,.search-input,.pos-search,.login-form input{background:#10
 @media(max-width:760px){.side-brand .brand-mark{width:170px;height:86px}.page-content{padding-top:21px}.topbar{background:#fff}}
 
 
-/* Etihad Prime Supplies — consistent professional finish */
+/* Ihsan Sweets & Supplies — consistent professional finish */
 :root{
   --navy:#17140e;
   --navy2:#262118;
@@ -189,7 +189,7 @@ table tbody tr:hover{background:#fbf9f4}
 }
 
 
-/* ETIHAD PRIME SUPPLIES — premium executive theme
+/* IHSAN SWEETS & SUPPLIES — premium executive theme
    Warm ivory workspace, crisp white surfaces, charcoal navigation and restrained metallic gold.
    Visual-only overrides: preserve existing modules, data, workflows and responsive behaviour. */
 :root{
