@@ -24,7 +24,7 @@ function transliterateProductNameToUrdu(value:string) {
   if(known[normalized]) return known[normalized];
   const digraphs:Record<string,string>={kh:"کھ",gh:"غ",sh:"ش",ch:"چ",zh:"ژ",ph:"ف",th:"تھ",dh:"دھ",bh:"بھ"};
   const letters:Record<string,string>={a:"َ",b:"ب",c:"ک",d:"د",e:"ے",f:"ف",g:"گ",h:"ہ",i:"ی",j:"ج",k:"ک",l:"ل",m:"م",n:"ن",o:"و",p:"پ",q:"ق",r:"ر",s:"س",t:"ت",u:"و",v:"و",w:"و",x:"کس",y:"ی",z:"ز"};
-  return value.split(/(\\s+)/).map(word=>{
+  return value.split(/(\s+)/).map(word=>{
     if(!word.trim()) return word;
     let out="";
     for(let i=0;i<word.length;){
@@ -44,13 +44,13 @@ async function translateInvoiceItemsToUrdu(items: any[]) {
   const translated=await Promise.all((items||[]).map(async (item:any)=>{
     const name=String(item.name||item.productName||item.title||item.product?.name||"").trim();
     if(!name) return {...item,urduName:String(item.urduName||item.nameUrdu||"")};
-    if(/[\\u0600-\\u06FF]/.test(name)) return {...item,urduName:name};
+    if(/[\u0600-\u06FF]/.test(name)) return {...item,urduName:name};
     const existing=String(item.urduName||item.nameUrdu||"").trim();
-    if(existing && /[\\u0600-\\u06FF]/.test(existing)) return {...item,urduName:existing};
+    if(existing && /[\u0600-\u06FF]/.test(existing)) return {...item,urduName:existing};
     const key=name.toLocaleLowerCase();
-    if(cache[key] && /[\\u0600-\\u06FF]/.test(cache[key])) return {...item,urduName:cache[key]};
+    if(cache[key] && /[\u0600-\u06FF]/.test(cache[key])) return {...item,urduName:cache[key]};
     let value="";
-    const normalizedName=name.toLocaleLowerCase().replace(/\\s+/g," ").trim();
+    const normalizedName=name.toLocaleLowerCase().replace(/\s+/g," ").trim();
     const knownUrdu:Record<string,string>={"chana khata":"چنا کھٹا","chana chat":"چنا چاٹ","fish nimko":"فش نمکو","nimko":"نمکو","jelly":"جیلی","chewing gum":"چیونگم","papad":"پاپڑ","pulses":"دالیں"};
     if(knownUrdu[normalizedName]) value=knownUrdu[normalizedName];
     if(!value) {
@@ -60,11 +60,11 @@ async function translateInvoiceItemsToUrdu(items: any[]) {
         if(!response.ok) throw new Error("Translation service unavailable");
         const payload=await response.json();
         const candidate=String(payload?.responseData?.translatedText||"").replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&quot;/g,'"').trim();
-        if(/[\\u0600-\\u06FF]/.test(candidate)) value=candidate;
+        if(/[\u0600-\u06FF]/.test(candidate)) value=candidate;
       } catch {}
     }
     if(!value) value=transliterateProductNameToUrdu(name);
-    if(!value || !/[\\u0600-\\u06FF]/.test(value)) value=name;
+    if(!value || !/[\u0600-\u06FF]/.test(value)) value=name;
     cache[key]=value;
     return {...item,urduName:value};
   }));
@@ -405,7 +405,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
         const canvas=document.createElement("canvas");
         const width=640, pad=34, content=width-pad*2;
         const items=Array.isArray(sale.items)?sale.items:[];
-        const wrap=(value:string,max=31)=>{const words=value.split(/\\s+/);const out:string[]=[];let line="";for(const word of words){const next=line?line+" "+word:word;if(next.length>max&&line){out.push(line);line=word;}else line=next;}if(line)out.push(line);return out.length?out:[""];};
+        const wrap=(value:string,max=31)=>{const words=value.split(/\s+/);const out:string[]=[];let line="";for(const word of words){const next=line?line+" "+word:word;if(next.length>max&&line){out.push(line);line=word;}else line=next;}if(line)out.push(line);return out.length?out:[""];};
         const rows=items.map((it:any)=>({it,name:wrap(clean(it.name||"Item"),31)}));
         const totals:[string,any][]=[["Subtotal",sale.subtotal??sale.total],["TOTAL",sale.total],["Paid",sale.paid],["Balance due",sale.balance]];
         if(n(sale.advanceUsed)>0)totals.splice(2,0,["Advance used",sale.advanceUsed]);
@@ -438,7 +438,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
         totals.forEach(([label,amount],i)=>{ctx.textAlign="left";ctx.fillStyle=i===1?"#172942":"#4d5b70";ctx.font=i===1?"bold 19px Arial":"16px Arial";ctx.fillText(label,pad,y);ctx.textAlign="right";ctx.fillText(cash(n(amount)),width-pad,y);y+=48;});
         y+=12;ctx.strokeStyle="#c6a264";ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(width-pad,y);ctx.stroke();y+=50;ctx.textAlign="center";ctx.fillStyle="#172942";ctx.font="bold 20px Arial";ctx.fillText("Thank you for your business!",width/2,y);ctx.fillStyle="#8993a1";ctx.font="13px Arial";ctx.fillText("IHSAN SWEETS & SUPPLIES · QUALITY & TRUST",width/2,y+28);
         const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error("Could not create invoice image")),"image/png"));
-        return new File([blob],"Ihsan-Sweets-Invoice-"+clean(sale.invoiceNo||"receipt").replace(/\\s+/g,"-")+".png",{type:"image/png"});
+        return new File([blob],"Ihsan-Sweets-Invoice-"+clean(sale.invoiceNo||"receipt").replace(/\s+/g,"-")+".png",{type:"image/png"});
       };
       createInvoiceImage().then(async(imageFile)=>{
         const chatText=lines.join("\n");
