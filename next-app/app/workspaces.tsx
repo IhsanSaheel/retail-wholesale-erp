@@ -38,11 +38,11 @@ function transliterateProductNameToUrdu(value:string) {
   }).join("");
 }
 async function translateInvoiceItemsToUrdu(items: any[]) {
-  const cacheKey="ihsan_invoice_urdu_translation_v1";
+  const cacheKey="ihsan_invoice_urdu_translation_v2";
   let cache:Record<string,string>={};
   try { cache=JSON.parse(localStorage.getItem(cacheKey)||"{}"); } catch {}
   const translated=await Promise.all((items||[]).map(async (item:any)=>{
-    const name=String(item.name||"").trim();
+    const name=String(item.name||item.productName||item.title||item.product?.name||"").trim();
     if(!name) return {...item,urduName:String(item.urduName||item.nameUrdu||"")};
     if(/[\\u0600-\\u06FF]/.test(name)) return {...item,urduName:name};
     const existing=String(item.urduName||item.nameUrdu||"").trim();
@@ -50,14 +50,19 @@ async function translateInvoiceItemsToUrdu(items: any[]) {
     const key=name.toLocaleLowerCase();
     if(cache[key] && /[\\u0600-\\u06FF]/.test(cache[key])) return {...item,urduName:cache[key]};
     let value="";
-    try {
-      const url="https://api.mymemory.translated.net/get?"+new URLSearchParams({q:name,langpair:"en|ur"}).toString();
-      const response=await fetch(url,{headers:{Accept:"application/json"}});
-      if(!response.ok) throw new Error("Translation service unavailable");
-      const payload=await response.json();
-      const candidate=String(payload?.responseData?.translatedText||"").replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&quot;/g,'"').trim();
-      if(/[\\u0600-\\u06FF]/.test(candidate)) value=candidate;
-    } catch {}
+    const normalizedName=name.toLocaleLowerCase().replace(/\\s+/g," ").trim();
+    const knownUrdu:Record<string,string>={"chana khata":"چنا کھٹا","chana chat":"چنا چاٹ","fish nimko":"فش نمکو","nimko":"نمکو","jelly":"جیلی","chewing gum":"چیونگم","papad":"پاپڑ","pulses":"دالیں"};
+    if(knownUrdu[normalizedName]) value=knownUrdu[normalizedName];
+    if(!value) {
+      try {
+        const url="https://api.mymemory.translated.net/get?"+new URLSearchParams({q:name,langpair:"en|ur"}).toString();
+        const response=await fetch(url,{headers:{Accept:"application/json"}});
+        if(!response.ok) throw new Error("Translation service unavailable");
+        const payload=await response.json();
+        const candidate=String(payload?.responseData?.translatedText||"").replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&quot;/g,'"').trim();
+        if(/[\\u0600-\\u06FF]/.test(candidate)) value=candidate;
+      } catch {}
+    }
     if(!value) value=transliterateProductNameToUrdu(name);
     if(!value || !/[\\u0600-\\u06FF]/.test(value)) value=name;
     cache[key]=value;
@@ -108,7 +113,7 @@ function buildReceiptDocument(data: Record<string, any>) {
 
 
 export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, onSaved, initialTab = "new" }: POSProps) {
-  const invoiceLanguageChoice=()=>String(window.prompt("Choose receipt language: type UR for Urdu or EN for English","EN")||"EN").trim().toLowerCase().startsWith("ur")?"ur":"en";
+  const [invoiceLanguage,setInvoiceLanguage]=useState<"en"|"ur">("en");
   const supabase = useMemo(() => getSupabase(), []);
   const products = rows.filter(r => r.collection === "mberp_products").map(r => r.data).filter(p => p.active !== false);
   const branches = rows.filter(r => r.collection === "mberp_branches").map(r => r.data).filter(b => b.active !== false && (!branchIds.length || branchIds.includes(String(b.id))));
@@ -317,7 +322,6 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
   }
 
   async function reprintSale(s: Product) {
-    const invoiceLanguage=invoiceLanguageChoice();
     const popup = window.open("", "_blank", "width=440,height=760");
     if (!popup) { setMessage("Allow pop-ups to reprint this receipt."); return; }
     const rowsHtml: [string, any][] = [
@@ -567,7 +571,6 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
       setMessage("One or more selected products belong to a different branch. Select the correct branch or transfer stock first.");
       return;
     }
-    const invoiceLanguage=invoiceLanguageChoice();
     setSaving(true);
     const receiptWindow = window.open("", "_blank", "width=420,height=700");
     const id = makeId();
@@ -687,7 +690,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
   }
 
   return <div className="pos-workspace">
-    <div className="pos-heading"><div><div className="section-kicker">POINT OF SALE</div><h2>New sale</h2><p>Build a bill, select a customer and settle the payment.</p></div><div className="pos-tabs"><button className={tab==="new"?"selected":""} onClick={()=>setTab("new")}>New sale</button><button className={tab==="history"?"selected":""} onClick={()=>setTab("history")}>Sales history</button><button className={tab==="orders"?"selected":""} onClick={()=>setTab("orders")}>Open orders ({openOrders.length})</button><button className={tab==="quotes"?"selected":""} onClick={()=>setTab("quotes")}>Quotations ({quotations.length})</button></div></div>
+    <div className="pos-heading"><div><div className="section-kicker">POINT OF SALE</div><h2>New sale</h2><p>Build a bill, select a customer and settle the payment.</p><label className="invoice-language-control">Receipt language<select value={invoiceLanguage} onChange={e=>setInvoiceLanguage(e.target.value==="ur"?"ur":"en")}><option value="en">English</option><option value="ur">اردو (Urdu)</option></select></label></div><div className="pos-tabs"><button className={tab==="new"?"selected":""} onClick={()=>setTab("new")}>New sale</button><button className={tab==="history"?"selected":""} onClick={()=>setTab("history")}>Sales history</button><button className={tab==="orders"?"selected":""} onClick={()=>setTab("orders")}>Open orders ({openOrders.length})</button><button className={tab==="quotes"?"selected":""} onClick={()=>setTab("quotes")}>Quotations ({quotations.length})</button></div></div>
     {pendingSales.length>0&&<div className="panel offline-queue-banner"><div><b>{pendingSales.length} sale{pendingSales.length===1?"":"s"} awaiting cloud sync</b><p>{syncing?"Synchronising saved sales…":"These sales are stored on this device and are not yet confirmed in cloud stock or accounts."}</p>{pendingSales.filter(x=>x.status==="failed").map(x=><small key={x.id}>Needs attention: {x.sale.invoiceNo} — {x.lastError}</small>)}</div><div className="offline-queue-actions"><button className="secondary-btn" disabled={syncing||!isOnline} onClick={retryPendingSales}>{syncing?"Syncing…":"Retry sync"}</button></div></div>}
     {message && <div className={message.startsWith("Sale saved")||message.includes("synchronised successfully")?"pos-success":"notice-error"}>{message}</div>}
     {tab==="orders"||tab==="quotes"?<div className="panel data-panel"><div className="panel-head"><div><h3>{tab==="orders"?"Open orders":"Quotations"}</h3><p>{tab==="orders"?"Saved carts can be restored and checked out later.":"Seven-day quotations can be reviewed and converted into a sale by restoring the items."}</p></div></div><div className="table-wrap"><table><thead><tr><th>REFERENCE</th><th>CUSTOMER</th><th>DATE</th><th>ITEMS</th><th>TOTAL</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody>{(tab==="orders"?openOrders:quotations).map((d:any)=><tr key={d.id}><td><b>{d.reference}</b></td><td>{d.customerName}</td><td>{d.date?new Date(d.date).toLocaleDateString():"—"}</td><td>{(d.items||[]).length}</td><td>{cash(n(d.total))}</td><td>{d.status||"open"}</td><td>{tab==="orders"&&<button className="text-action" onClick={()=>resumeOrder(d)}>Restore to bill</button>}{tab==="quotes"&&<><button className="text-action" onClick={()=>printQuotation(d)}>Print / Save PDF</button><button className="text-action" onClick={()=>shareQuotation(d)}>WhatsApp share</button><button className="text-action" onClick={()=>resumeOrder(d)}>Convert to sale</button></>} <button className="text-action" onClick={()=>markDraft(String(d.id),tab==="orders"?"mberp_open_orders":"mberp_quotations","cancelled")}>Close</button></td></tr>)}{!(tab==="orders"?openOrders:quotations).length&&<tr><td colSpan={7} className="empty-cell">No {tab==="orders"?"open orders":"quotations"} saved.</td></tr>}</tbody></table></div></div>:tab==="history" ? <div className="panel data-panel"><div id="product-history-section" className="panel-head"><div><h3>Recent invoices</h3><p>Latest sales from the shared Ihsan Sweets & Supplies database</p></div></div><div className="table-wrap"><table><thead><tr><th>INVOICE</th><th>CUSTOMER</th><th>DATE</th><th>TOTAL</th><th>PROFIT</th><th>PAID</th><th>BALANCE</th><th>RECEIPT</th><th>ACTIONS</th></tr></thead><tbody>{recent.map((s,i)=>{const key=String(s.id||s.invoiceNo||i),customerProfile=savedCustomers.find((c:any)=>String(c.phone||"").replace(/\D/g,"")===String(s.customerPhone||"").replace(/\D/g,""))||savedCustomers.find((c:any)=>searchText(c.name)===searchText(s.customerName)),hasWhatsapp=!!String(customerProfile?.whatsapp||customerProfile?.phone||s.customerPhone||"").replace(/\D/g,""),hasEmail=!!String(customerProfile?.email||customerProfile?.emailAddress||customerProfile?.contactEmail||s.customerEmail||"").trim(),saleStatus=String(s.status||"").toLowerCase(),cancelled=saleStatus==="cancelled",returned=saleStatus==="returned",partiallyReturned=saleStatus==="partially_returned",items=Array.isArray(s.items)?s.items:[],saleReturns=rows.filter(r=>r.collection==="mberp_sales_returns"&&String(r.data.saleId)===String(s.id)),saleProfit=cancelled||returned?0:items.every((it:any)=>it.cost!==undefined&&it.cost!==null)?items.reduce((sum:number,it:any)=>sum+(n(it.price)-n(it.cost))*n(it.qty),0)-saleReturns.reduce((sum:number,r:any)=>{const soldItem=items.find((it:any)=>String(it.productId)===String(r.data.productId));return sum+n(r.data.creditAmount??r.data.refund)-n(soldItem?.cost)*n(r.data.qty);},0):null;return <><tr key={key} className={cancelled?"cancelled-sale-row":""}><td><b>{s.invoiceNo||"—"}</b><div><button className="text-action" onClick={()=>setExpandedSales(prev=>({...prev,[key]:!prev[key]}))}>{expandedSales[key]?"− Collapse":"＋ Expand"} ({items.length})</button></div></td><td>{s.customerName||"Walk-in"}<small className="history-subline">{s.branchName||"—"}</small></td><td>{s.date?new Date(s.date).toLocaleString("en-PK",{timeZone:"Asia/Karachi"}):"—"}</td><td>{cash(n(s.total))}</td><td className={saleProfit===null?"muted-cell":saleProfit>=0?"profit-positive":"profit-negative"}>{saleProfit===null?"—":cash(saleProfit)}</td><td>{cash(n(s.paid))}</td><td>{cash(n(s.balance))}</td><td><span className={cancelled?"status cancelled":returned?"status returned":partiallyReturned?"status partially-returned":"status paid"}>{cancelled?"Cancelled":returned?"Returned":partiallyReturned?"Partially returned":"Recorded"}</span><button className="text-action" onClick={()=>reprintSale(s)}>Print 80mm receipt</button>{hasWhatsapp&&<button className="text-action" onClick={()=>shareSaleInvoice(s,"whatsapp")}>WhatsApp</button>}{hasEmail&&<button className="text-action" onClick={()=>shareSaleInvoice(s,"email")}>Email</button>}{!hasWhatsapp&&!hasEmail&&<small className="history-subline">Add customer contact to enable sharing</small>}</td><td>{!cancelled&&(role==="owner"||role==="manager")&&<button className="text-action" disabled={!!saleActionBusy} onClick={()=>beginEditSale(s)}>Edit sale</button>}{!cancelled&&(role==="owner"||role==="manager")&&<button className="text-action danger-action" disabled={saleActionBusy===key||!!saleActionBusy} onClick={()=>cancelSale(s)}>{saleActionBusy===key?"Cancelling…":"Cancel sale"}</button>}{cancelled&&<><small>Reason: {s.cancellationReason||"—"}</small>{role==="owner"&&<button className="text-action danger-action" disabled={!!saleActionBusy} onClick={()=>moveCancelledSaleToRecycleBin(s)}>{saleActionBusy===key?"Archiving…":"Move to Recycle Bin"}</button>}</>}</td></tr>{expandedSales[key]&&<tr key={key+"-items"} className={cancelled?"cancelled-sale-row":""}><td colSpan={9}><div className="sale-history-details"><div><b>Invoice:</b> {s.invoiceNo||"—"} · <b>Customer:</b> {s.customerName||"Walk-in"} · <b>Branch:</b> {s.branchName||"—"}</div><div><b>Recorded:</b> {s.date?new Date(s.date).toLocaleString("en-PK",{timeZone:"Asia/Karachi"}):"—"} · <b>Discount:</b> {cash(n(s.discount))} · <b>Total:</b> {cash(n(s.total))}</div>{items.map((it:any,j:number)=><div className="sale-history-item" key={j}><span>{cancelled?<del>{n(it.qty)} {it.unit||""} × {it.name}</del>:<>{n(it.qty)} {it.unit||""} × {it.name}</>}</span><b>{cash(n(it.price)*n(it.qty))}</b></div>)}{!items.length&&<small>No product line details stored for this invoice.</small>}</div></td></tr>}</>;})}{!recent.length&&<tr><td colSpan={9} className="empty-cell">No sales have been recorded yet.</td></tr>}</tbody></table></div></div> :
