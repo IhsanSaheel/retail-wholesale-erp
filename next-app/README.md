@@ -1,4 +1,4 @@
-# Etihad Traders — Next.js application
+# Ihsan Sweets & Supplies — Next.js application
 
 This is the separate professional application under development. The existing root `index.html` remains the current production application until the new version is approved.
 
@@ -29,7 +29,7 @@ The current Vercel preview was deployed from the `vercel-professional-rebuild` b
 
 ## Supabase
 
-This application intentionally uses the existing Etihad Traders Supabase project and existing business records.
+This application intentionally uses the existing Ihsan Sweets & Supplies Supabase project and existing business records.
 
 Database migration files are in `supabase/migrations/`; the corresponding migrations have already been applied to the connected project. The employee account creation function source is in `supabase/functions/etihad-create-employee/index.ts` and is deployed as an authenticated Supabase Edge Function.
 
