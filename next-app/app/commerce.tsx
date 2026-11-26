@@ -73,9 +73,9 @@ export function CustomerWorkspace({orgId,userId,role,rows,onSaved}:Props){
  return <div className="directory-workspace customer-ledger-workspace" style={customerPageOpen?{position:"fixed",inset:0,zIndex:10000,overflowY:"auto",background:"var(--background, #f5f7fa)",padding:"24px 16px",boxSizing:"border-box"}:undefined}>
   <div style={customerPageOpen?{width:"100%",maxWidth:1100,margin:"0 auto",padding:24,background:"var(--panel, #fff)",border:"1px solid var(--border, #e5e7eb)",borderRadius:16,boxSizing:"border-box"}:undefined}>}
   {!customerPageOpen&&<div className="welcome-row"><div><div className="section-kicker">CUSTOMER RELATIONSHIPS</div><h1>Customer & Ledger</h1><p>Manage customer profiles, account statements, balances and loyalty points in separate work areas.</p></div><span className="record-count">{customers.length} customers</span></div>
-</span></div>}
+
   {customerPageOpen&&<div className="panel-head" style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,marginBottom:18}}><div><div className="section-kicker">CUSTOMER WORKSPACE</div><h2 style={{margin:"4px 0"}}>{activeSection==="add"?(editingCustomer?"Edit customer profile":"Add customer"):"Customer account"}</h2></div><button type="button" className="outline-btn" onClick={()=>{setActiveSection("customers");setCustomer(null);}}>← Back to Customers</button></div>}
-  {message&&<div className="pos-success">{message}</div>
+  {message&&<div className="pos-success">{message}</div>}
   {!customerPageOpen&&<nav className="customer-section-nav" aria-label="Customer and ledger sections">
    <button type="button" className={activeSection==="customers"?"active":""} onClick={()=>setActiveSection("customers")}>Customers</button>
    {canEdit&&<button type="button" className={activeSection==="add"?"active":""} onClick={()=>{beginCustomerEdit();setActiveSection("add");}}>Add customer</button>}
