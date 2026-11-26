@@ -239,10 +239,17 @@ export async function POST(request: NextRequest) {
     const date = new Date(String(v || ""));
     return Number.isFinite(date.getTime()) ? date.toLocaleString("en-PK", { timeZone: "Asia/Karachi", dateStyle: "medium", timeStyle: "short" }) : "—";
   };
-  const navy = "0.08 0.16 0.29";
-  const gold = "0.82 0.70 0.43";
-  const ink = "0.13 0.17 0.23";
-  const muted = "0.40 0.45 0.52";
+  // Premium editorial layout: restrained navy, warm gold, generous spacing and clear hierarchy.
+  const navy = "0.07 0.11 0.19";
+  const navySoft = "0.12 0.18 0.28";
+  const gold = "0.82 0.66 0.34";
+  const goldPale = "0.97 0.94 0.87";
+  const ink = "0.13 0.16 0.21";
+  const muted = "0.43 0.47 0.53";
+  const pale = "0.97 0.975 0.985";
+  const border = "0.88 0.89 0.91";
+  const red = "0.67 0.20 0.19";
+  const green = "0.17 0.43 0.31";
   const pages: string[] = [];
   let commands: string[] = [];
   let pageNumber = 0;
@@ -253,39 +260,51 @@ export async function POST(request: NextRequest) {
   const line = (x1: number, top: number, x2: number, color: string, width = 0.6) => {
     commands.push("q", color + " RG", width + " w", x1 + " " + (842 - top) + " m " + x2 + " " + (842 - top) + " l S", "Q");
   };
-  const textAt = (value: unknown, x: number, top: number, size = 8, color = ink, bold = false) => {
-    commands.push("BT", bold ? "/F2 " + size + " Tf" : "/F1 " + size + " Tf", color + " rg", x + " " + (842 - top - size) + " Td", "(" + pdfText(value).slice(0, 105) + ") Tj", "ET");
+  const textAt = (value: unknown, x: number, top: number, size = 8, color = ink, bold = false, maxChars = 105) => {
+    commands.push("BT", bold ? "/F2 " + size + " Tf" : "/F1 " + size + " Tf", color + " rg", x + " " + (842 - top - size) + " Td", "(" + pdfText(value).slice(0, maxChars) + ") Tj", "ET");
   };
-  const startPage = () => {
+  const startPage = (continued = false) => {
     pageNumber++;
     commands = [];
     commands.push("q", "1 1 1 rg", "0 0 595 842 re f", "Q");
-    rect(0, 0, 595, 104, navy);
-    rect(0, 101, 595, 3, gold);
-    const logoWidth = logoImage ? 48 * logoImage.width / logoImage.height : 0;
-    if (logoImage) commands.push("q", logoWidth + " 0 0 48 38 772 cm", "/Logo Do", "Q");
-    textAt("IHSAN SWEETS & SUPPLIES", logoImage ? 38 + logoWidth + 14 : 38, 31, 17, "1 1 1", true);
-    textAt("RETAIL & WHOLESALE MANAGEMENT", logoImage ? 39 + logoWidth + 14 : 39, 55, 7, "0.88 0.91 0.95", false);
-    textAt("CASH REGISTER", 405, 28, 9, gold, true);
-    textAt("CLOSING REPORT", 405, 43, 9, "1 1 1", true);
-    textAt("BRANDED SHIFT STATEMENT", 405, 62, 6.5, "0.88 0.91 0.95", false);
-    textAt("Branch: " + (s.branchName || "—"), 38, 119, 9, navy, true);
-    textAt("Cashier: " + (s.cashierName || s.cashierId || "—"), 310, 119, 9, navy, true);
-    textAt("Session: " + sessionId, 38, 137, 7.5, muted);
-    textAt("Opened: " + pdfDate(s.openedAt), 38, 153, 7.5, muted);
-    textAt("Closed: " + pdfDate(s.closedAt), 310, 153, 7.5, muted);
-    line(38, 171, 557, gold, 1);
-    y = 187;
+    rect(0, 0, 595, 112, navy);
+    rect(0, 108, 595, 4, gold);
+    rect(0, 0, 7, 112, gold);
+    const logoWidth = logoImage ? 50 * logoImage.width / logoImage.height : 0;
+    if (logoImage) commands.push("q", logoWidth + " 0 0 50 38 770 cm", "/Logo Do", "Q");
+    const brandX = logoImage ? 38 + logoWidth + 16 : 42;
+    textAt("IHSAN SWEETS & SUPPLIES", brandX, 31, 16, "1 1 1", true, 50);
+    textAt("RETAIL  /  WHOLESALE  /  DISTRIBUTION", brandX + 1, 55, 6.5, "0.82 0.85 0.90", false, 60);
+    textAt("CASH REGISTER", 423, 27, 7, gold, true);
+    textAt(continued ? "CLOSING REPORT" : "SHIFT CLOSING", 423, 41, 10, "1 1 1", true);
+    textAt(continued ? "TRANSACTION DETAILS" : "FINANCIAL STATEMENT", 423, 59, 6, "0.82 0.85 0.90", false);
+    // Compact, consistent session identity strip on every page.
+    rect(38, 127, 519, 54, pale);
+    rect(38, 127, 3, 54, gold);
+    textAt("BRANCH", 51, 137, 5.8, muted, true);
+    textAt(s.branchName || "—", 51, 148, 8.5, navy, true, 42);
+    textAt("CASHIER", 228, 137, 5.8, muted, true);
+    textAt(s.cashierName || s.cashierId || "—", 228, 148, 8.5, navy, true, 34);
+    textAt("SESSION", 405, 137, 5.8, muted, true);
+    textAt(sessionId, 405, 148, 7, navy, true, 23);
+    textAt("OPENED  " + pdfDate(s.openedAt), 51, 166, 6.1, muted, false, 50);
+    textAt("CLOSED  " + pdfDate(s.closedAt), 305, 166, 6.1, muted, false, 50);
+    y = 199;
   };
   const finishPage = () => {
-    line(38, 808, 557, gold, 0.7);
-    textAt("IHSAN SWEETS & SUPPLIES ERP  |  CONFIDENTIAL BUSINESS RECORD", 38, 817, 6.5, muted);
-    textAt("PAGE " + pageNumber, 510, 817, 6.5, muted, true);
+    line(38, 808, 557, gold, 0.8);
+    textAt("IHSAN SWEETS & SUPPLIES  •  CONFIDENTIAL BUSINESS RECORD", 38, 817, 6.2, muted, true, 70);
+    textAt("PAGE " + String(pageNumber).padStart(2, "0"), 510, 817, 6.2, muted, true);
     pages.push(commands.join("\n"));
   };
+  const sectionTitle = (label: string, detail = "") => {
+    textAt(label.toUpperCase(), 38, y, 8.5, navy, true);
+    if (detail) textAt(detail.toUpperCase(), 430, y + 1, 6.2, muted, true, 30);
+    line(38, y + 14, 557, border, 0.55);
+    y += 22;
+  };
   startPage();
-  textAt("CASH RECONCILIATION SUMMARY", 38, y, 9, navy, true);
-  y += 19;
+  sectionTitle("Cash reconciliation", "PKR  /  SHIFT TOTALS");
   const summaryPairs: [string, unknown][] = [
     ["Opening float", s.openingFloat], ["Cash sales", cashSales],
     ["Cash tips", s.cashTips ?? cashTips], ["Customer cash advances", s.cashAdvances ?? cashAdvances],
@@ -293,63 +312,74 @@ export async function POST(request: NextRequest) {
     ["Cash out", cashOut], ["Expected cash", expected],
     ["Actual counted cash", actual], ["Variance", variance]
   ];
-  const cardW = 250;
+  const cardW = 252, cardH = 31, cardGap = 15;
   for (let i = 0; i < summaryPairs.length; i++) {
-    const col = i % 2;
-    const x = col === 0 ? 38 : 307;
-    if (col === 0) rect(x, y, cardW, 27, "0.96 0.97 0.98");
-    else rect(x, y, cardW, 27, "0.96 0.97 0.98");
-    textAt(summaryPairs[i][0], x + 9, y + 5, 7, muted);
-    textAt(pdfMoney(summaryPairs[i][1]), x + 145, y + 5, 8, navy, true);
-    if (col === 1 || i === summaryPairs.length - 1) y += 33;
+    const col = i % 2, row = Math.floor(i / 2);
+    const x = col === 0 ? 38 : 305;
+    const top = y + row * (cardH + 7);
+    rect(x, top, cardW, cardH, i === 9 ? goldPale : pale);
+    rect(x, top, 2, cardH, i === 9 ? gold : border);
+    textAt(summaryPairs[i][0], x + 10, top + 10, 6.8, muted, false, 35);
+    const valueColor = i === 9 && Number(summaryPairs[i][1] || 0) < 0 ? red : navy;
+    textAt(pdfMoney(summaryPairs[i][1]), x + 155, top + 9, 8.1, valueColor, true, 20);
   }
-  y += 5;
-  rect(38, y, 519, 54, "0.94 0.96 0.98");
-  textAt("DRAWER RECONCILIATION", 48, y + 6, 7, navy, true);
-  const reconciliationCards: [string, unknown][] = [["OPENING FLOAT", s.openingFloat], ["EXPECTED CASH", expected], ["COUNTED CASH", actual], ["VARIANCE", variance]];
+  y += 5 * (cardH + 7) + 7;
+  // The four most important drawer figures are given a dedicated visual emphasis.
+  rect(38, y, 519, 59, navySoft);
+  rect(38, y, 3, 59, gold);
+  textAt("DRAWER POSITION", 51, y + 8, 6.2, gold, true);
+  const reconciliationCards: [string, unknown][] = [
+    ["OPENING FLOAT", s.openingFloat], ["EXPECTED CASH", expected],
+    ["COUNTED CASH", actual], ["VARIANCE", variance]
+  ];
   for (let i = 0; i < reconciliationCards.length; i++) {
-    const x = 48 + i * 128;
-    textAt(reconciliationCards[i][0], x, y + 20, 5.8, muted, true);
-    textAt(pdfMoney(reconciliationCards[i][1]), x, y + 31, 8, i === 3 && variance < 0 ? "0.65 0.18 0.18" : navy, true);
+    const x = 51 + i * 126;
+    textAt(reconciliationCards[i][0], x, y + 22, 5.4, "0.82 0.85 0.90", true, 20);
+    textAt(pdfMoney(reconciliationCards[i][1]), x, y + 34, 8.2,
+      i === 3 && Number(variance) < 0 ? "1 0.68 0.65" : "1 1 1", true, 22);
   }
-  y += 63;
-  textAt("Variance is counted cash minus expected cash. Saved register closing figures remain the source of truth.", 38, y, 6.2, muted);
-  y += 10;
-  textAt("Expenses and supplier payments appear here only when recorded as a shift-linked cash movement.", 38, y, 6.2, muted);
-  textAt("Standalone ledger entries are excluded to prevent double-counting.", 38, y + 9, 6.2, muted);
-  y += 22;
-  textAt("TRANSACTION DETAILS", 38, y, 9, navy, true);
-  textAt(entries.length + " RECORDS", 492, y + 1, 7, muted, true);
-  y += 18;
+  y += 70;
+  textAt("Variance = actual counted cash minus expected cash. Saved register figures remain the accounting source of truth.", 38, y, 6.1, muted, false, 110);
+  textAt("Only shift-linked cash movements are included; standalone ledger entries are excluded to prevent double-counting.", 38, y + 10, 6.1, muted, false, 110);
+  y += 28;
+  sectionTitle("Transaction ledger", entries.length + " RECORDS");
   const drawTableHeader = () => {
-    rect(38, y, 519, 22, navy);
-    textAt("DATE / TIME", 45, y + 7, 6.5, "1 1 1", true);
-    textAt("TRANSACTION", 150, y + 7, 6.5, "1 1 1", true);
-    textAt("REFERENCE / DETAILS", 280, y + 7, 6.5, "1 1 1", true);
-    textAt("AMOUNT", 493, y + 7, 6.5, gold, true);
-    y += 22;
+    rect(38, y, 519, 23, navy);
+    textAt("DATE / TIME", 46, y + 8, 5.8, "1 1 1", true);
+    textAt("TRANSACTION", 151, y + 8, 5.8, "1 1 1", true);
+    textAt("REFERENCE / DETAILS", 286, y + 8, 5.8, "1 1 1", true);
+    textAt("AMOUNT (PKR)", 481, y + 8, 5.8, gold, true);
+    y += 23;
   };
   drawTableHeader();
   if (!entries.length) {
-    textAt("No transactions recorded in this shift.", 46, y + 9, 7.5, muted);
-    y += 26;
+    rect(38, y, 519, 37, pale);
+    textAt("No transactions were recorded during this register session.", 49, y + 13, 7, muted);
+    y += 37;
   }
   for (let i = 0; i < entries.length; i++) {
-    if (y > 775) {
+    if (y > 773) {
       finishPage();
-      startPage();
-      textAt("TRANSACTION DETAILS (CONTINUED)", 38, y, 9, navy, true);
-      y += 18;
+      startPage(true);
+      sectionTitle("Transaction ledger", "CONTINUED");
       drawTableHeader();
     }
     const entry = entries[i];
-    if (i % 2 === 0) rect(38, y, 519, 27, "0.97 0.98 0.99");
-    textAt(pdfDate(entry.date), 45, y + 8, 6.2, ink);
-    textAt(entry.type, 150, y + 8, 6.2, ink);
-    textAt(String(entry.reference || "—") + " / " + String(entry.detail || "—"), 280, y + 8, 6.0, ink);
-    textAt(pdfMoney(entry.amount), 493, y + 8, 6.5, entry.amount < 0 ? "0.65 0.18 0.18" : navy, true);
-    line(38, y + 27, 557, "0.88 0.90 0.93", 0.35);
-    y += 27;
+    const rowTop = y;
+    if (i % 2 === 0) rect(38, rowTop, 519, 30, pale);
+    textAt(pdfDate(entry.date), 46, rowTop + 10, 5.8, ink, false, 25);
+    textAt(entry.type, 151, rowTop + 10, 6.0, ink, true, 30);
+    textAt(String(entry.reference || "—") + "  /  " + String(entry.detail || "—"), 286, rowTop + 10, 5.7, muted, false, 34);
+    textAt(pdfMoney(entry.amount), 481, rowTop + 10, 6.1, entry.amount < 0 ? red : navy, true, 20);
+    line(38, rowTop + 30, 557, border, 0.35);
+    y += 30;
+  }
+  // A quiet end note makes the document feel complete without changing accounting data.
+  if (y < 770) {
+    y += 13;
+    line(38, y, 557, gold, 0.55);
+    textAt("PREPARED FOR INTERNAL CASH CONTROL AND SHIFT RECONCILIATION", 38, y + 8, 5.8, muted, true, 80);
+    textAt("Generated: " + pdfDate(new Date().toISOString()), 380, y + 8, 5.8, muted, false, 30);
   }
   finishPage();
   const pdfObjects: string[] = [];
