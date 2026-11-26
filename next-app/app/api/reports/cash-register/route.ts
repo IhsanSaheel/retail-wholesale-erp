@@ -57,7 +57,14 @@ export async function POST(request: NextRequest) {
   const { data: prior, error: priorError } = await db.from("etihad_records").select("record_id,data").eq("org_id", orgId).eq("collection", "mberp_email_delivery").eq("record_id", recordId).maybeSingle();
   if (priorError) return json("Could not check the email delivery record: " + priorError.message, 500);
   if (prior?.data?.status === "sent") return json("This closing report was already emailed. Duplicate delivery prevented.");
-  if (prior?.data?.status === "sending") return json("This closing report is already being emailed. Please wait before retrying.", 409);
+  // A process can stop after claiming the delivery lock (for example, during a
+  // transaction lookup). Permit a safe retry only after the lock has gone stale.
+  const priorUpdatedAt = new Date(String(prior?.data?.updatedAt || prior?.data?.failedAt || 0)).getTime();
+  const staleSending = prior?.data?.status === "sending" &&
+    Number.isFinite(priorUpdatedAt) && Date.now() - priorUpdatedAt > 10 * 60 * 1000;
+  if (prior?.data?.status === "sending" && !staleSending) {
+    return json("This closing report is already being emailed. Please wait before retrying.", 409);
+  }
 
   const logData = { kind: "cash_register_closing", sessionId, branchId, branchName: String(s.branchName || ""), status: "sending", recipient, updatedAt: new Date().toISOString() };
   if (prior) {
@@ -77,7 +84,14 @@ export async function POST(request: NextRequest) {
   const { data: transactionRecords, error: transactionError } = await db.from("etihad_records")
     .select("collection,record_id,data,branch_ids,updated_by")
     .eq("org_id", orgId).in("collection", collections).limit(5000);
-  if (transactionError) return json("Could not prepare the closing PDF transaction detail: " + transactionError.message, 500);
+  if (transactionError) {
+    const failure = "Could not prepare the closing PDF transaction detail: " + transactionError.message;
+    await db.from("etihad_records").update({
+      data: { ...logData, status: "failed", error: failure.slice(0, 500), failedAt: new Date().toISOString() },
+      updated_by: auth.user.id, updated_at: new Date().toISOString()
+    }).eq("org_id", orgId).eq("collection", "mberp_email_delivery").eq("record_id", recordId);
+    return json(failure, 500);
+  }
   const records = transactionRecords || [];
   const inSession = (r: any, dateValue: unknown, requireCashier = true) => {
     const time = new Date(String(dateValue || "")).getTime();
