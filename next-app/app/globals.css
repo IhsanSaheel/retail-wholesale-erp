@@ -1194,3 +1194,20 @@ table td,table th{border-color:#eee9df}
 .catalogue-import-guidance>b{display:block;margin-bottom:5px;color:#24364f;font-size:14px}
 .catalogue-import-guidance p{margin:5px 0}.catalogue-import-guidance ul{margin:6px 0 0;padding-left:19px}.catalogue-import-guidance li{margin:3px 0}
 @media(max-width:640px){.catalogue-import-guidance{padding:12px;font-size:12px}}
+
+
+/* Executive dashboard: calm, readable branch comparison */
+.branch-performance-panel{margin:0 0 17px;padding:20px 22px}
+.branch-performance-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 28px;margin-top:8px}
+.branch-performance-row{min-width:0;padding:13px 0;border-bottom:1px solid var(--line,#e9e4da)}
+.branch-performance-main{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.branch-performance-name{display:flex;align-items:center;gap:9px;min-width:0}
+.branch-performance-name>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:var(--ink,#25231f)}
+.branch-performance-name>small{color:var(--muted,#77736b);font-size:10px;white-space:nowrap}
+.branch-performance-main>strong{font-size:14px;font-weight:850;color:var(--ink,#25231f);font-variant-numeric:tabular-nums;white-space:nowrap}
+.branch-rank{display:grid;place-items:center;width:25px;height:25px;flex:0 0 25px;border-radius:8px;background:#f2eee5;color:#8b6828;font-size:11px;font-weight:850}
+.branch-performance-track{height:7px;margin:10px 0 9px 34px;overflow:hidden;border-radius:99px;background:#efede7}
+.branch-performance-track>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#a77c2e,#d6b66c);min-width:2px}
+.branch-performance-meta{display:flex;justify-content:space-between;gap:12px;margin-left:34px;color:var(--muted,#77736b);font-size:10px}
+.branch-performance-meta b{display:block;margin-top:3px;color:var(--ink,#25231f);font-size:11px;font-variant-numeric:tabular-nums}
+@media(max-width:760px){.branch-performance-panel{padding:16px}.branch-performance-list{grid-template-columns:1fr;gap:5px}.branch-performance-name{flex-wrap:wrap}.branch-performance-meta{font-size:10px}}
