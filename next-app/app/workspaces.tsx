@@ -767,7 +767,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
   row.push(cell.trim());if(row.some(v=>v!==""))lines.push(row);
   if(lines.length<2)throw new Error("The CSV must contain a header row and at least one product.");
   const headers=lines[0].map(h=>h.replace(/^\uFEFF/,"").toLowerCase().replace(/[ _-]+/g,""));
-  const allowed=["name","sku","barcode","category","unit","branch","cost","price","retailprice","retailerprice","salesmanprice","qty","quantity","alert","lowstockalert","upperunit","upperqty","lowerunit","lowerqty","supplier","suppliername","suppliercode","supplieritemcode","suppliercost","supplierlead","supplierleaddays","supplierleadtime","urduname","nameurdu"];
+  const allowed=["name","sku","barcode","category","unit","branch","cost","price","retailprice","retailerprice","salesmanprice","qty","quantity","alert","lowstockalert","upperunit","upperqty","lowerunit","lowerqty","unit2","unit2baseqty","unit2qty","unit3","unit3baseqty","unit3qty","unit4","unit4baseqty","unit4qty","unit5","unit5baseqty","unit5qty","supplier","suppliername","suppliercode","supplieritemcode","suppliercost","supplierlead","supplierleaddays","supplierleadtime","urduname","nameurdu"];
   const unknown=headers.filter(h=>!allowed.includes(h));if(unknown.length)throw new Error("Unsupported CSV column(s): "+unknown.join(", "));
   if(!headers.includes("name"))throw new Error("A name column is required.");
   return lines.slice(1).map((cells,i)=>{const item:Record<string,string>={};headers.forEach((h,j)=>item[h]=cells[j]||"");return {...item,__row:String(i+2)};});
