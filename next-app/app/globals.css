@@ -1038,3 +1038,71 @@ html,body,.app-shell,.main-area,.page-content{color:#29271f!important}
   .customer-ledger-workspace .hr-form .editor-actions{display:grid;grid-template-columns:1fr}
   .customer-ledger-workspace .hr-form .editor-actions button{width:100%;min-height:50px}
 }
+
+
+/* Global visual refinement: consistent premium workspace styling */
+:root{
+ --navy:#17140e;--navy2:#262118;--gold:#b88a2e;--gold2:#e8c77d;
+ --ink:#263142;--muted:#697586;--line:#e7e1d6;--paper:#f5f4f0;
+ --surface:#fff;--green:#238467;--red:#c94b48;
+}
+html{scroll-behavior:smooth}
+body{font-feature-settings:"ss01" on,"cv11" on}
+button,a,input,select,textarea{ -webkit-tap-highlight-color:transparent }
+button{transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+ outline:3px solid rgba(184,138,46,.34);outline-offset:2px
+}
+.page-content{padding-top:clamp(22px,2.3vw,34px);padding-left:clamp(16px,2.5vw,34px);padding-right:clamp(16px,2.5vw,34px)}
+.welcome-row{gap:16px}
+.welcome-row h1{letter-spacing:-.8px;line-height:1.2}
+.welcome-row p{line-height:1.6}
+.metric-card,.panel,.payroll-summary-card{
+ border-color:#e9e4da;border-radius:13px;
+ box-shadow:0 3px 12px rgba(37,32,22,.035)
+}
+.metric-card{transition:transform .16s ease,box-shadow .16s ease}
+.metric-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(37,32,22,.07)}
+.panel{padding:clamp(15px,1.5vw,21px)}
+.panel-head h3,.data-toolbar h3{letter-spacing:-.2px}
+.primary-btn{
+ background:linear-gradient(135deg,#282319 0%,#17140e 100%);
+ border:1px solid #17140e;border-radius:10px;min-height:42px;
+ box-shadow:0 4px 12px rgba(23,20,14,.12)
+}
+.primary-btn:hover{background:#383023;box-shadow:0 7px 18px rgba(23,20,14,.17);transform:translateY(-1px)}
+.outline-btn{border-color:#ddd5c7;border-radius:9px;min-height:39px;background:#fff}
+.outline-btn:hover{border-color:#b88a2e;background:#fbf8f1;color:#765a26}
+.search-input{border-color:#e3dfd6;border-radius:10px;min-height:42px}
+.table-wrap{border:1px solid #eee9df;border-radius:11px;background:#fff}
+table{border-collapse:separate;border-spacing:0}
+table thead th{background:#f8f6f1;color:#77705f;letter-spacing:.65px;font-size:9px}
+table tbody tr:hover td{background:#fcfaf5}
+table td,table th{border-color:#eee9df}
+.notice-error,.pos-success,.error-box{border-radius:10px;line-height:1.55}
+.sidebar{background:linear-gradient(180deg,#1c1912 0%,#14120d 100%)}
+.nav-item{min-height:39px;border-radius:9px}
+.nav-item.active{background:linear-gradient(90deg,rgba(184,138,46,.22),rgba(184,138,46,.07));box-shadow:inset 3px 0 #d4ad62}
+.topbar{backdrop-filter:saturate(150%) blur(12px);background:rgba(255,255,255,.94)}
+@media(max-width:900px){
+ .page-content{padding-top:20px;padding-bottom:25px}
+ .dashboard-grid{gap:12px}
+}
+@media(max-width:640px){
+ .page-content{padding:17px 13px 24px}
+ .welcome-row{align-items:flex-start;flex-direction:column;margin-bottom:17px}
+ .welcome-row h1{font-size:23px}
+ .welcome-row p{font-size:12px}
+ .metrics-grid{gap:9px}
+ .metric-card{padding:13px;min-height:112px;border-radius:11px}
+ .metric-card>strong{font-size:19px}
+ .panel{padding:14px;border-radius:11px}
+ .dashboard-grid{grid-template-columns:minmax(0,1fr)}
+ .topbar{padding:0 14px}
+ .top-actions{gap:9px}
+ .top-date{display:none}
+ .outline-btn,.primary-btn{min-height:44px}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
