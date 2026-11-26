@@ -268,12 +268,12 @@ export default function Home() {
   const monthReturns = allReturns.filter(r=>pakistanDateKey(r.createdAt||r.date).slice(0,7)===todayKey.slice(0,7));
   const returnValue = (r:any)=>amount(r.creditAmount??r.refund??r.amount);
   const returnCreditThisMonth = monthReturns.reduce((sum,r)=>sum+returnValue(r),0);
-  const returnCost = (r:any)=>{const sale=activeSales.find(s=>String(s.id)===String(r.saleId));const line=(sale?.items||[]).find((it:any)=>String(it.productId)===String(r.productId));return amount(r.unitCost??r.cost??line?.cost)*amount(r.qty);};
+  const returnCost = (r:any)=>{const sale=activeSales.find(s=>String(s.id)===String(r.saleId));const line=(sale?.items||[]).find((it:any)=>String(it.productId)===String(r.productId));const product=products.find(p=>String(p.id)===String(r.productId));return amount(r.unitCost??r.cost??line?.cost??product?.cost)*amount(r.qty);};
   const returnedCostThisMonth = monthReturns.reduce((sum,r)=>sum+returnCost(r),0);
   const saleDiscountFactor = (sale:any)=>{const itemGross=(sale.items||[]).reduce((sum:number,it:any)=>sum+amount(it.price)*amount(it.qty),0);const priorReturnCredit=allReturns.filter(r=>String(r.saleId)===String(sale.id)).reduce((sum,r)=>sum+returnValue(r),0);const originalSubtotal=amount(sale.subtotal??itemGross)+priorReturnCredit;return itemGross>0?Math.min(1,Math.max(0,originalSubtotal/itemGross)):1;};
   const saleRevenue = (sale:any)=>{const itemGross=(sale.items||[]).reduce((sum:number,it:any)=>sum+amount(it.price)*amount(it.qty),0);if(itemGross<=0)return amount(sale.subtotal??(amount(sale.total)-amount(sale.taxAmount)));return itemGross*saleDiscountFactor(sale);};
   const monthSalesRevenue = monthSales.reduce((sum,s)=>sum+saleRevenue(s)+allReturns.filter(r=>String(r.saleId)===String(s.id)).reduce((n,r)=>n+returnValue(r),0),0);
-  const monthSalesCost = monthSales.reduce((sum,s)=>sum+(s.items||[]).reduce((n:number,it:any)=>n+amount(it.cost)*amount(it.qty),0),0);
+  const monthSalesCost = monthSales.reduce((sum,s)=>sum+(s.items||[]).reduce((n:number,it:any)=>{const product=products.find(p=>String(p.id)===String(it.productId));return n+amount(it.cost??product?.cost)*amount(it.qty);},0),0);
   const monthNetSales = monthSalesRevenue-returnCreditThisMonth;
   const monthNetCost = monthSalesCost-returnedCostThisMonth;
   const monthGrossProfit = monthNetSales-monthNetCost;
