@@ -18,27 +18,50 @@ const pakistanDate = (date:Date=new Date()) => new Intl.DateTimeFormat("en-CA",{
 const addPakistanDays = (days:number) => {const [year,month,day]=pakistanDate().split("-").map(Number);const date=new Date(Date.UTC(year,month-1,day+days,12));return date.toISOString().slice(0,10);};
 const daysUntilPakistanDate = (value:any) => {const raw=String(value||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(raw))return null;const [y,m,d]=raw.split("-").map(Number);const [ty,tm,td]=pakistanDate().split("-").map(Number);const target=Date.UTC(y,m-1,d),today=Date.UTC(ty,tm-1,td);return Number.isFinite(target)&&Number.isFinite(today)?Math.round((target-today)/86400000):null;};
 const esc = (v: any) => String(v ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+function transliterateProductNameToUrdu(value:string) {
+  const known:Record<string,string>={"chana khata":"چنا کھٹا","chana chat":"چنا چاٹ","chana":"چنا","khata":"کھٹا"};
+  const normalized=value.trim().toLocaleLowerCase();
+  if(known[normalized]) return known[normalized];
+  const digraphs:Record<string,string>={kh:"کھ",gh:"غ",sh:"ش",ch:"چ",zh:"ژ",ph:"ف",th:"تھ",dh:"دھ",bh:"بھ"};
+  const letters:Record<string,string>={a:"َ",b:"ب",c:"ک",d:"د",e:"ے",f:"ف",g:"گ",h:"ہ",i:"ی",j:"ج",k:"ک",l:"ل",m:"م",n:"ن",o:"و",p:"پ",q:"ق",r:"ر",s:"س",t:"ت",u:"و",v:"و",w:"و",x:"کس",y:"ی",z:"ز"};
+  return value.split(/(\\s+)/).map(word=>{
+    if(!word.trim()) return word;
+    let out="";
+    for(let i=0;i<word.length;){
+      const pair=word.slice(i,i+2).toLowerCase();
+      if(digraphs[pair]){out+=digraphs[pair];i+=2;continue;}
+      const ch=word[i].toLowerCase();
+      out+=letters[ch]??word[i];
+      i++;
+    }
+    return out;
+  }).join("");
+}
 async function translateInvoiceItemsToUrdu(items: any[]) {
   const cacheKey="ihsan_invoice_urdu_translation_v1";
   let cache:Record<string,string>={};
   try { cache=JSON.parse(localStorage.getItem(cacheKey)||"{}"); } catch {}
   const translated=await Promise.all((items||[]).map(async (item:any)=>{
     const name=String(item.name||"").trim();
-    if(!name || /[\u0600-\u06FF]/.test(name)) return {...item,urduName:name||item.urduName||""};
+    if(!name) return {...item,urduName:String(item.urduName||item.nameUrdu||"")};
+    if(/[\\u0600-\\u06FF]/.test(name)) return {...item,urduName:name};
     const existing=String(item.urduName||item.nameUrdu||"").trim();
-    if(existing) return {...item,urduName:existing};
+    if(existing && /[\\u0600-\\u06FF]/.test(existing)) return {...item,urduName:existing};
     const key=name.toLocaleLowerCase();
-    if(cache[key]) return {...item,urduName:cache[key]};
+    if(cache[key] && /[\\u0600-\\u06FF]/.test(cache[key])) return {...item,urduName:cache[key]};
+    let value="";
     try {
       const url="https://api.mymemory.translated.net/get?"+new URLSearchParams({q:name,langpair:"en|ur"}).toString();
       const response=await fetch(url,{headers:{Accept:"application/json"}});
       if(!response.ok) throw new Error("Translation service unavailable");
       const payload=await response.json();
-      const value=String(payload?.responseData?.translatedText||"").replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&quot;/g,'"').trim();
-      if(!value || value.toLowerCase()===name.toLowerCase()) throw new Error("No Urdu translation returned");
-      cache[key]=value;
-      return {...item,urduName:value};
-    } catch { return {...item,urduName:existing||name}; }
+      const candidate=String(payload?.responseData?.translatedText||"").replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&quot;/g,'"').trim();
+      if(/[\\u0600-\\u06FF]/.test(candidate)) value=candidate;
+    } catch {}
+    if(!value) value=transliterateProductNameToUrdu(name);
+    if(!value || !/[\\u0600-\\u06FF]/.test(value)) value=name;
+    cache[key]=value;
+    return {...item,urduName:value};
   }));
   try { localStorage.setItem(cacheKey,JSON.stringify(cache)); } catch {}
   return translated;
@@ -85,7 +108,7 @@ function buildReceiptDocument(data: Record<string, any>) {
 
 
 export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, onSaved, initialTab = "new" }: POSProps) {
-  const invoiceLanguageChoice=()=>window.confirm("Print this invoice in Urdu? Press OK for Urdu or Cancel for English.")?"ur":"en";
+  const invoiceLanguageChoice=()=>String(window.prompt("Choose receipt language: type UR for Urdu or EN for English","EN")||"EN").trim().toLowerCase().startsWith("ur")?"ur":"en";
   const supabase = useMemo(() => getSupabase(), []);
   const products = rows.filter(r => r.collection === "mberp_products").map(r => r.data).filter(p => p.active !== false);
   const branches = rows.filter(r => r.collection === "mberp_branches").map(r => r.data).filter(b => b.active !== false && (!branchIds.length || branchIds.includes(String(b.id))));
