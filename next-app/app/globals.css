@@ -927,3 +927,114 @@ html,body,.app-shell,.main-area,.page-content{color:#29271f!important}
 .employee-create-footer .primary-btn{min-width:210px;min-height:43px}
 @media(max-width:800px){.employee-branch-grid,.employee-module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.employee-create-workspace{gap:19px;padding:16px}.employee-create-heading{display:grid;gap:10px}.employee-security-tag{justify-self:start}.employee-details-grid{grid-template-columns:1fr;padding:13px;gap:11px}.employee-branch-grid,.employee-module-grid{grid-template-columns:1fr}.employee-choice-grid label{min-height:48px}.employee-create-footer{align-items:stretch;flex-direction:column}.employee-create-footer .primary-btn{width:100%;min-width:0}.employee-section-title{align-items:flex-start}.employee-selection-count{font-size:8px}}
+
+
+/* Customer profile form — accessible, calm, touch-friendly layout */
+.customer-ledger-workspace .hr-form{
+  padding:clamp(20px,3vw,34px);
+  border:1px solid #e4e8ee;
+  border-radius:16px;
+  box-shadow:0 8px 28px rgba(24,39,60,.055);
+}
+.customer-ledger-workspace .hr-form .data-toolbar{
+  align-items:flex-start;
+  padding-bottom:18px;
+  border-bottom:1px solid #edf0f3;
+}
+.customer-ledger-workspace .hr-form .data-toolbar h3{
+  font-size:20px;
+  letter-spacing:-.35px;
+  color:#1d2b40;
+  margin-bottom:7px;
+}
+.customer-ledger-workspace .hr-form .data-toolbar p{
+  font-size:13px;
+  line-height:1.6;
+  color:#667386;
+  max-width:620px;
+}
+.customer-ledger-workspace .hr-form-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:22px 20px;
+  margin:24px 0;
+}
+.customer-ledger-workspace .hr-form-grid label{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:8px;
+  min-width:0;
+  font-size:13px;
+  line-height:1.4;
+  font-weight:650;
+  color:#344258;
+}
+.customer-ledger-workspace .hr-form-grid input{
+  width:100%;
+  min-height:48px;
+  padding:12px 14px;
+  border:1px solid #d8dee7;
+  border-radius:10px;
+  background:#fff;
+  color:#1d2939;
+  font:500 14px/1.4 inherit;
+  outline:none;
+  transition:border-color .15s ease,box-shadow .15s ease;
+}
+.customer-ledger-workspace .hr-form-grid input::placeholder{color:#9aa4b2;font-weight:400}
+.customer-ledger-workspace .hr-form-grid input:focus{
+  border-color:#b58b3e;
+  box-shadow:0 0 0 3px rgba(181,139,62,.16);
+}
+.customer-ledger-workspace .hr-form-grid input[type=file]{
+  min-height:48px;
+  padding:8px;
+  font-size:12px;
+}
+.customer-ledger-workspace .hr-form-grid input[type=file]::file-selector-button{
+  min-height:30px;
+  margin-right:10px;
+  padding:5px 11px;
+  border:1px solid #e2d6bd;
+  border-radius:7px;
+  background:#f8f4eb;
+  color:#75591f;
+  font-weight:650;
+}
+.customer-ledger-workspace .required-mark{
+  display:inline;
+  color:#a33b36;
+  font-size:11px;
+  font-weight:700;
+}
+.customer-ledger-workspace .field-optional{
+  display:inline;
+  color:#8792a3;
+  font-size:11px;
+  font-weight:500;
+}
+.customer-ledger-workspace .hr-form .editor-actions{
+  justify-content:flex-end;
+  gap:12px;
+  margin-top:24px;
+  padding-top:18px;
+  border-top:1px solid #edf0f3;
+}
+.customer-ledger-workspace .hr-form .primary-btn,
+.customer-ledger-workspace .hr-form .outline-btn{
+  min-height:48px;
+  padding:12px 22px;
+  border-radius:10px;
+  font-size:14px;
+  font-weight:700;
+}
+.customer-ledger-workspace .hr-form .primary-btn:disabled{opacity:.65;cursor:wait}
+@media(max-width:640px){
+  .customer-ledger-workspace .hr-form{padding:18px 15px;border-radius:13px}
+  .customer-ledger-workspace .hr-form-grid{grid-template-columns:minmax(0,1fr);gap:17px;margin:20px 0}
+  .customer-ledger-workspace .hr-form .data-toolbar h3{font-size:18px}
+  .customer-ledger-workspace .hr-form .data-toolbar p{font-size:12px}
+  .customer-ledger-workspace .hr-form-grid input{min-height:50px;font-size:16px}
+  .customer-ledger-workspace .hr-form .editor-actions{display:grid;grid-template-columns:1fr}
+  .customer-ledger-workspace .hr-form .editor-actions button{width:100%;min-height:50px}
+}
