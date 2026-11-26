@@ -786,7 +786,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
    const imported=parseProductCsv(await file.text());
    const source=(allRows||rows).filter(r=>r.collection==="mberp_products");
    const seen=new Set<string>(),updates:any[]=[],issues:string[]=[];
-   for(const item of imported){
+   for(const item of imported as any[]){
     const sku=String(item.sku||"").trim(),branchName=String(item.branch||"").trim(),urduName=String(item.urduname||item.nameurdu||"").trim();
     if(!sku){issues.push("Row "+item.__row+": SKU is required.");continue;}
     if(!urduName){issues.push("Row "+item.__row+": Urdu name is empty.");continue;}
