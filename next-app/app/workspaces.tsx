@@ -755,7 +755,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
    const match=branchMatch[0];
    const branchKeys=keys.map(k=>String(targetBranch.id)+"|"+k);
    if(branchKeys.some(k=>seen.has(k))){issues.push("Row "+item.__row+": duplicate SKU or barcode in this file for branch "+targetBranch.name+".");continue;}branchKeys.forEach(k=>seen.add(k));
-   const numeric=(key:string,alt?:string)=>{const raw=item[key]??(alt?item[alt]:"");if(raw==="")return undefined;const v=Number(raw);return Number.isFinite(v)&&v>=0?v:NaN;};
+   const numeric=(...keys:string[])=>{const raw=keys.map(key=>item[key]).find(value=>value!==undefined&&value!=="")??"";if(raw==="")return undefined;const v=Number(raw);return Number.isFinite(v)&&v>=0?v:NaN;};
    const costValue=numeric("cost"),retailValue=numeric("retailerprice")??numeric("retailprice")??numeric("price"),salesmanValue=numeric("salesmanprice"),alertValue=numeric("alert","lowstockalert"),qtyValue=numeric("qty","quantity"),supplierCostValue=numeric("suppliercost"),supplierLeadValue=numeric("supplierleaddays","supplierlead","supplierleadtime");
    if([costValue,retailValue,salesmanValue,alertValue,qtyValue,supplierCostValue,supplierLeadValue].some(v=>Number.isNaN(v))){issues.push("Row "+item.__row+": cost, retailer price, salesman price, quantity and alert must be non-negative numbers.");continue;}
    if(!match&&[costValue,retailValue,salesmanValue].some(v=>v===undefined)){issues.push("Row "+item.__row+": cost, Retailer Price and Salesman Price are required for a new product.");continue;}
