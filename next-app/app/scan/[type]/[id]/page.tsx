@@ -52,7 +52,7 @@ export default function ScannedProfilePage() {
     <main style={{minHeight:"100vh",background:"#f3f5f8",padding:"28px 16px",fontFamily:"Arial,sans-serif",color:"#17243a"}}>
       <section style={{maxWidth:520,margin:"0 auto",background:"#fff",border:"1px solid #e4e8ee",borderRadius:18,overflow:"hidden",boxShadow:"0 12px 34px rgba(23,36,58,.08)"}}>
         <header style={{background:"linear-gradient(120deg,#101e35,#263d5c)",padding:"22px 24px",borderBottom:"4px solid #c9a45f",color:"#fff"}}>
-          <div style={{fontSize:11,letterSpacing:2,color:"#e2c58e",fontWeight:700}}>ETIHAD PRIME SUPPLIES</div>
+          <div style={{fontSize:11,letterSpacing:2,color:"#e2c58e",fontWeight:700}}>IHSAN SWEETS & SUPPLIES</div>
           <h1 style={{fontSize:23,margin:"9px 0 4px"}}>{title}</h1>
           <div style={{fontSize:12,color:"#d8e0eb"}}>Card identity details</div>
         </header>
