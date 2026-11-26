@@ -385,7 +385,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const transport = nodemailer.createTransport({ host: process.env.ETIHAD_SMTP_HOST, port: Number(process.env.ETIHAD_SMTP_PORT || 465), secure: process.env.ETIHAD_SMTP_SECURE !== "false", auth: { user: sender, pass: password } });
-    const sent = await transport.sendMail({ from: { name: "Ihsan Sweets & Supplies ERP", address: sender }, to: recipient!, subject: "Cash Register Closing Report — " + String(s.branchName || "Branch") + " — " + sessionId, html, attachments: [{ filename: "Ihsan-Sweets-Supplies-Cash-Closing-" + sessionId + ".pdf", content: attachment.toString("base64"), encoding: "base64", contentType: "application/pdf" }] });
+    const sent = await transport.sendMail({ from: { name: "Ihsan Sweets & Supplies ERP", address: sender! }, to: recipient!, subject: "Cash Register Closing Report — " + String(s.branchName || "Branch") + " — " + sessionId, html, attachments: [{ filename: "Ihsan-Sweets-Supplies-Cash-Closing-" + sessionId + ".pdf", content: attachment.toString("base64"), encoding: "base64", contentType: "application/pdf" }] });
     const sentData = { ...logData, status: "sent", sentAt: new Date().toISOString(), messageId: sent.messageId };
     const { error: updateError } = await db.from("etihad_records").update({ data: sentData, updated_by: auth.user.id, updated_at: new Date().toISOString() }).eq("org_id", orgId).eq("collection", "mberp_email_delivery").eq("record_id", recordId);
     if (updateError) return json("Email was sent, but the delivery log could not be updated. Do not resend until checked.", 200);
