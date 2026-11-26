@@ -1106,3 +1106,76 @@ table td,table th{border-color:#eee9df}
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
+
+
+/* POS v2: faster scanning, clearer product cards and calmer checkout hierarchy */
+.pos-workspace{gap:18px!important}
+.pos-heading{align-items:center!important;padding:2px 1px 4px}
+.pos-heading h2{font-size:27px!important;letter-spacing:-.9px!important}
+.pos-heading p{font-size:12px!important;line-height:1.55!important}
+.invoice-language-control{display:inline-flex;align-items:center;gap:8px;margin-top:12px;color:#716d63;font-size:11px;font-weight:650}
+.invoice-language-control select{border:1px solid #e3ddcf;border-radius:8px;padding:8px 10px;background:#fff;color:#39362d;font-size:11px}
+.pos-tabs{max-width:100%;overflow-x:auto;scrollbar-width:thin}
+.pos-tabs button{min-height:38px;padding:9px 14px!important;white-space:nowrap;font-size:11px!important}
+.pos-catalog,.pos-bill{padding:clamp(15px,2vw,22px)!important}
+.pos-catalog-head h3,.bill-title h3{font-size:15px!important;letter-spacing:-.2px}
+.pos-catalog-head p,.bill-title p{font-size:11px!important;line-height:1.5}
+.pos-search{min-height:49px!important;padding:13px 15px!important;font-size:13px!important;border-radius:10px!important;margin:16px 0 13px!important;background:#fff!important}
+.pos-category-bar{gap:8px!important}
+.pos-category-bar>button{min-height:34px;padding:8px 13px!important;font-size:10px!important}
+.pos-category-bar .stock-toggle{font-size:10px!important}
+.pos-products{grid-template-columns:repeat(auto-fill,minmax(155px,1fr))!important;gap:10px!important;max-height:560px!important;padding:2px!important}
+.pos-product{min-height:130px!important;padding:13px!important;border-radius:11px!important;gap:7px!important}
+.pos-product .product-initial{width:32px!important;height:32px!important;border-radius:9px!important;font-size:13px!important}
+.pos-product b{font-size:12px!important;line-height:1.35;white-space:normal!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:31px}
+.pos-product small{font-size:10px!important}
+.pos-product strong{font-size:12px!important;margin-top:auto!important}
+.pos-product em{font-size:10px!important}
+.pos-bill{border-top:3px solid #c5a15a!important}
+.bill-title{padding-bottom:12px;border-bottom:1px solid #eee9df}
+.bill-title p{margin-top:5px!important}
+.bill-items{max-height:420px!important}
+.bill-item{gap:12px!important;padding:13px 2px!important}
+.bill-product b{font-size:12px!important;line-height:1.4}
+.bill-product small{font-size:10px!important}
+.bill-product label,.customer-box label,.payment-box label{font-size:11px!important;line-height:1.45}
+.bill-product select,.bill-product input,.customer-box>input,.customer-fields input,.payment-box>input,.payment-row select,.payment-box textarea{
+ min-height:42px!important;border-radius:9px!important;padding:10px 11px!important;font-size:12px!important
+}
+.customer-box{padding:15px!important;border-radius:11px!important;margin:14px 0 10px!important}
+.customer-fields{gap:9px!important}
+.customer-results{border-radius:10px!important;box-shadow:0 12px 28px #201a1020!important}
+.customer-results button{padding:12px!important;font-size:11px!important}
+.qty-control .qty-entry{height:42px!important;font-size:13px!important}
+.line-total{font-size:12px!important;min-width:74px}
+.remove-item{width:34px;height:34px;border-radius:8px;background:#fff4f2!important;font-size:20px!important}
+.bill-summary{padding:15px 0 9px!important}
+.bill-summary>div{font-size:12px!important;padding:6px 0!important}
+.bill-summary .bill-grand{font-size:14px!important}
+.bill-grand strong{font-size:23px!important}
+.payment-box{padding-top:16px!important}
+.payment-box>input{font-size:18px!important;min-height:49px!important}
+.tender-shortcuts button{min-height:36px!important;padding:8px 12px!important;font-size:11px!important}
+.payment-summary{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;font-size:10px!important}
+.payment-summary>span{padding:9px 10px;background:#f8f7f3;border:1px solid #eee9df;border-radius:8px}
+.payment-summary b{font-size:12px!important}
+.checkout-btn{min-height:51px!important;border-radius:10px!important;font-size:13px!important;padding:14px 16px!important}
+.offline-queue-banner{border-radius:11px!important}
+@media(max-width:760px){
+ .pos-heading h2{font-size:24px!important}
+ .pos-tabs{display:flex!important;flex-wrap:nowrap!important}
+ .pos-tabs button{flex:0 0 auto!important}
+ .pos-products{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-height:460px!important}
+ .pos-product{min-height:126px!important;padding:12px!important}
+ .pos-bill{margin-top:2px}
+ .bill-items{max-height:none!important}
+ .customer-fields{grid-template-columns:1fr!important}
+ .payment-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .checkout-btn{position:sticky;bottom:8px;z-index:3;box-shadow:0 7px 22px #17140e24!important}
+}
+@media(max-width:360px){
+ .pos-products{grid-template-columns:1fr 1fr!important;gap:7px!important}
+ .pos-product{padding:10px!important}
+ .pos-product b{font-size:11px!important}
+ .payment-summary{grid-template-columns:1fr!important}
+}
