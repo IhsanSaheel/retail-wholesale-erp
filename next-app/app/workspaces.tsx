@@ -19,11 +19,16 @@ const addPakistanDays = (days:number) => {const [year,month,day]=pakistanDate().
 const daysUntilPakistanDate = (value:any) => {const raw=String(value||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(raw))return null;const [y,m,d]=raw.split("-").map(Number);const [ty,tm,td]=pakistanDate().split("-").map(Number);const target=Date.UTC(y,m-1,d),today=Date.UTC(ty,tm-1,td);return Number.isFinite(target)&&Number.isFinite(today)?Math.round((target-today)/86400000):null;};
 const esc = (v: any) => String(v ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
 function transliterateProductNameToUrdu(value:string) {
-  const known:Record<string,string>={"chana khata":"چنا کھٹا","chana chat":"چنا چاٹ","chana":"چنا","khata":"کھٹا"};
-  const normalized=value.trim().toLocaleLowerCase();
+  const known:Record<string,string>={
+    "fish":"فش","chana khata":"چنا خٹا","chana chat":"چنا چاٹ","chana":"چنا",
+    "khata":"خٹا","fish nimko":"فش نمکو","nimko":"نمکو","jelly":"جیلی",
+    "chewing gum":"چیونگم","papad":"پاپڑ","pulses":"پلسز"
+  };
+  const normalized=value.trim().toLocaleLowerCase().replace(/\s+/g," ");
   if(known[normalized]) return known[normalized];
-  const digraphs:Record<string,string>={kh:"کھ",gh:"غ",sh:"ش",ch:"چ",zh:"ژ",ph:"ف",th:"تھ",dh:"دھ",bh:"بھ"};
-  const letters:Record<string,string>={a:"َ",b:"ب",c:"ک",d:"د",e:"ے",f:"ف",g:"گ",h:"ہ",i:"ی",j:"ج",k:"ک",l:"ل",m:"م",n:"ن",o:"و",p:"پ",q:"ق",r:"ر",s:"س",t:"ت",u:"و",v:"و",w:"و",x:"کس",y:"ی",z:"ز"};
+  // Phonetic transliteration only: keep the English word's sound, never translate its meaning.
+  const digraphs:Record<string,string>={kh:"خ",gh:"غ",sh:"ش",ch:"چ",zh:"ژ",ph:"ف",th:"تھ",dh:"دھ",bh:"بھ",tt:"ٹ",dd:"ڈ",rr:"ڑ"};
+  const letters:Record<string,string>={a:"",b:"ب",c:"ک",d:"د",e:"",f:"ف",g:"گ",h:"ہ",i:"",j:"ج",k:"ک",l:"ل",m:"م",n:"ن",o:"و",p:"پ",q:"ق",r:"ر",s:"س",t:"ت",u:"و",v:"و",w:"و",x:"کس",y:"ی",z:"ز"};
   return value.split(/(\s+)/).map(word=>{
     if(!word.trim()) return word;
     let out="";
@@ -38,36 +43,18 @@ function transliterateProductNameToUrdu(value:string) {
   }).join("");
 }
 async function translateInvoiceItemsToUrdu(items: any[]) {
-  const cacheKey="ihsan_invoice_urdu_translation_v2";
+  const cacheKey="ihsan_invoice_urdu_translation_v3";
   let cache:Record<string,string>={};
   try { cache=JSON.parse(localStorage.getItem(cacheKey)||"{}"); } catch {}
-  const translated=await Promise.all((items||[]).map(async (item:any)=>{
+  const translated=(items||[]).map((item:any)=>{
     const name=String(item.name||item.productName||item.title||item.product?.name||"").trim();
-    if(!name) return {...item,urduName:String(item.urduName||item.nameUrdu||"")};
+    if(!name) return {...item,urduName:""};
     if(/[\u0600-\u06FF]/.test(name)) return {...item,urduName:name};
-    const existing=String(item.urduName||item.nameUrdu||"").trim();
-    if(existing && /[\u0600-\u06FF]/.test(existing)) return {...item,urduName:existing};
-    const key=name.toLocaleLowerCase();
-    if(cache[key] && /[\u0600-\u06FF]/.test(cache[key])) return {...item,urduName:cache[key]};
-    let value="";
-    const normalizedName=name.toLocaleLowerCase().replace(/\s+/g," ").trim();
-    const knownUrdu:Record<string,string>={"chana khata":"چنا کھٹا","chana chat":"چنا چاٹ","fish nimko":"فش نمکو","nimko":"نمکو","jelly":"جیلی","chewing gum":"چیونگم","papad":"پاپڑ","pulses":"دالیں"};
-    if(knownUrdu[normalizedName]) value=knownUrdu[normalizedName];
-    if(!value) {
-      try {
-        const url="https://api.mymemory.translated.net/get?"+new URLSearchParams({q:name,langpair:"en|ur"}).toString();
-        const response=await fetch(url,{headers:{Accept:"application/json"}});
-        if(!response.ok) throw new Error("Translation service unavailable");
-        const payload=await response.json();
-        const candidate=String(payload?.responseData?.translatedText||"").replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&quot;/g,'"').trim();
-        if(/[\u0600-\u06FF]/.test(candidate)) value=candidate;
-      } catch {}
-    }
-    if(!value) value=transliterateProductNameToUrdu(name);
-    if(!value || !/[\u0600-\u06FF]/.test(value)) value=name;
+    const key=name.toLocaleLowerCase().replace(/\s+/g," ").trim();
+    const value=transliterateProductNameToUrdu(name);
     cache[key]=value;
-    return {...item,urduName:value};
-  }));
+    return {...item,urduName:value||name};
+  });
   try { localStorage.setItem(cacheKey,JSON.stringify(cache)); } catch {}
   return translated;
 }
