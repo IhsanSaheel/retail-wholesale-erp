@@ -30,10 +30,10 @@ export function CustomerWorkspace({orgId,userId,role,rows,onSaved}:Props){
   setBusy(true);
   try{
    const phone=String(c?.phone||"").trim();
-   const normalizedPhone=phone.replace(/\\D/g,"");
+   const normalizedPhone=phone.replace(/\D/g,"");
    const normalizedName=String(c?.name||"").trim().toLowerCase();
    const existingProfile=customerRecords.find((profile:any)=>{
-    const profilePhone=String(profile.phone||"").trim().replace(/\\D/g,"");
+    const profilePhone=String(profile.phone||"").trim().replace(/\D/g,"");
     return (normalizedPhone&&profilePhone===normalizedPhone)||(!normalizedPhone&&String(profile.name||"").trim().toLowerCase()===normalizedName);
    });
    const customerId=String(c?.id||existingProfile?.id||id());
@@ -61,12 +61,12 @@ export function CustomerWorkspace({orgId,userId,role,rows,onSaved}:Props){
   const name=customerName.trim(),phone=customerPhone.trim(),email=customerEmail.trim();
   if(name.length<2||name.length>120){setMessage("Enter a customer name between 2 and 120 characters.");return;}
   if(!phone){setMessage("Customer phone number is required.");return;}
-  const digits=phone.replace(/\\D/g,"");
+  const digits=phone.replace(/\D/g,"");
   if(digits.length<7||digits.length>15){setMessage("Enter a valid phone number with 7 to 15 digits.");return;}
-  if(email&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)){setMessage("Enter a valid email address or leave it blank.");return;}
+  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setMessage("Enter a valid email address or leave it blank.");return;}
   let normalizedPhone=digits.startsWith("00")?digits.slice(2):digits;
   if(normalizedPhone.startsWith("0")&&normalizedPhone.length>=10&&normalizedPhone.length<=11)normalizedPhone="92"+normalizedPhone.slice(1);
-  const normalizeExisting=(value:any)=>{let d=String(value||"").replace(/\\D/g,"");if(d.startsWith("00"))d=d.slice(2);if(d.startsWith("0")&&d.length>=10&&d.length<=11)d="92"+d.slice(1);return d;};
+  const normalizeExisting=(value:any)=>{let d=String(value||"").replace(/\D/g,"");if(d.startsWith("00"))d=d.slice(2);if(d.startsWith("0")&&d.length>=10&&d.length<=11)d="92"+d.slice(1);return d;};
   const duplicate=customers.find(c=>normalizeExisting(c.phone)===normalizedPhone&&String(c.id||"")!==String(editingCustomer?.id||""));
   if(duplicate){setMessage("This phone number is already linked to another customer. Check the customer list before saving.");return;}
   if(!pendingCustomerId.current)pendingCustomerId.current=String(editingCustomer?.id||id());
