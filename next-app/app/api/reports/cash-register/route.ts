@@ -152,6 +152,15 @@ export async function POST(request: NextRequest) {
     ["Cash in", cashIn], ["Cash out", cashOut], ["Expected cash", expected],
     ["Actual counted cash", actual], ["Variance", variance]
   ];
+  let logoJpeg: Buffer | null = null;
+  try {
+    const logoResponse = await fetch(new URL("/brand-logo.svg", request.url));
+    if (logoResponse.ok) {
+      const logoSvg = await logoResponse.text();
+      const logoMatch = logoSvg.match(/href=["']data:image\/jpeg;base64,([^"']+)["']/);
+      if (logoMatch?.[1]) logoJpeg = Buffer.from(logoMatch[1], "base64");
+    }
+  } catch { /* Keep the report readable if the logo is temporarily unavailable. */ }
   const pdfText = (v: unknown) => String(v ?? "—").normalize("NFKD").replace(/[^\x20-\x7E]/g, " ").replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
   const pdfMoney = (v: unknown) => "Rs " + Number(v || 0).toLocaleString("en-PK", { maximumFractionDigits: 0 });
   const pdfDate = (v: unknown) => {
@@ -181,8 +190,9 @@ export async function POST(request: NextRequest) {
     commands.push("q", "1 1 1 rg", "0 0 595 842 re f", "Q");
     rect(0, 0, 595, 104, navy);
     rect(0, 101, 595, 3, gold);
-    textAt("IHSAN SWEETS & SUPPLIES", 38, 25, 19, "1 1 1", true);
-    textAt("RETAIL & WHOLESALE MANAGEMENT", 39, 51, 7, "0.88 0.91 0.95", false);
+    if (logoJpeg) commands.push("q", "72 0 0 48 38 772 cm", "/Logo Do", "Q");
+    textAt("IHSAN SWEETS & SUPPLIES", logoJpeg ? 124 : 38, 31, 17, "1 1 1", true);
+    textAt("RETAIL & WHOLESALE MANAGEMENT", logoJpeg ? 125 : 39, 55, 7, "0.88 0.91 0.95", false);
     textAt("CASH REGISTER", 405, 28, 9, gold, true);
     textAt("CLOSING REPORT", 405, 43, 9, "1 1 1", true);
     textAt("BRANDED SHIFT STATEMENT", 405, 62, 6.5, "0.88 0.91 0.95", false);
@@ -221,6 +231,17 @@ export async function POST(request: NextRequest) {
     if (col === 1 || i === summaryPairs.length - 1) y += 33;
   }
   y += 5;
+  rect(38, y, 519, 54, "0.94 0.96 0.98");
+  textAt("DRAWER RECONCILIATION", 48, y + 6, 7, navy, true);
+  const reconciliationCards: [string, unknown][] = [["OPENING FLOAT", s.openingFloat], ["EXPECTED CASH", expected], ["COUNTED CASH", actual], ["VARIANCE", variance]];
+  for (let i = 0; i < reconciliationCards.length; i++) {
+    const x = 48 + i * 128;
+    textAt(reconciliationCards[i][0], x, y + 20, 5.8, muted, true);
+    textAt(pdfMoney(reconciliationCards[i][1]), x, y + 31, 8, i === 3 && variance < 0 ? "0.65 0.18 0.18" : navy, true);
+  }
+  y += 63;
+  textAt("Variance is counted cash minus expected cash. Saved register closing figures remain the source of truth.", 38, y, 6.2, muted);
+  y += 10;
   textAt("Expenses and supplier payments appear here only when recorded as a shift-linked cash movement.", 38, y, 6.2, muted);
   textAt("Standalone ledger entries are excluded to prevent double-counting.", 38, y + 9, 6.2, muted);
   y += 22;
@@ -264,28 +285,31 @@ export async function POST(request: NextRequest) {
   const pagesId = addObj("");
   const regularFontId = addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
   const boldFontId = addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+  const logoImageId = logoJpeg ? addObj("<< /Type /XObject /Subtype /Image /Width 240 /Height 160 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + logoJpeg.length + " >>\nstream\n" + logoJpeg.toString("binary") + "\nendstream") : 0;
   const pageIds: number[] = [];
   for (const pageCommands of pages) {
     const stream = pageCommands;
     const contentId = addObj("<< /Length " + Buffer.byteLength(stream, "ascii") + " >>\nstream\n" + stream + "\nendstream");
-    const pageId = addObj("<< /Type /Page /Parent " + pagesId + " 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 " + regularFontId + " 0 R /F2 " + boldFontId + " 0 R >> >> /Contents " + contentId + " 0 R >>");
+    const xObjects = logoImageId ? " /XObject << /Logo " + logoImageId + " 0 R >>" : "";
+    const pageId = addObj("<< /Type /Page /Parent " + pagesId + " 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 " + regularFontId + " 0 R /F2 " + boldFontId + " 0 R >>" + xObjects + " >> /Contents " + contentId + " 0 R >>");
     pageIds.push(pageId);
   }
   pdfObjects[catalogId - 1] = "<< /Type /Catalog /Pages " + pagesId + " 0 R >>";
   pdfObjects[pagesId - 1] = "<< /Type /Pages /Kids [" + pageIds.map(id => id + " 0 R").join(" ") + "] /Count " + pageIds.length + " >>";
   let pdf = "%PDF-1.4\n";
   const offsets = [0];
-  for (let i = 0; i < pdfObjects.length; i++) { offsets.push(Buffer.byteLength(pdf, "ascii")); pdf += (i + 1) + " 0 obj\n" + pdfObjects[i] + "\nendobj\n"; }
-  const xref = Buffer.byteLength(pdf, "ascii");
+  for (let i = 0; i < pdfObjects.length; i++) { offsets.push(Buffer.byteLength(pdf, "binary")); pdf += (i + 1) + " 0 obj\n" + pdfObjects[i] + "\nendobj\n"; }
+  const xref = Buffer.byteLength(pdf, "binary");
   pdf += "xref\n0 " + (pdfObjects.length + 1) + "\n0000000000 65535 f \n";
   for (let i = 1; i < offsets.length; i++) pdf += String(offsets[i]).padStart(10, "0") + " 00000 n \n";
   pdf += "trailer\n<< /Size " + (pdfObjects.length + 1) + " /Root " + catalogId + " 0 R >>\nstartxref\n" + xref + "\n%%EOF";
-  const attachment = Buffer.from(pdf, "ascii");
-  const html = "<!doctype html><html><body style=\"font-family:Arial,sans-serif;color:#172033\"><div style=\"max-width:640px;margin:auto;border:1px solid #d8dee8\"><div style=\"background:#172b4d;color:#fff;padding:22px 26px\"><div style=\"color:#d8bd7a;font-size:12px;letter-spacing:2px;font-weight:bold\">IHSAN SWEETS & SUPPLIES</div><h2 style=\"margin:8px 0 0\">Cash Register Closing Report</h2></div><div style=\"padding:24px 26px\"><p>The register has been closed and reconciled successfully.</p><p><b>Branch:</b> " + esc(s.branchName) + "<br><b>Cashier:</b> " + esc(s.cashierName || s.cashierId) + "<br><b>Session:</b> " + esc(sessionId) + "</p><table style=\"border-collapse:collapse;width:100%\">" + summaryRows.map(([label,value]) => "<tr><td style=\"padding:8px;border-bottom:1px solid #e5e9ef\">" + esc(label) + "</td><td style=\"padding:8px;border-bottom:1px solid #e5e9ef;text-align:right\"><b>" + esc(pdfMoney(value)) + "</b></td></tr>").join("") + "</table><p style=\"margin-top:22px\">The complete branded, multi-page closing report is attached as a PDF, including all " + entries.length + " transaction records.</p><p style=\"font-size:12px;color:#667085\">Automatically generated by Ihsan Sweets & Supplies ERP. This email and attachment do not alter accounting records.</p></div></div></body></html>";
+  const attachment = Buffer.from(pdf, "binary");
+  const logoUrl = new URL("/brand-logo.svg", request.url).toString();
+  const html = "<!doctype html><html><body style=\"font-family:Arial,sans-serif;color:#172033\"><div style=\"max-width:640px;margin:auto;border:1px solid #d8dee8\"><div style=\"background:#172b4d;color:#fff;padding:22px 26px\"><img src=\"${esc(logoUrl)}\" alt=\"Ihsan Sweets & Supplies\" style=\"display:block;width:86px;height:54px;object-fit:contain;background:transparent;margin-bottom:8px\"><div style=\"color:#d8bd7a;font-size:12px;letter-spacing:2px;font-weight:bold\">IHSAN SWEETS & SUPPLIES</div><h2 style=\"margin:8px 0 0\">Cash Register Closing Report</h2></div><div style=\"padding:24px 26px\"><p>The register has been closed and reconciled successfully.</p><p><b>Branch:</b> " + esc(s.branchName) + "<br><b>Cashier:</b> " + esc(s.cashierName || s.cashierId) + "<br><b>Session:</b> " + esc(sessionId) + "</p><table style=\"border-collapse:collapse;width:100%\">" + summaryRows.map(([label,value]) => "<tr><td style=\"padding:8px;border-bottom:1px solid #e5e9ef\">" + esc(label) + "</td><td style=\"padding:8px;border-bottom:1px solid #e5e9ef;text-align:right\"><b>" + esc(pdfMoney(value)) + "</b></td></tr>").join("") + "</table><p style=\"margin-top:22px\">The complete branded, multi-page closing report is attached as a PDF, including all " + entries.length + " transaction records.</p><p style=\"font-size:12px;color:#667085\">Automatically generated by Ihsan Sweets & Supplies ERP. This email and attachment do not alter accounting records.</p></div></div></body></html>";
 
   try {
     const transport = nodemailer.createTransport({ host: process.env.ETIHAD_SMTP_HOST, port: Number(process.env.ETIHAD_SMTP_PORT || 465), secure: process.env.ETIHAD_SMTP_SECURE !== "false", auth: { user: sender, pass: password } });
-    const sent = await transport.sendMail({ from: { name: "Ihsan Sweets & Supplies ERP", address: sender }, to: recipient, subject: "Cash Register Closing Report — " + String(s.branchName || "Branch") + " — " + sessionId, html, attachments: [{ filename: "Etihad-Traders-Cash-Closing-" + sessionId + ".pdf", content: attachment.toString("base64"), encoding: "base64", contentType: "application/pdf" }] });
+    const sent = await transport.sendMail({ from: { name: "Ihsan Sweets & Supplies ERP", address: sender }, to: recipient, subject: "Cash Register Closing Report — " + String(s.branchName || "Branch") + " — " + sessionId, html, attachments: [{ filename: "Ihsan-Sweets-Supplies-Cash-Closing-" + sessionId + ".pdf", content: attachment.toString("base64"), encoding: "base64", contentType: "application/pdf" }] });
     const sentData = { ...logData, status: "sent", sentAt: new Date().toISOString(), messageId: sent.messageId };
     const { error: updateError } = await db.from("etihad_records").update({ data: sentData, updated_by: auth.user.id, updated_at: new Date().toISOString() }).eq("org_id", orgId).eq("collection", "mberp_email_delivery").eq("record_id", recordId);
     if (updateError) return json("Email was sent, but the delivery log could not be updated. Do not resend until checked.", 200);
