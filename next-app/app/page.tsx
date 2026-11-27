@@ -128,25 +128,40 @@ export default function Home() {
     const orgPromise = supabase.from("etihad_organizations").select("name").eq("id",membership.org_id).maybeSingle();
 
     // Supabase's default row cap can silently truncate a large business.
-    // Fetch stable, ordered pages so POS history, customer credits and stock
-    // calculations use the complete authorised record set.
+    // Fetch stable, ordered pages in small parallel groups to reduce startup
+    // time without sacrificing complete POS history or stock calculations.
     const allRecords: RecordRow[] = [];
-    let offset = 0;
     let recordsError: Error | null = null;
     const pageSize = 1000;
-    while (true) {
-      const {data: page, error: pageError} = await supabase
+    const fetchRecordPage = async (from:number) => {
+      const {data,error} = await supabase
         .from("etihad_records")
         .select("collection,record_id,branch_ids,data,updated_at,updated_by")
         .eq("org_id",membership.org_id)
         .order("updated_at",{ascending:false})
         .order("record_id",{ascending:true})
-        .range(offset,offset+pageSize-1);
-      if (pageError) { recordsError = pageError; break; }
-      const batch = (page || []) as RecordRow[];
-      allRecords.push(...batch);
-      if (batch.length < pageSize) break;
-      offset += pageSize;
+        .range(from,from+pageSize-1);
+      return {data,error};
+    };
+    const firstPage = await fetchRecordPage(0);
+    if(firstPage.error) recordsError = firstPage.error;
+    else {
+      const firstBatch = (firstPage.data||[]) as RecordRow[];
+      allRecords.push(...firstBatch);
+      let offset = pageSize;
+      let finished = firstBatch.length < pageSize;
+      while(!finished && !recordsError) {
+        const offsets = Array.from({length:4},(_,index)=>offset+index*pageSize);
+        const pages = await Promise.all(offsets.map(fetchRecordPage));
+        for(let index=0;index<pages.length;index++) {
+          const result=pages[index];
+          if(result.error) { recordsError=result.error; break; }
+          const batch=(result.data||[]) as RecordRow[];
+          allRecords.push(...batch);
+          if(batch.length<pageSize) { finished=true; break; }
+        }
+        offset += offsets.length*pageSize;
+      }
     }
     const {data:org} = await orgPromise;
     if(org?.name) setOrgName(org.name);
@@ -155,20 +170,15 @@ export default function Home() {
       setError("Your account is signed in, but business records could not be loaded. Reconnect and refresh; existing screen data has been kept.");
     } else {
       setRows(allRecords); setOfflineMode(false);
-    }
-    // Do not report the first online load as complete until the encrypted
-    // offline POS snapshot is safely committed to IndexedDB. This prevents a
-    // quick app close from leaving the next offline launch without its data.
-    if(!recordsError) {
+      // Show the live workspace immediately. Secure offline caching continues
+      // in the background so encryption/storage time does not block startup.
+      setLoading(false);
       const snapshotRows = allRecords.filter(row=>OFFLINE_POS_COLLECTIONS.has(row.collection)) as OfflineBusinessRow[];
-      try {
-        await saveOfflineBusinessSnapshot({userId,orgId:membership.org_id,orgName:org?.name||"Ihsan Sweets & Supplies",branchIds:Array.isArray(membership.branch_ids)?membership.branch_ids:[],role:String(membership.role||"staff").trim().toLowerCase(),permissions:(membership.permissions&&typeof membership.permissions==="object")?membership.permissions:{},cachedAt:Date.now(),rows:snapshotRows});
-        try { if(navigator.storage?.persist) void navigator.storage.persist().catch(()=>false); } catch {}
-      } catch (cacheError:any) {
-        setError("Your business records loaded, but the secure offline copy could not be saved on this device. Keep the app open and reconnect before using offline mode. "+String(cacheError?.message||cacheError||""));
-      }
+      void saveOfflineBusinessSnapshot({userId,orgId:membership.org_id,orgName:org?.name||"Ihsan Sweets & Supplies",branchIds:Array.isArray(membership.branch_ids)?membership.branch_ids:[],role:String(membership.role||"staff").trim().toLowerCase(),permissions:(membership.permissions&&typeof membership.permissions==="object")?membership.permissions:{},cachedAt:Date.now(),rows:snapshotRows})
+        .then(()=>{try { if(navigator.storage?.persist) void navigator.storage.persist().catch(()=>false); } catch {}})
+        .catch((cacheError:any)=>setError("Your business records loaded, but the secure offline copy could not be saved on this device. Keep the app open and reconnect before using offline mode. "+String(cacheError?.message||cacheError||"")));
     }
-    setLoading(false);
+    if(recordsError) setLoading(false);
   },[supabase]);
 
   useEffect(() => {
