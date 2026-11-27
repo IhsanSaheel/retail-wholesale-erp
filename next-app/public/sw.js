@@ -1,4 +1,4 @@
-const CACHE = "etihad-prime-shell-v21";
+const CACHE = "etihad-prime-shell-v22";
 const OFFLINE = "/offline";
 const SHELL = ["/", OFFLINE, "/icon.svg", "/brand-logo.svg", "/receipt-logo.svg", "/manifest.webmanifest"];
 
@@ -65,17 +65,23 @@ self.addEventListener("fetch", event => {
   if (request.mode === "navigate") {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
+      const isCleanAppShell = url.pathname === "/" && !url.search;
       try {
         const response = await fetch(request);
-        await store(cache, request, response);
-        if (url.pathname === "/") await store(cache, "/", response);
+        // Cache only the single public app shell, never arbitrary navigation
+        // responses, query-string callbacks, or account-specific URLs.
+        if (isCleanAppShell) await store(cache, "/", response);
         return response;
       } catch {
-        const exact = await caches.match(cacheKey(request), { ignoreSearch: true });
-        const home = await caches.match(cacheKey("/"));
-        const offline = await caches.match(cacheKey(OFFLINE));
-        return exact || home || offline || new Response(
-          "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Etihad Prime Supplies</title></head><body style=\"font-family:Arial;padding:28px;background:#f5f3ee;color:#24221d\"><h2>Etihad Prime Supplies</h2><p>This device has not cached the app shell yet. Connect to the internet, open the dashboard once, then try offline again.</p></body></html>",
+        // The encrypted local snapshot is restored by the client at "/".
+        // Other paths must not fall back to a cached page from another route.
+        if (isCleanAppShell) {
+          const home = await cache.match(cacheKey("/"));
+          if (home) return home;
+        }
+        const offline = await cache.match(cacheKey(OFFLINE));
+        return offline || new Response(
+          "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Etihad Prime Supplies</title></head><body style=\"font-family:Arial;padding:28px;background:#f5f3ee;color:#24221d\"><h2>Etihad Prime Supplies</h2><p>This page is unavailable offline. Reconnect to continue.</p></body></html>",
           { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } }
         );
       }
