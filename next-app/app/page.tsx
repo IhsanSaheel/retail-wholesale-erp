@@ -1,13 +1,27 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { getOfflineBusinessSnapshot, saveOfflineBusinessSnapshot, OFFLINE_SNAPSHOT_MAX_AGE_MS, type OfflineBusinessRow } from "@/lib/offline-business";
 import { listPendingRecordMutations, removePendingRecordMutation } from "@/lib/offline-records";
-import { POSWorkspace, ProductManager } from "./workspaces";
-import { PeopleWorkspace, ReportsWorkspace, SettingsWorkspace } from "./management";
-import { CustomerWorkspace, SupplierWorkspace, PurchaseWorkspace, ReturnsWorkspace, PaymentWorkspace, TransferWorkspace, ExpenseWorkspace, BranchWorkspace, CashRegisterWorkspace, RecycleBinWorkspace } from "./commerce";
+const workspaceLoading = () => <div className="loading-panel">Opening workspace…</div>;
+const POSWorkspace = dynamic(() => import("./workspaces").then(m => m.POSWorkspace), { loading: workspaceLoading });
+const ProductManager = dynamic(() => import("./workspaces").then(m => m.ProductManager), { loading: workspaceLoading });
+const PeopleWorkspace = dynamic(() => import("./management").then(m => m.PeopleWorkspace), { loading: workspaceLoading });
+const ReportsWorkspace = dynamic(() => import("./management").then(m => m.ReportsWorkspace), { loading: workspaceLoading });
+const SettingsWorkspace = dynamic(() => import("./management").then(m => m.SettingsWorkspace), { loading: workspaceLoading });
+const CustomerWorkspace = dynamic(() => import("./commerce").then(m => m.CustomerWorkspace), { loading: workspaceLoading });
+const SupplierWorkspace = dynamic(() => import("./commerce").then(m => m.SupplierWorkspace), { loading: workspaceLoading });
+const PurchaseWorkspace = dynamic(() => import("./commerce").then(m => m.PurchaseWorkspace), { loading: workspaceLoading });
+const ReturnsWorkspace = dynamic(() => import("./commerce").then(m => m.ReturnsWorkspace), { loading: workspaceLoading });
+const PaymentWorkspace = dynamic(() => import("./commerce").then(m => m.PaymentWorkspace), { loading: workspaceLoading });
+const TransferWorkspace = dynamic(() => import("./commerce").then(m => m.TransferWorkspace), { loading: workspaceLoading });
+const ExpenseWorkspace = dynamic(() => import("./commerce").then(m => m.ExpenseWorkspace), { loading: workspaceLoading });
+const BranchWorkspace = dynamic(() => import("./commerce").then(m => m.BranchWorkspace), { loading: workspaceLoading });
+const CashRegisterWorkspace = dynamic(() => import("./commerce").then(m => m.CashRegisterWorkspace), { loading: workspaceLoading });
+const RecycleBinWorkspace = dynamic(() => import("./commerce").then(m => m.RecycleBinWorkspace), { loading: workspaceLoading });
 
 type RecordRow = { collection: string; record_id: string; branch_ids: string[]; data: Record<string, any>; updated_at: string; updated_by?: string };
 type ModuleKey = "overview" | "cashregister" | "sales" | "returns" | "products" | "customers" | "purchases" | "suppliers" | "expenses" | "branches" | "payments" | "transfers" | "reports" | "employees" | "settings" | "recyclebin";
