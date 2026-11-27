@@ -388,7 +388,8 @@ export default function Home() {
     const branchRefundPayments=payments.filter((p:any)=>String(p.type||"").toLowerCase()==="sales_return_refund"&&pakistanDateKey(p.date||p.paidAt||p.createdAt)>=rangeStart&&pakistanDateKey(p.date||p.paidAt||p.createdAt)<=rangeEnd&&String(p.branchId||saleByIdForFinance.get(String(p.saleId||""))?.branchId||"")===branchId).reduce((sum:number,p:any)=>sum+amount(p.amount),0);
     const branchCashRefunds=branchReturnRows.reduce((sum:number,r:any)=>sum+amount(r.cashRefund),0);
     const branchPaid=branchCollections.reduce((sum:number,p:any)=>sum+Math.max(0,amount(p.amount)-amount(p.reversedAmount)),0);
-    return {id:branchId,name:String(b.name||"Unnamed branch"),count:branchSales.length,sales:branchSalesNet,cash:branchPaid-Math.max(branchRefundPayments,branchCashRefunds),due:branchSales.reduce((sum,s)=>sum+invoiceBalance(s,returnAppliedBySale.get(String(s.id||''))||0),0)};
+    const branchLegacyReceipts=branchSales.reduce((sum:number,s:any)=>sum+Math.max(0,amount(s.cashReceived)-(recordedPaymentsBySale.get(String(s.id||""))||0)),0);
+    return {id:branchId,name:String(b.name||"Unnamed branch"),count:branchSales.length,sales:branchSalesNet,cash:branchPaid+branchLegacyReceipts-Math.max(branchRefundPayments,branchCashRefunds),due:branchSales.reduce((sum,s)=>sum+invoiceBalance(s,returnAppliedBySale.get(String(s.id||''))||0),0)};
   }).sort((a,b)=>b.sales-a.sales);
   const maxBranchSales=Math.max(1,...branchPerformance.map(b=>b.sales));
   const monthLabel=periodLabel;
