@@ -75,7 +75,7 @@
 
 
 /* POS flow: catalogue first, then bill, customer and payment; retain existing Etihad styling. */
-.pos-layout{grid-template-columns:minmax(0,1fr)!important;align-items:stretch}.pos-catalog{grid-row:auto!important}.pos-products{max-height:440px}.pos-bill{width:100%}.digital-clock{display:inline-block;margin-left:7px;font-variant-numeric:tabular-nums;letter-spacing:.04em;color:var(--navy)}.bar-select{border:0;background:transparent;padding:0;cursor:pointer;font:inherit}.bar-select.active .bar-fill{background:var(--gold2);outline:2px solid var(--gold);outline-offset:1px}.activity-drilldown{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fbfcfe}.activity-drilldown h4{margin:0;font:700 12px Manrope,sans-serif}.activity-sale-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:10px}.activity-sale-row span{display:flex;flex-direction:column;gap:3px}.activity-sale-row small{color:var(--muted)}.activity-sale-row strong{white-space:nowrap}.expiry-attention .stock-avatar{background:#fff1e8;color:#b85a27}
+.pos-layout{grid-template-columns:minmax(0,1.08fr) minmax(390px,.92fr)!important;align-items:start!important;gap:18px!important}.pos-catalog{grid-column:1;grid-row:1!important}.pos-products{max-height:560px}.pos-bill{grid-column:2;grid-row:1!important;width:100%;position:sticky!important;top:84px!important}.digital-clock{display:inline-block;margin-left:7px;font-variant-numeric:tabular-nums;letter-spacing:.04em;color:var(--navy)}.bar-select{border:0;background:transparent;padding:0;cursor:pointer;font:inherit}.bar-select.active .bar-fill{background:var(--gold2);outline:2px solid var(--gold);outline-offset:1px}.activity-drilldown{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fbfcfe}.activity-drilldown h4{margin:0;font:700 12px Manrope,sans-serif}.activity-sale-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:10px}.activity-sale-row span{display:flex;flex-direction:column;gap:3px}.activity-sale-row small{color:var(--muted)}.activity-sale-row strong{white-space:nowrap}.expiry-attention .stock-avatar{background:#fff1e8;color:#b85a27}
 
 .cancelled-sale-row{color:#bd3434;background:#fff8f8}
 .status.returned{background:#eaf6f0;color:#278366}.status.partially-returned{background:#fff4e7;color:#b47a31}.cancelled-sale-row td{color:#bd3434}.cancelled-sale-row .status{display:inline-block;margin-right:8px;color:#bd3434;background:#fff0f0;border:1px solid #f0c5c5;padding:3px 7px;border-radius:20px;font-size:9px}.history-subline{display:block;color:var(--muted);font-size:9px;margin-top:3px}.sale-history-details{display:flex;flex-direction:column;gap:8px;padding:8px 5px;color:var(--ink);font-size:10px}.sale-history-item{display:flex;justify-content:space-between;gap:12px;padding:6px 9px;border-bottom:1px solid var(--line)}.cancelled-sale-row .sale-history-item{color:#bd3434}
@@ -1230,3 +1230,31 @@ table td,table th{border-color:#eee9df}
 .metric-card-button:focus-visible{outline:2px solid #b18b4c;outline-offset:2px}
 .metric-open-hint{display:block;margin-top:8px;font-size:9px;font-weight:750;color:#a18a62;opacity:.8}
 @media(max-width:640px){.dashboard-range-toolbar{align-items:flex-start;padding:12px;gap:10px}.dashboard-range-heading{flex-basis:100%}.dashboard-range-controls{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.dashboard-range-controls button{padding:8px 4px;font-size:9px}.dashboard-custom-dates{width:100%}.dashboard-custom-dates label{flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch}.dashboard-custom-dates input{width:100%}.metric-open-hint{font-size:8px}}
+
+
+/* POS checkout polish: clear desktop split view and a high-contrast discount control */
+@media(max-width:1050px){
+  .pos-layout{grid-template-columns:minmax(0,1fr)!important}
+  .pos-bill{grid-column:1!important;grid-row:1!important;position:static!important}
+  .pos-catalog{grid-column:1!important;grid-row:2!important}
+}
+.bill-discount-control{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(112px,160px);
+  align-items:center;
+  gap:6px 12px;
+  padding:12px 13px!important;
+  margin:10px 0!important;
+  border:1px solid var(--line)!important;
+  border-radius:10px!important;
+  background:var(--paper)!important;
+}
+.bill-discount-control label{font-size:11px!important;font-weight:800!important;color:var(--navy)!important;margin:0!important}
+.page-content .pos-bill .bill-discount-control input{
+  width:100%!important;min-height:44px!important;text-align:right!important;
+  font-size:15px!important;font-weight:800!important;
+  border:1px solid var(--line)!important;border-radius:8px!important;
+  padding:9px 11px!important;background:var(--white)!important;color:var(--ink)!important;
+}
+.bill-discount-control small{grid-column:1/-1;font-size:10px!important;color:var(--muted)!important;line-height:1.45!important}
+@media(max-width:420px){.bill-discount-control{grid-template-columns:minmax(0,1fr) minmax(100px,120px)}}
