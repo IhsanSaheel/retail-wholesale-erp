@@ -283,7 +283,11 @@ export function TransferWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Pro
 export function PaymentWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Props){
  const db=useMemo(()=>getSupabase(),[]);
  const allSales=rows.filter(r=>r.collection==="mberp_sales").map(r=>r.data).filter(s=>(role==="owner"||branchIds.includes(String(s.branchId)))&&!["cancelled","returned"].includes(String(s.status||"").toLowerCase()));
- const invoiceBalance=(s:any)=>{const stored=num(s.balance),total=num(s.total),paid=num(s.paid);return Math.abs(total-paid-stored)>0.01?Math.max(0,total-paid):Math.max(0,stored);};
+ const returnRows=rows.filter(r=>r.collection==="mberp_sales_returns").map(r=>r.data);
+ const legacyReturnBalanceApplied=(r:any)=>r.balanceApplied!==undefined&&r.balanceApplied!==null?num(r.balanceApplied):r.creditAmount!==undefined&&r.creditAmount!==null?0:Math.max(0,num(r.amount)-num(r.refundAmount)-num(r.cashRefund));
+ const returnAppliedBySale=new Map<string,number>();
+ for(const r of returnRows){const id=String(r.saleId||"");if(id)returnAppliedBySale.set(id,(returnAppliedBySale.get(id)||0)+legacyReturnBalanceApplied(r));}
+ const invoiceBalance=(s:any)=>{const stored=num(s.balance),total=num(s.total),paid=num(s.paid),applied=returnAppliedBySale.get(String(s.id||""))||0;return Math.abs(total-paid-applied-stored)>0.01?Math.max(0,total-paid-applied):Math.max(0,stored);};
  const sales=allSales.filter(s=>invoiceBalance(s)>0.009);
  const payments=rows.filter(r=>r.collection==="mberp_payments").map(r=>r.data).filter(p=>p.type!=="staff_tip"&&(role==="owner"||branchIds.includes(String(p.branchId||""))));
  const normalizedPhone=(value:any)=>{let digits=String(value||"").replace(/\\D/g,"");if(digits.startsWith("92"))digits=digits.slice(2);if(digits.startsWith("0"))digits=digits.slice(1);return digits;};
