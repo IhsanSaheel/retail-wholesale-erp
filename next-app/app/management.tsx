@@ -208,11 +208,12 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const collectedPayments=paymentInRange.filter(p=>{const type=String(p.type||"").toLowerCase();return type==="sale_payment"||(!type&&Boolean(p.saleId));});
  const paymentRefunds=paymentInRange.filter(p=>String(p.type||"").toLowerCase()==="sales_return_refund").reduce((sum,p)=>sum+Math.max(0,Number(p.amount||0)-Number(p.reversedAmount||0)),0);
  const returnCashRefunds=periodReturns.reduce((sum,r)=>sum+Number(r.cashRefund||0),0);
- const received=collectedPayments.reduce((sum,p)=>sum+Math.max(0,Number(p.amount||0)-Number(p.reversedAmount||0)),0)-Math.max(paymentRefunds,returnCashRefunds);
- const paidEventsBySale=new Map<string,number>();
- for(const p of payments){const type=String(p.type||"").toLowerCase();if(!p.saleId||!(type==="sale_payment"||type==="advance_applied"||!type))continue;const key=String(p.saleId);paidEventsBySale.set(key,(paidEventsBySale.get(key)||0)+Math.max(0,Number(p.amount||0)-Number(p.reversedAmount||0)));}
+ const received=collectedPayments.reduce((sum,p)=>sum+Math.max(0,Number(p.amount||0)-Number(p.reversedAmount||0)),0)+legacyReceipts-Math.max(paymentRefunds,returnCashRefunds);
+ const paidEventsBySale=new Map<string,number>(),cashEventsBySale=new Map<string,number>();
+ for(const p of payments){const type=String(p.type||"").toLowerCase();if(!p.saleId)continue;const key=String(p.saleId),netAmount=Math.max(0,Number(p.amount||0)-Number(p.reversedAmount||0));if(type==="sale_payment"||type==="advance_applied"||!type)paidEventsBySale.set(key,(paidEventsBySale.get(key)||0)+netAmount);if(type==="sale_payment"||!type)cashEventsBySale.set(key,(cashEventsBySale.get(key)||0)+netAmount);}
  const advanceApplied=paymentInRange.filter(p=>String(p.type||"").toLowerCase()==="advance_applied").reduce((sum,p)=>sum+Number(p.amount||0),0);
  const unallocatedPaid=active.reduce((sum,s)=>sum+Math.max(0,Number(s.paid||0)-(paidEventsBySale.get(String(s.id||""))||0)),0);
+ const legacyReceipts=active.reduce((sum,s)=>sum+Math.max(0,Number(s.cashReceived||0)-(cashEventsBySale.get(String(s.id||""))||0)),0);
  const balance=active.reduce((sum,s)=>sum+invoiceBalance(s),0);
  const cost=active.reduce((sum,s)=>sum+(s.items||[]).reduce((a:any,it:any)=>a+Number(it.cost??productById.get(String(it.productId||""))?.cost??0)*Number(it.qty||0),0),0);
  const returnUnitCost=(r:any)=>{const sale=saleById.get(String(r.saleId||""));const item=(sale?.items||[]).find((it:any)=>String(it.productId||"")===String(r.productId||""));return Number(r.unitCost??r.cost??item?.cost??productById.get(String(r.productId||""))?.cost??0);};const returnedCost=periodReturns.reduce((sum,r)=>sum+returnUnitCost(r)*Number(r.qty||0),0);
@@ -253,7 +254,7 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  }
  if(report==="payment"){
   for(const p of collectedPayments){const label=String(p.method||"Unspecified");add(label,label,Math.max(0,Number(p.amount||0)-Number(p.reversedAmount||0)));}
-  for(const sale of active){const legacyAmount=Math.max(0,Number(sale.paid||0)-(paidEventsBySale.get(String(sale.id||""))||0));if(legacyAmount>0){const label="Legacy / unallocated";add(label,label,legacyAmount);}}
+  for(const sale of active){const legacyAmount=Math.max(0,Number(sale.cashReceived||0)-(cashEventsBySale.get(String(sale.id||""))||0));if(legacyAmount>0){const label=String(sale.paymentMethod||"Legacy / unallocated");add(label,label,legacyAmount);}}
  }
  if(report==="supplier")for(const p of filteredPurchases){const label=String(p.supplierName||"Unassigned supplier");add(String(p.supplierId||label),label,Number(p.total||0));}
  if(report==="purchaseProduct")for(const p of filteredPurchases){const label=String(p.productName||"Unnamed product");add(String(p.productId||label),label,Number(p.cost||0)*Number(p.qty||0));}
