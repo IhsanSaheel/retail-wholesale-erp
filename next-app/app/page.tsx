@@ -74,7 +74,7 @@ export default function Home() {
 
   const loadBusiness = useCallback(async (userId:string, forceOffline=false) => {
     setLoading(true); setError("");
-    const restoreOfflineSnapshot = async () => {
+    const restoreOfflineSnapshot = async (offlineFallback=true) => {
       try {
         const snapshot = await getOfflineBusinessSnapshot(userId);
         if (!snapshot || !snapshot.orgId || Date.now()-snapshot.cachedAt>OFFLINE_SNAPSHOT_MAX_AGE_MS) return false;
@@ -87,8 +87,8 @@ export default function Home() {
           const index=restoredRows.findIndex(item=>item.collection===row.collection&&item.record_id===row.record_id);
           if(index>=0)restoredRows[index]=row;else restoredRows.push(row);
         }
-        setRows(restoredRows); setOfflineMode(true); setModule("overview");
-        setError("OFFLINE MODE · Using this device’s saved dashboard and POS records from "+new Date(snapshot.cachedAt).toLocaleString()+". Figures may be out of date; new sales will remain pending until synchronised.");
+        setRows(restoredRows); setOfflineMode(offlineFallback); setModule("overview");
+        if(offlineFallback) setError("OFFLINE MODE · Using this device’s saved dashboard and POS records from "+new Date(snapshot.cachedAt).toLocaleString()+". Figures may be out of date; new sales will remain pending until synchronised.");
         setLoading(false); return true;
       } catch { return false; }
     };
@@ -101,6 +101,10 @@ export default function Home() {
       setLoading(false); return;
     }
     setOfflineMode(false);
+    // Stale-while-revalidate: paint the encrypted local workspace immediately,
+    // then continue with the authoritative cloud membership and record refresh.
+    // Keep online mode enabled so new transactions still use the normal sync path.
+    await restoreOfflineSnapshot(false);
     const {data: memberships,error: memberError} = await supabase.from("etihad_memberships").select("org_id,role,active,branch_ids,permissions").eq("user_id",userId).eq("active",true);
     if(memberError) {
       if (isNetworkFailure(memberError) && await restoreOfflineSnapshot()) return;
