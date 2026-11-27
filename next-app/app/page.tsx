@@ -39,9 +39,9 @@ const pakistanDateKey=(v:any)=>{if(!v)return "";const raw=String(v);if(/^\d{4}-\
 const shiftPakistanDate=(key:string,days:number)=>{const d=new Date(key+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);};
 const pakistanDateLabel=(key:string,options:Intl.DateTimeFormatOptions)=>new Intl.DateTimeFormat("en-PK",{timeZone:"Asia/Karachi",...options}).format(new Date(key+"T12:00:00Z"));
 const amount = (v:any) => Number(v || 0);
-const invoiceBalance = (sale:any) => {
-  const stored=amount(sale?.balance), total=amount(sale?.total), paid=amount(sale?.paid);
-  return Math.abs(total-paid-stored)>0.01 ? Math.max(0,total-paid) : Math.max(0,stored);
+const invoiceBalance = (sale:any, returnApplied=0) => {
+  const stored=amount(sale?.balance), total=amount(sale?.total), paid=amount(sale?.paid), applied=amount(returnApplied);
+  return Math.abs(total-paid-applied-stored)>0.01 ? Math.max(0,total-paid-applied) : Math.max(0,stored);
 };
 const OFFLINE_POS_COLLECTIONS = new Set(["mberp_sales","mberp_products","mberp_branches","mberp_customers","mberp_customer_account_credits","mberp_loyalty_settings","mberp_product_taxes","mberp_sales_returns","mberp_expenses","mberp_stock_batches","mberp_payments","mberp_brand_settings"]);
 const OFFLINE_LAST_USER_KEY = "etihad-prime-offline-user";
@@ -313,6 +313,9 @@ export default function Home() {
   const monthSales = rangeIsValid?activeSales.filter(s=>{const day=pakistanDateKey(s.date);return day>=rangeStart&&day<=rangeEnd;}):[];
   const periodLabel=pakistanDateLabel(rangeStart,{day:"2-digit",month:"short",year:"numeric"})+" – "+pakistanDateLabel(rangeEnd,{day:"2-digit",month:"short",year:"numeric"});
   const allReturns = records("mberp_sales_returns");
+  const legacyReturnBalanceApplied=(r:any)=>r.balanceApplied!==undefined&&r.balanceApplied!==null?amount(r.balanceApplied):r.creditAmount!==undefined&&r.creditAmount!==null?0:Math.max(0,amount(r.amount)-amount(r.refundAmount)-amount(r.cashRefund));
+  const returnAppliedBySale = new Map<string,number>();
+  for(const returned of allReturns){const saleId=String(returned.saleId||"");if(saleId)returnAppliedBySale.set(saleId,(returnAppliedBySale.get(saleId)||0)+legacyReturnBalanceApplied(returned));}
   const periodReturns = allReturns.filter((r:any)=>{const day=pakistanDateKey(r.date||r.createdAt);return rangeIsValid&&day>=rangeStart&&day<=rangeEnd;});
   const revenueSales = rangeIsValid?sales.filter(s=>String(s.status||"").toLowerCase()!=="cancelled"&&(()=>{const day=pakistanDateKey(s.date);return day>=rangeStart&&day<=rangeEnd;})()):[];
   const monthGrossSales = revenueSales.reduce((n,s)=>n+amount(s.total),0);
@@ -343,7 +346,7 @@ export default function Home() {
     return sum+legacyUnrecorded;
   },0);
   const monthCashReceived = paymentRowsInPeriod.reduce((sum:number,payment:any)=>sum+amount(payment.amount),0)+legacyReceiptsInPeriod;
-  const monthOutstanding = monthSales.reduce((sum,sale)=>sum+invoiceBalance(sale),0);
+  const monthOutstanding = monthSales.reduce((sum,sale)=>sum+invoiceBalance(sale,returnAppliedBySale.get(String(sale.id||''))||0),0);
   // Match the invoice-history profit rule: use only the cost snapshots saved on
   // invoice lines. Never substitute today's product cost for a historical sale.
   const profitEligibleSales = monthSales.filter(s=>!["cancelled","returned"].includes(String(s.status||"").toLowerCase()));
@@ -385,11 +388,11 @@ export default function Home() {
     const branchRefundPayments=payments.filter((p:any)=>String(p.type||"").toLowerCase()==="sales_return_refund"&&pakistanDateKey(p.date||p.paidAt||p.createdAt)>=rangeStart&&pakistanDateKey(p.date||p.paidAt||p.createdAt)<=rangeEnd&&String(p.branchId||saleByIdForFinance.get(String(p.saleId||""))?.branchId||"")===branchId).reduce((sum:number,p:any)=>sum+amount(p.amount),0);
     const branchCashRefunds=branchReturnRows.reduce((sum:number,r:any)=>sum+amount(r.cashRefund),0);
     const branchPaid=branchCollections.reduce((sum:number,p:any)=>sum+Math.max(0,amount(p.amount)-amount(p.reversedAmount)),0);
-    return {id:branchId,name:String(b.name||"Unnamed branch"),count:branchSales.length,sales:branchSalesNet,cash:branchPaid-Math.max(branchRefundPayments,branchCashRefunds),due:branchSales.reduce((sum,s)=>sum+invoiceBalance(s),0)};
+    return {id:branchId,name:String(b.name||"Unnamed branch"),count:branchSales.length,sales:branchSalesNet,cash:branchPaid-Math.max(branchRefundPayments,branchCashRefunds),due:branchSales.reduce((sum,s)=>sum+invoiceBalance(s,returnAppliedBySale.get(String(s.id||''))||0),0)};
   }).sort((a,b)=>b.sales-a.sales);
   const maxBranchSales=Math.max(1,...branchPerformance.map(b=>b.sales));
   const monthLabel=periodLabel;
-  const outstanding = activeSales.reduce((n,s)=>n+invoiceBalance(s),0);
+  const outstanding = activeSales.reduce((n,s)=>n+invoiceBalance(s,returnAppliedBySale.get(String(s.id||''))||0),0);
   const lowStock = products.filter(p=>amount(p.qty)<=amount(p.alert ?? p.lowAt ?? 0));
   const expiryAlerts: any[] = scopedRows.filter(r=>r.collection==="mberp_stock_batches").map(r=>r.data).filter(b=>amount(b.remainingQty??b.qty)>0&&Boolean(b.expiryDate||b.expiry||b.expiresAt)).map(b=>{const expiryValue=b.expiryDate||b.expiry||b.expiresAt;const expiryKey=pakistanDateKey(expiryValue);const daysToExpiry=expiryKey?Math.round((new Date(expiryKey+"T12:00:00Z").getTime()-new Date(todayKey+"T12:00:00Z").getTime())/86400000):Number.POSITIVE_INFINITY;return {...b,expiryValue,daysToExpiry};}).filter(b=>Number.isFinite(b.daysToExpiry)&&b.daysToExpiry<=30).sort((a,b)=>a.daysToExpiry-b.daysToExpiry);
   const expiredBatchCount=expiryAlerts.filter(b=>b.daysToExpiry<0).length;const expiringWithin7DaysCount=expiryAlerts.filter(b=>b.daysToExpiry>=0&&b.daysToExpiry<=7).length;const expiring8To30DaysCount=expiryAlerts.filter(b=>b.daysToExpiry>7&&b.daysToExpiry<=30).length;
