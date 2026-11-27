@@ -80,16 +80,27 @@ export default function Home() {
         if (!snapshot || !snapshot.orgId || Date.now()-snapshot.cachedAt>OFFLINE_SNAPSHOT_MAX_AGE_MS) return false;
         setOrgId(snapshot.orgId); setOrgName(snapshot.orgName||"Ihsan Sweets & Supplies"); setBranchIds(snapshot.branchIds||[]);
         setRole(String(snapshot.role||"staff").trim().toLowerCase()); setPermissions(snapshot.permissions||{});
-        const restoredRows=[...(snapshot.rows as RecordRow[])];
-        const queuedMutations=await listPendingRecordMutations(snapshot.orgId,userId);
-        for(const mutation of queuedMutations){
-          const row:RecordRow={collection:mutation.collection,record_id:mutation.recordId,branch_ids:mutation.branchIds,data:mutation.data,updated_at:new Date(mutation.createdAt).toISOString(),updated_by:mutation.updatedBy};
-          const index=restoredRows.findIndex(item=>item.collection===row.collection&&item.record_id===row.record_id);
-          if(index>=0)restoredRows[index]=row;else restoredRows.push(row);
-        }
-        setRows(restoredRows); setOfflineMode(offlineFallback); setModule("overview");
+        // Paint the decrypted snapshot before waiting for the offline mutation
+        // queue. This keeps local startup independent of a second IndexedDB read.
+        setRows([...(snapshot.rows as RecordRow[])]);
+        setOfflineMode(offlineFallback); setModule("overview");
         if(offlineFallback) setError("OFFLINE MODE · Using this device’s saved dashboard and POS records from "+new Date(snapshot.cachedAt).toLocaleString()+". Figures may be out of date; new sales will remain pending until synchronised.");
-        setLoading(false); return true;
+        setLoading(false);
+        // Merge pending local changes after first paint. Functional state update
+        // prevents this asynchronous merge from overwriting a newer cloud refresh.
+        void listPendingRecordMutations(snapshot.orgId,userId).then(queuedMutations=>{
+          if(!queuedMutations.length) return;
+          setRows(currentRows=>{
+            const merged=[...currentRows];
+            for(const mutation of queuedMutations){
+              const row:RecordRow={collection:mutation.collection,record_id:mutation.recordId,branch_ids:mutation.branchIds,data:mutation.data,updated_at:new Date(mutation.createdAt).toISOString(),updated_by:mutation.updatedBy};
+              const index=merged.findIndex(item=>item.collection===row.collection&&item.record_id===row.record_id);
+              if(index>=0)merged[index]=row;else merged.push(row);
+            }
+            return merged;
+          });
+        }).catch(queueError=>console.warn("Could not merge pending offline changes into the first paint.",queueError));
+        return true;
       } catch { return false; }
     };
     // A browser can report navigator.onLine=true even when its network cannot
