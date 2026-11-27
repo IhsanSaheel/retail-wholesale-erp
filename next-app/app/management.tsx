@@ -185,7 +185,10 @@ export function ReportsWorkspace({rows}:{rows:Row[]}){
  const todayKey=iso(today); const shiftDate=(key:string,days:number)=>{const d=new Date(`${key}T12:00:00Z`);d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);};
  const dateFrom=period==="custom"?from:period==="7"?shiftDate(todayKey,-6):period==="30"?shiftDate(todayKey,-29):period==="month"?todayKey.slice(0,7)+"-01":period==="all"?"2000-01-01":todayKey,dateTo=period==="custom"?to:todayKey;
  const dateKey=(v:any)=>{if(!v)return "";const raw=String(v);if(raw.length===10&&raw[4]==="-"&&raw[7]==="-")return raw;const d=new Date(v);return Number.isNaN(d.getTime())?"":iso(d);};
- const invoiceBalance=(sale:any)=>{const stored=Number(sale.balance||0),total=Number(sale.total||0),paid=Number(sale.paid||0);return Math.abs(total-paid-stored)>0.01?Math.max(0,total-paid):Math.max(0,stored);};
+ const legacyReturnBalanceApplied=(r:any)=>r.balanceApplied!==undefined&&r.balanceApplied!==null?Number(r.balanceApplied||0):r.creditAmount!==undefined&&r.creditAmount!==null?0:Math.max(0,Number(r.amount||0)-Number(r.refundAmount||0)-Number(r.cashRefund||0));
+ const returnAppliedBySale=new Map<string,number>();
+ for(const r of returns){const id=String(r.saleId||"");if(id)returnAppliedBySale.set(id,(returnAppliedBySale.get(id)||0)+legacyReturnBalanceApplied(r));}
+ const invoiceBalance=(sale:any)=>{const stored=Number(sale.balance||0),total=Number(sale.total||0),paid=Number(sale.paid||0),applied=returnAppliedBySale.get(String(sale.id||""))||0;return Math.abs(total-paid-applied-stored)>0.01?Math.max(0,total-paid-applied):Math.max(0,stored);};
  const inRange=(v:any)=>{const k=dateKey(v);return !!k&&k>=dateFrom&&k<=dateTo;};
  const pakistanHour=(v:any)=>{const d=new Date(v||"");return Number.isNaN(d.getTime())?"00":new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Karachi",hour:"2-digit",hourCycle:"h23"}).format(d);};
  const pakistanWeekday=(key:string)=>new Date(key+"T12:00:00Z").getUTCDay();
