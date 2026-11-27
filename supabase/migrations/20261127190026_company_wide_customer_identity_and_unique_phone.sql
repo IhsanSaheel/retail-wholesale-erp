@@ -115,6 +115,9 @@ drop trigger if exists etihad_enforce_company_customer_identity on public.etihad
 
 create trigger etihad_enforce_company_customer_identity before insert or update of data,collection,org_id,branch_ids on public.etihad_records for each row execute function private.enforce_company_customer_identity();
 
+-- Normalize existing profiles and make sure they are not branch-scoped.
+update public.etihad_records set data=data where collection='mberp_customers';
+
 with latest as (
  select distinct on (private.normalize_customer_phone(data->>'customerPhone'))
  org_id,private.normalize_customer_phone(data->>'customerPhone') normalized_phone,btrim(data->>'customerPhone') phone,btrim(data->>'customerName') customer_name,
