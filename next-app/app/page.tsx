@@ -316,12 +316,19 @@ export default function Home() {
     const type=String(payment.type||"").toLowerCase();
     return type==="sale_payment"||(!type&&Boolean(payment.saleId));
   });
-  const salePaymentInvoiceIds = new Set(salePaymentRows.map((payment:any)=>String(payment.saleId||"")).filter(Boolean));
   const paymentRowsInPeriod = salePaymentRows.filter((payment:any)=>{
     const day=pakistanDateKey(payment.date||payment.paidAt||payment.createdAt);
     return day>=rangeStart&&day<=rangeEnd;
   });
-  const legacyReceiptsInPeriod = monthSales.filter((sale:any)=>!salePaymentInvoiceIds.has(String(sale.id||""))).reduce((sum:number,sale:any)=>sum+amount(sale.cashReceived),0);
+  const recordedPaymentsBySale = new Map<string,number>();
+  for(const payment of salePaymentRows){
+    const saleId=String(payment.saleId||"");
+    if(saleId)recordedPaymentsBySale.set(saleId,(recordedPaymentsBySale.get(saleId)||0)+amount(payment.amount));
+  }
+  const legacyReceiptsInPeriod = monthSales.reduce((sum:number,sale:any)=>{
+    const legacyUnrecorded=Math.max(0,amount(sale.cashReceived)-(recordedPaymentsBySale.get(String(sale.id||""))||0));
+    return sum+legacyUnrecorded;
+  },0);
   const monthCashReceived = paymentRowsInPeriod.reduce((sum:number,payment:any)=>sum+amount(payment.amount),0)+legacyReceiptsInPeriod;
   const monthOutstanding = monthSales.reduce((sum,sale)=>sum+Math.max(0,amount(sale.balance)),0);
   // Match the invoice-history profit rule: use only the cost snapshots saved on
