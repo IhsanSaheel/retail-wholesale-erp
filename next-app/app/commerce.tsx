@@ -297,7 +297,7 @@ export function PaymentWorkspace({orgId,userId,role,branchIds,rows,onSaved}:Prop
  const customerKey=(record:any)=>{const phone=normalizedPhone(record.customerPhone||record.phone);return phone?"phone:"+phone:"name:"+String(record.customerName||record.name||"").trim().replace(/\\s+/g," ").toLocaleLowerCase();};
  const customerRecords=rows.filter(r=>r.collection==="mberp_customers").map(r=>r.data);
  const customers=Array.from(new Map([...allSales,...payments,...customerRecords].filter(x=>x.customerName||x.name).map(x=>{const key=customerKey(x);return [key,{key,name:x.customerName||x.name||"Walk-in Customer",phone:x.customerPhone||x.phone||""}] as const;})).values());
- const collectionBranches=rows.filter(r=>r.collection==="mberp_branches").map(r=>r.data).filter(b=>b.active!==false&&(role==="owner"||branchIds.includes(String(b.id))));
+ const collectionBranches=rows.filter(r=>r.collection==="mberp_branches").map(r=>r.data).filter(b=>String(b.active??"true").toLowerCase()!=="false"&&(role==="owner"||branchIds.includes(String(b.id))));
  const [selectedCustomer,setSelectedCustomer]=useState(customers[0]?.key||"");const [customerSearch,setCustomerSearch]=useState("");
  const visibleCustomers=customers.filter(c=>(c.name+" "+c.phone).toLowerCase().includes(customerSearch.toLowerCase()));
  const selectedCustomerPhone=customers.find(c=>c.key===selectedCustomer)?.phone||"";
