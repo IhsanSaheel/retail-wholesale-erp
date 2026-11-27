@@ -345,7 +345,9 @@ export default function Home() {
     const legacyUnrecorded=Math.max(0,amount(sale.cashReceived)-(recordedPaymentsBySale.get(String(sale.id||""))||0));
     return sum+legacyUnrecorded;
   },0);
-  const monthCashReceived = paymentRowsInPeriod.reduce((sum:number,payment:any)=>sum+amount(payment.amount),0)+legacyReceiptsInPeriod;
+  const periodRefundPayments = payments.filter((p:any)=>String(p.type||"").toLowerCase()==="sales_return_refund").filter((p:any)=>{const day=pakistanDateKey(p.date||p.paidAt||p.createdAt);return day>=rangeStart&&day<=rangeEnd;}).reduce((sum:number,p:any)=>sum+Math.max(0,amount(p.amount)-amount(p.reversedAmount)),0);
+  const periodCashRefunds = periodReturns.reduce((sum:number,r:any)=>sum+amount(r.cashRefund),0);
+  const monthCashReceived = paymentRowsInPeriod.reduce((sum:number,payment:any)=>sum+Math.max(0,amount(payment.amount)-amount(payment.reversedAmount)),0)+legacyReceiptsInPeriod-Math.max(periodRefundPayments,periodCashRefunds);
   const monthOutstanding = monthSales.reduce((sum,sale)=>sum+invoiceBalance(sale,returnAppliedBySale.get(String(sale.id||''))||0),0);
   // Match the invoice-history profit rule: use only the cost snapshots saved on
   // invoice lines. Never substitute today's product cost for a historical sale.
