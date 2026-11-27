@@ -192,7 +192,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
   const taxAmount=selectedTax?(selectedTax.type==="inclusive"?subtotal*taxRate/(100+taxRate):subtotal*taxRate/100):0;
   const baseTotal=selectedTax&&selectedTax.type!=="inclusive"?subtotal+taxAmount:subtotal;
   const loyaltyCustomerSales=customerPhone.trim()?(remoteCustomerMatches?(remoteCustomerLedger.sales||[]):sales.filter(s=>normalizeCustomerPhone(s.customerPhone)===normalizeCustomerPhone(customerPhone)&&String(s.status||"").toLowerCase()!=="cancelled")):[];
-  const customerLoyaltyPoints=remoteCustomerMatches?Math.max(0,n(remoteCustomerLedger.loyaltyPoints)):Math.max(0,loyaltyCustomerSales.reduce((sum,s)=>{const original=Math.max(0,n(s.loyaltyEligibleTotal)||n(s.total));const ratio=original>0?Math.min(1,Math.max(0,n(s.total)/original)):1;return sum+Math.floor(n(s.loyaltyPointsEarned)*ratio)-Math.floor(n(s.loyaltyPointsRedeemed)*ratio);},0));
+  const customerLoyaltyPoints=remoteCustomerMatches?Math.max(0,n(remoteCustomerLedger.loyaltyPoints)):Math.max(0,loyaltyCustomerSales.reduce((sum:number,s:any)=>{const original=Math.max(0,n(s.loyaltyEligibleTotal)||n(s.total));const ratio=original>0?Math.min(1,Math.max(0,n(s.total)/original)):1;return sum+Math.floor(n(s.loyaltyPointsEarned)*ratio)-Math.floor(n(s.loyaltyPointsRedeemed)*ratio);},0));
   const redeemRatePoints=Math.max(1,n(loyaltyConfig.redeemPoints)||1000),redeemRateValue=Math.max(0,n(loyaltyConfig.redeemValue)||1);
   const requestedRedeem=Math.max(0,Math.floor(n(loyaltyRedeemPoints)));
   const loyaltyPointsRedeemed=Math.min(customerLoyaltyPoints,requestedRedeem,Math.floor(baseTotal*redeemRatePoints/Math.max(0.01,redeemRateValue)));
