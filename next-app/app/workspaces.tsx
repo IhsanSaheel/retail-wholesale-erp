@@ -667,7 +667,7 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
         origin: window.location.origin, language: invoiceLanguage, logoUrl: String(rows.find(r=>r.collection==="mberp_brand_settings"&&r.record_id==="default")?.data?.logoUrl || ""), title: "SALES RECEIPT",
         invoiceNo, date, customerName: sale.customerName, customerPhone: sale.customerPhone,
         branchName: sale.branchName, cashier: cashier || userId, items: invoiceLanguage==="ur"?await translateInvoiceItemsToUrdu(sale.items):sale.items,
-        rows: [["Subtotal after loyalty", saleSubtotal], ...(saleTaxAmount>0?[[selectedTax?.name||"Tax",saleTaxAmount] as [string,any]]:[]), ["Total bill", total], ...(loyaltyDiscount>0?[["Loyalty savings (included above)",loyaltyDiscount] as [string,any]]:[]), ["Amount received (" + method + ")", cashReceived],
+        rows: [["Subtotal", subtotal], ...(taxAmount>0?[[selectedTax?.type==="inclusive"?(selectedTax?.name||"Tax")+" included in subtotal":(selectedTax?.name||"Tax"),taxAmount] as [string,any]]:[]), ...(loyaltyDiscount>0?[["Loyalty discount",-loyaltyDiscount] as [string,any]]:[]), ...(billDiscountAmount>0?[["Bill discount",-billDiscountAmount] as [string,any]]:[]), ["Total bill", total], ["Amount received (" + method + ")", cashReceived],
           ...(advanceUsed > 0 ? [["Customer advance applied", advanceUsed] as [string, any]] : []),
           ["Total tender applied", receivedAmount], ["Applied to invoice", applied],
           ...(priorOutstandingApplied > 0 ? [["Previous outstanding settled", priorOutstandingApplied] as [string, any]] : []),
