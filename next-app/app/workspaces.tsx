@@ -1122,7 +1122,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
   else{
    if(hasSupplier){
     const sourceRows=allRows||rows;const records=sourceRows.filter(r=>r.collection==="mberp_suppliers").map(r=>r.data||{});
-    let supplier=editorSupplierId==="new"?records.find((x:any)=>String(x.name||"").trim().toLowerCase()===supplierNameValue.toLowerCase()):records.find((x:any)=>String(x.id)===editorSupplierId);
+    let supplier:any=editorSupplierId==="new"?records.find((x:any)=>String(x.name||"").trim().toLowerCase()===supplierNameValue.toLowerCase()):records.find((x:any)=>String(x.id)===editorSupplierId);
     if(supplier?.active===false&&supplier?.mergedInto)supplier=records.find((x:any)=>String(x.id)===String(supplier.mergedInto)&&x.active!==false)||null;
     if(!supplier&&editorSupplierId==="new"){
      const sid=makeId();supplier={id:sid,name:supplierNameValue,phone:"",address:"",openingBalance:0,openingBalanceDate:pakistanDate(),active:true,createdAt:new Date().toISOString()};
