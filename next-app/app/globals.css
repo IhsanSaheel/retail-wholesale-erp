@@ -1284,3 +1284,15 @@ table td,table th{border-color:#eee9df}
 .pos-quick-options label small{display:block;color:#98a2af;font-size:7px;margin-top:2px;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:1100px){.pos-products{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:760px){.pos-products{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-height:none;overflow:visible}.pos-product{min-height:82px;padding:7px}.pos-search{margin:9px 0;padding:9px}.pos-quick-options{grid-template-columns:1fr;max-height:210px}}
+
+
+/* Compact employee Quick Products: show all ten shortcuts without clipping. */
+.pos-products.pos-quick-grid{grid-template-columns:repeat(5,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:6px;max-height:none;overflow:visible;padding:0}
+.pos-products.pos-quick-grid .pos-product{height:76px;min-height:76px;padding:7px 5px;gap:3px;justify-content:center;overflow:hidden;border-radius:7px}
+.pos-products.pos-quick-grid .product-initial{display:none}
+.pos-products.pos-quick-grid .pos-product b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal;overflow:hidden;text-overflow:ellipsis;width:100%;font-size:9px;line-height:1.2;overflow-wrap:anywhere}
+.pos-products.pos-quick-grid .pos-product small{display:none}
+.pos-products.pos-quick-grid .pos-product strong{font-size:9px;line-height:1.15;margin-top:2px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.pos-products.pos-quick-grid .pos-product em{display:none}
+@media(max-width:760px){.pos-products.pos-quick-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.pos-products.pos-quick-grid .pos-product{height:72px;min-height:72px;padding:6px 4px}.pos-products.pos-quick-grid .pos-product b{font-size:8px}.pos-products.pos-quick-grid .pos-product strong{font-size:8px}}
+@media(max-width:360px){.pos-products.pos-quick-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}.pos-products.pos-quick-grid .pos-product{height:68px;min-height:68px}}
