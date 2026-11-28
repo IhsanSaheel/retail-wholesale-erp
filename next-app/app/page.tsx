@@ -101,7 +101,7 @@ export default function Home() {
         // Paint the decrypted snapshot before waiting for the offline mutation
         // queue. This keeps local startup independent of a second IndexedDB read.
         setRows([...(snapshot.rows as RecordRow[])]);
-        setOfflineMode(offlineFallback); setModule("overview");
+        setOfflineMode(offlineFallback); if(offlineFallback) setModule("overview");
         if(offlineFallback) setError("OFFLINE MODE · Using this device’s saved dashboard and POS records from "+new Date(snapshot.cachedAt).toLocaleString()+". Figures may be out of date; new sales will remain pending until synchronised.");
         setLoading(false);
         // Merge pending local changes after first paint. Functional state update
