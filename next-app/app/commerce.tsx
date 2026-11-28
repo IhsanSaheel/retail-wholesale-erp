@@ -152,7 +152,7 @@ export function SupplierWorkspace({orgId,userId,role,rows,onSaved}:Props){
   if(!Number.isFinite(qty)||qty<=0){setMessage("Enter the original quantity received from this supplier invoice for "+String(product.name||"this product")+".");return;}
   if(!Number.isFinite(cost)||cost<=0){setMessage("Supplier cost is missing for "+String(product.name||"this product")+". Update its supplier cost first.");return;}
   const parts=date.split("-").map(Number),parsed=parts.length===3?new Date(Date.UTC(parts[0],parts[1]-1,parts[2])):null;
-  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!parsed||Number.isNaN(parsed.getTime())||parsed.getUTCFullYear()!==parts[0]||parsed.getUTCMonth()!==parts[1]-1||parsed.getUTCDate()!==parts[2]){setMessage("Enter the actual supplier purchase date in YYYY-MM-DD format.");return;}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!parsed||Number.isNaN(parsed.getTime())||parsed.getUTCFullYear()!==parts[0]||parsed.getUTCMonth()!==parts[1]-1||parsed.getUTCDate()!==parts[2]){setMessage("Enter the actual supplier purchase date in YYYY-MM-DD format.");return;}
   if(!Number.isFinite(paid)||paid<0||paid>total+0.000001){setMessage("Amount paid must be between Rs 0 and "+money(total)+".");return;}
   const branchId=String(link.branchId||product.branchId||"");
   if(!branchId||String(product.branchId||"")!==branchId){setMessage("The linked product branch is missing or does not match. No purchase was posted.");return;}
