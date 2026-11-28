@@ -1099,7 +1099,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
     setBusy(false);return;
   }
   if(supplierQty>0){
-   const supplierId=String(selectedSupplier?.id||makeId());
+   const supplierId=String(selectedSupplier?.id||"");
    const supplierLinkId="singleprod-link-"+id;
    const purchaseId="singleprod-"+id;
    const purchaseDate=editorPurchaseDate;
