@@ -1466,3 +1466,11 @@ table td,table th{border-color:#eee9df}
 .pos-workspace .bill-item .line-total{grid-area:total!important;justify-self:start!important;width:100%!important;text-align:left!important;font-size:12px!important;font-weight:800!important;white-space:nowrap!important;padding-top:2px!important}
 .pos-workspace .bill-item .remove-item{grid-area:remove!important;justify-self:end!important;width:31px!important;height:29px!important;min-height:29px!important;font-size:17px!important}
 @media(min-width:761px){.pos-workspace .bill-item{grid-template-columns:minmax(0,1.2fr) minmax(100px,.8fr) minmax(130px,1fr) minmax(95px,.8fr)!important}}
+
+
+/* No inner scrolling in the current-bill list: all controls stay within the viewport. */
+.pos-workspace .bill-items{width:100%!important;max-height:none!important;height:auto!important;overflow:visible!important;overflow-x:visible!important;overflow-y:visible!important}
+.pos-workspace .bill-item{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
+.pos-workspace .bill-item>*{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+.pos-workspace .bill-product b{max-width:100%!important}
+.pos-workspace .bill-item .qty-control input,.pos-workspace .bill-unit-price,.pos-workspace .bill-price-type,.pos-workspace .bill-product select{min-width:0!important;max-width:100%!important}
