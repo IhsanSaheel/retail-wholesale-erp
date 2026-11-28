@@ -1424,3 +1424,29 @@ table td,table th{border-color:#eee9df}
  .pos-workspace .bill-item .line-total{font-size:9px!important}
  .pos-workspace .bill-item .remove-item{width:21px!important;height:23px!important;min-height:23px!important}
 }
+
+
+/* Final compact single-row bill controls; preserve readable whole-number quantities. */
+.pos-workspace .bill-items{overflow-x:auto!important;overflow-y:visible!important}
+.pos-workspace .bill-item{grid-template-columns:minmax(76px,1fr) 64px 78px 62px 58px 22px!important;gap:4px!important;min-width:0!important;padding:5px 0!important}
+.pos-workspace .bill-product{grid-template-columns:minmax(0,1fr)!important;gap:2px!important}
+.pos-workspace .bill-product b{font-size:9px!important;line-height:1.15!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.pos-workspace .bill-product select{height:24px!important;min-height:24px!important;padding:2px 4px!important;font-size:8px!important}
+.pos-workspace .bill-price-type,.pos-workspace .bill-unit-price{height:26px!important;min-height:26px!important;padding:2px 4px!important;font-size:8px!important}
+.pos-workspace .bill-item .qty-control{display:flex!important;align-items:center!important;gap:2px!important;min-width:0!important}
+.pos-workspace .bill-item .qty-control button{width:18px!important;height:24px!important;min-height:24px!important;flex:0 0 18px!important;padding:0!important;font-size:12px!important}
+.pos-workspace .bill-item .qty-control input{width:100%!important;min-width:0!important;height:24px!important;min-height:24px!important;padding:1px!important;font-size:9px!important;text-align:center!important}
+.pos-workspace .bill-item .line-total{min-width:0!important;font-size:9px!important;white-space:nowrap!important;text-align:right!important}
+.pos-workspace .bill-item .remove-item{width:20px!important;height:23px!important;min-height:23px!important;font-size:14px!important}
+@media(max-width:760px){
+ .pos-workspace .bill-item{grid-template-areas:none!important;grid-template-columns:minmax(68px,1fr) 55px 68px 54px 49px 18px!important;gap:3px!important;padding:5px 0!important}
+ .pos-workspace .bill-product,.pos-workspace .bill-price-type,.pos-workspace .bill-item .qty-control,.pos-workspace .bill-unit-price,.pos-workspace .bill-item .line-total,.pos-workspace .bill-item .remove-item{grid-area:auto!important}
+ .pos-workspace .bill-product b{font-size:8px!important}
+ .pos-workspace .bill-product select{font-size:8px!important}
+ .pos-workspace .bill-price-type,.pos-workspace .bill-unit-price{font-size:8px!important}
+ .pos-workspace .bill-item .qty-control{gap:1px!important}
+ .pos-workspace .bill-item .qty-control button{width:16px!important;flex-basis:16px!important}
+ .pos-workspace .bill-item .qty-control input{font-size:8px!important}
+ .pos-workspace .bill-item .line-total{font-size:8px!important}
+ .pos-workspace .bill-item .remove-item{width:18px!important}
+}
