@@ -749,6 +749,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
  const chooseSection=(section:string)=>{setActiveSection(section);onSectionChange?.(section);};
  const [editing,setEditing]=useState<Product|null>(null),[editorOpen,setEditorOpen]=useState(false);
  const [name,setName]=useState(""),[urduName,setUrduName]=useState(""),[sku,setSku]=useState(""),[barcode,setBarcode]=useState(""),[category,setCategory]=useState(""),[unit,setUnit]=useState("piece"),[qty,setQty]=useState("0"),[cost,setCost]=useState("0"),[price,setPrice]=useState("0"),[salesmanPrice,setSalesmanPrice]=useState("0"),[alertQty,setAlertQty]=useState("5"),[productNote,setProductNote]=useState(""),[branchId,setBranchId]=useState(branches[0]?.id||""),[busy,setBusy]=useState(false),[error,setError]=useState("");
+ const [editorSupplierId,setEditorSupplierId]=useState(""),[editorSupplierName,setEditorSupplierName]=useState(""),[editorSupplierCode,setEditorSupplierCode]=useState(""),[editorSupplierCost,setEditorSupplierCost]=useState(""),[editorPurchaseDate,setEditorPurchaseDate]=useState(pakistanDate()),[editorSupplierInvoice,setEditorSupplierInvoice]=useState(""),[editorBatchNo,setEditorBatchNo]=useState(""),[editorExpiryDate,setEditorExpiryDate]=useState(""),[editorAmountPaid,setEditorAmountPaid]=useState("0"),[editorPaymentMethod,setEditorPaymentMethod]=useState("Cash");
  const [extraUnits,setExtraUnits]=useState<any[]>([]);
  const [upperUnit,setUpperUnit]=useState(""),[upperQty,setUpperQty]=useState(""),[lowerUnit,setLowerUnit]=useState(""),[lowerQty,setLowerQty]=useState("");
  const [adjustProduct,setAdjustProduct]=useState(""),[adjustBatch,setAdjustBatch]=useState(""),[adjustDelta,setAdjustDelta]=useState(""),[adjustReason,setAdjustReason]=useState(""),[adjustBusy,setAdjustBusy]=useState(false),[reviewBusy,setReviewBusy]=useState("");
@@ -781,6 +782,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
  ].sort((a,b)=>new Date(b.date||0).getTime()-new Date(a.date||0).getTime()):[];
  const [batchProduct,setBatchProduct]=useState(""),[batchCode,setBatchCode]=useState(""),[batchQty,setBatchQty]=useState(""),[batchExpiry,setBatchExpiry]=useState(""),[batchReceived,setBatchReceived]=useState(pakistanDate()),[batchBranch,setBatchBranch]=useState(branches[0]?.id||""),[batchBusy,setBatchBusy]=useState(false);
  const productSuppliers=rows.filter(r=>r.collection==="mberp_product_suppliers").map(r=>r.data);
+ const editorSupplierRecords=(allRows||rows).filter(r=>r.collection==="mberp_suppliers").map(r=>r.data||{}).filter((x:any)=>x.active!==false&&String(x.id||"").trim()).sort((a:any,b:any)=>String(a.name||"").localeCompare(String(b.name||"")));
  const productTaxes=rows.filter(r=>r.collection==="mberp_product_taxes").map(r=>r.data);
  const [supplierProduct,setSupplierProduct]=useState(""),[supplierName,setSupplierName]=useState(""),[supplierCode,setSupplierCode]=useState(""),[supplierCost,setSupplierCost]=useState(""),[supplierLead,setSupplierLead]=useState(""),[supplierBusy,setSupplierBusy]=useState(false);
  const [taxName,setTaxName]=useState(""),[taxRate,setTaxRate]=useState(""),[taxType,setTaxType]=useState("exclusive"),[taxBusy,setTaxBusy]=useState(false);
@@ -994,7 +996,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
   setBulkSummary("Import completed: "+bulkSettlement.created+" new products and "+bulkSettlement.updated+" updated. Supplier purchase value "+cash(totalValue)+" · Paid "+cash(totalPaid)+" · Due "+cash(totalDue)+". Supplier accounts have been updated.");
   setBulkSettlement(null);setBulkSettlementBusy(false);setBulkPaid({});onSaved();
  }
- function start(p?:Product){const units=Array.isArray(p?.packagingUnits)?p.packagingUnits:[];const upper=units.filter((x:any)=>n(x.conversionToBase)>1).sort((a:any,b:any)=>n(b.conversionToBase)-n(a.conversionToBase))[0];const lower=units.filter((x:any)=>n(x.conversionToBase)>0&&n(x.conversionToBase)<1).sort((a:any,b:any)=>n(a.conversionToBase)-n(b.conversionToBase))[0];setEditorOpen(true);setEditing(p||null);setName(p?.name||"");setUrduName(p?.urduName||p?.nameUrdu||"");setSku(p?.sku||"");setBarcode(p?.barcode||"");setCategory(p?.category||"");setUnit(String(p?.unit||"piece"));setQty(String(p?.qty??0));setCost(String(p?.cost??0));setPrice(String(p?.retailerPrice??p?.price??0));setSalesmanPrice(String(p?.salesmanPrice??p?.retailerPrice??p?.price??0));setAlertQty(String(p?.alert??p?.lowAt??5));setBranchId(p?.branchId||branches.find(b=>String(b.id)===String(selectedBranchId))?.id||branches[0]?.id||"");setProductNote(p?.note||"");setUpperUnit(String(upper?.name||""));setUpperQty(upper?String(n(upper.conversionToBase)):"");setLowerUnit(String(lower?.name||""));setLowerQty(lower?String(1/n(lower.conversionToBase)):"");setExtraUnits([]);setError("");}
+ function start(p?:Product){const units=Array.isArray(p?.packagingUnits)?p.packagingUnits:[];const upper=units.filter((x:any)=>n(x.conversionToBase)>1).sort((a:any,b:any)=>n(b.conversionToBase)-n(a.conversionToBase))[0];const lower=units.filter((x:any)=>n(x.conversionToBase)>0&&n(x.conversionToBase)<1).sort((a:any,b:any)=>n(a.conversionToBase)-n(b.conversionToBase))[0];const linkedSupplier=productSuppliers.find((x:any)=>String(x.productId)===String(p?.id||""));const linkedSupplierId=String(linkedSupplier?.supplierId||editorSupplierRecords.find((x:any)=>String(x.name||"").trim().toLowerCase()===String(linkedSupplier?.supplierName||"").trim().toLowerCase())?.id||"");setEditorOpen(true);setEditing(p||null);setName(p?.name||"");setUrduName(p?.urduName||p?.nameUrdu||"");setSku(p?.sku||"");setBarcode(p?.barcode||"");setCategory(p?.category||"");setUnit(String(p?.unit||"piece"));setQty(String(p?.qty??0));setCost(String(p?.cost??0));setPrice(String(p?.retailerPrice??p?.price??0));setSalesmanPrice(String(p?.salesmanPrice??p?.retailerPrice??p?.price??0));setAlertQty(String(p?.alert??p?.lowAt??5));setBranchId(p?.branchId||branches.find(b=>String(b.id)===String(selectedBranchId))?.id||branches[0]?.id||"");setProductNote(p?.note||"");setUpperUnit(String(upper?.name||""));setUpperQty(upper?String(n(upper.conversionToBase)):"");setLowerUnit(String(lower?.name||""));setLowerQty(lower?String(1/n(lower.conversionToBase)):"");setExtraUnits([]);setEditorSupplierId(linkedSupplierId);setEditorSupplierName("");setEditorSupplierCode(String(linkedSupplier?.supplierCode||""));setEditorSupplierCost(linkedSupplier?.cost!=null?String(linkedSupplier.cost):p?String(p.cost??""):"");setEditorPurchaseDate(pakistanDate());setEditorSupplierInvoice("");setEditorBatchNo("");setEditorExpiryDate("");setEditorAmountPaid("0");setEditorPaymentMethod("Cash");setError("");}
  async function setProductStockToZero(product:Product){
   if(role!=="owner"){setError("Only the owner can directly set product stock to zero.");return;}
   const productId=String(product.id||"");
@@ -1061,14 +1063,32 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
  }
  async function save(){
   setBusy(true);setError("");
-  const id=editing?.id||makeId();
+  const id=String(editing?.id||makeId());
   const cleanNote=productNote.trim();
   const baseName=unit.trim()||"piece";
+  const hasSupplier=!!editorSupplierId;
+  const selectedSupplier=editorSupplierId==="new"?null:editorSupplierRecords.find((x:any)=>String(x.id)===editorSupplierId)||null;
+  const supplierNameValue=editorSupplierId==="new"?editorSupplierName.trim():String(selectedSupplier?.name||"").trim();
+  const supplierQty=!editing&&hasSupplier?n(qty):0;
+  const supplierCostValue=editorSupplierCost.trim()===""?n(cost):Number(editorSupplierCost);
+  const supplierTotal=Math.round(supplierQty*supplierCostValue*100)/100;
   if((upperUnit.trim()&&(!Number.isFinite(Number(upperQty))||Number(upperQty)<=1))||(lowerUnit.trim()&&(!Number.isFinite(Number(lowerQty))||Number(lowerQty)<=1))){setError("Enter a valid upper-unit quantity greater than 1 and a valid lower-unit quantity greater than 1.");setBusy(false);return;}
   if((upperUnit.trim()&&upperUnit.trim().toLowerCase()===baseName.toLowerCase())||(lowerUnit.trim()&&lowerUnit.trim().toLowerCase()===baseName.toLowerCase())||(upperUnit.trim()&&lowerUnit.trim()&&upperUnit.trim().toLowerCase()===lowerUnit.trim().toLowerCase())){setError("Upper, base and lower unit names must be different.");setBusy(false);return;}
+  if(hasSupplier&&supplierNameValue.length<2){setError(editorSupplierId==="new"?"Enter the new supplier's name.":"Select a valid active supplier.");setBusy(false);return;}
+  if(hasSupplier&&(!Number.isFinite(supplierCostValue)||supplierCostValue<0)){setError("Enter a valid supplier cost.");setBusy(false);return;}
+  if(supplierQty>0){
+   const paid=Number(editorAmountPaid);
+   const dateOk=/^\\d{4}-\\d{2}-\\d{2}$/.test(editorPurchaseDate)&&!Number.isNaN(new Date(editorPurchaseDate+"T00:00:00").getTime());
+   if(!(supplierCostValue>0)){setError("Supplier cost must be greater than zero when receiving stock as a purchase.");setBusy(false);return;}
+   if(!dateOk){setError("Enter a valid purchase date.");setBusy(false);return;}
+   if(!Number.isFinite(paid)||paid<0||paid>supplierTotal+0.000001){setError("Amount paid must be between Rs 0 and "+cash(supplierTotal)+".");setBusy(false);return;}
+   if(!!editorBatchNo.trim()!==!!editorExpiryDate){setError("Enter both batch / lot number and expiry date, or leave both blank.");setBusy(false);return;}
+   if(editorExpiryDate&&editorExpiryDate<editorPurchaseDate){setError("Expiry date cannot be earlier than the purchase date.");setBusy(false);return;}
+  }
+  if(hasSupplier&&!navigator.onLine){setError("Supplier linking and purchase posting require an internet connection. Reconnect before saving so the supplier ledger and stock remain consistent.");setBusy(false);return;}
   const previousNotes=Array.isArray(editing?.noteHistory)?editing.noteHistory:[];
   const noteChanged=!!cleanNote&&(!editing||cleanNote!==String(editing.note||"")||n(price)!==n(editing.retailerPrice??editing.price)||n(cost)!==n(editing.cost));
-  const data={...(editing||{}),id,name:name.trim(),urduName:urduName.trim(),sku:sku.trim(),barcode:barcode.trim(),category:category.trim(),unit:unit.trim()||"piece",packagingUnits:(()=>{const raw:any[]=[{name:baseName,conversionToBase:1,costPrice:n(cost),retailerPrice:n(price),salesmanPrice:n(salesmanPrice),}];if(upperUnit.trim())raw.push({name:upperUnit.trim(),conversionToBase:Number(upperQty),costPrice:n(cost)*Number(upperQty),retailerPrice:n(price)*Number(upperQty),salesmanPrice:n(salesmanPrice)*Number(upperQty),secondaryUnit:baseName,secondaryQty:Number(upperQty)});if(lowerUnit.trim())raw.push({name:lowerUnit.trim(),conversionToBase:1/Number(lowerQty),costPrice:n(cost)/Number(lowerQty),retailerPrice:n(price)/Number(lowerQty),salesmanPrice:n(salesmanPrice)/Number(lowerQty),secondaryUnit:baseName,secondaryQty:1/Number(lowerQty)});return raw;})(),...(editing?{}:{qty:n(qty)}),cost:n(cost),price:n(price),retailerPrice:n(price),salesmanPrice:n(salesmanPrice),alert:n(alertQty),lowAt:n(alertQty),branchId,note:cleanNote,noteHistory:noteChanged?[...previousNotes,{note:cleanNote,at:new Date().toISOString(),oldRetailerPrice:editing?n(editing.retailerPrice??editing.price):null,newRetailerPrice:n(price),oldCost:editing?n(editing.cost):null,newCost:n(cost)}]:previousNotes};
+  const data={...(editing||{}),id,name:name.trim(),urduName:urduName.trim(),sku:sku.trim(),barcode:barcode.trim(),category:category.trim(),unit:unit.trim()||"piece",packagingUnits:(()=>{const raw:any[]=[{name:baseName,conversionToBase:1,costPrice:n(cost),retailerPrice:n(price),salesmanPrice:n(salesmanPrice),}];if(upperUnit.trim())raw.push({name:upperUnit.trim(),conversionToBase:Number(upperQty),costPrice:n(cost)*Number(upperQty),retailerPrice:n(price)*Number(upperQty),salesmanPrice:n(salesmanPrice)*Number(upperQty),secondaryUnit:baseName,secondaryQty:Number(upperQty)});if(lowerUnit.trim())raw.push({name:lowerUnit.trim(),conversionToBase:1/Number(lowerQty),costPrice:n(cost)/Number(lowerQty),retailerPrice:n(price)/Number(lowerQty),salesmanPrice:n(salesmanPrice)/Number(lowerQty),secondaryUnit:baseName,secondaryQty:1/Number(lowerQty)});return raw;})(),...(editing?{}:{qty:supplierQty>0?0:n(qty)}),cost:n(cost),price:n(price),retailerPrice:n(price),salesmanPrice:n(salesmanPrice),alert:n(alertQty),lowAt:n(alertQty),branchId,note:cleanNote,noteHistory:noteChanged?[...previousNotes,{note:cleanNote,at:new Date().toISOString(),oldRetailerPrice:editing?n(editing.retailerPrice??editing.price):null,newRetailerPrice:n(price),oldCost:editing?n(editing.cost):null,newCost:n(cost)}]:previousNotes};
   const branchIdsForRecord=[String(branchId)];
   if(!navigator.onLine){
     try{
@@ -1078,6 +1098,20 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
     }catch(storageError){setError("Product was not saved. Secure offline storage failed: "+(storageError instanceof Error?storageError.message:"Unknown error"));}
     setBusy(false);return;
   }
+  if(supplierQty>0){
+   const supplierId=String(selectedSupplier?.id||makeId());
+   const supplierLinkId="singleprod-link-"+id;
+   const purchaseId="singleprod-"+id;
+   const purchaseDate=editorPurchaseDate;
+   const branchName=branches.find(b=>String(b.id)===String(branchId))?.name||"";
+   const invoiceNo=editorSupplierInvoice.trim()||("SP-"+id.slice(-10).toUpperCase());
+   const purchase={id:purchaseId,date:purchaseDate,purchaseDate,createdAt:new Date().toISOString(),invoiceNo,supplierInvoiceNo:editorSupplierInvoice.trim(),supplierCode:editorSupplierCode.trim(),branchId:String(branchId),branchName,productId:id,productName:data.name,sku:String(data.sku||""),qty:supplierQty,cost:supplierCostValue,purchaseQty:supplierQty,purchaseUnit:String(data.unit||"piece"),purchaseFactor:1,packageCost:supplierCostValue,subtotal:supplierTotal,taxType:"none",taxRate:0,taxAmount:0,inputTaxRecoverable:false,inputTax:0,nonRecoverableTax:0,inventoryUnitCost:supplierCostValue,supplierId,supplierName:supplierNameValue,total:supplierTotal,paid:Number(editorAmountPaid),balance:Math.max(0,supplierTotal-Number(editorAmountPaid)),batchNo:editorBatchNo.trim(),expiryDate:editorExpiryDate,note:"Single product form supplier receipt; stock and purchase are recorded atomically.",stockAction:"receive",importedVia:"single_product_form",importPaymentId:"singleprod-pay-"+id,importBatchRecordId:"singleprod-batch-"+id};
+   const supplierPayload={id:supplierId,name:supplierNameValue,phone:selectedSupplier?.phone||"",address:selectedSupplier?.address||""};
+   const supplierLink={id:supplierLinkId,productId:id,productName:data.name,branchId:String(branchId),supplierId,supplierName:supplierNameValue,supplierCode:editorSupplierCode.trim(),cost:supplierCostValue,leadDays:null};
+   const {data:result,error:rpcError}=await supabase.rpc("etihad_create_single_product_with_purchase",{p_org_id:orgId,p_branch_id:String(branchId),p_product:data,p_supplier:supplierPayload,p_supplier_link:supplierLink,p_purchase:purchase,p_paid:Number(editorAmountPaid),p_method:editorPaymentMethod});
+   if(rpcError||!result?.success){setError("Product and supplier purchase were not confirmed. No stock receipt should be assumed. "+(rpcError?.message||result?.message||"Please refresh and retry; the stable purchase reference prevents duplicate stock."));setBusy(false);onSaved();return;}
+   setEditing(null);setEditorOpen(false);setError("Product created and linked to "+String(result.supplierName||supplierNameValue)+". Purchase "+invoiceNo+" recorded: "+cash(supplierTotal)+" · Paid "+cash(Number(editorAmountPaid))+" · Due "+cash(Math.max(0,supplierTotal-Number(editorAmountPaid)))+". Stock received once.");setBusy(false);onSaved();return;
+  }
   const payload={org_id:orgId,collection:"mberp_products",record_id:String(id),branch_ids:branchIdsForRecord,data,updated_by:userId};
   const q=editing?supabase.from("etihad_records").update({data,branch_ids:branchIdsForRecord,updated_by:userId}).eq("org_id",orgId).eq("collection","mberp_products").eq("record_id",String(id)):supabase.from("etihad_records").insert(payload);
   const {error}=await q;
@@ -1085,7 +1119,24 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
     try{await saveOfflineRecordMutation({orgId,userId,collection:"mberp_products",recordId:String(id),branchIds:branchIdsForRecord,data,updatedBy:userId});setEditing(null);setEditorOpen(false);setError("Connection interrupted. Product saved securely on this device and queued for cloud sync.");onSaved();}
     catch(storageError){setError("Product was not confirmed and could not be queued offline: "+(storageError instanceof Error?storageError.message:"Unknown error"));}
   }else if(error)setError(error.message);
-  else{setEditing(null);setEditorOpen(false);onSaved();}
+  else{
+   if(hasSupplier){
+    const sourceRows=allRows||rows;const records=sourceRows.filter(r=>r.collection==="mberp_suppliers").map(r=>r.data||{});
+    let supplier=editorSupplierId==="new"?records.find((x:any)=>String(x.name||"").trim().toLowerCase()===supplierNameValue.toLowerCase()):records.find((x:any)=>String(x.id)===editorSupplierId);
+    if(supplier?.active===false&&supplier?.mergedInto)supplier=records.find((x:any)=>String(x.id)===String(supplier.mergedInto)&&x.active!==false)||null;
+    if(!supplier&&editorSupplierId==="new"){
+     const sid=makeId();supplier={id:sid,name:supplierNameValue,phone:"",address:"",openingBalance:0,openingBalanceDate:pakistanDate(),active:true,createdAt:new Date().toISOString()};
+     const {error:supplierError}=await supabase.from("etihad_records").insert({org_id:orgId,collection:"mberp_suppliers",record_id:String(sid),branch_ids:[],data:supplier,updated_by:userId});
+     if(supplierError){setError("Product saved, but supplier account could not be created: "+supplierError.message);setBusy(false);onSaved();return;}
+    }
+    if(!supplier||supplier.active===false){setError("Product saved, but the selected supplier is inactive. Select an active supplier and link it again.");setBusy(false);onSaved();return;}
+    const supplierId=String(supplier.id);const existingLink=productSuppliers.find((x:any)=>String(x.productId)===String(id)&&String(x.supplierId||"")===supplierId);
+    const linkId=String(existingLink?.id||makeId());const linkData={...(existingLink||{}),id:linkId,productId:String(id),productName:data.name,branchId:String(branchId),supplierId,supplierName:String(supplier.name||supplierNameValue),supplierCode:editorSupplierCode.trim(),cost:supplierCostValue,updatedAt:new Date().toISOString(),...(!existingLink?{createdAt:new Date().toISOString()}:{})};
+    const linkQuery=existingLink?supabase.from("etihad_records").update({data:linkData,branch_ids:[String(branchId)],updated_by:userId}).eq("org_id",orgId).eq("collection","mberp_product_suppliers").eq("record_id",String(linkId)):supabase.from("etihad_records").insert({org_id:orgId,collection:"mberp_product_suppliers",record_id:String(linkId),branch_ids:[String(branchId)],data:linkData,updated_by:userId});
+    const {error:linkError}=await linkQuery;if(linkError){setError("Product saved, but supplier link could not be saved: "+linkError.message);setBusy(false);onSaved();return;}
+   }
+   setEditing(null);setEditorOpen(false);onSaved();
+  }
   setBusy(false);
 }
  function exportStockAdjustmentRegister(){const headers=["Request date","Reviewed date","Request reference","Product","Branch","Batch / lot","Delta quantity","Reason","Status","Review note"];const data=requests.map(x=>[x.requestedAt||x.date||"",x.reviewedAt||"",x.requestNo||x.id,x.productName,x.branchName,x.batchNo||"",x.delta,x.reason,x.status||"pending",x.reviewNote||""]);const csv=[headers,...data].map(row=>row.map(v=>{const raw=String(v??"");const safe=typeof v==="string"&&/^\s*[=+@-]/.test(raw)?"'"+raw:raw;return '"'+safe.replace(/"/g,'""')+'"';}).join(",")).join("\r\n");const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="Ihsan-Sweets-Supplies-Stock-Adjustment-Register.csv";a.click();URL.revokeObjectURL(url);}
