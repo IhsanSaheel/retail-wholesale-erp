@@ -927,7 +927,7 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
   for(const item of prepared){
    if(!item.supplierName)continue;
    const matchedSupplier=supplierRecords.find((s:any)=>searchText(s.name)===searchText(item.supplierName));
-   const supplier=matchedSupplier?.active===false&&matchedSupplier?.mergedInto?supplierRecords.find((s:any)=>String(s.id)===String(matchedSupplier.mergedInto)&&s.active!==false)||null:matchedSupplier?.active===false?null:matchedSupplier;
+   let supplier=matchedSupplier?.active===false&&matchedSupplier?.mergedInto?supplierRecords.find((s:any)=>String(s.id)===String(matchedSupplier.mergedInto)&&s.active!==false)||null:matchedSupplier?.active===false?null:matchedSupplier;
    if(!supplier){const sid=makeId();supplier={id:sid,name:item.supplierName,phone:"",address:"",openingBalance:0,openingBalanceDate:new Date().toISOString().slice(0,10),active:true,createdAt:new Date().toISOString()};const {error}=await supabase.from("etihad_records").upsert({org_id:orgId,collection:"mberp_suppliers",record_id:String(sid),branch_ids:[],data:supplier,updated_by:userId},{onConflict:"org_id,collection,record_id"});if(error){setBulkError("Products were imported, but supplier "+item.supplierName+" could not be saved: "+error.message+". Refresh before retrying.");setBulkBusy(false);onSaved();return;}supplierRecords.push(supplier);}
    const supplierId=String(supplier.id);
    const existingLink=productSupplierRows.find(r=>String(r.data?.productId)===String(item.id)&&((String(r.data?.supplierId||"")===supplierId)||searchText(r.data?.supplierName)===searchText(item.supplierName)));
