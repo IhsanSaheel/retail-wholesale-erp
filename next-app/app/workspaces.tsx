@@ -1076,9 +1076,11 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
   if((upperUnit.trim()&&upperUnit.trim().toLowerCase()===baseName.toLowerCase())||(lowerUnit.trim()&&lowerUnit.trim().toLowerCase()===baseName.toLowerCase())||(upperUnit.trim()&&lowerUnit.trim()&&upperUnit.trim().toLowerCase()===lowerUnit.trim().toLowerCase())){setError("Upper, base and lower unit names must be different.");setBusy(false);return;}
   if(hasSupplier&&supplierNameValue.length<2){setError(editorSupplierId==="new"?"Enter the new supplier's name.":"Select a valid active supplier.");setBusy(false);return;}
   if(hasSupplier&&(!Number.isFinite(supplierCostValue)||supplierCostValue<0)){setError("Enter a valid supplier cost.");setBusy(false);return;}
+  if(!editing){const duplicate=products.find((p:any)=>String(p.branchId)===String(branchId)&&((sku.trim()&&String(p.sku||"").trim().toLowerCase()===sku.trim().toLowerCase())||(barcode.trim()&&String(p.barcode||"").trim().toLowerCase()===barcode.trim().toLowerCase())));if(duplicate){setError("This SKU or barcode is already used by "+String(duplicate.name||"another product")+" in this branch. Use the existing product or enter a unique code.");setBusy(false);return;}}
   if(supplierQty>0){
    const paid=Number(editorAmountPaid);
-   const dateOk=/^\\d{4}-\\d{2}-\\d{2}$/.test(editorPurchaseDate)&&!Number.isNaN(new Date(editorPurchaseDate+"T00:00:00").getTime());
+   const dateParts=editorPurchaseDate.split("-").map(Number);const parsedDate=dateParts.length===3?new Date(Date.UTC(dateParts[0],dateParts[1]-1,dateParts[2])):null;
+   const dateOk=/^\\d{4}-\\d{2}-\\d{2}$/.test(editorPurchaseDate)&&!!parsedDate&&!Number.isNaN(parsedDate.getTime())&&parsedDate.getUTCFullYear()===dateParts[0]&&parsedDate.getUTCMonth()===dateParts[1]-1&&parsedDate.getUTCDate()===dateParts[2];
    if(!(supplierCostValue>0)){setError("Supplier cost must be greater than zero when receiving stock as a purchase.");setBusy(false);return;}
    if(!dateOk){setError("Enter a valid purchase date.");setBusy(false);return;}
    if(!Number.isFinite(paid)||paid<0||paid>supplierTotal+0.000001){setError("Amount paid must be between Rs 0 and "+cash(supplierTotal)+".");setBusy(false);return;}
