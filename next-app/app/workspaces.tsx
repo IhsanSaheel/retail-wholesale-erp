@@ -222,17 +222,58 @@ export function POSWorkspace({ orgId, userId, cashier, role, branchIds, rows, on
   const balance = Math.max(0, total - applied);
   const categories = ["All", ...Array.from(new Set(products.filter(p => String(p.branchId) === String(branchId)).map(p => String(p.category || "Uncategorised").trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b))];
   const branchProducts = products.filter(p => String(p.branchId) === String(branchId));
-  const quickProductStorageKey = "etihad-pos-quick-products:"+String(userId||"device")+":"+String(branchId||"no-branch");
+  // Quick Products belong to the signed-in employee account, not to a branch.
+  // Keep a local copy for offline POS and sync the same preference to that
+  // employee's private cloud profile so it follows their login across devices.
+  const quickProductStorageKey = "etihad-pos-quick-products:"+String(orgId||"org")+":"+String(userId||"device");
   useEffect(()=>{
-    let saved:string[]=[];
-    try{const parsed=JSON.parse(localStorage.getItem(quickProductStorageKey)||"[]");if(Array.isArray(parsed))saved=parsed.map(String).slice(0,10);}catch{}
-    setQuickProductIds(saved);
-    setQuickProductsReadyKey(quickProductStorageKey);
-  },[quickProductStorageKey]);
+    let active=true;
+    const loadQuickProducts=async()=>{
+      let saved:string[]=[];
+      try{
+        const {data,error}=await supabase.from("erp_cloud_data").select("data").eq("user_id",userId).maybeSingle();
+        if(!error&&data?.data&&typeof data.data==="object"){
+          const cloudPrefs=data.data.posQuickProducts;
+          const cloudSaved=cloudPrefs&&typeof cloudPrefs==="object"?cloudPrefs[String(orgId||"")]:null;
+          if(Array.isArray(cloudSaved))saved=cloudSaved.map(String).slice(0,10);
+        }
+      }catch{}
+      if(!saved.length){
+        try{
+          const parsed=JSON.parse(localStorage.getItem(quickProductStorageKey)||"[]");
+          if(Array.isArray(parsed))saved=parsed.map(String).slice(0,10);
+          // Migrate the previous branch-specific local preference once.
+          if(!saved.length){
+            const legacyKey="etihad-pos-quick-products:"+String(userId||"device")+":"+String(branchId||"no-branch");
+            const legacy=JSON.parse(localStorage.getItem(legacyKey)||"[]");
+            if(Array.isArray(legacy))saved=legacy.map(String).slice(0,10);
+          }
+        }catch{}
+      }
+      if(!active)return;
+      setQuickProductIds(saved);
+      setQuickProductsReadyKey(quickProductStorageKey);
+    };
+    void loadQuickProducts();
+    return()=>{active=false;};
+  },[quickProductStorageKey,userId,orgId,branchId,supabase]);
   useEffect(()=>{
     if(quickProductsReadyKey!==quickProductStorageKey)return;
-    try{localStorage.setItem(quickProductStorageKey,JSON.stringify(quickProductIds.slice(0,10)));}catch{}
-  },[quickProductIds,quickProductStorageKey,quickProductsReadyKey]);
+    const selected=quickProductIds.slice(0,10);
+    try{localStorage.setItem(quickProductStorageKey,JSON.stringify(selected));}catch{}
+    if(!navigator.onLine||!userId)return;
+    void (async()=>{
+      try{
+        const {data}=await supabase.from("erp_cloud_data").select("data").eq("user_id",userId).maybeSingle();
+        const current=data?.data&&typeof data.data==="object"?data.data:{};
+        const currentPrefs=current.posQuickProducts&&typeof current.posQuickProducts==="object"?current.posQuickProducts:{};
+        await supabase.from("erp_cloud_data").upsert({
+          user_id:userId,
+          data:{...current,posQuickProducts:{...currentPrefs,[String(orgId||"")]:selected}}
+        },{onConflict:"user_id"});
+      }catch(error){console.warn("Quick Products remain saved locally and will sync when online.",error);}
+    })();
+  },[quickProductIds,quickProductStorageKey,quickProductsReadyKey,userId,orgId,supabase]);
   const editAllowance = (productId:string) => editingSale ? (editingSale.items||[]).filter((it:any)=>String(it.productId)===productId).reduce((sum:number,it:any)=>sum+n(it.qty),0) : 0;
   const effectiveStock = (product:Product) => n(product.qty)+editAllowance(String(product.id));
   const matches = branchProducts
