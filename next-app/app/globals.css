@@ -1474,3 +1474,9 @@ table td,table th{border-color:#eee9df}
 .pos-workspace .bill-item>*{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
 .pos-workspace .bill-product b{max-width:100%!important}
 .pos-workspace .bill-item .qty-control input,.pos-workspace .bill-unit-price,.pos-workspace .bill-price-type,.pos-workspace .bill-product select{min-width:0!important;max-width:100%!important}
+
+/* Editable line totals for weight and litre products: clear, compact and consistent with the POS bill controls. */
+.pos-workspace .bill-item .line-total-edit{display:block!important;min-width:0!important;max-width:100%!important;width:100%!important;height:31px!important;min-height:31px!important;padding:5px 8px!important;border:1px solid #d9e0e8!important;border-radius:6px!important;background:#fff!important;color:#243650!important;font:800 12px/1.2 Manrope,Arial,sans-serif!important;text-align:left!important;font-variant-numeric:tabular-nums!important;box-sizing:border-box!important;outline:none!important}
+.pos-workspace .bill-item .line-total-edit:focus{border-color:#b89558!important;box-shadow:0 0 0 2px #b895581f!important}
+.pos-workspace .bill-item .line-total-edit::-webkit-inner-spin-button,.pos-workspace .bill-item .line-total-edit::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.pos-workspace .bill-item .line-total-edit{-moz-appearance:textfield}
