@@ -926,15 +926,17 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
   const productSupplierRows=(allRows||rows).filter(r=>r.collection==="mberp_product_suppliers");
   for(const item of prepared){
    if(!item.supplierName)continue;
-   let supplier=supplierRecords.find((s:any)=>searchText(s.name)===searchText(item.supplierName));
+   const matchedSupplier=supplierRecords.find((s:any)=>searchText(s.name)===searchText(item.supplierName));
+   const supplier=matchedSupplier?.active===false&&matchedSupplier?.mergedInto?supplierRecords.find((s:any)=>String(s.id)===String(matchedSupplier.mergedInto)&&s.active!==false)||null:matchedSupplier?.active===false?null:matchedSupplier;
    if(!supplier){const sid=makeId();supplier={id:sid,name:item.supplierName,phone:"",address:"",openingBalance:0,openingBalanceDate:new Date().toISOString().slice(0,10),active:true,createdAt:new Date().toISOString()};const {error}=await supabase.from("etihad_records").upsert({org_id:orgId,collection:"mberp_suppliers",record_id:String(sid),branch_ids:[],data:supplier,updated_by:userId},{onConflict:"org_id,collection,record_id"});if(error){setBulkError("Products were imported, but supplier "+item.supplierName+" could not be saved: "+error.message+". Refresh before retrying.");setBulkBusy(false);onSaved();return;}supplierRecords.push(supplier);}
    const supplierId=String(supplier.id);
    const existingLink=productSupplierRows.find(r=>String(r.data?.productId)===String(item.id)&&((String(r.data?.supplierId||"")===supplierId)||searchText(r.data?.supplierName)===searchText(item.supplierName)));
    const linkId=String(existingLink?.record_id||existingLink?.data?.id||makeId());
-   const linkData={...(existingLink?.data||{}),id:linkId,productId:String(item.id),productName:item.data.name,branchId:item.branchId,supplierId,supplierName:item.supplierName,supplierCode:item.supplierCode,cost:item.supplierCost,leadDays:item.supplierLeadDays??existingLink?.data?.leadDays??null,updatedAt:new Date().toISOString(),...(!existingLink?{createdAt:new Date().toISOString()}:{})};
+   const canonicalSupplierName=String(supplier.name||item.supplierName);
+   const linkData={...(existingLink?.data||{}),id:linkId,productId:String(item.id),productName:item.data.name,branchId:item.branchId,supplierId,supplierName:canonicalSupplierName,supplierCode:item.supplierCode,cost:item.supplierCost,leadDays:item.supplierLeadDays??existingLink?.data?.leadDays??null,updatedAt:new Date().toISOString(),...(!existingLink?{createdAt:new Date().toISOString()}:{})};
    const linkQuery=existingLink?supabase.from("etihad_records").update({data:linkData,branch_ids:[item.branchId],updated_by:userId}).eq("org_id",orgId).eq("collection","mberp_product_suppliers").eq("record_id",linkId):supabase.from("etihad_records").insert({org_id:orgId,collection:"mberp_product_suppliers",record_id:linkId,branch_ids:[item.branchId],data:linkData,updated_by:userId});
    const {error:linkError}=await linkQuery;if(linkError){setBulkError("Products were imported, but supplier link for "+item.data.name+" could not be saved: "+linkError.message+". Refresh before retrying.");setBulkBusy(false);onSaved();return;}
-   if(!supplierGroups.has(supplierId))supplierGroups.set(supplierId,{supplierId,supplierName:item.supplierName,total:0,lines:[]});
+   if(!supplierGroups.has(supplierId))supplierGroups.set(supplierId,{supplierId,supplierName:canonicalSupplierName,total:0,lines:[]});
    const group=supplierGroups.get(supplierId);const lineTotal=Math.round(Math.max(0,n(item.importQty))*Math.max(0,n(item.supplierCost))*100)/100;group.total+=lineTotal;group.lines.push({...item,supplierId,lineTotal});
   }
   const groups=[...supplierGroups.values()].filter(g=>g.total>0);
