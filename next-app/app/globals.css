@@ -1450,3 +1450,19 @@ table td,table th{border-color:#eee9df}
  .pos-workspace .bill-item .line-total{font-size:8px!important}
  .pos-workspace .bill-item .remove-item{width:18px!important}
 }
+
+
+/* Professional POS bill: product title first, aligned controls beneath, total/remove on a clear final row. */
+.pos-workspace .bill-item{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.15fr) minmax(0,1fr)!important;grid-template-areas:"product product product product" "unit tier quantity unitprice" "total total total remove"!important;align-items:center!important;gap:6px 7px!important;padding:10px 0!important;border-bottom:1px solid #edf0f4!important;min-width:0!important}
+.pos-workspace .bill-product{display:contents!important}
+.pos-workspace .bill-product b{grid-area:product!important;display:block!important;width:100%!important;font-size:12px!important;line-height:1.35!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.pos-workspace .bill-product small{display:none!important}
+.pos-workspace .bill-product select{grid-area:unit!important;width:100%!important;min-width:0!important;height:31px!important;min-height:31px!important;font-size:10px!important}
+.pos-workspace .bill-price-type{grid-area:tier!important;width:100%!important;min-width:0!important;height:31px!important;min-height:31px!important;font-size:10px!important}
+.pos-workspace .bill-item .qty-control{grid-area:quantity!important;width:100%!important;display:flex!important;gap:3px!important;min-width:0!important}
+.pos-workspace .bill-item .qty-control button{width:23px!important;flex:0 0 23px!important;height:31px!important;min-height:31px!important}
+.pos-workspace .bill-item .qty-control input{width:100%!important;min-width:0!important;height:31px!important;min-height:31px!important;font-size:11px!important}
+.pos-workspace .bill-unit-price{grid-area:unitprice!important;width:100%!important;min-width:0!important;height:31px!important;min-height:31px!important;font-size:10px!important}
+.pos-workspace .bill-item .line-total{grid-area:total!important;justify-self:start!important;width:100%!important;text-align:left!important;font-size:12px!important;font-weight:800!important;white-space:nowrap!important;padding-top:2px!important}
+.pos-workspace .bill-item .remove-item{grid-area:remove!important;justify-self:end!important;width:31px!important;height:29px!important;min-height:29px!important;font-size:17px!important}
+@media(min-width:761px){.pos-workspace .bill-item{grid-template-columns:minmax(0,1.2fr) minmax(100px,.8fr) minmax(130px,1fr) minmax(95px,.8fr)!important}}
