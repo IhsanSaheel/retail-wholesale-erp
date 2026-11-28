@@ -912,8 +912,9 @@ export function ProductManager({ orgId, userId, role, branchIds, rows, allRows, 
     const supplierCodeValue=String(item.suppliercode||item.supplieritemcode||"").trim();
     const supplierCost=supplierCostValue??costValue??n(match?.cost);
     const purchaseDateValue=String(item.purchasedate||item.purchasedat||item.date||"").trim();
-    const parsedPurchaseDate=purchaseDateValue?new Date(purchaseDateValue+"T00:00:00"):null;
-    const normalizedPurchaseDate=purchaseDateValue?(/^\d{4}-\d{2}-\d{2}$/.test(purchaseDateValue)&&parsedPurchaseDate&&!Number.isNaN(parsedPurchaseDate.getTime())&&parsedPurchaseDate.toISOString().slice(0,10)===purchaseDateValue?purchaseDateValue:""):new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Karachi"}).format(new Date());
+    const purchaseDateParts=purchaseDateValue.split("-").map(Number);
+    const parsedPurchaseDate=purchaseDateParts.length===3?new Date(Date.UTC(purchaseDateParts[0],purchaseDateParts[1]-1,purchaseDateParts[2])):null;
+    const normalizedPurchaseDate=purchaseDateValue?(/^\d{4}-\d{2}-\d{2}$/.test(purchaseDateValue)&&parsedPurchaseDate&&!Number.isNaN(parsedPurchaseDate.getTime())&&parsedPurchaseDate.getUTCFullYear()===purchaseDateParts[0]&&parsedPurchaseDate.getUTCMonth()===purchaseDateParts[1]-1&&parsedPurchaseDate.getUTCDate()===purchaseDateParts[2]?purchaseDateValue:""):new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Karachi"}).format(new Date());
     if(purchaseDateValue&&!normalizedPurchaseDate){issues.push("Row "+item.__row+": purchaseDate must use YYYY-MM-DD format (for example 2026-11-28).");continue;}
     const supplierInvoiceNo=String(item.supplierinvoice||item.supplierinvoiceno||item.invoiceno||"").trim();
     prepared.push({id,match,data,branchId:String(targetBranch.id),supplierName:supplierNameValue,supplierCode:supplierCodeValue,supplierCost,supplierLeadDays:supplierLeadValue,importQty:qtyValue??0,purchaseDate:normalizedPurchaseDate,supplierInvoiceNo});
